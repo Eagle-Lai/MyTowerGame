@@ -1,0 +1,480 @@
+using System.Collections.Generic;
+using AStar;
+using UnityEngine;
+
+namespace FTProject
+{
+    public enum TowerType { None = 0, Normal = 1, Power = 2, Slow = 3 }
+
+    /// <summary>
+    /// 防御塔基类（v2.1 的 2D 版）。
+    ///
+    /// 相对 v1.0 的关键改动：
+    ///   - 去掉 Renderer/GetComponentsInChildren 换色 → 改 SpriteRenderer.color
+    ///   - **攻击逻辑抽出为 TickAttack(dt)，由 CombatSystem 集中驱动**（不再自行订阅 UpdateEvent）
+    ///   - 索敌走 EnemyGrid 空间哈希 + 节流 + 目标锁定（不再用 SphereCollider / OnTriggerEnter）
+    ///   - **无目标绝不开火**（v1.0 是每 0.2s 无条件空放）
+    ///   - 塔头转向目标；数值全部来自 TBTowerInfo
+    /// </summary>
+    public class BaseTower : MonoBehaviour
+    {
+        public TowerConfig Config { get; private set; }
+        public CellData Cell { get; private set; }
+        public bool IsBuilt { get; private set; }
+
+        /// <summary>自检计数（CombatSystem 汇总，用于验证"空放为 0"）</summary>
+        public int SearchCount { get; set; }
+        public int FireCount { get; set; }
+
+        private BaseEnemy _target;
+        private float _fireTimer;
+        private float _searchTimer;
+        private readonly List<BaseEnemy> _candidates = new List<BaseEnemy>(32);
+        private Transform _barrel;
+        private Transform _muzzle;
+        private SpriteRenderer[] _renderers;
+        private Vector2 _lastDir = Vector2.right;
+
+        private const float MinRotateStep = 0.5f;
+
+        /// <summary>
+        /// 炮管贴图**自身画朝哪个方向**（Unity 角度，0°=右、90°=上）。
+        ///
+        /// 【为什么需要这个偏移】`Atan2(y,x)` 算出的角是"0°=右"，
+        /// 而旋转是作用在贴图上的 —— 两者之间差一个"贴图原生朝向"。
+        /// 本工程的炮管贴图（turret_barrel_128.png）是**竖着画**的：上窄下宽、枪口朝上，
+        /// 即原生朝向 90°。所以实际要转的角度 = 目标角 - 90°。
+        ///
+        /// 【怎么量出来的】把贴图降采样成 ASCII 图看形状：枪口（窄端）在图像顶部。
+        /// 这类美术事实从代码/节点名推不出来，必须看图。
+        /// 换炮管美术时若朝向不对，改这一个常数即可。
+        /// </summary>
+        private const float BarrelNativeAngle = 90f;
+
+        // ------------------------------------------------------------------
+        // 初始化
+        // ------------------------------------------------------------------
+
+        public void Init(TowerConfig cfg, CellData cell)
+        {
+            Config = cfg;
+            Cell = cell;
+            IsBuilt = true;
+            _fireTimer = 0f;
+            _searchTimer = 0f;
+            _target = null;
+            SearchCount = 0;
+            FireCount = 0;
+
+            if (_renderers == null)
+            {
+                _renderers = GetComponentsInChildren<SpriteRenderer>(true);
+                for (int i = 0; i < _renderers.Length; i++)
+                {
+                    // 保留 prefab 里排好的相对层次（炮座 300 / 炮管 301），
+                    // 只把"画在棋盘底下"的那些抬到塔层，不做无差别覆盖
+                    if (_renderers[i] != null && _renderers[i].sortingOrder < BoardSorting.Tower)
+                    {
+                        _renderers[i].sortingOrder = BoardSorting.Tower;
+                    }
+                }
+            }
+            if (_barrel == null)
+            {
+                _barrel = transform.Find("barbette/Img_gun");
+                if (_barrel == null)
+                {
+                    _barrel = transform.Find("Img_gun");
+                }
+            }
+            if (_muzzle == null && _barrel != null)
+            {
+                _muzzle = _barrel.Find("BarrelPoint");
+            }
+            SetTint(Color.white);
+        }
+
+        public Vector2 Position
+        {
+            get { Vector2 p = transform.position; return p; }
+        }
+
+        private Vector2 MuzzlePosition
+        {
+            get
+            {
+                if (_muzzle != null)
+                {
+                    Vector2 m = _muzzle.position;
+                    return m;
+                }
+                return Position;
+            }
+        }
+
+        // ------------------------------------------------------------------
+        // 每帧（由 CombatSystem 驱动）
+        // ------------------------------------------------------------------
+
+        public void TickAttack(float dt)
+        {
+            if (!IsBuilt || Config == null)
+            {
+                return;
+            }
+
+            // ① 目标有效性检查：死亡/回收/走出射程 → 立即解除锁定
+            if (_target != null && (!_target.IsAlive || !InRange(_target)))
+            {
+                _target = null;
+            }
+
+            // ② 节流索敌：已有锁定目标时不重复搜索
+            _searchTimer += dt;
+            if (_target == null && _searchTimer >= Config.SearchIntervalSec)
+            {
+                _searchTimer = 0f;
+                _target = FindTarget();
+            }
+
+            if (_target == null)
+            {
+                return;   // ★ 无目标绝不开火
+            }
+
+            // ③ 塔头转向
+            RotateBarrelTowards(_target.Position, dt);
+
+            // ④ 冷却结束才开火
+            _fireTimer += dt;
+            if (_fireTimer < Config.CooldownSec)
+            {
+                return;
+            }
+            _fireTimer = 0f;
+            Fire(_target);
+        }
+
+        private bool InRange(BaseEnemy e)
+        {
+            float r = Config.RadiusWorld;
+            return (e.Position - Position).sqrMagnitude <= r * r;
+        }
+
+        /// <summary>空间哈希取候选 → 精确过滤 → 按 targetMode 打分</summary>
+        private BaseEnemy FindTarget()
+        {
+            CombatSystem cs = CombatSystem.Instance;
+            if (cs == null || cs.Grid == null)
+            {
+                return null;
+            }
+
+            SearchCount++;
+            cs.AddSearchCount(1);
+
+            _candidates.Clear();
+            cs.Grid.QueryCircle(Position, Config.RadiusWorld, _candidates);
+            if (_candidates.Count == 0)
+            {
+                return null;   // ★ 空列表直接返回，杜绝 v1.0 的 IndexOutOfRange
+            }
+
+            float r2 = Config.RadiusWorld * Config.RadiusWorld;
+            Vector2 self = Position;
+            BaseEnemy best = null;
+            float bestScore = float.MinValue;
+
+            for (int i = 0; i < _candidates.Count; i++)
+            {
+                BaseEnemy e = _candidates[i];
+                if (e == null || !e.IsAlive)
+                {
+                    continue;
+                }
+                float d2 = (e.Position - self).sqrMagnitude;
+                if (d2 > r2)
+                {
+                    continue;   // 网格查询会带出范围外元素，这里精确过滤
+                }
+
+                float score;
+                switch (Config.TargetMode)
+                {
+                    case TargetMode.Nearest:
+                        score = -d2;
+                        break;
+                    case TargetMode.HighestHp:
+                        score = e.CurrentHp;
+                        break;
+                    default:
+                        score = e.PathProgress;   // 最危险优先
+                        break;
+                }
+                if (score > bestScore)
+                {
+                    bestScore = score;
+                    best = e;
+                }
+            }
+            return best;
+        }
+
+        private void RotateBarrelTowards(Vector2 targetPos, float dt)
+        {
+            Vector2 d = targetPos - Position;
+            if (d.sqrMagnitude >= 0.000001f)
+            {
+                _lastDir = d.normalized;
+            }
+            if (_barrel == null)
+            {
+                return;
+            }
+            Vector2 bd = targetPos - (Vector2)_barrel.position;
+            if (bd.sqrMagnitude < 0.000001f)
+            {
+                return;
+            }
+            float targetAngle = Mathf.Atan2(bd.y, bd.x) * Mathf.Rad2Deg - BarrelNativeAngle;
+            Vector3 e = _barrel.localEulerAngles;
+            float cur = e.z;
+            float next = Mathf.MoveTowardsAngle(cur, targetAngle, Config.RotateSpeed * dt);
+            if (Mathf.Abs(Mathf.DeltaAngle(cur, next)) >= MinRotateStep)
+            {
+                _barrel.localEulerAngles = new Vector3(e.x, e.y, next);
+            }
+        }
+
+        private void Fire(BaseEnemy target)
+        {
+            BulletConfig bulletCfg = Configs.GetBullet(Config.BulletId);
+            if (bulletCfg == null)
+            {
+                return;
+            }
+            BulletManager.Instance.Fire(target, Config.Power, MuzzlePosition, bulletCfg);
+            FireCount++;
+        }
+
+        // ------------------------------------------------------------------
+        // 表现
+        // ------------------------------------------------------------------
+
+        public void SetTint(Color c)
+        {
+            if (_renderers == null)
+            {
+                return;
+            }
+            for (int i = 0; i < _renderers.Length; i++)
+            {
+                if (_renderers[i] != null)
+                {
+                    _renderers[i].color = c;
+                }
+            }
+        }
+
+        public void SetPreviewAlpha(float a)
+        {
+            if (_renderers == null)
+            {
+                return;
+            }
+            for (int i = 0; i < _renderers.Length; i++)
+            {
+                if (_renderers[i] != null)
+                {
+                    Color c = _renderers[i].color;
+                    c.a = a;
+                    _renderers[i].color = c;
+                }
+            }
+        }
+
+        /// <summary>吸附到格子中心</summary>
+        public void SnapToCell(CellData cell)
+        {
+            Cell = cell;
+            transform.position = new Vector3(cell.Center.x, cell.Center.y, 0f);
+        }
+
+        public void MarkDestroyed()
+        {
+            IsBuilt = false;
+            _target = null;
+        }
+    }
+
+    /// <summary>
+    /// 防御塔管理器：建塔（含路径校验与扣费）、出售、按格查询。
+    /// v1.0 的 `GetTower&lt;T&gt;() where T : new()` 对 MonoBehaviour 是反模式，已废弃。
+    ///
+    /// 【注意】本类不是 MonoBehaviour（继承 BaseManager），可以与本文件共存；
+    /// 而 NormalTower 是 MonoBehaviour，Unity 要求它与文件名一致，故放在 NormalTower.cs。
+    /// </summary>
+    public class TowerManager : BaseManager<TowerManager>
+    {
+        public Transform TowerParent { get; private set; }
+
+        private readonly List<BaseTower> _towers = new List<BaseTower>(64);
+
+        public IList<BaseTower> Towers { get { return _towers; } }
+
+        public void SetParent(Transform parent)
+        {
+            TowerParent = parent;
+        }
+
+        /// <summary>
+        /// 尝试在指定格建塔。
+        /// 顺序：占位校验 → 临时设墙跑 A*（堵死则回滚）→ 扣费 → 实例化。
+        /// 任何一步失败都完整回滚，不会出现"扣了钱又建不成"。
+        /// </summary>
+        public BaseTower TryBuild(int type, int level, int row, int col)
+        {
+            BoardView board = BoardView.Instance;
+            if (board == null)
+            {
+                Debug.LogError("[Tower] BoardView 未初始化");
+                return null;
+            }
+
+            CellData cell = board.GetCell(row, col);
+            if (cell == null)
+            {
+                Tips("该位置无法建造");
+                return null;
+            }
+            if (!cell.IsBuildable)
+            {
+                board.SetHighlight(row, col, CellHighlight.Blocked);
+                Tips("该位置不可建造");
+                return null;
+            }
+            if (cell.HasTower)
+            {
+                Tips("该位置已有防御塔");
+                return null;
+            }
+
+            TowerConfig cfg = Configs.GetTowerByTypeAndLevel(type, level);
+            if (cfg == null)
+            {
+                return null;
+            }
+
+            // 怪物脚下的格子不允许建塔：否则怪物会瞬间被墙包住，视觉上像卡死
+            CombatSystem combat = CombatSystem.Instance;
+            if (combat != null && combat.HasAliveEnemyNear(cell.Center, board.CellSize * 0.5f))
+            {
+                Tips("该格上正有怪物，换个位置吧");
+                return null;
+            }
+
+            AStarManager astar = AStarManager.Instance;
+            Point point = astar.GetPoint(row, col);
+            bool oldWall = point != null && point.IsWall;
+
+            // ① 临时占位，校验不会把路完全堵死
+            if (point != null)
+            {
+                point.IsWall = true;
+            }
+            if (!astar.IsFindPath())
+            {
+                if (point != null)
+                {
+                    point.IsWall = oldWall;
+                }
+                board.SetHighlight(row, col, CellHighlight.Blocked);
+                Tips("不能完全阻断怪物路径");
+                return null;
+            }
+
+            // ② 扣费（放在路径校验之后，避免扣了钱建不成）
+            if (!PlayerDataManager.Instance.TrySpend(cfg.Prices))
+            {
+                if (point != null)
+                {
+                    point.IsWall = oldWall;
+                }
+                Tips("金币不足");
+                return null;
+            }
+
+            // ③ 实例化
+            GameObject go = ResLoader.Instance.Instantiate(cfg.ResName, TowerParent);
+            if (go == null)
+            {
+                if (point != null)
+                {
+                    point.IsWall = oldWall;
+                }
+                PlayerDataManager.Instance.AddGold(cfg.Prices);   // 退还
+                Tips("防御塔资源加载失败");
+                Debug.LogError("[Tower] 建塔失败：无法加载 " + cfg.ResName);
+                return null;
+            }
+
+            BaseTower tower = go.GetComponent<BaseTower>();
+            if (tower == null)
+            {
+                tower = go.AddComponent<NormalTower>();
+            }
+            tower.Init(cfg, cell);
+            tower.SnapToCell(cell);
+
+            cell.Tower = tower;
+            cell.Point = point;
+            _towers.Add(tower);
+
+            CombatSystem.Instance.RegisterTower(tower);
+            EventDispatcher.TriggerEvent<BaseTower>(EventName.BuildTowerSuccess, tower);
+            astar.RequestRefresh();      // 节流重算，敌人改道
+
+            return tower;
+        }
+
+        /// <summary>出售：返还金币 + 释放格子 + 请求重算路径</summary>
+        public bool Sell(BaseTower tower)
+        {
+            if (tower == null || tower.Config == null || !tower.IsBuilt)
+            {
+                return false;
+            }
+            // 返还金额 = 配置的 sellPrice × 常数表的返还比例
+            // （比例做成常数是为了以后能加"卖塔折损"的经济压力，而不用改代码）
+            float rate = Configs.Global != null ? Configs.Global.SellRefundRate : 1f;
+            int refund = Mathf.Max(0, Mathf.RoundToInt(tower.Config.SellPrice * rate));
+            string resName = tower.Config.ResName;
+
+            if (tower.Cell != null)
+            {
+                tower.Cell.Tower = null;
+                if (tower.Cell.Point != null)
+                {
+                    tower.Cell.Point.IsWall = false;
+                }
+            }
+            tower.MarkDestroyed();
+            _towers.Remove(tower);
+            CombatSystem.Instance.UnregisterTower(tower);
+
+            PlayerDataManager.Instance.AddGold(refund);
+            EventDispatcher.TriggerEvent<BaseTower>(EventName.DestroyTower, tower);
+            ResLoader.Instance.ReleaseInstance(resName, tower.gameObject);
+            AStarManager.Instance.RequestRefresh();
+            Tips(string.Format("已出售防御塔，返还 {0} 金币", refund));
+            return true;
+        }
+
+        private static void Tips(string msg)
+        {
+            EventDispatcher.TriggerEvent<string>(EventName.ShowTipEvent, msg);
+        }
+
+        public int Count { get { return _towers.Count; } }
+    }
+}
