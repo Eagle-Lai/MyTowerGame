@@ -213,6 +213,12 @@ namespace FTProject
                 {
                     continue;
                 }
+                // 对空过滤：本塔打不到飞行单位时**直接跳过**，
+                // 而不是"锁一个打不到的目标然后空放"——那会让无目标开火的自检计数器爆掉。
+                if (e.Config != null && e.Config.IsFlying && !Config.CanAttackAir)
+                {
+                    continue;
+                }
                 float d2 = (e.Position - self).sqrMagnitude;
                 if (d2 > r2)
                 {
@@ -269,12 +275,36 @@ namespace FTProject
 
         private void Fire(BaseEnemy target)
         {
+            // ---- 激光：瞬发命中（hitscan），不生成弹体 ----
+            // 【为什么不做成"速度极高的子弹"】那会引入高速穿透漏判
+            // （BulletConfig.IsSpeedSafeAtFps 就是为这个坑准备的自检），
+            // 而且激光本来就该是"立即结算"，用弹体反而要额外处理寿命与回收。
+            if (Config.IsLaser)
+            {
+                if (target == null || !target.IsAlive)
+                {
+                    return;   // ★ 无目标绝不开火（与普通塔同一条不变量）
+                }
+                Vector2 muzzle = MuzzlePosition;
+                target.Hurt(Config.Power);
+                LaserBeamView.Fire(muzzle, target.Position);
+                FireCount++;
+                return;
+            }
+
+            if (!Config.FiresBullet)
+            {
+                return;
+            }
+
             BulletConfig bulletCfg = Configs.GetBullet(Config.BulletId);
             if (bulletCfg == null)
             {
                 return;
             }
-            BulletManager.Instance.Fire(target, Config.Power, MuzzlePosition, bulletCfg);
+            // 把塔的 effectValue 传下去：减速塔三级强度不同就靠它
+            // （子弹自身 effectValue > 0 时会被塔的值覆盖，见 BaseBullet.Init）
+            BulletManager.Instance.Fire(target, Config.Power, MuzzlePosition, bulletCfg, Config.EffectValue);
             FireCount++;
         }
 

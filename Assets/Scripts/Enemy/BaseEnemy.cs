@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using AStar;
 using UnityEngine;
 
@@ -48,11 +48,21 @@ namespace FTProject
         public float CurrentHp { get; private set; }
         public float TotalHp { get; private set; }
 
-        /// <summary>路径进度 0~1（0=刚出生，1=快到终点）。索敌"最危险优先"策略的基础。</summary>
+        /// <summary>
+        /// 路径进度 0~1（0=刚出生，1=快到终点）。索敌"最危险优先"策略的基础。
+        ///
+        /// 【为什么飞行单位要单独算】地面怪按"走了几格 / 总格数"衡量；
+        /// 飞行怪只有起点和终点两个点，格数比值毫无意义（永远是 0 或 1），
+        /// 于是"最危险优先"会对它们完全失效。改用直线上的行驶比例，语义才一致。
+        /// </summary>
         public float PathProgress
         {
             get
             {
+                if (_flying)
+                {
+                    return _flyProgress;
+                }
                 if (_path == null || _path.Count <= 1)
                 {
                     return 0f;
@@ -68,6 +78,14 @@ namespace FTProject
         private List<Point> _path;
         private int _pathIndex;
         private float _speed;
+
+        // ---- 飞行单位（M2-W4）：直线寻路，不入 A* 网格 ----
+        /// <summary>本怪是否飞行（由 EnemyConfig.IsFlying 决定，Init 时定型）</summary>
+        private bool _flying;
+        private Vector2 _flyStart;
+        private Vector2 _flyEnd;
+        private float _flyTotal = 1f;
+        private float _flyProgress;
         private Transform _hpBarFill;
         private Transform _hpBarRoot;
         private Animator _anim;
@@ -128,6 +146,12 @@ namespace FTProject
             CurrentHp = cfg.Hp;
             BodyRadius = cfg.BodyRadius;
 
+            // 池化复用必须清状态效果，否则新怪会带着上一只的减速 / 持续伤害出场
+            _slowRatio = 0f;
+            _slowTimer = 0f;
+            _dotDps = 0f;
+            _dotTimer = 0f;
+
             // 首次 Init 时记下 prefab 授权缩放，之后只在此基础上乘配置值
             if (_baseScale == Vector3.zero)
             {
@@ -142,6 +166,8 @@ namespace FTProject
             }
 
             CacheRefs();
+            // 飞行标记必须在 SetPath 之前定型：SetPath 会据此决定"逐格走"还是"走直线"
+            _flying = cfg.IsFlying;
             SetPath(path);
 
             IsAlive = true;
@@ -271,7 +297,15 @@ namespace FTProject
                 return;
             }
 
-            if (!IsAlive || _path == null || _path.Count == 0)
+            // 状态效果先结算：持续伤害可能就在这一步把怪打死，
+            // 打死之后就不能再移动了（否则尸体会顺着路径再滑一格）。
+            TickEffects(dt);
+            if (!IsAlive || _pendingRecycle)
+            {
+                return;
+            }
+
+            if (_path == null || _path.Count == 0)
             {
                 return;
             }
@@ -280,8 +314,71 @@ namespace FTProject
             FaceMoveDirection();
         }
 
+        /// <summary>
+        /// 飞行单位的路径 = 出生点 → 终点的一条直线。
+        ///
+        /// 【为什么复用 A* 路径的首尾两点，而不是另开一套生成入口】
+        /// EnemyManager / 波次系统只认识"这条 A* 路径"，取首尾即可。
+        /// 飞行逻辑因此完全收在 BaseEnemy 内部，上层一行都不用改，
+        /// 也不会出现"忘了给飞行单位传路径"的新失败模式。
+        ///
+        /// 【飞行单位的副作用，都是有意为之】
+        ///   · 不参与"禁止完全堵路"的判定（塔墙拦不住它）
+        ///   · 不参与路径重算（建塔/拆塔不影响它）
+        ///   · 不阻止玩家在它脚下建塔（见 CombatSystem.HasAliveEnemyNear）
+        /// </summary>
+        private void SetupFlyingPath(List<Point> path)
+        {
+            if (path == null || path.Count == 0)
+            {
+                _flying = false;   // 拿不到路径就退回地面逻辑，别把怪卡死
+                return;
+            }
+            _flyStart = Position;
+            _flyEnd = path[path.Count - 1].Center;
+            _flyTotal = Mathf.Max(0.0001f, Vector2.Distance(_flyStart, _flyEnd));
+            _flyProgress = 0f;
+
+            Vector2 d = _flyEnd - _flyStart;
+            if (d.sqrMagnitude > 0.000001f)
+            {
+                _lastDir = d.normalized;
+                FaceMoveDirection();
+            }
+        }
+
+        /// <summary>飞行：直线飞向终点。到达即算漏怪。</summary>
+        private void MoveStraight(float dt)
+        {
+            Vector2 pos = Position;
+            Vector2 dir = _flyEnd - pos;
+            float dist = dir.magnitude;
+
+            if (dist <= ArriveThreshold)
+            {
+                _flyProgress = 1f;
+                OnReachEnd();
+                return;
+            }
+
+            Vector2 step = dir / dist * (_speed * dt);
+            if (step.magnitude > dist)
+            {
+                step = dir;
+            }
+            transform.position = new Vector3(pos.x + step.x, pos.y + step.y, 0f);
+            _lastDir = dir;
+            _flyProgress = Mathf.Clamp01(1f - (dist - step.magnitude) / _flyTotal);
+        }
+
         private void MoveAlongPath(float dt)
         {
+            if (_flying)
+            {
+                MoveStraight(dt);
+                return;
+            }
+
             if (_pathIndex >= _path.Count)
             {
                 OnReachEnd();
@@ -395,6 +492,15 @@ namespace FTProject
     {
         _path = path;
         _pathIndex = 0;
+
+        // 飞行单位：不逐格走 A*，改为"当前位置 → 终点"的直线。
+        // 【为什么入口放在 SetPath 而不是 Init】路径在任何时候都可能被重设，
+        // 把飞行分支收在这里，就不会出现"某条重设路径的调用绕过了飞行逻辑"。
+        if (_flying)
+        {
+            SetupFlyingPath(path);
+            return;
+        }
         // 让第一格从当前位置自然衔接：若已经在第一格附近，直接跳到下一格
         if (_path != null && _path.Count > 1)
         {
@@ -436,6 +542,12 @@ namespace FTProject
         public void RefreshPath()
         {
             if (!IsAlive || AStarManager.Instance == null)
+            {
+                return;
+            }
+            // 飞行单位走直线，与 A* 无关：重算路径对它没有任何意义，
+            // 强行重算反而会把它从直线拽回地面路线（那是 bug，不是特性）。
+            if (_flying)
             {
                 return;
             }
@@ -582,6 +694,83 @@ namespace FTProject
             if (_anim != null)
             {
                 _anim.SetTrigger(ANIM_ATTACK);
+            }
+        }
+
+        // ------------------------------------------------------------------
+        // 状态效果：减速 / 持续伤害（M2-W3）
+        // ------------------------------------------------------------------
+
+        /// <summary>当前减速比例（0 = 未减速）</summary>
+        private float _slowRatio;
+        private float _slowTimer;
+
+        private float _dotDps;
+        private float _dotTimer;
+
+        /// <summary>
+        /// 施加减速。
+        ///
+        /// 【为什么不叠加】多个减速塔叠加会让"铺满减速塔"变成唯一解，经济与难度都会失控。
+        /// 取最强的一层并刷新时长，是塔防里的通行做法，也更容易向玩家解释。
+        /// </summary>
+        /// <param name="ratio">减速比例 0~1（0.5 = 速度减半）</param>
+        public void ApplySlow(float ratio, float durationSec)
+        {
+            if (!IsAlive || ratio <= 0f || durationSec <= 0f)
+            {
+                return;
+            }
+            // 上限 0.95：留 5% 速度，避免怪被定住后看起来像卡死（也防止除零类隐患）
+            ratio = Mathf.Clamp(ratio, 0f, 0.95f);
+            if (ratio >= _slowRatio)
+            {
+                _slowRatio = ratio;
+            }
+            _slowTimer = Mathf.Max(_slowTimer, durationSec);
+            SetSpeedScale(1f - _slowRatio);
+        }
+
+        /// <summary>施加持续伤害（每秒 dps 点，持续 durationSec 秒）。重复施加取更强的一层并刷新时长。</summary>
+        public void ApplyDot(float dps, float durationSec)
+        {
+            if (!IsAlive || dps <= 0f || durationSec <= 0f)
+            {
+                return;
+            }
+            if (dps >= _dotDps)
+            {
+                _dotDps = dps;
+            }
+            _dotTimer = Mathf.Max(_dotTimer, durationSec);
+        }
+
+        /// <summary>推进状态效果计时器。由 Tick 在最前面调用。</summary>
+        private void TickEffects(float dt)
+        {
+            if (_slowTimer > 0f)
+            {
+                _slowTimer -= dt;
+                if (_slowTimer <= 0f)
+                {
+                    _slowTimer = 0f;
+                    _slowRatio = 0f;
+                    ResetSpeed();
+                }
+            }
+
+            if (_dotTimer > 0f && IsAlive)
+            {
+                _dotTimer -= dt;
+                // 【为什么走 Hurt 而不是直接扣 CurrentHp】
+                // 护甲减伤、血条刷新、击杀奖励、命中统计、伤害飘字全都挂在 Hurt 上，
+                // 绕过去等于每一条都要单独再实现一遍，迟早不一致。
+                Hurt(_dotDps * dt);
+                if (_dotTimer <= 0f)
+                {
+                    _dotTimer = 0f;
+                    _dotDps = 0f;
+                }
             }
         }
 

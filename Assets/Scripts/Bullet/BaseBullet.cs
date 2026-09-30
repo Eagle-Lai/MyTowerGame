@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace FTProject
@@ -5,17 +6,47 @@ namespace FTProject
     public enum BulletState { None = 0, Fire, Idle }
 
     /// <summary>
-    /// 子弹基类（v2.1 的 2D 版）。
+    /// 子弹基类（v2.1 的 2D 版，M2 补齐穿透 / 范围 / 减速 / 持续伤害）。
     ///
     /// 相对 v1.0 的关键改动：
-    ///   - **移除 OnTriggerEnter 命中判定**，改为每帧「与目标的距离 ≤ hitRadius」判定（需求 8）
+    ///   - **移除 OnTriggerEnter 命中判定**，改为每帧「与目标的距离 ≤ hitRadius + 怪物体半径」判定
     ///   - 不再用 transform.Translate(Vector3.forward)，改为 Vector2 方向位移
     ///   - 伤害由发射塔注入（v1.0 硬编码 Hurt(1)）
     ///   - 复用时必须完整重置状态，否则会出现"带着上次目标飞出去"的经典池化 Bug
+    ///
+    /// 【M2 修复的两个真实缺陷】
+    ///   1. 穿透**完全无效**：原实现在 _pierce > 0 时把 _target 置 null 后 return，
+    ///      而命中判定要求 _target != null —— 子弹此后再也不会命中任何东西。
+    ///      现在改为"用空间哈希找最近的、还没打过的敌人"，穿透才有意义。
+    ///   2. AOE 每次命中 new List（每跳一次 GC）：缓冲改为实例字段复用。
+    ///
+    /// 【命中效果的口径】以**子弹的 effectType** 为准（见 EffectType 枚举注释）；
+    ///   强度 effectValue 由塔覆盖（塔里填了正数就用塔的），这样减速塔三级各不相同，
+    ///   而 AOE / 穿透塔不必在表里重复填同样的值。
     /// </summary>
     public class BaseBullet : MonoBehaviour
     {
         public BulletState State { get; private set; }
+
+        /// <summary>配置里没填 resName 时的兜底逻辑名（BulletManager 与归还逻辑共用，避免两处写死不一致）</summary>
+        public const string FallbackResName = "Bullet_Normal";
+
+        /// <summary>本发子弹所属的对象池 key（= 配置的 resName）。归还时用它找对池子。</summary>
+        public string ResName { get; private set; }
+
+        /// <summary>减速持续时长（秒）。做成常数而不是配置列：当前只有一种减速弹，
+        /// 加一列只会让表更宽；真要做"不同时长"时再加列即可。</summary>
+        private const float SlowDurationSec = 2f;
+
+        /// <summary>持续伤害的持续时间（秒），同上。</summary>
+        private const float DotDurationSec = 3f;
+
+        /// <summary>
+        /// 空间哈希查询的额外半径余量，用来覆盖"怪物受击半径"。
+        /// 取 1.0 世界单位，远大于当前所有怪的 bodyRadius（默认 0.4）；
+        /// 多查出来的候选会被随后的精确距离判定过滤掉，只是多几次比较。
+        /// </summary>
+        private const float QueryPad = 1.0f;
 
         private BaseEnemy _target;
         private Vector2 _dir = Vector2.right;
@@ -26,9 +57,23 @@ namespace FTProject
         private float _damage;
         private int _pierce;
         private float _aoeRadius;
+        private EffectType _effect;
+        private float _effectValue;
         private SpriteRenderer _sr;
 
-        public void Init(BaseEnemy target, float damage, BulletConfig cfg)
+        /// <summary>命中判定 / AOE 的候选缓冲。实例字段复用 → 命中过程零 GC。</summary>
+        private readonly List<BaseEnemy> _queryBuf = new List<BaseEnemy>(32);
+
+        /// <summary>已被**这一发**子弹打过的敌人。穿透时用来避免反复打同一个目标。</summary>
+        private readonly HashSet<BaseEnemy> _hitSet = new HashSet<BaseEnemy>();
+
+        /// <summary>
+        /// 初始化一发子弹。
+        /// </summary>
+        /// <param name="towerEffectValue">
+        /// 发射塔的 effectValue。&gt; 0 时覆盖子弹自己的值（减速塔三级强度因此不同）。
+        /// </param>
+        public void Init(BaseEnemy target, float damage, BulletConfig cfg, float towerEffectValue)
         {
             _target = target;
             _damage = damage;
@@ -37,7 +82,11 @@ namespace FTProject
             _lifeTime = cfg.LifeTimeSec;
             _pierce = cfg.Pierce;
             _aoeRadius = cfg.AoeRadius;
+            _effect = cfg.Effect;
+            _effectValue = towerEffectValue > 0f ? towerEffectValue : cfg.EffectValue;
+            ResName = string.IsNullOrEmpty(cfg.ResName) ? FallbackResName : cfg.ResName;
             _lifeTimer = 0f;
+            _hitSet.Clear();
             State = BulletState.Fire;
 
             // includeInactive=true：对象池归还时会 SetActive(false)，
@@ -71,8 +120,10 @@ namespace FTProject
                 return;
             }
 
-            // ① 追踪目标（目标死亡则保持最后方向飞完剩余寿命）
-            if (_target != null && _target.IsAlive)
+            // ① 追踪：只在"还没打中任何敌人"时制导。
+            //    一旦打中过（穿透弹），就改为保持最后方向直线飞行 ——
+            //    否则子弹会拐回去追已经被打过的那只，穿透就变成了"绕圈"。
+            if (_hitSet.Count == 0 && _target != null && _target.IsAlive)
             {
                 Vector2 d = _target.Position - (Vector2)transform.position;
                 if (d.sqrMagnitude > 0.000001f)
@@ -86,18 +137,14 @@ namespace FTProject
             pos += _dir * (_speed * dt);
             transform.position = new Vector3(pos.x, pos.y, 0f);
 
-            // ③ 命中判定：与目标的距离 ≤ (子弹命中半径 + 怪物受击半径)
-            // 【为什么要加怪物半径】只用子弹自己的 hitRadius 时，判定面是"目标中心的一个小圆"，
-            // 怪物越大反而越难打中（视觉上明显穿过身体却不算命中）。
-            // 加上 BodyRadius 后，判定面 ≈ 怪物身体轮廓，符合直觉，且两个半径都可配。
-            if (_target != null && _target.IsAlive)
+            // ③ 命中判定：找最近的、本发子弹还没打过的敌人
+            BaseEnemy hit = FindHit(pos);
+            if (hit != null)
             {
-                float hitR = _hitRadius + _target.BodyRadius;
-                float sqr = ((Vector2)_target.Position - pos).sqrMagnitude;
-                if (sqr <= hitR * hitR)
+                OnHit(hit);
+                if (State != BulletState.Fire)
                 {
-                    OnHit(_target);
-                    return;
+                    return;   // 已回收，后面的逻辑不能再碰 transform
                 }
             }
 
@@ -109,28 +156,76 @@ namespace FTProject
             }
         }
 
+        /// <summary>
+        /// 找当前位置能命中的敌人（最近优先）。
+        ///
+        /// 【为什么不能只认 _target】穿透弹打中第一个之后 _target 就没有意义了，
+        /// 必须能"沿路找下一个"。空间哈希已经把候选压到常数级，这里再精确过滤即可。
+        /// </summary>
+        private BaseEnemy FindHit(Vector2 pos)
+        {
+            CombatSystem cs = CombatSystem.Instance;
+            if (cs == null || cs.Grid == null)
+            {
+                return null;
+            }
+
+            _queryBuf.Clear();
+            cs.Grid.QueryCircle(pos, _hitRadius + QueryPad, _queryBuf);
+
+            BaseEnemy best = null;
+            float bestSqr = float.MaxValue;
+            for (int i = 0; i < _queryBuf.Count; i++)
+            {
+                BaseEnemy e = _queryBuf[i];
+                if (e == null || !e.IsAlive || _hitSet.Contains(e))
+                {
+                    continue;
+                }
+                // 命中面 ≈ 怪物身体轮廓：只用子弹半径的话，怪物越大反而越难打中
+                float hitR = _hitRadius + e.BodyRadius;
+                float sqr = (e.Position - pos).sqrMagnitude;
+                if (sqr > hitR * hitR)
+                {
+                    continue;   // 网格查询会带出范围外元素，这里精确过滤
+                }
+                if (sqr < bestSqr)
+                {
+                    bestSqr = sqr;
+                    best = e;
+                }
+            }
+            return best;
+        }
+
         private void OnHit(BaseEnemy e)
         {
             e.Hurt(_damage);
+            ApplyEffect(e);
+            _hitSet.Add(e);
 
-            // AOE：对半径内其他敌人也造成伤害（M2 启用，M0 的配置 aoeRadius=0）
-            if (_aoeRadius > 0f && CombatSystem.Instance != null && CombatSystem.Instance.Grid != null)
+            // AOE：对半径内的其他敌人也造成同等伤害
+            if (_aoeRadius > 0f)
             {
-                // 简化实现：用空间哈希取候选后精确过滤，避免全表遍历
-                System.Collections.Generic.List<BaseEnemy> buf =
-                    new System.Collections.Generic.List<BaseEnemy>(16);
-                CombatSystem.Instance.Grid.QueryCircle(Position, _aoeRadius, buf);
-                float r2 = _aoeRadius * _aoeRadius;
-                for (int i = 0; i < buf.Count; i++)
+                CombatSystem cs = CombatSystem.Instance;
+                if (cs != null && cs.Grid != null)
                 {
-                    BaseEnemy other = buf[i];
-                    if (other == null || !other.IsAlive || other == e)
+                    _queryBuf.Clear();
+                    cs.Grid.QueryCircle(Position, _aoeRadius, _queryBuf);
+                    float r2 = _aoeRadius * _aoeRadius;
+                    for (int i = 0; i < _queryBuf.Count; i++)
                     {
-                        continue;
-                    }
-                    if ((other.Position - Position).sqrMagnitude <= r2)
-                    {
-                        other.Hurt(_damage);
+                        BaseEnemy other = _queryBuf[i];
+                        if (other == null || !other.IsAlive || other == e || _hitSet.Contains(other))
+                        {
+                            continue;
+                        }
+                        if ((other.Position - Position).sqrMagnitude <= r2)
+                        {
+                            other.Hurt(_damage);
+                            ApplyEffect(other);
+                            _hitSet.Add(other);
+                        }
                     }
                 }
             }
@@ -138,10 +233,28 @@ namespace FTProject
             if (_pierce > 0)
             {
                 _pierce--;
-                _target = null;   // 继续飞行，寻找下一个目标（M2 完善）
-                return;
+                return;   // 不回收：继续沿当前方向飞，找下一个目标
             }
             Recycle();
+        }
+
+        /// <summary>
+        /// 施加命中效果。effectType 以子弹为准（见 EffectType 注释）。
+        /// Aoe / Laser 不在子弹侧额外处理：前者由 aoeRadius 分支完成，后者根本不生成弹体。
+        /// </summary>
+        private void ApplyEffect(BaseEnemy e)
+        {
+            switch (_effect)
+            {
+                case EffectType.Slow:
+                    e.ApplySlow(_effectValue, SlowDurationSec);
+                    break;
+                case EffectType.Dot:
+                    e.ApplyDot(_effectValue, DotDurationSec);
+                    break;
+                default:
+                    break;
+            }
         }
 
         public Vector2 Position
@@ -163,27 +276,38 @@ namespace FTProject
             _lifeTimer = 0f;
             _pierce = 0;
             _damage = 0f;
+            _aoeRadius = 0f;
+            _effect = EffectType.None;
+            _effectValue = 0f;
+            _hitSet.Clear();
+            _queryBuf.Clear();
             gameObject.SetActive(false);
         }
     }
 
     /// <summary>
     /// 子弹管理器（池化）。
-    /// 与 v1.0 的差异：统一使用通用 ObjectPool，并在取出/归还时完整重置状态。
+    ///
+    /// 【为什么按 resName 分池】不同子弹将来会有不同外观（爆炸弹/穿透弹/腐蚀弹…），
+    ///   TBBulletData.resName 已经能表达这件事。现在五种子弹都还指向 Bullet_Normal，
+    ///   所以实际只有一个池；但接口先按多池设计，将来换美术时不用再改这里。
     /// </summary>
     public class BulletManager : BaseManager<BulletManager>
     {
         public Transform BulletParent { get; private set; }
 
-        private ObjectPool<BaseBullet> _pool;
-        private string _resName = "Bullet_Normal";
+        /// <summary>兜底资源名：配置里没填 resName 时用它</summary>
+        private readonly Dictionary<string, ObjectPool<BaseBullet>> _pools =
+            new Dictionary<string, ObjectPool<BaseBullet>>();
+
+        private int _maxPoolSize = 256;
         private bool _inited;
 
         public override void OnInit()
         {
             base.OnInit();
 
-            // 幂等保护：重复初始化会新建一个对象池，之前发出去的池化对象就再也回不来了
+            // 幂等保护：重复初始化会新建对象池，之前发出去的池化对象就再也回不来了
             if (_inited)
             {
                 Debug.LogWarning("[Bullet] OnInit 被重复调用，已忽略（管理器应只初始化一次）");
@@ -192,26 +316,27 @@ namespace FTProject
             _inited = true;
 
             int prewarm = Configs.Global != null ? Configs.Global.BulletPoolSize : 128;
-            _pool = new ObjectPool<BaseBullet>(
-                create: CreateBullet,
-                reset: b => b.OnRecycle(),
-                maxSize: prewarm * 2,
-                prewarm: 0);
+            _maxPoolSize = Mathf.Max(16, prewarm * 2);
         }
 
         public override void OnDestroy()
         {
             base.OnDestroy();
-            if (_pool != null)
+            foreach (KeyValuePair<string, ObjectPool<BaseBullet>> kv in _pools)
             {
-                _pool.Clear(b =>
+                ObjectPool<BaseBullet> pool = kv.Value;
+                if (pool != null)
                 {
-                    if (b != null && b.gameObject != null)
+                    pool.Clear(b =>
                     {
-                        Object.Destroy(b.gameObject);
-                    }
-                });
+                        if (b != null && b.gameObject != null)
+                        {
+                            Object.Destroy(b.gameObject);
+                        }
+                    });
+                }
             }
+            _pools.Clear();
         }
 
         public void SetParent(Transform parent)
@@ -219,14 +344,36 @@ namespace FTProject
             BulletParent = parent;
         }
 
-        private BaseBullet CreateBullet()
+        private ObjectPool<BaseBullet> GetPool(string resName)
+        {
+            ObjectPool<BaseBullet> pool;
+            if (_pools.TryGetValue(resName, out pool))
+            {
+                return pool;
+            }
+            if (!_inited)
+            {
+                Debug.LogError("[Bullet] 管理器尚未初始化，无法创建子弹");
+                return null;
+            }
+            string captured = resName;
+            pool = new ObjectPool<BaseBullet>(
+                create: () => CreateBullet(captured),
+                reset: b => b.OnRecycle(),
+                maxSize: _maxPoolSize,
+                prewarm: 0);
+            _pools[resName] = pool;
+            return pool;
+        }
+
+        private BaseBullet CreateBullet(string resName)
         {
             if (BulletParent == null)
             {
                 GameObject root = GameObject.Find("BulletRoot");
                 BulletParent = root != null ? root.transform : null;
             }
-            GameObject go = ResLoader.Instance.Instantiate(_resName, BulletParent);
+            GameObject go = ResLoader.Instance.Instantiate(resName, BulletParent);
             if (go == null)
             {
                 return null;
@@ -241,27 +388,42 @@ namespace FTProject
             return b;
         }
 
-        /// <summary>发射一颗子弹</summary>
-        public void Fire(BaseEnemy target, float damage, Vector2 fromPos, BulletConfig cfg)
+        /// <summary>
+        /// 发射一颗子弹。
+        /// </summary>
+        /// <param name="towerEffectValue">发射塔的 effectValue（&gt;0 时覆盖子弹的，见 BaseBullet.Init）</param>
+        public void Fire(BaseEnemy target, float damage, Vector2 fromPos, BulletConfig cfg, float towerEffectValue)
         {
             if (target == null || cfg == null)
             {
                 return;
             }
-            BaseBullet b = _pool.Get();
+            string resName = string.IsNullOrEmpty(cfg.ResName) ? BaseBullet.FallbackResName : cfg.ResName;
+            ObjectPool<BaseBullet> pool = GetPool(resName);
+            if (pool == null)
+            {
+                return;
+            }
+            BaseBullet b = pool.Get();
             if (b == null)
             {
-                Debug.LogError("[Bullet] 子弹创建失败，请检查 ResTable 中的 Bullet_Normal 是否就绪");
+                Debug.LogError("[Bullet] 子弹创建失败，请检查 ResTable 中的 " + resName + " 是否就绪");
                 return;
             }
             b.transform.SetParent(BulletParent, false);
             b.transform.position = new Vector3(fromPos.x, fromPos.y, 0f);
-            b.Init(target, damage, cfg);
+            b.Init(target, damage, cfg, towerEffectValue);
 
             if (CombatSystem.Instance != null)
             {
                 CombatSystem.Instance.AddFireCount(1);
             }
+        }
+
+        /// <summary>兼容旧调用点：不带塔效果参数（等价于 effectValue=0，用子弹自己的值）。</summary>
+        public void Fire(BaseEnemy target, float damage, Vector2 fromPos, BulletConfig cfg)
+        {
+            Fire(target, damage, fromPos, cfg, 0f);
         }
 
         public void RecycleBullet(BaseBullet b)
@@ -270,9 +432,32 @@ namespace FTProject
             {
                 return;
             }
-            _pool.Release(b);
+            string resName = string.IsNullOrEmpty(b.ResName) ? BaseBullet.FallbackResName : b.ResName;
+            ObjectPool<BaseBullet> pool;
+            if (!_pools.TryGetValue(resName, out pool) || pool == null)
+            {
+                // 找不到原池（理论上不会）：直接销毁，避免对象泄漏在场景里
+                Object.Destroy(b.gameObject);
+                return;
+            }
+            pool.Release(b);
         }
 
-        public int PooledCount { get { return _pool != null ? _pool.IdleCount : 0; } }
+        /// <summary>空闲子弹总数（自检/调试用）</summary>
+        public int PooledCount
+        {
+            get
+            {
+                int n = 0;
+                foreach (KeyValuePair<string, ObjectPool<BaseBullet>> kv in _pools)
+                {
+                    if (kv.Value != null)
+                    {
+                        n += kv.Value.IdleCount;
+                    }
+                }
+                return n;
+            }
+        }
     }
 }

@@ -160,7 +160,10 @@ namespace FTProject
             for (int i = 0; i < _queryBuffer.Count; i++)
             {
                 BaseEnemy e = _queryBuffer[i];
-                if (e != null && e.IsAlive && (e.Position - center).sqrMagnitude <= r2)
+                // 飞行单位不参与"脚下不能建塔"的判定：它从空中过去，
+                // 在它下面盖塔既困不住它，也不该抢走玩家的一个格子。
+                if (e != null && e.IsAlive && e.Config != null && !e.Config.IsFlying &&
+                    (e.Position - center).sqrMagnitude <= r2)
                 {
                     return true;
                 }
