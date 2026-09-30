@@ -49,6 +49,10 @@ namespace FTProject
             { "Bullet_Dot",   new ResAddress(ResBundle.CoreArt, "Bullet_Dot",   "Assets/Art/Generated/Bullet_Dot.png") },
             { "HP_Bar_Bg",    new ResAddress(ResBundle.CoreArt, "HP_Bar_Bg",    "Assets/Art/Generated/HP_Bar_Bg.png") },
             { "HP_Bar_Fill",  new ResAddress(ResBundle.CoreArt, "HP_Bar_Fill",  "Assets/Art/Generated/HP_Bar_Fill.png") },
+            // 射程提示圈（M2-C2）。登记的是**贴图**而不是 prefab：
+            // RangeIndicatorView 走 Load<Sprite> 后运行时建 GameObject，
+            // 这样少一个需要在 Unity 里生成的资产，纯代码即可交付。
+            { "Range_Ring",   new ResAddress(ResBundle.CoreArt, "Range_Ring",   "Assets/Art/Generated/Range_Ring.png") },
 
             // ------------------------------------------------------------------
             // 防御塔

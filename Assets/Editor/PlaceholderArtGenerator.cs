@@ -1,4 +1,4 @@
-﻿using UnityEditor;
+using UnityEditor;
 using UnityEngine;
 
 namespace FTProject.EditorTools
@@ -88,6 +88,19 @@ namespace FTProject.EditorTools
                 EditorUtil.FillRect(fill, 0, 0, 100, 20, Color.white, Color.white, 0);
                 EditorUtil.WriteSprite(Dir + "/HP_Bar_Fill.png", fill);
                 report.Ok("HP_Bar_Fill.png (100×20 纯白，运行时着色)");
+            }
+
+            // ---- 射程提示圈 ----
+            // 256×256、环宽 6px → PPU100 下原生 2.56 世界单位。
+            // 运行时按"目标直径 / 原生直径"折算 localScale（与 CellView.Setup 同一套做法），
+            // 所以以后换分辨率或换美术都不用改代码。
+            {
+                const int size = 256;
+                Texture2D tex = EditorUtil.NewTexture(size, size);
+                float half = size * 0.5f;
+                EditorUtil.FillRing(tex, half, half, half - 2f, half - 8f, new Color(1f, 1f, 1f, 0.8f));
+                EditorUtil.WriteSprite(Dir + "/Range_Ring.png", tex);
+                report.Ok("Range_Ring.png (256×256 圆环，运行时按射程缩放)");
             }
 
             AssetDatabase.SaveAssets();

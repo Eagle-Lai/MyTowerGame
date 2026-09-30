@@ -238,6 +238,37 @@ namespace FTProject.EditorTools
             }
         }
 
+        /// <summary>
+        /// 画一个抗锯齿的圆环（用于射程提示圈）。
+        /// 【为什么不"先画实心圆再挖空"】Blend 的语义是叠加，没有"擦除"；
+        /// 直接按 内半径 ≤ d ≤ 外半径 判定更简单也更可控。
+        /// </summary>
+        public static void FillRing(Texture2D tex, float cx, float cy, float outerRadius, float innerRadius, Color color)
+        {
+            int texW = tex.width;
+            int texH = tex.height;
+            float aa = 1f;
+            for (int iy = 0; iy < texH; iy++)
+            {
+                for (int ix = 0; ix < texW; ix++)
+                {
+                    float dx = ix + 0.5f - cx;
+                    float dy = iy + 0.5f - cy;
+                    float d = Mathf.Sqrt(dx * dx + dy * dy);
+                    float outer = Mathf.Clamp01((outerRadius - d) / aa + 0.5f);
+                    float inner = Mathf.Clamp01((d - innerRadius) / aa + 0.5f);
+                    float a = Mathf.Min(outer, inner);
+                    if (a <= 0f)
+                    {
+                        continue;
+                    }
+                    Color c = color;
+                    c.a *= a;
+                    tex.SetPixel(ix, iy, Blend(tex.GetPixel(ix, iy), c));
+                }
+            }
+        }
+
         /// <summary>画一个朝上的抗锯齿实心三角形（用于路径箭头）</summary>
         public static void FillTriangleUp(Texture2D tex, Vector2 a, Vector2 b, Vector2 c, Color color)
         {

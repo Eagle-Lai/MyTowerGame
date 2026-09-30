@@ -29,6 +29,8 @@ namespace FTProject
         Buildable = 1,
         /// <summary>不可建造 / 会堵死路径（红）</summary>
         Blocked = 2,
+        /// <summary>该格上的塔被选中（暖黄）—— 与"可建造绿"和"不可建造红"都要能一眼分开</summary>
+        Selected = 3,
     }
 
     /// <summary>

@@ -134,6 +134,7 @@ namespace FTProject
             }
             _active = false;
             ClearHover();
+            HideRange();
             DestroyGhost();
             EventDispatcher.TriggerEvent(EventName.CancelBuildRequestEvent);
         }
@@ -274,18 +275,21 @@ namespace FTProject
         private static readonly Color SelectedTint = new Color(1f, 0.95f, 0.72f, 1f);
 
         /// <summary>
-        /// 选中态高亮 —— 塔身部分。
+        /// 选中态高亮，三件套一起上：① 塔身提亮 ② 所在格染色 ③ 射程圈。
+        ///
         /// 【为什么先做提亮而不是描边】描边需要额外的美术资源（M2 待补），
         /// 而 BaseTower.SetTint 已存在，零新增资源就能给出明确、可用的选中反馈。
         /// 美术到位后把这里换成描边/选中 Sprite，调用方无需改动。
-        /// 格子高亮（CellHighlight.Selected）在 Board/CellView 侧另行处理。
         /// </summary>
-        private static void ApplySelectionHighlight(BaseTower tower)
+        private void ApplySelectionHighlight(BaseTower tower)
         {
-            if (tower != null)
+            if (tower == null)
             {
-                tower.SetTint(SelectedTint);
+                return;
             }
+            tower.SetTint(SelectedTint);
+            SetCellHighlight(tower.Cell, CellHighlight.Selected);
+            ShowRange(tower.Position, tower.Config != null ? tower.Config.RadiusWorld : 0f);
         }
 
         /// <summary>
@@ -293,11 +297,57 @@ namespace FTProject
         /// 【参数是"要清哪一座"】调用发生在 _selected 被改写**之前**，
         /// 所以不能依赖 _selected —— 这是原先的 bug：清理方法读不到旧塔，等于没清。
         /// </summary>
-        private static void ClearSelectionHighlight(BaseTower tower)
+        private void ClearSelectionHighlight(BaseTower tower)
         {
-            if (tower != null)
+            if (tower == null)
             {
-                tower.SetTint(Color.white);
+                return;
+            }
+            tower.SetTint(Color.white);
+            ResetCellHighlight(tower.Cell);
+            HideRange();
+        }
+
+        // ------------------------------------------------------------------
+        // 高亮 / 射程圈工具（都做了空引用容错：棋盘或占位美术缺失时静默降级）
+        // ------------------------------------------------------------------
+
+        private static void SetCellHighlight(CellData cell, CellHighlight h)
+        {
+            if (cell == null || BoardView.Instance == null)
+            {
+                return;
+            }
+            BoardView.Instance.SetHighlight(cell.Row, cell.Col, h);
+        }
+
+        private static void ResetCellHighlight(CellData cell)
+        {
+            if (cell == null || BoardView.Instance == null)
+            {
+                return;
+            }
+            BoardView.Instance.ResetHighlight(cell.Row, cell.Col);
+        }
+
+        /// <summary>
+        /// 显示射程圈。RangeIndicatorView.Ensure 在占位贴图缺失时返回 null ——
+        /// 射程圈是"锦上添花"，不该因为一张图没生成就把整局玩法拖下水。
+        /// </summary>
+        private static void ShowRange(Vector2 center, float radiusWorld)
+        {
+            RangeIndicatorView v = RangeIndicatorView.Ensure();
+            if (v != null)
+            {
+                v.Show(center, radiusWorld);
+            }
+        }
+
+        private static void HideRange()
+        {
+            if (RangeIndicatorView.Instance != null)
+            {
+                RangeIndicatorView.Instance.Hide();
             }
         }
 
@@ -329,7 +379,12 @@ namespace FTProject
                 return;
             }
 
-            // 非放置态：左键选中、右键取消选中
+            // 非放置态：右键 / ESC 取消选中。
+            //
+            // 【ESC 的分层语义】优先级是"放置态 > 选中态"，靠上面的 _active 提前 return 实现：
+            //   · 放置中按 ESC → ExitPlacement（取消放置，塔还没落地，无损失）
+            //   · 非放置态按 ESC → Deselect（面板随之关闭，因为它订阅的是 TowerDeselectedEvent）
+            // 两层不会同时生效，也不会互相遗漏。
             if (Input.GetMouseButtonDown(1) || Input.GetKeyDown(KeyCode.Escape))
             {
                 Deselect();
@@ -382,10 +437,13 @@ namespace FTProject
                     board.SetHighlight(row, col, _hoverState);
                 }
                 _ghost.transform.position = board.CellCenter3(row, col);
+                // 射程圈跟着悬停格走：放置前就能看清这座塔能覆盖到哪几格
+                ShowRange(board.CellCenter(row, col), _cfg != null ? _cfg.RadiusWorld : 0f);
             }
             else
             {
                 ClearHover();
+                HideRange();   // 棋盘外不显示射程，避免圈飘在空地上误导
                 // 棋盘外：跟随鼠标自由移动，方便玩家看清塔的样子
                 Vector3 world = ScreenToWorld(Input.mousePosition);
                 _ghost.transform.position = new Vector3(world.x, world.y, 0f);

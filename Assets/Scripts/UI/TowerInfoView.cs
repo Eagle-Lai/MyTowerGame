@@ -155,6 +155,10 @@ namespace FTProject
                 return;
             }
             _tower = tower;
+            // 换了一座塔 → 之前那次"确认出售？"必须作废，
+            // 否则玩家选了 A 点了确认、又选了 B，第二次点击会把 B 卖掉。
+            _sellConfirming = false;
+            _sellConfirmTimer = 0f;
             SetContentVisible(true);
             Refresh();
         }
@@ -224,8 +228,10 @@ namespace FTProject
 
             TowerConfig cfg = _tower.Config;
             SetText(_title, string.Format("{0}  Lv.{1}", cfg.Name, cfg.Level));
-            SetText(_stats, string.Format("攻击 {0:0.#}   射程 {1:0.#} 格   攻速 {2:0.00}s", 
-                cfg.Power, cfg.RadiusGrid, cfg.CooldownSec));
+            // 带上 DPS：升级值不值得，玩家看"攻击力"是看不出来的，
+            // 而 power / CD 才是这条升级链真正在卖的东西。
+            SetText(_stats, string.Format("攻击 {0:0.#}   射程 {1:0.#} 格   攻速 {2:0.00}s   DPS {3:0.#}",
+                cfg.Power, cfg.RadiusGrid, cfg.CooldownSec, cfg.Power / cfg.CooldownSec));
 
             RefreshButtons();
         }
@@ -270,8 +276,50 @@ namespace FTProject
                 float rate = Configs.Global != null ? Configs.Global.SellRefundRate : 1f;
                 int refund = Mathf.Max(0, Mathf.RoundToInt(cfg.SellPrice * rate));
                 _sellBtn.interactable = true;
-                SetText(_sellLabel, string.Format("出售 (+{0})", refund));
+                // 确认态期间不要覆盖文案，否则倒计时还没走完，"确认出售？"就被刷新回去了
+                if (!_sellConfirming)
+                {
+                    SetText(_sellLabel, string.Format("出售 (+{0})", refund));
+                }
             }
+        }
+
+        // ------------------------------------------------------------------
+        // 出售二次确认（原地两段式）
+        // ------------------------------------------------------------------
+
+        /// <summary>出售确认的文案（契约 §3.2 第 5 条：文案集中在本类顶部常量）</summary>
+        private const string SellConfirmText = "确认出售？";
+
+        /// <summary>确认态超时（秒）。到点自动取消，避免玩家点了第一次就走开，
+        /// 回头再点一次就把塔卖了。</summary>
+        private const float SellConfirmTimeoutSec = 3f;
+
+        private bool _sellConfirming;
+        private float _sellConfirmTimer;
+
+        /// <summary>
+        /// 倒计时用 unscaledDeltaTime：面板不该受 Time.timeScale 影响
+        /// （将来做暂停/倍速时，确认态如果被暂停卡住会很难理解）。
+        /// </summary>
+        private void Update()
+        {
+            if (!_sellConfirming)
+            {
+                return;
+            }
+            _sellConfirmTimer -= Time.unscaledDeltaTime;
+            if (_sellConfirmTimer <= 0f)
+            {
+                CancelSellConfirm();
+            }
+        }
+
+        private void CancelSellConfirm()
+        {
+            _sellConfirming = false;
+            _sellConfirmTimer = 0f;
+            RefreshButtons();
         }
 
         // ------------------------------------------------------------------
@@ -288,13 +336,31 @@ namespace FTProject
             // 结果由 TowerUpgradeSuccess 事件回来刷新
         }
 
+        /// <summary>
+        /// 出售：原地两段式确认（不弹二级窗口）。
+        ///
+        /// 【为什么不直接卖】卖塔不可撤销，而"升级"和"出售"两个按钮挨着放，
+        /// 误触代价完全不对称 —— 多点一次的成本，远小于把一座三级塔点没了。
+        /// 【为什么不做弹窗】弹窗要额外的美术与层级管理（L-7 待资源），
+        /// 原地改文案已经能拦住误触，等美术到位再换皮即可，逻辑不用动。
+        /// </summary>
         private void OnClickSell()
         {
             if (_tower == null)
             {
                 return;
             }
-            // 【v1 无弹窗】直接发请求。二次确认的 UI 在美术补齐后加进来（见 Dev_Plan C-3）。
+            if (!_sellConfirming)
+            {
+                _sellConfirming = true;
+                _sellConfirmTimer = SellConfirmTimeoutSec;
+                SetText(_sellLabel, SellConfirmText);
+                return;
+            }
+            // 第二次点击：确认执行。先复位确认态，再发请求 ——
+            // 出售成功会走 DestroyTower 关面板；失败（理论上不会）也不该卡在确认态。
+            _sellConfirming = false;
+            _sellConfirmTimer = 0f;
             EventDispatcher.TriggerEvent<BaseTower>(EventName.TowerSellRequestEvent, _tower);
         }
 

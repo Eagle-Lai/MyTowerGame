@@ -80,6 +80,11 @@ namespace FTProject
                 case CellHighlight.Blocked:
                     _sr.color = new Color(1f, 0.35f, 0.35f, 1f);
                     break;
+                case CellHighlight.Selected:
+                    // 暖黄：与"可建造绿/不可建造红"在色相上完全分开，
+                    // 也和塔身选中提亮色（1,0.95,0.72）同色系，观感统一。
+                    _sr.color = new Color(1f, 0.88f, 0.45f, 1f);
+                    break;
                 default:
                     _sr.color = _baseColor;
                     break;
