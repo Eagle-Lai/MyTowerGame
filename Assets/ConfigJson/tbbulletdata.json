@@ -12,5 +12,61 @@
     "effectValue": 0,
     "scale": 1,
     "desc": "M0 唯一子弹，直线追踪"
+  },
+  {
+    "id": 2,
+    "name": "爆炸弹",
+    "resName": "Bullet_Normal",
+    "speed": 12,
+    "hitRadius": 0.25,
+    "lifeTimeMs": 3000,
+    "pierce": 0,
+    "aoeRadius": 1.2,
+    "effectType": 3,
+    "effectValue": 0,
+    "scale": 1.3,
+    "desc": "AOE 塔专用：命中后对 aoeRadius 格内的其他敌人造成同等伤害"
+  },
+  {
+    "id": 3,
+    "name": "穿透弹",
+    "resName": "Bullet_Normal",
+    "speed": 18,
+    "hitRadius": 0.22,
+    "lifeTimeMs": 2500,
+    "pierce": 3,
+    "aoeRadius": 0,
+    "effectType": 0,
+    "effectValue": 0,
+    "scale": 0.9,
+    "desc": "穿透：pierce=3 表示命中后还能再穿 3 个敌人（共可打 4 个）"
+  },
+  {
+    "id": 4,
+    "name": "减速弹",
+    "resName": "Bullet_Normal",
+    "speed": 12,
+    "hitRadius": 0.25,
+    "lifeTimeMs": 3000,
+    "pierce": 0,
+    "aoeRadius": 0,
+    "effectType": 1,
+    "effectValue": 0.5,
+    "scale": 1,
+    "desc": "减速：effectValue=减速比例(0~1)。塔自身 effectValue>0 时会覆盖此值（减速塔三级各不相同）"
+  },
+  {
+    "id": 5,
+    "name": "腐蚀弹",
+    "resName": "Bullet_Normal",
+    "speed": 12,
+    "hitRadius": 0.25,
+    "lifeTimeMs": 3000,
+    "pierce": 0,
+    "aoeRadius": 0,
+    "effectType": 2,
+    "effectValue": 6,
+    "scale": 1,
+    "desc": "持续伤害：effectValue=每秒伤害，持续时长由代码常数 DotDurationSec 决定"
   }
 ]

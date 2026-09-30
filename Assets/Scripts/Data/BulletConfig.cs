@@ -40,7 +40,17 @@ namespace FTProject
         /// <summary>爆炸半径（格），0 = 单体伤害</summary>
         public float AoeRadius { get { return _b.AoeRadius; } }
 
-        public int EffectType { get { return _b.EffectType; } }
+        /// <summary>
+        /// 命中时施加的效果（与塔表共用一套编号，见 EffectType 枚举注释）。
+        /// **子弹的 effectType 是命中效果的权威来源**；塔的 effectType 只用于分类与激光判定。
+        /// </summary>
+        public EffectType Effect { get { return (EffectType)_b.EffectType; } }
+
+        /// <summary>
+        /// 效果参数。语义随 Effect 变化：
+        ///   减速 → 减速比例 0~1；持续伤害 → 每秒伤害；范围伤害 → 不使用（半径看 AoeRadius）。
+        /// 塔自身 effectValue > 0 时会**覆盖**本值（减速塔三级因此可以各不相同）。
+        /// </summary>
         public float EffectValue { get { return _b.EffectValue; } }
 
         public float Scale { get { return _b.Scale > 0f ? _b.Scale : 1f; } }

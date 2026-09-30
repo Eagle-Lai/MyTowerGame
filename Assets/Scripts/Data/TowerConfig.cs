@@ -80,9 +80,31 @@ namespace FTProject
 
         public bool IsMaxLevel { get { return _t.UpgradeTo <= 0; } }
 
-        public int EffectType { get { return _t.EffectType; } }
+        /// <summary>
+        /// 塔的招牌效果（与子弹共用 EffectType 编号，见该枚举注释）。
+        /// 【为什么这里没有 int EffectType 属性】同名属性会**遮蔽枚举类型名**，
+        /// 于是在本类内部写 EffectType.Laser 会被解析成"int 的成员"，报 CS1061。
+        /// 与其到处写全限定名，不如只留一个语义明确的枚举属性。
+        /// </summary>
+        public EffectType Effect { get { return (EffectType)_t.EffectType; } }
 
         public float EffectValue { get { return _t.EffectValue; } }
+
+        /// <summary>激光塔：瞬发命中（hitscan），不发射弹体</summary>
+        public bool IsLaser { get { return Effect == EffectType.Laser; } }
+
+        /// <summary>本塔是否会生成弹体。激光塔不会。</summary>
+        public bool FiresBullet { get { return !IsLaser && _t.BulletId > 0; } }
+
+        /// <summary>
+        /// 是否可攻击飞行单位（TBTowerInfo.canAttackAir，1=可 / 0=不可）。
+        ///
+        /// 【为什么不是"缺省即可攻空"】这一列在表里是**每行都必须填**的：
+        /// Luban 对空单元格给的是 0，与"显式填 0"无法区分。
+        /// 与其在代码里猜，不如把它定义清楚 —— 表里的说明行已同步写明"留空视为 0"。
+        /// 当前 15 行全部填 1；将来若要设计"对空专用塔"，把对应行改成 0 即可。
+        /// </summary>
+        public bool CanAttackAir { get { return _t.CanAttackAir != 0; } }
 
         public string Desc { get { return _t.Desc; } }
 

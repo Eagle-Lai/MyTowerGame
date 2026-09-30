@@ -31,11 +31,12 @@ namespace FTProject
         private Text _startLabel;
 
         /// <summary>
-        /// 三颗塔按钮：节点名 → (按钮, 塔型)。
-        /// 用数组而不是三个字段，是为了让"进入/退出放置态时统一置灰"这类操作用循环即可。
+        /// 塔按钮：节点名 → (按钮, 塔型, 价格文本)。
+        /// 用数组而不是一堆字段，是为了让"进入/退出放置态时统一置灰"这类操作用循环即可。
         /// </summary>
         private Button[] _towerButtons;
         private int[] _towerButtonTypes;
+        private Text[] _towerPriceTexts;
 
         /// <summary>当前选中的塔类型与等级（M2 起由按钮决定 type；level 固定 1 = 建造等级）</summary>
         private int _towerType = 1;
@@ -44,13 +45,27 @@ namespace FTProject
         /// <summary>进入放置模式后按钮变灰，避免重复点</summary>
         private bool _placing;
 
+        /// <summary>
+        /// 建造栏的塔按钮（M2 起五类）。
+        ///
+        /// 【为什么节点名必须显式映射，不能由配置推导】
+        ///   Slow(3) 在美术/节点/资源目录里叫 "Retard" —— 这处不一致无法用字符串规则还原。
+        ///   所以塔型 ↔ 节点名 的对应关系**只在这里写一次**，
+        ///   UIPrefabBuilder 与 prefab 三处保持同名即可（契约见 Docs/HudView_Sync_and_TowerUI_Plan.md §2）。
+        ///
+        /// 【为什么在 Awake 里按固定名单绑定，而不是读配置表动态生成】
+        ///   HUD 的 Awake 可能早于 Configs 加载完成；靠配置决定"绑哪几个节点"会在时序上翻车。
+        ///   所以：**节点绑定固定，是否显示由配置决定**（见 RefreshTowerAffordability）——
+        ///   表里没有对应 type 时按钮自动隐藏，等于按表驱动，又不引入时序依赖。
+        /// </summary>
         private static readonly string[] TowerNodeNames =
         {
-            "Btn_Tower_Normal", "Btn_Tower_Power", "Btn_Tower_Retard"
+            "Btn_Tower_Normal", "Btn_Tower_Power", "Btn_Tower_Retard",
+            "Btn_Tower_Pierce", "Btn_Tower_Laser",
         };
 
-        // 与 TowerNodeNames 一一对应；Retard ↔ TowerType.Slow 的映射就在这
-        private static readonly int[] TowerNodeTypes = { 1, 2, 3 };
+        // 与 TowerNodeNames 一一对应（TowerType：1单体/2范围/3减速/4穿透/5激光）
+        private static readonly int[] TowerNodeTypes = { 1, 2, 3, 4, 5 };
 
         private void Awake()
         {
@@ -95,14 +110,17 @@ namespace FTProject
                 _startLabel.text = "开始";
             }
 
-            // 三颗塔按钮
+            // 塔按钮（五类）
             _towerButtons = new Button[TowerNodeNames.Length];
             _towerButtonTypes = new int[TowerNodeNames.Length];
+            _towerPriceTexts = new Text[TowerNodeNames.Length];
             for (int i = 0; i < TowerNodeNames.Length; i++)
             {
                 int type = TowerNodeTypes[i];
                 _towerButtons[i] = FindButton(TowerNodeNames[i]);
                 _towerButtonTypes[i] = type;
+                // PriceText 是"可选节点"：老的 prefab 没有它，不应该报错，只是没有价格可显示
+                _towerPriceTexts[i] = FindChildText(TowerNodeNames[i] + "/PriceText");
                 if (_towerButtons[i] != null)
                 {
                     int captured = type;
@@ -227,23 +245,43 @@ namespace FTProject
         /// </summary>
         private void RefreshTowerAffordability()
         {
-            if (_placing || _towerButtons == null)
+            if (_towerButtons == null)
             {
                 return;
             }
             PlayerDataManager pd = PlayerDataManager.Instance;
             for (int i = 0; i < _towerButtons.Length; i++)
             {
-                if (_towerButtons[i] == null)
+                Button btn = _towerButtons[i];
+                if (btn == null)
                 {
                     continue;
                 }
+
+                // 按配置表决定这颗按钮是否登场：表里没有这个 type 就隐藏，
+                // 免得留下"点了没反应"的死按钮。新增塔型 = 加配置行 + 加节点名。
                 TowerConfig cfg = Configs.GetTowerByTypeAndLevelSilent(_towerButtonTypes[i], 1);
                 if (cfg == null)
                 {
+                    if (btn.gameObject.activeSelf)
+                    {
+                        btn.gameObject.SetActive(false);
+                    }
                     continue;
                 }
-                _towerButtons[i].interactable = pd.Gold >= cfg.Prices;
+                if (!btn.gameObject.activeSelf)
+                {
+                    btn.gameObject.SetActive(true);
+                }
+
+                SetText(_towerPriceTexts[i], cfg.Prices.ToString());
+
+                // 放置中时不动 interactable：那由 SetTowerButtonState 统一管，
+                // 两边都写会互相覆盖（"放置中全部置灰"会被这里刷新回可点）。
+                if (!_placing)
+                {
+                    btn.interactable = pd.Gold >= cfg.Prices;
+                }
             }
         }
 

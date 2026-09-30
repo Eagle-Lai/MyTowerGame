@@ -256,6 +256,11 @@ namespace FTProject
             // 塔 → 子弹
             foreach (TowerInfo tw in TowerTable.DataList)
             {
+                // bulletId = 0 表示"本塔不发射弹体"（激光塔走 hitscan），不是配置错误
+                if (tw.BulletId <= 0)
+                {
+                    continue;
+                }
                 if (BulletTable.GetOrDefault(tw.BulletId) == null)
                 {
                     sb.AppendLine(string.Format("  · 塔 {0}(lv{1}) 引用的子弹 bulletId={2} 不存在",
@@ -342,6 +347,33 @@ namespace FTProject
             return null;
         }
 
+        /// <summary>按 id 取塔配置，找不到时**静默返回 null**（不打印错误）。</summary>
+        public static TowerConfig GetTowerSilent(int id)
+        {
+            TowerInfo t = TowerTable != null ? TowerTable.GetOrDefault(id) : null;
+            return t != null ? new TowerConfig(t) : null;
+        }
+
+        /// <summary>
+        /// 取某座塔的**下一等级**配置（找不到返回 null）。
+        ///
+        /// 【为什么以 upgradeTo 为唯一口径】升级链是配置表里**显式写出来**的
+        /// （TBTowerInfo.upgradeTo 指向下一等级的 id，0 = 满级），而不是"等级 + 1"的隐式约定。
+        /// 将来若出现跳级（L1→L3）或分叉升级，只有按 upgradeTo 走才不会错。
+        ///
+        /// 【为什么必须收敛到这一个方法】TowerManager.TryUpgrade 与 TowerInfoView 都要算"下一级"。
+        /// 之前一处用 upgradeTo、一处用"type + level+1"，两者一旦分叉，
+        /// 就会出现"按钮显示可以升级，点下去却升不了"这类难查的不一致。
+        /// </summary>
+        public static TowerConfig GetNextLevel(TowerConfig cur)
+        {
+            if (cur == null || cur.UpgradeTo <= 0)
+            {
+                return null;
+            }
+            return GetTowerSilent(cur.UpgradeTo);
+        }
+
         public static BulletConfig GetBullet(int id)
         {
             BulletData b = BulletTable != null ? BulletTable.GetOrDefault(id) : null;
@@ -407,6 +439,34 @@ namespace FTProject
                 return null;
             }
             return new WaveGroupConfig(w);
+        }
+
+        /// <summary>
+        /// 取全部"一级塔"（level == 1）配置，按 type 升序。
+        ///
+        /// 【用途】建造栏按表生成按钮：新增一种塔只要加配置行 + 美术资源，
+        /// HUD 不需要改代码。这是"多塔型可扩展"的关键一步 ——
+        /// 之前按钮的塔型是硬编码 {1,2,3}，加第四种塔必须回来改 UI。
+        ///
+        /// 【返回新列表】调用方可以随意排序/过滤，不会影响配置表本身。
+        /// </summary>
+        public static List<TowerConfig> GetBaseTowers()
+        {
+            List<TowerConfig> list = new List<TowerConfig>(8);
+            if (TowerTable == null || TowerTable.DataList == null)
+            {
+                return list;
+            }
+            for (int i = 0; i < TowerTable.DataList.Count; i++)
+            {
+                TowerInfo t = TowerTable.DataList[i];
+                if (t != null && t.Level == 1)
+                {
+                    list.Add(new TowerConfig(t));
+                }
+            }
+            list.Sort((a, b) => a.Type.CompareTo(b.Type));
+            return list;
         }
 
         /// <summary>取第一个关卡 id（用于 M0 直接开局）</summary>

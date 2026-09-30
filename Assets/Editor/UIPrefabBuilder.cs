@@ -16,10 +16,14 @@ namespace FTProject.EditorTools
     ///   ├── GoldText        金币
     ///   ├── HpText          生命
     ///   ├── RoundText       回合 / 波次
-    ///   ├── Btn_Tower_Normal 建塔·普通（type=1）
-    ///   ├── Btn_Tower_Power  建塔·强力（type=2）
-    ///   ├── Btn_Tower_Retard 建塔·减速（type=3）★ 名字 Retard ↔ 枚举 Slow，映射见 HudView
+    ///   ├── Btn_Tower_Normal 建塔·单体（type=1）→ PriceText
+    ///   ├── Btn_Tower_Power  建塔·范围（type=2）→ PriceText
+    ///   ├── Btn_Tower_Retard 建塔·减速（type=3）→ PriceText ★ 名字 Retard ↔ 枚举 Slow，映射见 HudView
+    ///   ├── Btn_Tower_Pierce 建塔·穿透（type=4）→ PriceText
+    ///   ├── Btn_Tower_Laser  建塔·激光（type=5）→ PriceText
     ///   └── StartButton     开始 / 下一回合（→ StartButton/Label）
+    ///
+    ///   ★ 塔按钮**不带 Label**，价格走 PriceText 子节点（契约见 Docs/HudView_Sync_and_TowerUI_Plan.md §2）
     ///
     /// TipsView 节点：
     ///   TipsView（CanvasGroup）
@@ -30,8 +34,12 @@ namespace FTProject.EditorTools
     /// 但 Android / iOS 包内没有系统字体可回退，中文会显示成方块 ——
     /// 出移动包前需要换成自带中文字形的 TTF（见操作指南「字体」一节）。
     ///
-    /// 菜单：Tools ▸ 塔防 ▸ 高级（单步重建） ▸ 生成 UI 预制体
-    /// 【破坏性】会重建 prefab —— 若 prefab 内存在生成器不认识的节点会中止（见 EditorUtil.IsSafeToRebuild）
+    /// 菜单：
+    ///   Tools ▸ 塔防 ▸ 高级（单步重建） ▸ 补缺 UI 预制体（安全：只补缺失）
+    ///   Tools ▸ 塔防 ▸ 高级（单步重建） ▸ 生成 UI 预制体（全量重建，危险）
+    /// 【破坏性】全量重建会 DeleteAsset 后重写 prefab；
+    ///   若 prefab 内存在生成器不认识的节点会中止（见 EditorUtil.IsSafeToRebuild）。
+    ///   日常补缺请走 EnsureMissing /「补缺 UI 预制体（安全）」。
     /// </summary>
     public static class UIPrefabBuilder
     {
@@ -47,23 +55,31 @@ namespace FTProject.EditorTools
         {
             "GoldText", "HpText", "RoundText",
             "Btn_Tower_Normal", "Btn_Tower_Power", "Btn_Tower_Retard",
+            "Btn_Tower_Pierce", "Btn_Tower_Laser",
             "StartButton",
         };
 
-        // 三颗塔按钮：节点名 / 塔型枚举 / 显示文字 / 参考位置（锚点左下）
+        // 塔按钮：节点名 / 塔型枚举 / 参考位置（锚点左下）。
+        // 【为什么没有 Label 字段】契约规定塔按钮**不配 Label**（纯图标按钮，对齐原作塔栏）。
+        // 需要显示价格时用 PriceText 子节点。曾经这里有个 Label 字段，
+        // 结果生成器产出的 prefab 与手工版不一致（手工版无 Label），一跑生成器就"多出文字"。
         private struct TowerButtonSpec
         {
             public string NodeName;
             public int TowerType;
-            public string Label;
             public Vector2 Pos;
         }
 
+        // 五类塔等距铺开（间距 274），整体在 1920 参考宽度下居中。
+        // 【为什么改坐标】原来是三颗、位置 -633/-359/-123（偏左）；加到五颗后必须重新居中，
+        // 否则最右一颗会顶到「开始」按钮上。
         private static readonly TowerButtonSpec[] TowerButtons =
         {
-            new TowerButtonSpec { NodeName = "Btn_Tower_Normal", TowerType = 1, Label = "普通", Pos = new Vector2(-633f, -427f) },
-            new TowerButtonSpec { NodeName = "Btn_Tower_Power",  TowerType = 2, Label = "强力", Pos = new Vector2(-359f, -427f) },
-            new TowerButtonSpec { NodeName = "Btn_Tower_Retard", TowerType = 3, Label = "减速", Pos = new Vector2(-123f, -427f) },
+            new TowerButtonSpec { NodeName = "Btn_Tower_Normal", TowerType = 1, Pos = new Vector2(-548f, -427f) },
+            new TowerButtonSpec { NodeName = "Btn_Tower_Power",  TowerType = 2, Pos = new Vector2(-274f, -427f) },
+            new TowerButtonSpec { NodeName = "Btn_Tower_Retard", TowerType = 3, Pos = new Vector2(0f,    -427f) },
+            new TowerButtonSpec { NodeName = "Btn_Tower_Pierce", TowerType = 4, Pos = new Vector2(274f,  -427f) },
+            new TowerButtonSpec { NodeName = "Btn_Tower_Laser",  TowerType = 5, Pos = new Vector2(548f,  -427f) },
         };
 
         // 参考分辨率下的字号
@@ -74,7 +90,21 @@ namespace FTProject.EditorTools
         private static readonly Color ButtonColor = new Color(0.18f, 0.24f, 0.34f, 0.92f);
         private static readonly Color OutlineColor = new Color(0f, 0f, 0f, 0.85f);
 
-        [MenuItem("Tools/塔防/高级（单步重建）/生成 UI 预制体", false, 305)]
+        [MenuItem("Tools/塔防/高级（单步重建）/补缺 UI 预制体（安全：只补缺失）", false, 304)]
+        public static void EnsureMissingFromMenu()
+        {
+            EditorUtil.Report report = new EditorUtil.Report();
+            EnsureMissing(report);
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+
+            Debug.Log("[M0] UI 预制体补缺结果：\n" + report.Text);
+            EditorUtility.DisplayDialog("补缺 UI 预制体",
+                string.Format("{0}\n\n{1}",
+                    report.Errors > 0 ? "有错误，请查看 Console" : "完成", report.Text), "好");
+        }
+
+        [MenuItem("Tools/塔防/高级（单步重建）/生成 UI 预制体（全量重建）", false, 305)]
         public static void Build()
         {
             EditorUtil.Report report = new EditorUtil.Report();
@@ -88,12 +118,55 @@ namespace FTProject.EditorTools
                     report.Errors > 0 ? "有错误，请查看 Console" : "完成", report.Text), "好");
         }
 
-        /// <summary>供一键向导调用（不弹窗）</summary>
+        /// <summary>供一键向导调用（不弹窗）。**全量重建**，会覆盖手工改过的 prefab。</summary>
         public static void BuildInternal(EditorUtil.Report report)
         {
             BuildHud(report);
             BuildTips(report);
             BuildTowerInfo(report);
+        }
+
+        /// <summary>
+        /// **安全**入口：只为"尚不存在"的 prefab 调生成器，已存在的一律跳过、一个字节都不动。
+        ///
+        /// 【为什么必须有这个入口】本类的三个 Build* 都是"DeleteAsset + 重建"。
+        /// HudView.prefab 已被手工改造过（三颗塔按钮、手工摆位），
+        /// 只要有人跑一次全量生成，手工成果就被整份覆盖。
+        /// 一键向导与日常补缺走本方法；确要全量重建时走「高级（单步重建）」菜单。
+        ///
+        /// 【与 IsSafeToRebuild 的分工（两者叠加，不是二选一）】
+        ///   IsSafeToRebuild 防的是"prefab 里有生成器不认识的节点"（防误删未知内容）；
+        ///   本方法防的是"prefab 本来就好好存在"（防无谓重建）。
+        ///   于是：不存在 → 生成；存在且合规 → 全量入口才会重建；存在但含未知节点 → 中止。
+        /// </summary>
+        public static void EnsureMissing(EditorUtil.Report report)
+        {
+            report.Head("补缺 UI 预制体（只生成缺失的，已存在的不动）");
+            EnsureOne(HudPath, "HudView", report);
+            EnsureOne(TipsPath, "TipsView", report);
+            EnsureOne(TowerInfoPath, "TowerInfoView", report);
+        }
+
+        private static void EnsureOne(string path, string name, EditorUtil.Report report)
+        {
+            if (AssetDatabase.LoadAssetAtPath<GameObject>(path) != null)
+            {
+                report.Skip(string.Format("{0}.prefab 已存在，跳过（要重建请用「高级（单步重建）▸ 生成 UI 预制体」）", name));
+                return;
+            }
+            report.Ok(string.Format("{0}.prefab 缺失 → 补齐", name));
+            if (path == HudPath)
+            {
+                BuildHud(report);
+            }
+            else if (path == TipsPath)
+            {
+                BuildTips(report);
+            }
+            else
+            {
+                BuildTowerInfo(report);
+            }
         }
 
         // ------------------------------------------------------------------
@@ -149,7 +222,7 @@ namespace FTProject.EditorTools
                 report.Error("保存失败：" + HudPath);
                 return;
             }
-            report.Ok("HudView.prefab（GoldText / HpText / RoundText / Btn_Tower_Normal·Power·Retard / StartButton）");
+            report.Ok("HudView.prefab（GoldText / HpText / RoundText / Btn_Tower_Normal·Power·Retard·Pierce·Laser / StartButton）");
         }
 
         // ------------------------------------------------------------------
@@ -411,16 +484,14 @@ namespace FTProject.EditorTools
                 iconImg.color = Color.white;
             }
 
-            // 文字标签（浮在图标下方）
-            Text t = CreateText(go.transform, "Label", spec.Label,
-                new Vector2(0.5f, 0f), new Vector2(0f, 6f), new Vector2(128f, 40f),
-                TextAnchor.MiddleCenter, SmallFontSize);
-            RectTransform lrt = (RectTransform)t.transform;
-            lrt.anchorMin = new Vector2(0f, 0f);
-            lrt.anchorMax = new Vector2(1f, 0f);
-            lrt.pivot = new Vector2(0.5f, 0f);
-            lrt.anchoredPosition = new Vector2(0f, 6f);
-            lrt.sizeDelta = new Vector2(0f, 40f);
+            // 【契约】塔按钮**不配 Label**（Docs/HudView_Sync_and_TowerUI_Plan.md §2）：
+            // 需要显示价格时用 PriceText 子节点，不要复用 Label —— 否则"按钮上的文字"
+            // 会同时承担"塔名"和"价格"两种语义，将来加角标或换图标栏时必然打架。
+            // 本轮只建节点、文案留空，由 HudView 按当前配置表价格刷新。
+            Text pt = CreateText(go.transform, "PriceText", string.Empty,
+                new Vector2(0.5f, 0f), new Vector2(0f, 4f), new Vector2(128f, 36f),
+                TextAnchor.LowerCenter, SmallFontSize);
+            pt.raycastTarget = false;   // 不吃点击，点击交给父级 Button
         }
 
         /// <summary>
@@ -436,6 +507,11 @@ namespace FTProject.EditorTools
             {
                 case 2: path = "Assets/_UIAssets/Tower/Power/tower_base.png"; break;
                 case 3: path = "Assets/_UIAssets/Tower/retard/slowtower_base.png"; break;
+                // 穿透塔 / 激光塔：专属美术未到位，暂时复用普通塔图标。
+                // 【为什么不干脆留空退化成纯色块】纯色块在五连排里看不出是哪一种塔，
+                // 联调"点对按钮了吗"反而更难判断；复用现有图标至少可区分"这是塔按钮"。
+                case 4:
+                case 5:
                 default: path = "Assets/_UIAssets/Tower/Normal/turret_base_128.png"; break;
             }
             // 资源还没到 —— 不是错误，静默退化为纯色块

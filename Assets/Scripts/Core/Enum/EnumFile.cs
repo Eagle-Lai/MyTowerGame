@@ -1,4 +1,4 @@
-﻿namespace FTProject
+namespace FTProject
 {
     /// <summary>
     /// 怪物类型。
@@ -25,5 +25,31 @@
         Flying = 4,
         /// <summary>Boss</summary>
         Boss = 5,
+    }
+
+    /// <summary>
+    /// 特殊效果类型。**塔表与子弹表共用这一套编号**（图例写在两张 xlsx 的第 3 行注释里）。
+    ///
+    /// 【为什么塔和子弹共用一个枚举】两处各写一套编号，迟早会出现
+    /// "表里填 2 以为在说 AOE、代码里 2 却当成持续伤害"这类只有运行时才暴露的错。
+    /// 共用一个枚举 + 一份图例，是这个项目里成本最低的一致性保障。
+    ///
+    /// 【谁说了算】真正的**命中效果**以子弹的 effectType 为准；
+    /// 塔的 effectType 用于①分类展示 ②判定激光（Laser 走 hitscan，不发射弹体）。
+    /// 效果**强度**：塔的 effectValue > 0 时覆盖子弹的 effectValue，否则用子弹自己的 ——
+    /// 这样减速塔三级（0.5/0.6/0.7）能各自不同，而 AOE/穿透塔不必重复填。
+    /// </summary>
+    public enum EffectType
+    {
+        /// <summary>无特殊效果</summary>
+        None = 0,
+        /// <summary>减速：effectValue = 减速比例 0~1（实际速度 = 原速 × (1 - effectValue)）</summary>
+        Slow = 1,
+        /// <summary>持续伤害：effectValue = 每秒伤害</summary>
+        Dot = 2,
+        /// <summary>范围伤害：半径由子弹的 aoeRadius 决定</summary>
+        Aoe = 3,
+        /// <summary>激光：瞬发命中，不生成弹体</summary>
+        Laser = 4,
     }
 }

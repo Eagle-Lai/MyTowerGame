@@ -102,6 +102,25 @@ namespace FTProject
         /// </summary>
         public bool ArtFaceLeft { get { return _g.ArtFaceLeft != 0; } }
 
+        // ==================================================================
+        // 表现层常数（M2 打击感）
+        // ==================================================================
+
+        /// <summary>是否显示伤害飘字（关掉即整条链路短路，用于压测与低端机降级）</summary>
+        public bool ShowDamageText { get { return _g.ShowDamageText != 0; } }
+
+        /// <summary>同一怪物两次伤害飘字的最小间隔（秒），防止高频攻击把屏幕刷满</summary>
+        public float DamageTextThrottleSec
+        {
+            get { return Mathf.Max(0f, _g.DamageTextThrottleMs / 1000f); }
+        }
+
+        /// <summary>屏幕震动幅度（世界单位）。0 = 不震。</summary>
+        public float ShakeAmplitude { get { return Mathf.Max(0f, _g.ShakeAmplitude); } }
+
+        /// <summary>屏幕震动持续时间（秒），0 = 不震。</summary>
+        public float ShakeDurationSec { get { return Mathf.Max(0f, _g.ShakeDurationMs / 1000f); } }
+
         public Global Raw { get { return _g; } }
     }
 }

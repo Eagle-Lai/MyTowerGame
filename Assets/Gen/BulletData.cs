@@ -88,7 +88,7 @@ public sealed partial class BulletData :  Bright.Config.BeanBase
     /// </summary>
     public float AoeRadius { get; private set; }
     /// <summary>
-    /// 效果类型 0无/1减速/2持续伤害
+    /// 效果类型 0无/1减速/2持续伤害/3范围伤害/4激光（命中时施加）
     /// </summary>
     public int EffectType { get; private set; }
     /// <summary>

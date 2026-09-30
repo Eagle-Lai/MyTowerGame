@@ -60,7 +60,7 @@ namespace FTProject
         {
             EventDispatcher.AddEventListener<BaseTower>(EventName.TowerSelectedEvent, OnTowerSelected);
             EventDispatcher.AddEventListener(EventName.TowerDeselectedEvent, OnTowerDeselected);
-            EventDispatcher.AddEventListener(EventName.TowerUpgradeSuccess, OnUpgradeSuccess);
+            EventDispatcher.AddEventListener<BaseTower>(EventName.TowerUpgradeSuccess, OnUpgradeSuccess);
             EventDispatcher.AddEventListener<BaseTower>(EventName.DestroyTower, OnTowerDestroyed);
             EventDispatcher.AddEventListener<int, int>(EventName.GoldChangeEvent, OnGoldChanged);
         }
@@ -69,7 +69,7 @@ namespace FTProject
         {
             EventDispatcher.RemoveEventListener<BaseTower>(EventName.TowerSelectedEvent, OnTowerSelected);
             EventDispatcher.RemoveEventListener(EventName.TowerDeselectedEvent, OnTowerDeselected);
-            EventDispatcher.RemoveEventListener(EventName.TowerUpgradeSuccess, OnUpgradeSuccess);
+            EventDispatcher.RemoveEventListener<BaseTower>(EventName.TowerUpgradeSuccess, OnUpgradeSuccess);
             EventDispatcher.RemoveEventListener<BaseTower>(EventName.DestroyTower, OnTowerDestroyed);
             EventDispatcher.RemoveEventListener<int, int>(EventName.GoldChangeEvent, OnGoldChanged);
         }
@@ -165,11 +165,16 @@ namespace FTProject
             SetContentVisible(false);
         }
 
-        private void OnUpgradeSuccess()
+        /// <summary>
+        /// 升级成功 → 面板切到**新实例**。
+        /// 【为什么直接收参数，而不是回查 TowerPlacement.SelectedTower】
+        ///   升级是"换实例"，旧的 BaseTower 已被销毁并归还对象池。
+        ///   事件里直接带着新实例，面板不需要再依赖 TowerPlacement 这个全局单例去绕一圈；
+        ///   依赖越少，将来换 UI / 换状态机时改动面越小。
+        /// </summary>
+        private void OnUpgradeSuccess(BaseTower newTower)
         {
-            // 升级是"换实例"，选中对象已变；面板需要重新取当前选中塔
-            BaseTower sel = TowerPlacement.Instance != null ? TowerPlacement.Instance.SelectedTower : null;
-            _tower = sel;
+            _tower = newTower;
             Refresh();
         }
 
@@ -249,7 +254,8 @@ namespace FTProject
                 }
                 else
                 {
-                    TowerConfig next = Configs.GetTowerByTypeAndLevelSilent(cfg.Type, cfg.Level + 1);
+                    // 下一级一律由 upgradeTo 链决定（与 TowerManager.TryUpgrade 同一口径）
+                    TowerConfig next = Configs.GetNextLevel(cfg);
                     int cost = next != null ? next.Prices : 0;
                     _upgradeBtn.interactable = next != null && pd.Gold >= cost;
                     SetText(_upgradeLabel, next != null

@@ -323,6 +323,17 @@ namespace FTProject.EditorTools
                 Warnings++;
             }
 
+            /// <summary>
+            /// 「已就绪，本次跳过」。
+            /// 【为什么要单独一档】"检查并补缺"类工具的正常路径就是**什么都不做**，
+            /// 用 Ok 会把"跳过了 3 项"误读成"做了 3 件事"，用 Warn 又会把正常情况报成问题。
+            /// 所以给一个中性档：既不计入 Errors 也不计入 Warnings。
+            /// </summary>
+            public void Skip(string msg)
+            {
+                _sb.AppendLine("  · " + msg);
+            }
+
             public void Error(string msg)
             {
                 _sb.AppendLine("  ✘ " + msg);

@@ -232,8 +232,12 @@ namespace FTProject
             {
                 return;
             }
-            ClearSelectionHighlight();
+            // 【顺序不能反】必须先清"旧选中"的高亮，再改 _selected。
+            // 反过来的话 ClearSelectionHighlight 看到的就是新塔，旧塔的高亮永远清不掉。
+            // 也正因为如此，清理方法必须**接收参数**，不能内部读 _selected。
+            ClearSelectionHighlight(_selected);
             _selected = tower;
+            ApplySelectionHighlight(_selected);
             EventDispatcher.TriggerEvent<BaseTower>(EventName.TowerSelectedEvent, _selected);
         }
 
@@ -244,6 +248,7 @@ namespace FTProject
             {
                 return;
             }
+            ClearSelectionHighlight(_selected);
             _selected = null;
             EventDispatcher.TriggerEvent(EventName.TowerDeselectedEvent);
         }
@@ -255,17 +260,45 @@ namespace FTProject
         /// </summary>
         public void ReselectAfterSwap(BaseTower old, BaseTower newer)
         {
-            if (_selected == old)
+            if (_selected != old)
             {
-                _selected = newer;
+                return;
+            }
+            _selected = newer;
+            // 新实例是刚 Instantiate + Init 出来的，Init 内部已经 SetTint(white)，
+            // 所以这里必须把"选中"的视觉重新贴回去，否则升级后高亮会莫名消失。
+            ApplySelectionHighlight(_selected);
+        }
+
+        /// <summary>选中态塔身提亮色。偏暖白，与"可建造"的绿色 hover 高亮区分开。</summary>
+        private static readonly Color SelectedTint = new Color(1f, 0.95f, 0.72f, 1f);
+
+        /// <summary>
+        /// 选中态高亮 —— 塔身部分。
+        /// 【为什么先做提亮而不是描边】描边需要额外的美术资源（M2 待补），
+        /// 而 BaseTower.SetTint 已存在，零新增资源就能给出明确、可用的选中反馈。
+        /// 美术到位后把这里换成描边/选中 Sprite，调用方无需改动。
+        /// 格子高亮（CellHighlight.Selected）在 Board/CellView 侧另行处理。
+        /// </summary>
+        private static void ApplySelectionHighlight(BaseTower tower)
+        {
+            if (tower != null)
+            {
+                tower.SetTint(SelectedTint);
             }
         }
 
-        /// <summary>选中态高亮（M2-C1 占位：先复用格子高亮，后续换成塔身描边）</summary>
-        private void ClearSelectionHighlight()
+        /// <summary>
+        /// 清除选中高亮。
+        /// 【参数是"要清哪一座"】调用发生在 _selected 被改写**之前**，
+        /// 所以不能依赖 _selected —— 这是原先的 bug：清理方法读不到旧塔，等于没清。
+        /// </summary>
+        private static void ClearSelectionHighlight(BaseTower tower)
         {
-            // 目前没有专用描边资源，选中反馈走 TowerSelectView（若存在）。
-            // 这里留空，避免与 hover 高亮打架。
+            if (tower != null)
+            {
+                tower.SetTint(Color.white);
+            }
         }
 
         /// <summary>

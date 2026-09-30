@@ -1,4 +1,4 @@
-﻿using System.IO;
+using System.IO;
 using System.Text;
 using SimpleJSON;
 using UnityEditor;
@@ -74,8 +74,9 @@ namespace FTProject.EditorTools
             // 6. 物理清理（兜住前两步可能漏掉的）
             PhysicsComponentCleaner.CleanAllInternal(report);
 
-            // 7. UI 预制体（M-3 起：检测到不认识的手工节点会中止，不静默删除）
-            UIPrefabBuilder.BuildInternal(report);
+            // 7. UI 预制体（**只补缺失**：HudView 等已被手工改造过，全量重建会覆盖手工成果）
+            //    确需全量重建请用「高级（单步重建）▸ 生成 UI 预制体（全量重建）」
+            UIPrefabBuilder.EnsureMissing(report);
 
             // 8. 场景（缺失才搭建；已有则跳过，保住手工接线）
             SceneMainBuilder.EnsureOrBuildInternal(report);
@@ -286,7 +287,8 @@ namespace FTProject.EditorTools
             // UI
             CheckUiPrefab(report, UIPrefabBuilder.HudPath, "HudView",
                 new[] { "GoldText", "HpText", "RoundText", "StartButton",
-                        "Btn_Tower_Normal", "Btn_Tower_Power", "Btn_Tower_Retard" });
+                        "Btn_Tower_Normal", "Btn_Tower_Power", "Btn_Tower_Retard",
+                        "Btn_Tower_Pierce", "Btn_Tower_Laser" });
             CheckUiPrefab(report, UIPrefabBuilder.TipsPath, "TipsView", new[] { "TipText" });
             CheckUiPrefab(report, UIPrefabBuilder.TowerInfoPath, "TowerInfoView", new[] { "Bg", "Panel" });
         }

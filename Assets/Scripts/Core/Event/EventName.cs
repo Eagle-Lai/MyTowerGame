@@ -1,4 +1,4 @@
-﻿namespace FTProject
+namespace FTProject
 {
     /// <summary>
     /// 全局事件名常量。
@@ -54,7 +54,11 @@
         /// <summary>请求升级选中的塔，参数：BaseTower</summary>
         public const string TowerUpgradeRequestEvent = "TowerUpgradeRequestEvent";
 
-        /// <summary>升级成功，参数：(BaseTower 新塔, int 花费)</summary>
+        /// <summary>升级成功，参数：BaseTower（升级后的**新实例**）。
+        /// 【为什么必须带参】升级采用"换实例"，旧的 BaseTower 已被销毁并归还对象池。
+        /// UI 必须拿新实例刷新，任何缓存的旧引用都是失效对象。
+        /// 【不要用 BuildTowerSuccess 代替】那个事件的语义是"新建了一座塔"，
+        /// HudView 收到会退出放置态并复位按钮，升级时发它会把 HUD 状态搅乱。</summary>
         public const string TowerUpgradeSuccess = "TowerUpgradeSuccess";
 
         /// <summary>请求出售选中的塔，参数：BaseTower</summary>

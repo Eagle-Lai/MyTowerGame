@@ -36,10 +36,11 @@ public sealed partial class TowerInfo :  Bright.Config.BeanBase
         { if(!_json["effectType"].IsNumber) { throw new SerializationException(); }  EffectType = _json["effectType"]; }
         { if(!_json["effectValue"].IsNumber) { throw new SerializationException(); }  EffectValue = _json["effectValue"]; }
         { if(!_json["desc"].IsString) { throw new SerializationException(); }  Desc = _json["desc"]; }
+        { if(!_json["canAttackAir"].IsNumber) { throw new SerializationException(); }  CanAttackAir = _json["canAttackAir"]; }
         PostInit();
     }
 
-    public TowerInfo(int id, int type, string name, string resName, int level, int radius, int power, float CD, int prices, int bulletId, int targetMode, int searchIntervalMs, float rotateSpeed, int upgradeTo, int sellPrice, int effectType, float effectValue, string desc ) 
+    public TowerInfo(int id, int type, string name, string resName, int level, int radius, int power, float CD, int prices, int bulletId, int targetMode, int searchIntervalMs, float rotateSpeed, int upgradeTo, int sellPrice, int effectType, float effectValue, string desc, int canAttackAir ) 
     {
         this.Id = id;
         this.Type = type;
@@ -59,6 +60,7 @@ public sealed partial class TowerInfo :  Bright.Config.BeanBase
         this.EffectType = effectType;
         this.EffectValue = effectValue;
         this.Desc = desc;
+        this.CanAttackAir = canAttackAir;
         PostInit();
     }
 
@@ -125,7 +127,7 @@ public sealed partial class TowerInfo :  Bright.Config.BeanBase
     /// </summary>
     public int SellPrice { get; private set; }
     /// <summary>
-    /// 特殊效果类型 0无/1减速/2持续伤害
+    /// 特殊效果类型 0无/1减速/2持续伤害/3范围伤害/4激光
     /// </summary>
     public int EffectType { get; private set; }
     /// <summary>
@@ -136,6 +138,10 @@ public sealed partial class TowerInfo :  Bright.Config.BeanBase
     /// 备注
     /// </summary>
     public string Desc { get; private set; }
+    /// <summary>
+    /// 是否可攻击飞行单位 0否/1是（缺省视为 1，兼容旧表）
+    /// </summary>
+    public int CanAttackAir { get; private set; }
 
     public const int __ID__ = -86035657;
     public override int GetTypeId() => __ID__;
@@ -170,6 +176,7 @@ public sealed partial class TowerInfo :  Bright.Config.BeanBase
         + "EffectType:" + EffectType + ","
         + "EffectValue:" + EffectValue + ","
         + "Desc:" + Desc + ","
+        + "CanAttackAir:" + CanAttackAir + ","
         + "}";
     }
     

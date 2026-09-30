@@ -4,7 +4,28 @@ using UnityEngine;
 
 namespace FTProject
 {
-    public enum TowerType { None = 0, Normal = 1, Power = 2, Slow = 3 }
+    /// <summary>
+    /// 塔型。编号与 TBTowerInfo.type 一一对应（设计文档 §8 M2 定案的五类）。
+    ///
+    /// 【命名与行为的偏差，只在这里解释一次】
+    ///   · Power(2) 是美术名「强力塔」，其**行为**是范围伤害（AOE）—— 见 TBTowerInfo.effectType=3；
+    ///   · Slow(3) 的行为是减速，而美术、节点名、资源目录一律叫 "Retard"
+    ///     （映射表在 HudView.TowerTypeOf，别处不要再推导一遍）。
+    /// </summary>
+    public enum TowerType
+    {
+        None = 0,
+        /// <summary>单体：普通塔</summary>
+        Normal = 1,
+        /// <summary>范围伤害：强力塔（美术名 Power，行为是 AOE）</summary>
+        Aoe = 2,
+        /// <summary>减速：美术名 Retard</summary>
+        Slow = 3,
+        /// <summary>穿透：一发子弹可连续命中多个敌人</summary>
+        Pierce = 4,
+        /// <summary>激光：瞬发命中（hitscan），不发射弹体</summary>
+        Laser = 5,
+    }
 
     /// <summary>
     /// 防御塔基类（v2.1 的 2D 版）。
@@ -448,10 +469,19 @@ namespace FTProject
         ///   3. 升级后等级/射程/伤害/攻速全部由新行的 TBTowerInfo 驱动，
         ///      不用在代码里维护任何"等级 → 数值"映射表。
         ///
-        /// 【顺序很重要】
+        /// 【顺序很重要，且顺序本身就是正确性的一部分】
         ///   读旧状态 → 校验升级链 → 扣费（失败即返回，无副作用）
-        ///   → 取消旧塔在战斗系统的注册、从列表移除、释放旧实例（★ 不触发路径重算）
-        ///   → 实例化新塔 → Init + SnapToCell → 写回格子 → 注册新塔 → 广播事件
+        ///   → **先实例化新塔**（失败则退还金币、旧塔原样保留）
+        ///   → 摘旧塔的战斗注册与列表引用 → 新塔 Init + SnapToCell
+        ///   → 写回格子 → 注册新塔 → 释放旧实例 → 广播事件（★ 全程不触发路径重算）
+        ///
+        /// 【为什么必须"先建后拆"】
+        ///   如果先拆旧塔再实例化，一旦新塔资源加载失败，旧塔已经被 MarkDestroyed
+        ///   并归还对象池 —— 玩家花了钱，格子上却什么都不剩。
+        ///   先建后拆才能做到"失败时原样保留原塔"，与 TryBuild 的回滚风格一致。
+        ///
+        /// 【注册顺序】必须先 UnregisterTower(old) 再 RegisterTower(new)，
+        ///   否则会出现短暂的双份 tick（同一格被两座塔各开一次火）。
         ///
         /// 【为什么不 RequestRefresh 路径】
         ///   换塔前后格子始终是"有塔"状态，地图阻挡关系没变，路径无需重算。
@@ -469,11 +499,19 @@ namespace FTProject
                 return null;
             }
 
-            // 升级链：upgradeTo 指向"下一等级的 TBTowerInfo.id"，0 表示满级
-            TowerConfig nextCfg = Configs.GetTower(old.Config.UpgradeTo);
+            // 升级链：upgradeTo 指向"下一等级的 TBTowerInfo.id"，0 表示满级。
+            // 走 Configs.GetNextLevel 而不是"type + level + 1"：口径只允许有一处。
+            TowerConfig nextCfg = Configs.GetNextLevel(old.Config);
             if (nextCfg == null)
             {
                 Tips("该防御塔暂无可升级的下一级配置");
+                return null;
+            }
+
+            CellData cell = old.Cell;
+            if (cell == null)
+            {
+                Tips("该防御塔不在格子上，无法升级");
                 return null;
             }
 
@@ -484,36 +522,14 @@ namespace FTProject
                 return null;
             }
 
-            CellData cell = old.Cell;
-            if (cell == null)
-            {
-                PlayerDataManager.Instance.AddGold(nextCfg.Prices);   // 退还
-                Tips("该防御塔不在格子上，无法升级");
-                return null;
-            }
-
-            string oldResName = old.Config.ResName;
-
-            // ② 拆旧塔：只摘注册与引用，**不动格子阻挡与路径**
-            old.MarkDestroyed();
-            _towers.Remove(old);
-            CombatSystem.Instance.UnregisterTower(old);
-            ResLoader.Instance.ReleaseInstance(oldResName, old.gameObject);
-
-            // ③ 建新塔
+            // ② **先实例化新塔**。此处失败必须做到"零损失"：
+            //    金币退还、旧塔保持 IsBuilt、仍在 _towers、仍在 CombatSystem 注册、格子占用不变。
             GameObject go = ResLoader.Instance.Instantiate(nextCfg.ResName, TowerParent);
             if (go == null)
             {
-                // 极端情况：新塔资源加载失败 → 退还金币，格子恢复为空
-                PlayerDataManager.Instance.AddGold(nextCfg.Prices);
-                cell.Tower = null;
-                if (cell.Point != null)
-                {
-                    cell.Point.IsWall = false;
-                }
-                Tips("升级失败：防御塔资源加载失败");
-                Debug.LogError("[Tower] 升级失败：无法加载 " + nextCfg.ResName);
-                AStarManager.Instance.RequestRefresh();
+                PlayerDataManager.Instance.AddGold(nextCfg.Prices);   // 退还
+                Tips("升级失败：防御塔资源加载失败，已退还金币");
+                Debug.LogError("[Tower] 升级失败：无法加载 " + nextCfg.ResName + "（原塔保持不变）");
                 return null;
             }
 
@@ -522,21 +538,34 @@ namespace FTProject
             {
                 tower = go.AddComponent<NormalTower>();
             }
+
+            string oldResName = old.Config.ResName;
+
+            // ③ 新塔已就位，才拆旧塔：只摘战斗注册与列表引用，**不动格子阻挡与路径**。
+            //    顺序不变量：先 Unregister 旧的，再 Register 新的（避免双份 tick）。
+            old.MarkDestroyed();
+            _towers.Remove(old);
+            CombatSystem.Instance.UnregisterTower(old);
+
             tower.Init(nextCfg, cell);
             tower.SnapToCell(cell);
 
             cell.Tower = tower;
             _towers.Add(tower);
-
             CombatSystem.Instance.RegisterTower(tower);
-            EventDispatcher.TriggerEvent<BaseTower>(EventName.BuildTowerSuccess, tower);
+
+            // ④ 释放旧实例（放在新塔注册之后：即使释放过程出问题，战斗注册也已一致）
+            ResLoader.Instance.ReleaseInstance(oldResName, old.gameObject);
 
             // 升级后选中态要指向"新实例"，否则面板还拿着已被销毁的旧塔
             if (TowerPlacement.Instance != null)
             {
                 TowerPlacement.Instance.ReselectAfterSwap(old, tower);
             }
-            EventDispatcher.TriggerEvent(EventName.TowerUpgradeSuccess);
+
+            // 【为什么不用 BuildTowerSuccess】它的语义是"新建了一座塔"，
+            // HudView 收到会退出放置态并复位按钮 —— 升级时发它会把 HUD 状态搅乱。
+            EventDispatcher.TriggerEvent<BaseTower>(EventName.TowerUpgradeSuccess, tower);
             Tips(string.Format("已升级为 {0} Lv.{1}", nextCfg.Name, nextCfg.Level));
 
             return tower;

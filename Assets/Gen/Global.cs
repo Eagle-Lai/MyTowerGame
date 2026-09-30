@@ -36,10 +36,14 @@ public sealed partial class Global :  Bright.Config.BeanBase
         { if(!_json["autoStartRoundDelayMs"].IsNumber) { throw new SerializationException(); }  AutoStartRoundDelayMs = _json["autoStartRoundDelayMs"]; }
         { if(!_json["sellRefundRate"].IsNumber) { throw new SerializationException(); }  SellRefundRate = _json["sellRefundRate"]; }
         { if(!_json["artFaceLeft"].IsNumber) { throw new SerializationException(); }  ArtFaceLeft = _json["artFaceLeft"]; }
+        { if(!_json["showDamageText"].IsNumber) { throw new SerializationException(); }  ShowDamageText = _json["showDamageText"]; }
+        { if(!_json["damageTextThrottleMs"].IsNumber) { throw new SerializationException(); }  DamageTextThrottleMs = _json["damageTextThrottleMs"]; }
+        { if(!_json["shakeAmplitude"].IsNumber) { throw new SerializationException(); }  ShakeAmplitude = _json["shakeAmplitude"]; }
+        { if(!_json["shakeDurationMs"].IsNumber) { throw new SerializationException(); }  ShakeDurationMs = _json["shakeDurationMs"]; }
         PostInit();
     }
 
-    public Global(int id, float cellSize, float boardOriginPadding, int enemyPoolSize, int bulletPoolSize, int maxEnemyAlive, int defaultReward, int defaultDamageToPlayer, float defaultBodyRadius, int defaultSearchIntervalMs, int targetFrameRate, int deathRecycleDelayMs, int checkOfflinePerFrame, int showDebugLog, int autoNextRoundDelayMs, int autoStartRoundDelayMs, float sellRefundRate, int artFaceLeft ) 
+    public Global(int id, float cellSize, float boardOriginPadding, int enemyPoolSize, int bulletPoolSize, int maxEnemyAlive, int defaultReward, int defaultDamageToPlayer, float defaultBodyRadius, int defaultSearchIntervalMs, int targetFrameRate, int deathRecycleDelayMs, int checkOfflinePerFrame, int showDebugLog, int autoNextRoundDelayMs, int autoStartRoundDelayMs, float sellRefundRate, int artFaceLeft, int showDamageText, int damageTextThrottleMs, float shakeAmplitude, int shakeDurationMs ) 
     {
         this.Id = id;
         this.CellSize = cellSize;
@@ -59,6 +63,10 @@ public sealed partial class Global :  Bright.Config.BeanBase
         this.AutoStartRoundDelayMs = autoStartRoundDelayMs;
         this.SellRefundRate = sellRefundRate;
         this.ArtFaceLeft = artFaceLeft;
+        this.ShowDamageText = showDamageText;
+        this.DamageTextThrottleMs = damageTextThrottleMs;
+        this.ShakeAmplitude = shakeAmplitude;
+        this.ShakeDurationMs = shakeDurationMs;
         PostInit();
     }
 
@@ -85,6 +93,10 @@ public sealed partial class Global :  Bright.Config.BeanBase
     public int AutoStartRoundDelayMs { get; private set; }
     public float SellRefundRate { get; private set; }
     public int ArtFaceLeft { get; private set; }
+    public int ShowDamageText { get; private set; }
+    public int DamageTextThrottleMs { get; private set; }
+    public float ShakeAmplitude { get; private set; }
+    public int ShakeDurationMs { get; private set; }
 
     public const int __ID__ = 2135814083;
     public override int GetTypeId() => __ID__;
@@ -119,6 +131,10 @@ public sealed partial class Global :  Bright.Config.BeanBase
         + "AutoStartRoundDelayMs:" + AutoStartRoundDelayMs + ","
         + "SellRefundRate:" + SellRefundRate + ","
         + "ArtFaceLeft:" + ArtFaceLeft + ","
+        + "ShowDamageText:" + ShowDamageText + ","
+        + "DamageTextThrottleMs:" + DamageTextThrottleMs + ","
+        + "ShakeAmplitude:" + ShakeAmplitude + ","
+        + "ShakeDurationMs:" + ShakeDurationMs + ","
         + "}";
     }
     
