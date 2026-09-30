@@ -1,4 +1,4 @@
-using UnityEditor;
+﻿using UnityEditor;
 using UnityEngine;
 
 namespace FTProject.EditorTools
@@ -14,7 +14,7 @@ namespace FTProject.EditorTools
     ///   `Assets/_UIAssets/Monsters/**` 下的每个怪物转成战斗预制体
     ///   （去物理 / 挂 BaseEnemy / 自适应血条）。
     ///
-    /// 菜单：Tools ▸ 塔防 ▸ 3. 生成战斗预制体
+    /// 菜单：Tools ▸ 塔防 ▸ 高级（单步重建）▸ 生成战斗预制体
     /// </summary>
     public static class BattlePrefabBuilder
     {
@@ -22,7 +22,7 @@ namespace FTProject.EditorTools
 
         private const string BulletSpriteKey = "Bullet_Dot";
 
-        [MenuItem("Tools/塔防/3. 生成战斗预制体", false, 102)]
+        [MenuItem("Tools/塔防/高级（单步重建）/生成战斗预制体", false, 302)]
         public static void Build()
         {
             EditorUtil.Report report = new EditorUtil.Report();
@@ -56,7 +56,7 @@ namespace FTProject.EditorTools
                 EditorUtil.GeneratedArtDir + "/" + BulletSpriteKey + ".png");
             if (dot == null)
             {
-                report.Error("找不到子弹贴图，请先执行「1. 生成占位美术」");
+                report.Error("找不到子弹贴图，请先执行「高级（单步重建）▸ 生成占位美术」");
                 return;
             }
 

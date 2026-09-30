@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 
@@ -25,14 +25,14 @@ namespace FTProject.EditorTools
     ///     我们已经完全不用物理，关掉可以让 Profiler 的 Physics 分区稳定为 0，
     ///     这就是需求 8 的量化验收标准。
     ///
-    /// 菜单：Tools ▸ 塔防 ▸ 6. 配置工程设置
+    /// 菜单：Tools ▸ 塔防 ▸ 2. 配置工程设置
     /// </summary>
     public static class ProjectSettingsConfigurator
     {
         public const string MainScenePath = "Assets/Scenes/main.unity";
         public const string UiCanvasTag = "UICanvas";
 
-        [MenuItem("Tools/塔防/6. 配置工程设置", false, 106)]
+        [MenuItem("Tools/塔防/2. 配置工程设置", false, 102)]
         public static void Configure()
         {
             EditorUtil.Report report = new EditorUtil.Report();

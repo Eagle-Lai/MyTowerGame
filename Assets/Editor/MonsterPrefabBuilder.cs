@@ -20,7 +20,7 @@ namespace FTProject.EditorTools
     ///（`_Common/Animations/<怪名>/Controller.controller`），克隆时会一并带过来。
     /// 所以配置表的 `animController` 可以留空，BaseEnemy 会沿用 prefab 自带的。
     ///
-    /// 菜单：Tools ▸ 塔防 ▸ 9. 导入全部怪物（生成战斗预制体）
+    /// 菜单：Tools ▸ 塔防 ▸ 高级（单步重建）▸ 导入全部怪物（生成战斗预制体）
     /// </summary>
     public static class MonsterPrefabBuilder
     {
@@ -39,7 +39,7 @@ namespace FTProject.EditorTools
         private const float BarTopMarginRatio = 0.14f;
         private static readonly Color HpFillColor = new Color(0.35f, 0.90f, 0.35f, 1f);
 
-        [MenuItem("Tools/塔防/9. 导入全部怪物（生成战斗预制体）", false, 108)]
+        [MenuItem("Tools/塔防/高级（单步重建）/导入全部怪物（生成战斗预制体）", false, 306)]
         public static void BuildAllFromMenu()
         {
             if (!EditorUtility.DisplayDialog("导入全部怪物",
@@ -79,7 +79,7 @@ namespace FTProject.EditorTools
             if (barBg == null || barFill == null)
             {
                 report.Error("找不到血条贴图（HP_Bar_Bg / HP_Bar_Fill）。" +
-                             "请先执行「1. 生成占位美术」");
+                             "请先执行「高级（单步重建）▸ 生成占位美术」");
                 return;
             }
 

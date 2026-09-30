@@ -23,8 +23,14 @@ namespace FTProject
         /// <summary>程序生成的占位美术（格子/箭头/血条/子弹点），常驻不卸载</summary>
         public const string CoreArt = "core_art";
 
-        /// <summary>防御塔</summary>
+        /// <summary>防御塔：普通（type=1）</summary>
         public const string TowerNormal = "tower_normal";
+
+        /// <summary>防御塔：强力（type=2）</summary>
+        public const string TowerPower = "tower_power";
+
+        /// <summary>防御塔：减速（type=3）</summary>
+        public const string TowerRetard = "tower_retard";
 
         /// <summary>子弹</summary>
         public const string BulletNormal = "bullet_normal";
@@ -35,7 +41,7 @@ namespace FTProject
         /// <summary>不随怪物清单变化的固定包</summary>
         public static readonly string[] Fixed =
         {
-            Config, CoreArt, TowerNormal, BulletNormal, UiHud
+            Config, CoreArt, TowerNormal, TowerPower, TowerRetard, BulletNormal, UiHud
         };
 
         /// <summary>常驻包：初始化后不参与卸载</summary>

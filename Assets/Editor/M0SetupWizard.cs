@@ -7,13 +7,13 @@ using UnityEngine;
 namespace FTProject.EditorTools
 {
     /// <summary>
-    /// M0 一键资源准备向导 + 交付自检。
+    /// M0 资源准备向导 + 交付自检。
     ///
-    /// 【为什么要做成向导】
-    ///   M0 的资源就绪化涉及 7 个步骤，且**顺序有依赖**（先有占位美术才能生成怪物血条；
-    ///   先有 Tag 才能给 Canvas 打 Tag；先有预制体才能搭场景引用）。
-    ///   让人按文档一步步点，漏一步就要花很久排查。向导把顺序固化下来，且每步都会
-    ///   把结果汇总成一份报告，成功失败一目了然。
+    /// 【为什么改成"补齐缺口"而不是"全量重建"（M-1）】
+    ///   原实现是无条件顺序跑完 9 步，其中 4 步是"DeleteAsset + 重建"。
+    ///   于是"跑一次向导"会**抹掉人在编辑器里手工调过的 prefab**（真实案例：
+    ///   HudView 手工加的三颗塔按钮被生成器删掉；main.unity 的手工接线被重建覆盖）。
+    ///   现在改为：**只补缺失的，已有的跳过**。真要全量重建请走「高级（单步重建）」子菜单。
     ///
     /// 【为什么还要自检】
     ///   "工具跑完了"不等于"产物可用"。自检会把启用游戏前的所有前提条件过一遍
@@ -22,75 +22,74 @@ namespace FTProject.EditorTools
     ///
     /// 菜单：
     ///   Tools ▸ 塔防 ▸ 0. 自检（先跑这个）
-    ///   Tools ▸ 塔防 ▸ 一键完成 M0 资源准备
+    ///   Tools ▸ 塔防 ▸ 一键补齐 M0 资源（安全：只补缺失）
     /// </summary>
     public static class M0SetupWizard
     {
-        [MenuItem("Tools/塔防/一键完成 M0 资源准备", false, 10)]
+        [MenuItem("Tools/塔防/一键补齐 M0 资源（安全：只补缺失）", false, 10)]
         public static void RunAll()
         {
-            if (!EditorUtility.DisplayDialog("M0 一键资源准备",
-                    "将依次执行：\n" +
+            if (!EditorUtility.DisplayDialog("M0 资源补齐（安全模式）",
+                    "本模式**只补齐缺失的产物，已存在的一律跳过**，不会覆盖手工修改。\n\n" +
+                    "依次执行：\n" +
                     "  1. 导出配置表（Luban，改完 Excel 后可整体重跑）\n" +
                     "  2. 配置工程设置（Tag / 渲染排序 / Build Settings / 物理）\n" +
-                    "  3. 生成占位美术（格子 / 箭头 / 血条 / 子弹）\n" +
-                    "  4. 转换防御塔预制体（UGUI → 世界空间 SpriteRenderer）\n" +
-                    "  5. 生成战斗预制体（子弹 / 全部 119 个怪物）\n" +
+                    "  3. 占位美术（缺失才生成）\n" +
+                    "  4. 防御塔预制体（缺失才转换）\n" +
+                    "  5. 战斗预制体（缺失才生成）\n" +
                     "  6. 清理物理组件\n" +
-                    "  7. 生成 UI 预制体（HUD / 提示）\n" +
-                    "  8. 搭建 main 场景并接线\n" +
-                    "  9. 按 ResTable 打 AssetBundle 标记\n\n" +
-                    "注意：第 8 步会重建 main.unity（原文件会先备份到\n" +
-                    "Assets/Scenes/_Backup/main_before_builder.unity）。\n\n是否继续？",
+                    "  7. UI 预制体（结构有问题才重建，不认识的手工节点会中止）\n" +
+                    "  8. main 场景（缺失才搭建）\n" +
+                    "  9. 按 ResTable 打 AssetBundle 标记\n\n是否继续？",
                     "开始执行", "取消"))
             {
                 return;
             }
 
             EditorUtil.Report report = new EditorUtil.Report();
-            report.Head("M0 一键资源准备（顺序执行，某步失败会继续后续步骤）");
+            report.Head("M0 资源补齐（安全模式：只补缺失）");
 
             // 1. 导出配置表（Luban）—— 必须最先做：后面所有步骤都依赖表已就绪
             if (!LubanExporter.ExportInternal(report))
             {
                 Debug.LogError("[M0] 导出配置表失败，已中止一键流程。\n" + report.Text);
-                EditorUtility.DisplayDialog("M0 一键资源准备",
+                EditorUtility.DisplayDialog("M0 资源补齐",
                     "中止：配置表导出失败。\n\n" + report.Text +
                     "\n\n（常见原因：Excel 被占用没保存 / 表结构改错）", "好");
                 return;
             }
 
-            // 2. 工程设置（必须在搭场景之前：Canvas 要打 UICanvas Tag）
+            // 2. 工程设置（幂等，重复执行无副作用）
             ProjectSettingsConfigurator.ConfigureInternal(report);
 
-            // 2. 占位美术（必须在战斗预制体之前：怪物要挂血条）
+            // 3. 占位美术（生成器内部已做存在性判断）
             PlaceholderArtGenerator.GenerateInternal(report);
 
-            // 3. 塔预制体
+            // 4. 塔预制体（M-2 起：已是 SpriteRenderer 结构的塔自动跳过）
             TowerPrefabConverter.ConvertInternal(report);
 
-            // 4. 战斗预制体
+            // 5. 战斗预制体（生成器内部存在性判断）
             BattlePrefabBuilder.BuildInternal(report);
 
-            // 5. 物理清理（兜住前两步可能漏掉的）
+            // 6. 物理清理（兜住前两步可能漏掉的）
             PhysicsComponentCleaner.CleanAllInternal(report);
 
-            // 6. UI 预制体
+            // 7. UI 预制体（M-3 起：检测到不认识的手工节点会中止，不静默删除）
             UIPrefabBuilder.BuildInternal(report);
 
-            // 7. 场景
-            SceneMainBuilder.BuildInternal(report);
+            // 8. 场景（缺失才搭建；已有则跳过，保住手工接线）
+            SceneMainBuilder.EnsureOrBuildInternal(report);
 
-            // 8. AB 打标（只打标不打包；真正的打包耗时较长，单独一个菜单）
+            // 9. AB 打标（只打标不打包；真正的打包耗时较长，单独一个菜单）
             ABNameSetter.Apply(report);
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
 
-            Debug.Log("[M0] 一键资源准备完成：\n" + report.Text);
+            Debug.Log("[M0] 资源补齐完成：\n" + report.Text);
 
             bool hasError = report.Errors > 0;
-            bool buildAb = EditorUtility.DisplayDialog("M0 一键资源准备",
+            bool buildAb = EditorUtility.DisplayDialog("M0 资源补齐",
                 string.Format("{0}\n错误 {1} · 警告 {2}\n\n完整报告已打印到 Console。\n\n" +
                               "{3}",
                     hasError ? "有错误，请先按报告修复" : "全部完成",
@@ -99,7 +98,7 @@ namespace FTProject.EditorTools
                         ? "请查看 Console 的 [M0] 开头日志。"
                         : "下一步建议：\n① 运行「Tools ▸ 塔防 ▸ 0. 自检」确认产物可用\n" +
                           "② 打开 Assets/Scenes/main.unity 按 Play 试跑（编辑器走直读模式，不需要打 AB）\n" +
-                          "③ 需要验证真 AB 链路时，先点「8b. 打包 AssetBundle」，再加 FORCE_AB 宏"),
+                          "③ 需要验证真 AB 链路时，先点「打包 AssetBundle」，再加 FORCE_AB 宏"),
                 "好", "顺便打包 AB");
 
             if (!buildAb)
@@ -224,38 +223,11 @@ namespace FTProject.EditorTools
         {
             report.Head("③ 关键预制体与组件");
 
-            // 塔：必须世界空间 + 有炮管 + 有出膛点
-            GameObject tower = AssetDatabase.LoadAssetAtPath<GameObject>(TowerPrefabConverter.TargetPath);
-            if (tower == null)
+            // 塔：三座塔逐一检查（Normal / Power / Retard）
+            // 每座都必须：世界空间（无 RectTransform）+ SpriteRenderer + barbette/Img_gun + 根组件继承 BaseTower
+            for (int i = 0; i < TowerPrefabConverter.TowerResNames.Length; i++)
             {
-                report.Error("塔预制体不存在：" + TowerPrefabConverter.TargetPath +
-                             "（请执行「2. 转换防御塔预制体」）");
-            }
-            else if (tower.GetComponent<RectTransform>() != null)
-            {
-                report.Error("Tower_Normal.prefab 仍是 UGUI（带 RectTransform），" +
-                             "请执行「2. 转换防御塔预制体」");
-            }
-            else if (tower.GetComponentInChildren<SpriteRenderer>(true) == null)
-            {
-                report.Error("Tower_Normal.prefab 里没有 SpriteRenderer，无法显示");
-            }
-            else if (tower.transform.Find("barbette/Img_gun") == null)
-            {
-                report.Error("Tower_Normal.prefab 缺少 barbette/Img_gun 节点，" +
-                             "BaseTower 找不到炮管，塔不会转向");
-            }
-            else if (tower.transform.Find("barbette/Img_gun/BarrelPoint") == null)
-            {
-                report.Warn("炮管下没有 BarrelPoint，子弹会从塔中心而不是枪口发出（不影响玩法）");
-            }
-            else
-            {
-                report.Ok("Tower_Normal.prefab：世界空间 SpriteRenderer + 炮管 + 出膛点");
-            }
-            if (tower != null && !HasScript(tower, "NormalTower"))
-            {
-                report.Error("Tower_Normal.prefab 上没有挂 NormalTower 脚本");
+                CheckOneTower(TowerPrefabConverter.TowerResNames[i], report);
             }
 
             // 子弹
@@ -296,7 +268,7 @@ namespace FTProject.EditorTools
             {
                 report.Error(string.Format(
                     "{0}/{1} 个怪物战斗预制体不存在（例：{2}）\n" +
-                    "      修复：执行「Tools ▸ 塔防 ▸ 9. 导入全部怪物」",
+                    "      修复：执行「Tools ▸ 塔防 ▸ 高级（单步重建）▸ 导入全部怪物」",
                     monsterMissing, monsterTotal, firstMissing));
             }
             else
@@ -313,8 +285,57 @@ namespace FTProject.EditorTools
             }
             // UI
             CheckUiPrefab(report, UIPrefabBuilder.HudPath, "HudView",
-                new[] { "GoldText", "HpText", "RoundText", "StartButton", "TowerButton" });
+                new[] { "GoldText", "HpText", "RoundText", "StartButton",
+                        "Btn_Tower_Normal", "Btn_Tower_Power", "Btn_Tower_Retard" });
             CheckUiPrefab(report, UIPrefabBuilder.TipsPath, "TipsView", new[] { "TipText" });
+            CheckUiPrefab(report, UIPrefabBuilder.TowerInfoPath, "TowerInfoView", new[] { "Bg", "Panel" });
+        }
+
+        /// <summary>
+        /// 单座防御塔自检：世界空间（无 RectTransform）+ SpriteRenderer + barbette/Img_gun + 根组件继承 BaseTower。
+        /// 三塔（Normal / Power / Retard）共用同一套结构，逐一调用。
+        /// </summary>
+        private static void CheckOneTower(string resName, EditorUtil.Report report)
+        {
+            string path = TowerPrefabConverter.TowerPath(resName);
+            GameObject tower = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+            if (tower == null)
+            {
+                report.Error(resName + ".prefab 不存在：" + path +
+                             "（请执行「高级（单步重建）▸ 转换防御塔预制体」）");
+                return;
+            }
+            if (tower.GetComponent<RectTransform>() != null)
+            {
+                report.Error(resName + ".prefab 仍是 UGUI（带 RectTransform），" +
+                             "请执行「高级（单步重建）▸ 转换防御塔预制体」");
+                return;
+            }
+            if (tower.GetComponentInChildren<SpriteRenderer>(true) == null)
+            {
+                report.Error(resName + ".prefab 里没有 SpriteRenderer，无法显示");
+                return;
+            }
+            if (tower.transform.Find("barbette/Img_gun") == null)
+            {
+                report.Error(resName + ".prefab 缺少 barbette/Img_gun 节点，" +
+                             "BaseTower 找不到炮管，塔不会转向");
+                return;
+            }
+            if (tower.transform.Find("barbette/Img_gun/BarrelPoint") == null)
+            {
+                report.Warn(resName + ".prefab：炮管下没有 BarrelPoint，子弹会从塔中心而不是枪口发出（不影响玩法）");
+            }
+            else
+            {
+                report.Ok(resName + ".prefab：世界空间 SpriteRenderer + 炮管 + 出膛点");
+            }
+
+            // 根组件必须是 BaseTower 的派生（三塔子类功能等价，只校验基类存在）
+            if (tower.GetComponent<BaseTower>() == null)
+            {
+                report.Error(resName + ".prefab 上没有挂 BaseTower 及其子类脚本");
+            }
         }
 
         /// <summary>抽样检查某个怪物的战斗预制体结构</summary>
@@ -338,7 +359,7 @@ namespace FTProject.EditorTools
                 go.GetComponentInChildren<Rigidbody>(true) != null)
             {
                 report.Error(tag + " 上仍有物理组件（Collider/Rigidbody），" +
-                             "请执行「9. 导入全部怪物」或「4b. 清理全部战斗预制体的物理组件」");
+                             "请执行「导入全部怪物」或「清理全部战斗预制体的物理组件」（均在「高级（单步重建）」下）");
             }
             else if (go.transform.Find("HpBar/Fill") == null)
             {
@@ -369,7 +390,7 @@ namespace FTProject.EditorTools
             GameObject go = AssetDatabase.LoadAssetAtPath<GameObject>(path);
             if (go == null)
             {
-                report.Error("UI 预制体不存在：" + path + "（请执行「5. 生成 UI 预制体」）");
+                report.Error("UI 预制体不存在：" + path + "（请执行「高级（单步重建）▸ 生成 UI 预制体」）");
                 return;
             }
             if (!HasScript(go, rootName))
@@ -400,7 +421,7 @@ namespace FTProject.EditorTools
             string full = Path.Combine(Directory.GetCurrentDirectory(), path);
             if (!File.Exists(full))
             {
-                report.Error("主场景不存在：" + path + "（请执行「7. 搭建 main 场景」）");
+                report.Error("主场景不存在：" + path + "（请执行「高级（单步重建）▸ 重建 main 场景」）");
                 return;
             }
 
@@ -471,7 +492,7 @@ namespace FTProject.EditorTools
             }
             else
             {
-                report.Error("Tag「UICanvas」缺失，UI 打不开。请执行「6. 配置工程设置」");
+                report.Error("Tag「UICanvas」缺失，UI 打不开。请执行「2. 配置工程设置」");
             }
 
             // 渲染排序
@@ -495,7 +516,7 @@ namespace FTProject.EditorTools
             else
             {
                 report.Warn("Transparency Sort Mode 未设为 Custom Axis (0,-1,0)，" +
-                            "塔与怪的前后遮挡关系会不可控。请执行「6. 配置工程设置」");
+                            "塔与怪的前后遮挡关系会不可控。请执行「2. 配置工程设置」");
             }
 
             // Build Settings
@@ -525,7 +546,7 @@ namespace FTProject.EditorTools
             if (!Directory.Exists(dir))
             {
                 report.Warn("尚未打包过 AB（" + dir + "）。编辑器下走直读模式可以正常试跑，" +
-                            "但出真机包之前必须执行「8b. 打包 AssetBundle」");
+                            "但出真机包之前必须执行「5. 打包 AssetBundle」");
                 return;
             }
 
@@ -542,7 +563,7 @@ namespace FTProject.EditorTools
                     // 降级为提示：编辑器试跑走直读模式，不需要 AB；
                     // 而且新增了 16 个怪物家族包后，旧的一次打包结果必然"缺"它们。
                     report.Warn("包缺失：" + ResBundle.All[i] +
-                                "（出真机包前重新执行「8b. 打包 AssetBundle」即可全部产出）");
+                                "（出真机包前重新执行「5. 打包 AssetBundle」即可全部产出）");
                 }
             }
             string manifest = Path.Combine(dir, ResPathUtil.ManifestBundleName);

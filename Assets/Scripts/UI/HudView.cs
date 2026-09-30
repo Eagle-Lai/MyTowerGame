@@ -4,14 +4,20 @@ using UnityEngine.UI;
 namespace FTProject
 {
     /// <summary>
-    /// 战斗 HUD（P0-9）。
+    /// 战斗 HUD（P0-9 / M2-A4）。
     ///
     /// 【设计原则】HUD 只做两件事：①把数据变化显示出来 ②把玩家操作转成事件。
     /// 它不持有任何游戏逻辑引用（不碰 TowerManager / WaveManager），
     /// 这样 UI 挂了也不会影响战斗正确性。
     ///
-    /// 节点名必须与 Editor/SceneMainBuilder.cs 生成的 prefab 严格一致，
+    /// 【节点名必须与 Assets/Editor/UIPrefabBuilder.cs 生成/维护的 prefab 严格一致】，
     /// 否则会在 Console 里看到「HUD 缺少子节点」的错误（查找是显式报错的，不静默失败）。
+    /// 因此 prefab 与 .cs 是**成对修改**的。
+    ///
+    /// 【M2 新增：三颗塔按钮】
+    ///   Btn_Tower_Normal (type=1) / Btn_Tower_Power (type=2) / Btn_Tower_Retard (type=3)
+    ///   ★ 命名映射：节点里的 "Retard" ⇄ 枚举 TowerType.Slow(3)，同一件事的两种叫法，
+    ///     映射只在本文件的 TowerTypeOf 与美术目录两处，别处不要各写一份。
     /// </summary>
     public class HudView : MonoBehaviour
     {
@@ -20,18 +26,31 @@ namespace FTProject
         private Text _hpText;
         private Text _roundText;
 
-        // ---- 按钮 ----
+        // ---- 开始按钮 ----
         private Button _startButton;
         private Text _startLabel;
-        private Button _towerButton;
-        private Text _towerLabel;
 
-        /// <summary>当前选中的塔类型与等级（M0 固定 1/1，M2 接塔选择栏）</summary>
+        /// <summary>
+        /// 三颗塔按钮：节点名 → (按钮, 塔型)。
+        /// 用数组而不是三个字段，是为了让"进入/退出放置态时统一置灰"这类操作用循环即可。
+        /// </summary>
+        private Button[] _towerButtons;
+        private int[] _towerButtonTypes;
+
+        /// <summary>当前选中的塔类型与等级（M2 起由按钮决定 type；level 固定 1 = 建造等级）</summary>
         private int _towerType = 1;
         private int _towerLevel = 1;
 
         /// <summary>进入放置模式后按钮变灰，避免重复点</summary>
         private bool _placing;
+
+        private static readonly string[] TowerNodeNames =
+        {
+            "Btn_Tower_Normal", "Btn_Tower_Power", "Btn_Tower_Retard"
+        };
+
+        // 与 TowerNodeNames 一一对应；Retard ↔ TowerType.Slow 的映射就在这
+        private static readonly int[] TowerNodeTypes = { 1, 2, 3 };
 
         private void Awake()
         {
@@ -67,24 +86,28 @@ namespace FTProject
 
             _startButton = FindButton("StartButton");
             _startLabel = FindChildText("StartButton/Label");
-            _towerButton = FindButton("TowerButton");
-            _towerLabel = FindChildText("TowerButton/Label");
-
             if (_startButton != null)
             {
                 _startButton.onClick.AddListener(OnClickStart);
-            }
-            if (_towerButton != null)
-            {
-                _towerButton.onClick.AddListener(OnClickTower);
             }
             if (_startLabel != null)
             {
                 _startLabel.text = "开始";
             }
-            if (_towerLabel != null)
+
+            // 三颗塔按钮
+            _towerButtons = new Button[TowerNodeNames.Length];
+            _towerButtonTypes = new int[TowerNodeNames.Length];
+            for (int i = 0; i < TowerNodeNames.Length; i++)
             {
-                _towerLabel.text = "建塔";
+                int type = TowerNodeTypes[i];
+                _towerButtons[i] = FindButton(TowerNodeNames[i]);
+                _towerButtonTypes[i] = type;
+                if (_towerButtons[i] != null)
+                {
+                    int captured = type;
+                    _towerButtons[i].onClick.AddListener(delegate { OnClickTower(captured); });
+                }
             }
         }
 
@@ -152,10 +175,11 @@ namespace FTProject
             EventDispatcher.TriggerEvent(EventName.StartRoundRequestEvent);
         }
 
-        private void OnClickTower()
+        private void OnClickTower(int type)
         {
             // 不在这里判断"是否已在放置态"——那是 TowerPlacement 的职责。
             // 统一发同一个请求事件，由它决定是进入还是退出（单一状态源，避免两边状态不一致）。
+            _towerType = type;
             EventDispatcher.TriggerEvent<int, int>(EventName.BuildTowerRequestEvent, _towerType, _towerLevel);
         }
 
@@ -187,11 +211,40 @@ namespace FTProject
             PlayerDataManager pd = PlayerDataManager.Instance;
             SetText(_goldText, pd.Gold.ToString());
             SetText(_hpText, string.Format("{0}/{1}", pd.Hp, pd.MaxHp));
+            RefreshTowerAffordability();
         }
 
         private void OnGoldChanged(int current, int delta)
         {
             SetText(_goldText, current.ToString());
+            // 金币变化 → 刷新塔按钮可用性（买不起的置灰）
+            RefreshTowerAffordability();
+        }
+
+        /// <summary>
+        /// 按当前金币刷新三颗塔按钮的 interactable。
+        /// 放置中时不改（避免和"放置中"的置灰状态打架）。
+        /// </summary>
+        private void RefreshTowerAffordability()
+        {
+            if (_placing || _towerButtons == null)
+            {
+                return;
+            }
+            PlayerDataManager pd = PlayerDataManager.Instance;
+            for (int i = 0; i < _towerButtons.Length; i++)
+            {
+                if (_towerButtons[i] == null)
+                {
+                    continue;
+                }
+                TowerConfig cfg = Configs.GetTowerByTypeAndLevelSilent(_towerButtonTypes[i], 1);
+                if (cfg == null)
+                {
+                    continue;
+                }
+                _towerButtons[i].interactable = pd.Gold >= cfg.Prices;
+            }
         }
 
         private void OnHpChanged(int current, int delta)
@@ -239,13 +292,14 @@ namespace FTProject
         private void OnEnterPlacement()
         {
             _placing = true;
-            SetTowerButtonState(false, "放置中");
+            SetTowerButtonState(false);
         }
 
         private void OnExitPlacement()
         {
             _placing = false;
-            SetTowerButtonState(true, "建塔");
+            SetTowerButtonState(true);
+            RefreshTowerAffordability();
         }
 
         private void OnBuildSuccess(BaseTower tower)
@@ -254,15 +308,19 @@ namespace FTProject
             OnExitPlacement();
         }
 
-        private void SetTowerButtonState(bool interactable, string label)
+        /// <summary>统一设置三颗塔按钮的可用性（放置中全部置灰）</summary>
+        private void SetTowerButtonState(bool interactable)
         {
-            if (_towerButton != null)
+            if (_towerButtons == null)
             {
-                _towerButton.interactable = interactable;
+                return;
             }
-            if (_towerLabel != null)
+            for (int i = 0; i < _towerButtons.Length; i++)
             {
-                _towerLabel.text = label;
+                if (_towerButtons[i] != null)
+                {
+                    _towerButtons[i].interactable = interactable;
+                }
             }
         }
 
@@ -277,10 +335,11 @@ namespace FTProject
         /// <summary>供金币不足时置灰塔按钮（由 TowerPlacement 调用）</summary>
         public void SetTowerButtonInteractable(bool value)
         {
-            if (_towerButton != null && !_placing)
+            if (_placing)
             {
-                _towerButton.interactable = value;
+                return;
             }
+            SetTowerButtonState(value);
         }
     }
 }

@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using UnityEditor;
 using UnityEngine;
@@ -19,21 +19,21 @@ namespace FTProject.EditorTools
     ///   ④ 自检：主清单是否存在、每个预期的包是否都产出了
     ///
     /// 菜单：
-    ///   Tools ▸ 塔防 ▸ 8b. 打包 AssetBundle
-    ///   Tools ▸ 塔防 ▸ 8b-严格模式（引用缺失即失败）
+    ///   Tools ▸ 塔防 ▸ 5. 打包 AssetBundle
+    ///   Tools ▸ 塔防 ▸ 高级（单步重建）▸ 5b. 严格模式打包（引用缺失即失败）
     /// </summary>
     public static class BuildAssetBundles
     {
         /// <summary>配置表源数据目录（Luban 的 --output_data_dir）</summary>
         public const string ConfigDir = "Assets/ConfigJson";
 
-        [MenuItem("Tools/塔防/8b. 打包 AssetBundle", false, 111)]
+        [MenuItem("Tools/塔防/5. 打包 AssetBundle", false, 105)]
         public static void Build()
         {
             BuildInternal(false);
         }
 
-        [MenuItem("Tools/塔防/8b-严格模式 打包（引用缺失即失败）", false, 113)]
+        [MenuItem("Tools/塔防/高级（单步重建）/5b. 严格模式打包（引用缺失即失败）", false, 311)]
         public static void BuildStrict()
         {
             BuildInternal(true);

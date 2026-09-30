@@ -163,6 +163,8 @@ namespace FTProject
         public const int Background = -100;
         public const int Cell = 0;
         public const int PathArrow = 10;
+        /// <summary>射程提示圈（在格子之上、怪物之下，避免挡住塔与怪）</summary>
+        public const int RangeIndicator = 100;
         public const int Enemy = 200;      // 与怪物素材包 SortingGroup 默认值一致
         public const int Tower = 300;      // 塔默认盖住怪
         public const int Bullet = 400;

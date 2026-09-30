@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -36,7 +36,7 @@ namespace FTProject.EditorTools
     ///   GameFlow          (GameFlowManager)     关卡流程总控
     ///   GameSceneLauncher (GameSceneLauncher)   组合根：校验并注入引用
     ///
-    /// 菜单：Tools ▸ 塔防 ▸ 7. 搭建 main 场景
+    /// 菜单：Tools ▸ 塔防 ▸ 高级（单步重建）▸ 重建 main 场景
     /// </summary>
     public static class SceneMainBuilder
     {
@@ -47,18 +47,45 @@ namespace FTProject.EditorTools
         /// <summary>背景缩放：Paper.png 是 19.5×13 世界单位，放大后足以覆盖视野</summary>
         private const float BackgroundScale = 1.6f;
 
-        [MenuItem("Tools/塔防/7. 搭建 main 场景", false, 107)]
+        /// <summary>
+        /// 菜单入口：**危险**，会重建整个 main.unity（原文件先备份）。
+        /// 为了不被误点，收进「高级（单步重建）」子菜单。
+        /// </summary>
+        [MenuItem("Tools/塔防/高级（单步重建）/重建 main 场景（危险：会清空重建）", false, 307)]
         public static void Build()
         {
+            if (!EditorUtility.DisplayDialog("重建 main 场景",
+                    "此操作会**清空并重建** main.unity 的全部根对象，" +
+                    "你在场景里的手工接线会丢失（原文件会先备份到\n" +
+                    BackupPath + "）。\n\n确认继续？",
+                    "重建", "取消"))
+            {
+                return;
+            }
             EditorUtil.Report report = new EditorUtil.Report();
             bool ok = BuildInternal(report);
             Debug.Log("[M0] 场景搭建结果：\n" + report.Text);
-            EditorUtility.DisplayDialog("搭建 main 场景",
+            EditorUtility.DisplayDialog("重建 main 场景",
                 string.Format("{0}\n\n{1}",
                     ok ? "完成，已打开 main.unity" : "有错误，请查看 Console", report.Text), "好");
         }
 
-        /// <summary>供一键向导调用（不弹窗）</summary>
+        /// <summary>
+        /// 安全入口（供一键补齐向导调用）：场景已存在则**跳过**，只在缺失时搭建。
+        /// 这样"跑一次向导"不会抹掉手工接线。
+        /// </summary>
+        public static bool EnsureOrBuildInternal(EditorUtil.Report report)
+        {
+            report.Head("main 场景（安全模式：缺失才搭建）");
+            if (AssetDatabase.LoadAssetAtPath<Object>(MainScenePath) != null)
+            {
+                report.Ok("main.unity 已存在，跳过重建（保住手工接线）。需要重建请走「高级（单步重建）」");
+                return true;
+            }
+            return BuildInternal(report);
+        }
+
+        /// <summary>供一键向导调用（不弹窗，会重建）</summary>
         public static bool BuildInternal(EditorUtil.Report report)
         {
             report.Head("搭建 main 场景 → " + MainScenePath);

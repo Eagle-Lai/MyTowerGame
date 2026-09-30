@@ -58,6 +58,14 @@ namespace FTProject
             { "Tower_Base_Sprite",   new ResAddress(ResBundle.TowerNormal, "turret_base_128",   "Assets/_UIAssets/Tower/Normal/turret_base_128.png") },
             { "Tower_Barrel_Sprite", new ResAddress(ResBundle.TowerNormal, "turret_barrel_128", "Assets/_UIAssets/Tower/Normal/turret_barrel_128.png") },
 
+            { "Tower_Power", new ResAddress(ResBundle.TowerPower, "Tower_Power", "Assets/Prefabs/Tower/Tower_Power.prefab") },
+            { "Tower_Power_Base_Sprite",   new ResAddress(ResBundle.TowerPower, "tower_base",   "Assets/_UIAssets/Tower/Power/tower_base.png") },
+            { "Tower_Power_Barrel_Sprite", new ResAddress(ResBundle.TowerPower, "tower_barrel", "Assets/_UIAssets/Tower/Power/tower_barrel.png") },
+
+            { "Tower_Retard", new ResAddress(ResBundle.TowerRetard, "Tower_Retard", "Assets/Prefabs/Tower/Tower_Retard.prefab") },
+            { "Tower_Retard_Base_Sprite",   new ResAddress(ResBundle.TowerRetard, "slowtower_base",    "Assets/_UIAssets/Tower/retard/slowtower_base.png") },
+            { "Tower_Retard_Barrel_Sprite", new ResAddress(ResBundle.TowerRetard, "slowtower_crystal", "Assets/_UIAssets/Tower/retard/slowtower_crystal.png") },
+
             // ------------------------------------------------------------------
             // 子弹
             // ------------------------------------------------------------------
@@ -85,6 +93,7 @@ namespace FTProject
             // ------------------------------------------------------------------
             { "HudView",      new ResAddress(ResBundle.UiHud, "HudView",  "Assets/Prefabs/UI/HudView.prefab") },
             { "TipsView",     new ResAddress(ResBundle.UiHud, "TipsView", "Assets/Prefabs/UI/TipsView.prefab") },
+            { "TowerInfoView", new ResAddress(ResBundle.UiHud, "TowerInfoView", "Assets/Prefabs/UI/TowerInfoView.prefab") },
         };
 
         static ResTable()

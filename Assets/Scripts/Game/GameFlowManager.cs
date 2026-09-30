@@ -62,6 +62,9 @@ namespace FTProject
         /// <summary>HUD 引用（倒计时需要更新按钮文字）</summary>
         private HudView _hud;
 
+        /// <summary>塔升级/出售面板是否已打开（惰性打开，见 OnTowerSelected）</summary>
+        private bool _towerPanelOpened;
+
         /// <summary>当前回合序号（从 1 计，0 = 尚未开始）</summary>
         public int CurrentRoundIndex { get { return _roundCursor + (State == GameFlowState.RoundRunning ? 1 : 0); } }
 
@@ -79,6 +82,10 @@ namespace FTProject
             EventDispatcher.AddEventListener<bool>(EventName.ConfigLoadedEvent, OnConfigLoaded);
             EventDispatcher.AddEventListener(EventName.StartRoundRequestEvent, OnStartRequest);
             EventDispatcher.AddEventListener<bool>(EventName.GameOverEvent, OnGameOver);
+            // M2：塔选中 → 打开升级/出售面板；升级/出售请求 → 执行
+            EventDispatcher.AddEventListener<BaseTower>(EventName.TowerSelectedEvent, OnTowerSelected);
+            EventDispatcher.AddEventListener<BaseTower>(EventName.TowerUpgradeRequestEvent, OnTowerUpgradeRequest);
+            EventDispatcher.AddEventListener<BaseTower>(EventName.TowerSellRequestEvent, OnTowerSellRequest);
         }
 
         private void OnDisable()
@@ -86,6 +93,9 @@ namespace FTProject
             EventDispatcher.RemoveEventListener<bool>(EventName.ConfigLoadedEvent, OnConfigLoaded);
             EventDispatcher.RemoveEventListener(EventName.StartRoundRequestEvent, OnStartRequest);
             EventDispatcher.RemoveEventListener<bool>(EventName.GameOverEvent, OnGameOver);
+            EventDispatcher.RemoveEventListener<BaseTower>(EventName.TowerSelectedEvent, OnTowerSelected);
+            EventDispatcher.RemoveEventListener<BaseTower>(EventName.TowerUpgradeRequestEvent, OnTowerUpgradeRequest);
+            EventDispatcher.RemoveEventListener<BaseTower>(EventName.TowerSellRequestEvent, OnTowerSellRequest);
         }
 
         private void OnDestroy()
@@ -235,9 +245,12 @@ namespace FTProject
         {
             List<string> keys = new List<string>(32);
             keys.Add("Tower_Normal");
+            keys.Add("Tower_Power");
+            keys.Add("Tower_Retard");
             keys.Add("Bullet_Normal");
             keys.Add("HudView");
             keys.Add("TipsView");
+            keys.Add("TowerInfoView");
 
             if (Level.RoundIds != null)
             {
@@ -432,6 +445,60 @@ namespace FTProject
             Debug.Log(string.Format("[Flow] 本局结束：{0}\n{1}",
                 victory ? "胜利" : "失败", PlayerDataManager.Instance.DumpDebugInfo()));
             Tips(victory ? "恭喜通关！" : "防御失败……");
+        }
+
+        // ------------------------------------------------------------------
+        // 塔选中 / 升级 / 出售（M2）
+        // ------------------------------------------------------------------
+
+        /// <summary>
+        /// 选中塔 → 惰性打开升级/出售面板。
+        ///
+        /// 【为什么打开后要显式 Show(tower)】面板是**在 TowerSelectedEvent 的分发过程中**实例化的，
+        /// 它的 OnEnable（订阅事件）发生在本次分发之后 —— 于是它收不到"这一次"选中事件。
+        /// 所以这里打开后必须手动喂一次，否则面板打开是空白。
+        /// </summary>
+        private void OnTowerSelected(BaseTower tower)
+        {
+            if (tower == null)
+            {
+                return;
+            }
+
+            TowerInfoView view;
+            if (!_towerPanelOpened)
+            {
+                view = UIManager.Instance.Open<TowerInfoView>(
+                    TowerInfoView.LogicalName, UILayout.NormalPanel);
+                if (view == null)
+                {
+                    // 面板资源未就绪时降级：提示玩家升级/出售暂不可用（逻辑本身没坏）
+                    Tips("塔操作面板资源未就绪，暂无法升级/出售（补齐 TowerInfoView 后可用）");
+                    return;
+                }
+                _towerPanelOpened = true;
+            }
+            else
+            {
+                UIManager.Instance.Open(TowerInfoView.LogicalName, UILayout.NormalPanel);
+                view = UIManager.Instance.Get<TowerInfoView>(TowerInfoView.LogicalName);
+            }
+
+            if (view != null)
+            {
+                view.Show(tower);
+            }
+        }
+
+        private void OnTowerUpgradeRequest(BaseTower tower)
+        {
+            TowerManager.Instance.TryUpgrade(tower);
+        }
+
+        private void OnTowerSellRequest(BaseTower tower)
+        {
+            // 二次确认由面板负责（美术补齐后加）；这里直接执行出售
+            TowerManager.Instance.Sell(tower);
         }
 
         private static void Tips(string msg)

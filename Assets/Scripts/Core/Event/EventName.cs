@@ -51,6 +51,15 @@
         /// <summary>取消选中塔</summary>
         public const string TowerDeselectedEvent = "TowerDeselectedEvent";
 
+        /// <summary>请求升级选中的塔，参数：BaseTower</summary>
+        public const string TowerUpgradeRequestEvent = "TowerUpgradeRequestEvent";
+
+        /// <summary>升级成功，参数：(BaseTower 新塔, int 花费)</summary>
+        public const string TowerUpgradeSuccess = "TowerUpgradeSuccess";
+
+        /// <summary>请求出售选中的塔，参数：BaseTower</summary>
+        public const string TowerSellRequestEvent = "TowerSellRequestEvent";
+
         // ------------------------------------------------------------------
         // 怪物
         // ------------------------------------------------------------------

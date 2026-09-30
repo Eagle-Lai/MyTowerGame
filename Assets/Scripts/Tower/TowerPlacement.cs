@@ -40,7 +40,12 @@ namespace FTProject
         private bool _canBuild;
         private string _blockReason = "无法建造";
 
+        /// <summary>当前选中的已建造塔（M2-B1）。未选中为 null。</summary>
+        private BaseTower _selected;
+
         public bool IsPlacing { get { return _active; } }
+
+        public BaseTower SelectedTower { get { return _selected; } }
 
         private void Awake()
         {
@@ -67,7 +72,6 @@ namespace FTProject
             }
             DestroyGhost();
         }
-
         public void SetGhostParent(Transform parent)
         {
             _ghostParent = parent;
@@ -113,6 +117,9 @@ namespace FTProject
             _hoverRow = -1;
             _hoverCol = -1;
             _hoverState = CellHighlight.None;
+
+            // 进入放置态时先取消已选中的塔（否则面板不会自动关，两个状态并存会互相干扰）
+            Deselect();
 
             CreateGhost(cfg);
             EventDispatcher.TriggerEvent(EventName.BuildingTower);
@@ -176,18 +183,18 @@ namespace FTProject
         }
 
         // ------------------------------------------------------------------
-        // 售卖（右键直接卖，M0 简化交互）
+        // 选中 / 取消选中（M2-B1：点击已建造塔 → 打开升级/出售面板）
         // ------------------------------------------------------------------
 
         /// <summary>
-        /// 售卖鼠标下的防御塔。
-        /// 返还金币、清理格子占用、通知路径重算都由 TowerManager.Sell 负责，
-        /// 这里只做"定位到哪座塔"。
+        /// 处理"非放置态"下的鼠标左键：命中已建造塔 → 选中并广播事件。
+        /// 【为什么放在这里】塔是纯 SpriteRenderer，没有 Collider，
+        /// 靠"屏幕坐标 → 格子"反查而不是物理射线，与放置预览共用同一套坐标换算，天然一致。
         /// </summary>
-        private void TrySellUnderCursor()
+        private void HandleSelectClick()
         {
-            // 点在 UI 上时不要触发（否则点 HUD 按钮会顺手卖掉塔）
-            if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
+            // 点在 UI 上不要触发（否则点 HUD 面板会顺手选中/取消塔）
+            if (IsPointerOverUI())
             {
                 return;
             }
@@ -200,15 +207,81 @@ namespace FTProject
             int row, col;
             if (!board.ScreenToCell(Input.mousePosition, out row, out col))
             {
+                // 点到棋盘外 → 视为取消选中
+                Deselect();
                 return;
             }
             CellData cell = board.GetCell(row, col);
             if (cell == null || cell.Tower == null)
             {
+                Deselect();
                 return;
             }
+            Select(cell.Tower);
+        }
 
-            TowerManager.Instance.Sell(cell.Tower);
+        /// <summary>选中一座塔：广播事件（UI 据此打开面板）。重复点同一座不重复广播。</summary>
+        public void Select(BaseTower tower)
+        {
+            if (tower == null)
+            {
+                Deselect();
+                return;
+            }
+            if (_selected == tower)
+            {
+                return;
+            }
+            ClearSelectionHighlight();
+            _selected = tower;
+            EventDispatcher.TriggerEvent<BaseTower>(EventName.TowerSelectedEvent, _selected);
+        }
+
+        /// <summary>取消选中：广播事件（UI 据此关闭面板）。</summary>
+        public void Deselect()
+        {
+            if (_selected == null)
+            {
+                return;
+            }
+            _selected = null;
+            EventDispatcher.TriggerEvent(EventName.TowerDeselectedEvent);
+        }
+
+        /// <summary>
+        /// 升级（换实例）后把选中态从旧塔迁到新塔。
+        /// 若升级的正是当前选中的塔，则静默改指向（不发 Deselect，避免面板闪烁关闭）。
+        /// 面板随后通过 TowerUpgradeSuccess 事件重新读 SelectedTower 刷新。
+        /// </summary>
+        public void ReselectAfterSwap(BaseTower old, BaseTower newer)
+        {
+            if (_selected == old)
+            {
+                _selected = newer;
+            }
+        }
+
+        /// <summary>选中态高亮（M2-C1 占位：先复用格子高亮，后续换成塔身描边）</summary>
+        private void ClearSelectionHighlight()
+        {
+            // 目前没有专用描边资源，选中反馈走 TowerSelectView（若存在）。
+            // 这里留空，避免与 hover 高亮打架。
+        }
+
+        /// <summary>
+        /// 售卖鼠标下的防御塔（**仅当该塔已被选中时**）。
+        /// 【M2 变更】原来右键 = 直接卖，误触风险高；现在改为
+        /// 右键 = 关闭面板 / 取消选中，出售必须走面板上的确认按钮。
+        /// </summary>
+        public bool SellSelected()
+        {
+            if (_selected == null)
+            {
+                return false;
+            }
+            BaseTower tower = _selected;
+            Deselect();
+            return TowerManager.Instance.Sell(tower);
         }
 
         // ------------------------------------------------------------------
@@ -217,24 +290,30 @@ namespace FTProject
 
         private void Update()
         {
-            // 右键：放置中 → 取消放置；未放置 → 直接售卖鼠标下的防御塔
-            // （M0 的简化售卖交互。后续要做"选中塔 → 弹菜单 → 确认"时，
-            //   把 TrySellUnderCursor 换掉即可，其它逻辑不受影响）
-            if (Input.GetMouseButtonDown(1))
+            if (_active)
             {
-                if (_active)
-                {
-                    ExitPlacement(false);
-                }
-                else
-                {
-                    TrySellUnderCursor();
-                }
+                UpdatePlacement();
                 return;
             }
 
-            if (!_active)
+            // 非放置态：左键选中、右键取消选中
+            if (Input.GetMouseButtonDown(1) || Input.GetKeyDown(KeyCode.Escape))
             {
+                Deselect();
+                return;
+            }
+            if (Input.GetMouseButtonDown(0))
+            {
+                HandleSelectClick();
+            }
+        }
+
+        private void UpdatePlacement()
+        {
+            // 右键 / ESC：取消放置
+            if (Input.GetMouseButtonDown(1))
+            {
+                ExitPlacement(false);
                 return;
             }
             if (_ghost == null)

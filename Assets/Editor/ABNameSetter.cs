@@ -1,4 +1,4 @@
-using UnityEditor;
+﻿using UnityEditor;
 using UnityEngine;
 
 namespace FTProject.EditorTools
@@ -12,12 +12,16 @@ namespace FTProject.EditorTools
     ///   症状是"编辑器下一切正常，打包后某个资源变成白色/丢失" —— 这是 AB 项目最难查的一类问题。
     ///
     /// 菜单：
-    ///   Tools ▸ 塔防 ▸ 8a. 按 ResTable 打 AssetBundle 标记
-    ///   Tools ▸ 塔防 ▸ 8c. 清除全部 AssetBundle 标记
+    ///   Tools ▸ 塔防 ▸ 4. 按 ResTable 打 AssetBundle 标记
+    ///   Tools ▸ 塔防 ▸ 高级（单步重建） ▸ 清除 ResTable 范围内的 AssetBundle 标记
+    ///
+    /// 【M-5 改动】原来 8c 会"清除工程内所有资源的标记"，范围过宽 ——
+    ///   一旦有第三方/插件资源也被打了标记，就会被误清，且无法逐条核对。
+    ///   现在改为**只清 ResTable 登记的那些路径**，范围明确、可复核。
     /// </summary>
     public static class ABNameSetter
     {
-        [MenuItem("Tools/塔防/8a. 按 ResTable 打 AssetBundle 标记", false, 110)]
+        [MenuItem("Tools/塔防/4. 按 ResTable 打 AssetBundle 标记", false, 104)]
         public static void ApplyFromMenu()
         {
             EditorUtil.Report report = new EditorUtil.Report();
@@ -99,26 +103,33 @@ namespace FTProject.EditorTools
             }
         }
 
-        [MenuItem("Tools/塔防/8c. 清除全部 AssetBundle 标记", false, 112)]
+        [MenuItem("Tools/塔防/高级（单步重建）/清除 ResTable 范围内的 AssetBundle 标记", false, 310)]
         public static void ClearAll()
         {
             if (!EditorUtility.DisplayDialog("清除 AssetBundle 标记",
-                    "将清除工程内**所有**资源的 AssetBundle 标记。\n\n" +
-                    "仅在你想重新规划分包时使用。清除后必须重新执行「8a. 打标记」才能打包。",
+                    "将清除 **ResTable 登记范围内**资源的 AssetBundle 标记" +
+                    "（不再清全工程，避免误伤插件资源）。\n\n" +
+                    "清除后必须重新执行「8a. 打标记」才能打包。",
                     "确认清除", "取消"))
             {
                 return;
             }
 
-            string[] guids = AssetDatabase.FindAssets(string.Empty, new[] { "Assets" });
+            // ★ 只遍历 ResTable 登记的路径，逐条清除
             int cleared = 0;
+            int scanned = 0;
             AssetDatabase.StartAssetEditing();
             try
             {
-                for (int i = 0; i < guids.Length; i++)
+                foreach (System.Collections.Generic.KeyValuePair<string, ResAddress> kv in ResTable.All)
                 {
-                    string path = AssetDatabase.GUIDToAssetPath(guids[i]);
-                    AssetImporter importer = AssetImporter.GetAtPath(path);
+                    ResAddress addr = kv.Value;
+                    if (!addr.IsValid)
+                    {
+                        continue;
+                    }
+                    scanned++;
+                    AssetImporter importer = AssetImporter.GetAtPath(addr.EditorPath);
                     if (importer != null && !string.IsNullOrEmpty(importer.assetBundleName))
                     {
                         importer.assetBundleName = string.Empty;
@@ -133,8 +144,10 @@ namespace FTProject.EditorTools
                 AssetDatabase.Refresh();
             }
 
-            Debug.Log(string.Format("[M0] 已清除 {0} 个资源的 AssetBundle 标记", cleared));
-            EditorUtility.DisplayDialog("清除完成", string.Format("已清除 {0} 个资源。", cleared), "好");
+            Debug.Log(string.Format("[M0] 已扫描 ResTable 内 {0} 条，清除 {1} 个资源的 AssetBundle 标记",
+                scanned, cleared));
+            EditorUtility.DisplayDialog("清除完成",
+                string.Format("已扫描 {0} 条，清除 {1} 个资源。", scanned, cleared), "好");
         }
     }
 }

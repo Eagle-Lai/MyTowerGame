@@ -17,7 +17,7 @@ namespace FTProject.EditorTools
     ///
     /// 导出成功后会自动 AssetDatabase.Refresh()，让新表立刻生效。
     ///
-    /// 菜单：Tools ▸ 塔防 ▸ 10. 导出配置表（Luban）
+    /// 菜单：Tools ▸ 塔防 ▸ 3. 导出配置表（Luban）
     /// </summary>
     public static class LubanExporter
     {
@@ -31,7 +31,7 @@ namespace FTProject.EditorTools
         /// <summary>Luban 正常 1~2 秒跑完，给 120 秒兜底（首次可能要预热）</summary>
         private const int TimeoutMs = 120000;
 
-        [MenuItem("Tools/塔防/10. 导出配置表（Luban）", false, 109)]
+        [MenuItem("Tools/塔防/3. 导出配置表（Luban）", false, 103)]
         public static void ExportFromMenu()
         {
             EditorUtil.Report report = new EditorUtil.Report();

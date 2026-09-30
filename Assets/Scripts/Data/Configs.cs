@@ -313,9 +313,23 @@ namespace FTProject
         /// <summary>取某类塔的指定等级（M0 只用 level=1）</summary>
         public static TowerConfig GetTowerByTypeAndLevel(int type, int level)
         {
+            TowerConfig cfg = GetTowerByTypeAndLevelSilent(type, level);
+            if (cfg == null)
+            {
+                Debug.LogError(string.Format("[Config] TBTowerInfo 中找不到 type={0} level={1} 的塔", type, level));
+            }
+            return cfg;
+        }
+
+        /// <summary>
+        /// 取某类塔的指定等级，找不到时**静默返回 null**（不打印错误）。
+        /// 【什么时候用它】高频、允许失败的场景，例如每帧/每次金币变化刷新按钮可用性 ——
+        /// 用会报错的版本会把 Console 刷满，且这种"查不到"本身是可接受的降级。
+        /// </summary>
+        public static TowerConfig GetTowerByTypeAndLevelSilent(int type, int level)
+        {
             if (TowerTable == null || TowerTable.DataList == null)
             {
-                Debug.LogError("[Config] TBTowerInfo 未加载");
                 return null;
             }
             foreach (TowerInfo t in TowerTable.DataList)
@@ -325,7 +339,6 @@ namespace FTProject
                     return new TowerConfig(t);
                 }
             }
-            Debug.LogError(string.Format("[Config] TBTowerInfo 中找不到 type={0} level={1} 的塔", type, level));
             return null;
         }
 

@@ -1,4 +1,4 @@
-using UnityEditor;
+﻿using UnityEditor;
 using UnityEngine;
 
 namespace FTProject.EditorTools
@@ -14,7 +14,7 @@ namespace FTProject.EditorTools
     /// 全部按 PPU=100 生成，与现有美术（塔/怪物）保持一致。
     /// 输出目录：Assets/Art/Generated/　逻辑名见 ResTable（Cell_Ground / Path_Arrow / ...）
     ///
-    /// 菜单：Tools ▸ 塔防 ▸ 1. 生成占位美术
+    /// 菜单：Tools ▸ 塔防 ▸ 高级（单步重建）▸ 生成占位美术
     /// </summary>
     public static class PlaceholderArtGenerator
     {
@@ -30,7 +30,7 @@ namespace FTProject.EditorTools
         private static readonly Color EndFill = new Color(0.353f, 0.169f, 0.169f, 1f);
         private static readonly Color EndBorder = new Color(0.95f, 0.35f, 0.35f, 0.85f);
 
-        [MenuItem("Tools/塔防/1. 生成占位美术", false, 100)]
+        [MenuItem("Tools/塔防/高级（单步重建）/生成占位美术", false, 300)]
         public static void Generate()
         {
             EditorUtil.Report report = new EditorUtil.Report();

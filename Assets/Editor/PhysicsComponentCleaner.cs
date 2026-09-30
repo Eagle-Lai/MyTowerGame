@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 
@@ -16,8 +16,8 @@ namespace FTProject.EditorTools
     ///   验收标准（DoD）：Profiler 里 Physics / Physics2D 分区恒为 0。
     ///
     /// 菜单：
-    ///   Tools ▸ 塔防 ▸ 4. 清理选中预制体的物理组件
-    ///   Tools ▸ 塔防 ▸ 4b. 清理全部战斗预制体的物理组件
+    ///   Tools ▸ 塔防 ▸ 高级（单步重建）▸ 清理选中预制体的物理组件
+    ///   Tools ▸ 塔防 ▸ 高级（单步重建）▸ 清理全部战斗预制体的物理组件
     /// </summary>
     public static class PhysicsComponentCleaner
     {
@@ -29,7 +29,7 @@ namespace FTProject.EditorTools
             "Assets/Prefabs/Enemy",
         };
 
-        [MenuItem("Tools/塔防/4. 清理选中预制体的物理组件", false, 103)]
+        [MenuItem("Tools/塔防/高级（单步重建）/清理选中预制体的物理组件", false, 303)]
         public static void CleanSelected()
         {
             Object[] selection = Selection.objects;
@@ -67,7 +67,7 @@ namespace FTProject.EditorTools
                     fileCount, totalRemoved), "好");
         }
 
-        [MenuItem("Tools/塔防/4b. 清理全部战斗预制体的物理组件", false, 104)]
+        [MenuItem("Tools/塔防/高级（单步重建）/清理全部战斗预制体的物理组件", false, 304)]
         public static void CleanAllBattlePrefabs()
         {
             EditorUtil.Report report = new EditorUtil.Report();

@@ -437,6 +437,111 @@ namespace FTProject
             return tower;
         }
 
+        /// <summary>
+        /// 升级一座已建造的塔（M2「换实例」方案）。
+        ///
+        /// 【为什么是"换实例"而不是"就地改数值"】
+        ///   1. 塔的等级差异不止数值，还有外观（炮座/炮管贴图、后续可能加特效），
+        ///      就地改数值无法换皮，"换实例"一步到位。
+        ///   2. 不同塔型会挂不同子类组件（NormalTower / PowerTower / RetardTower），
+        ///      AddComponent 覆盖旧组件会留下脏数据；换实例最干净。
+        ///   3. 升级后等级/射程/伤害/攻速全部由新行的 TBTowerInfo 驱动，
+        ///      不用在代码里维护任何"等级 → 数值"映射表。
+        ///
+        /// 【顺序很重要】
+        ///   读旧状态 → 校验升级链 → 扣费（失败即返回，无副作用）
+        ///   → 取消旧塔在战斗系统的注册、从列表移除、释放旧实例（★ 不触发路径重算）
+        ///   → 实例化新塔 → Init + SnapToCell → 写回格子 → 注册新塔 → 广播事件
+        ///
+        /// 【为什么不 RequestRefresh 路径】
+        ///   换塔前后格子始终是"有塔"状态，地图阻挡关系没变，路径无需重算。
+        ///   若重算反而会让怪物在升级瞬间抖动改道。
+        /// </summary>
+        public BaseTower TryUpgrade(BaseTower old)
+        {
+            if (old == null || old.Config == null || !old.IsBuilt)
+            {
+                return null;
+            }
+            if (old.Config.IsMaxLevel)
+            {
+                Tips("该防御塔已满级");
+                return null;
+            }
+
+            // 升级链：upgradeTo 指向"下一等级的 TBTowerInfo.id"，0 表示满级
+            TowerConfig nextCfg = Configs.GetTower(old.Config.UpgradeTo);
+            if (nextCfg == null)
+            {
+                Tips("该防御塔暂无可升级的下一级配置");
+                return null;
+            }
+
+            // ① 扣费（在一切破坏性操作之前，失败则完全无副作用）
+            if (!PlayerDataManager.Instance.TrySpend(nextCfg.Prices))
+            {
+                Tips(string.Format("金币不足，升级需要 {0}", nextCfg.Prices));
+                return null;
+            }
+
+            CellData cell = old.Cell;
+            if (cell == null)
+            {
+                PlayerDataManager.Instance.AddGold(nextCfg.Prices);   // 退还
+                Tips("该防御塔不在格子上，无法升级");
+                return null;
+            }
+
+            string oldResName = old.Config.ResName;
+
+            // ② 拆旧塔：只摘注册与引用，**不动格子阻挡与路径**
+            old.MarkDestroyed();
+            _towers.Remove(old);
+            CombatSystem.Instance.UnregisterTower(old);
+            ResLoader.Instance.ReleaseInstance(oldResName, old.gameObject);
+
+            // ③ 建新塔
+            GameObject go = ResLoader.Instance.Instantiate(nextCfg.ResName, TowerParent);
+            if (go == null)
+            {
+                // 极端情况：新塔资源加载失败 → 退还金币，格子恢复为空
+                PlayerDataManager.Instance.AddGold(nextCfg.Prices);
+                cell.Tower = null;
+                if (cell.Point != null)
+                {
+                    cell.Point.IsWall = false;
+                }
+                Tips("升级失败：防御塔资源加载失败");
+                Debug.LogError("[Tower] 升级失败：无法加载 " + nextCfg.ResName);
+                AStarManager.Instance.RequestRefresh();
+                return null;
+            }
+
+            BaseTower tower = go.GetComponent<BaseTower>();
+            if (tower == null)
+            {
+                tower = go.AddComponent<NormalTower>();
+            }
+            tower.Init(nextCfg, cell);
+            tower.SnapToCell(cell);
+
+            cell.Tower = tower;
+            _towers.Add(tower);
+
+            CombatSystem.Instance.RegisterTower(tower);
+            EventDispatcher.TriggerEvent<BaseTower>(EventName.BuildTowerSuccess, tower);
+
+            // 升级后选中态要指向"新实例"，否则面板还拿着已被销毁的旧塔
+            if (TowerPlacement.Instance != null)
+            {
+                TowerPlacement.Instance.ReselectAfterSwap(old, tower);
+            }
+            EventDispatcher.TriggerEvent(EventName.TowerUpgradeSuccess);
+            Tips(string.Format("已升级为 {0} Lv.{1}", nextCfg.Name, nextCfg.Level));
+
+            return tower;
+        }
+
         /// <summary>出售：返还金币 + 释放格子 + 请求重算路径</summary>
         public bool Sell(BaseTower tower)
         {

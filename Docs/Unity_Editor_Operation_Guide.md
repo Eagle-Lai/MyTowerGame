@@ -19,23 +19,34 @@
 
 菜单全部集中在 Unity 顶部菜单栏的 **`Tools ▸ 塔防`** 下：
 
+> v2.2 更新（2026-09-29）：菜单已按"安全 / 危险"重新分层。
+> **一级菜单只保留安全的日常入口**；破坏性的"删除+重建"式单步工具全部收进
+> `Tools ▸ 塔防 ▸ 高级（单步重建）`，且一律带警告或需要确认。
+
+**一级菜单（日常用）**
+
 | 菜单项 | 作用 | 何时用 |
 |---|---|---|
 | `0. 自检（先跑这个）` | 检查全部前提条件，给出 ✘/! 报告 | 每次改完资源都跑 |
-| `一键完成 M0 资源准备` | 按正确顺序跑完 1~8 步 | **正常流程只需要点这一个** |
-| `1. 生成占位美术` | 程序生成格子/箭头/血条/子弹贴图 | 向导会自动跑 |
-| `2. 转换防御塔预制体` | UGUI → 世界空间 SpriteRenderer | 向导会自动跑 |
-| `3. 生成战斗预制体` | 子弹 + **全部 119 个怪物**（去物理 / 挂 BaseEnemy / 自适应血条） | 向导会自动跑 |
-| `4. 清理选中预制体的物理组件` | 手动清理指定预制体 | 美术包更新后用 |
-| `4b. 清理全部战斗预制体的物理组件` | 批量清理 | 向导会自动跑 |
-| `5. 生成 UI 预制体` | HUD + 提示层 | 向导会自动跑 |
-| `6. 配置工程设置` | Tag / 渲染排序 / Build Settings / 物理 | 向导会自动跑 |
-| `7. 搭建 main 场景` | 在 main.unity 里建层级并接线 | 向导会自动跑 |
-| `8a. 按 ResTable 打 AssetBundle 标记` | 按唯一数据源自动打标 | 向导会自动跑 |
-| `8b. 打包 AssetBundle` | 构建 AB 到 StreamingAssets | 验证真 AB / 出包前 |
-| `8b-严格模式 打包` | 引用缺失即构建失败 | 出正式包前 |
-| `8c. 清除全部 AssetBundle 标记` | 重新规划分包时用 | 慎用 |
-| `9. 导入全部怪物` | 单独重跑"导入全部怪物"（美术包更新后用） | 向导已包含 |
+| `一键补齐 M0 资源（安全：只补缺失）` | 按正确顺序检查并补齐缺失产物；**已就绪的一律跳过，不覆盖手工成果** | **正常流程只需要点这一个** |
+| `2. 配置工程设置` | Tag / 渲染排序 / Build Settings / 物理 | 向导会自动跑 |
+| `3. 导出配置表（Luban）` | 把 `Luban/Config/Datas/*.xlsx` 导出为 `Assets/Gen` + `Assets/ConfigJson` | 改完 Excel 后 |
+| `4. 按 ResTable 打 AssetBundle 标记` | 按唯一数据源自动打标 | 向导会自动跑 |
+| `5. 打包 AssetBundle` | 构建 AB 到 StreamingAssets | 验证真 AB / 出包前 |
+
+**高级（单步重建）—— 会删除并重建，慎用**
+
+| 菜单项 | 作用 | 风险 |
+|---|---|---|
+| `生成占位美术` | 程序生成格子/箭头/血条/子弹贴图 | 覆盖 `Art/Generated` |
+| `转换防御塔预制体` | UGUI → 世界空间 SpriteRenderer（三塔循环；**已合规的塔会跳过**） | 重建不合规的塔 prefab |
+| `生成战斗预制体` | 子弹 + **全部 119 个怪物** | 覆盖子弹/怪物 prefab |
+| `清理选中预制体的物理组件` | 手动清理指定预制体 | 改选中资源 |
+| `清理全部战斗预制体的物理组件` | 批量清理 | 批量改 119 个 |
+| `生成 UI 预制体` | HUD + 提示层 + **塔信息面板** | **重建 UI prefab**；若含生成器不认识的节点会**中止** |
+| `重建 main 场景（危险：会清空重建）` | 清空 main.unity 全部根对象后重建 | **抹掉场景里的手工接线**（原文件先备份到 `Assets/Scenes/_Backup/`） |
+| `清除 ResTable 范围内的 AssetBundle 标记` | 重新规划分包时用 | 只清 `ResTable` 登记的资源，不再清全工程 |
+| `5b. 严格模式打包（引用缺失即失败）` | 引用缺失即构建失败 | 出正式包前 |
 
 ---
 
@@ -89,7 +100,7 @@ D:\FreedomTower\Luban\
 
 1. 打开 Unity 工程 `D:\FreedomTower`（Unity 2022.3 LTS）。
 2. 等首次编译完成。**Console 没有红色 Error 才继续**。
-3. 菜单栏 → **`Tools ▸ 塔防 ▸ 一键完成 M0 资源准备`**。
+3. 菜单栏 → **`Tools ▸ 塔防 ▸ 一键补齐 M0 资源（安全：只补缺失）`**。
 4. 弹窗列出将要执行的 8 个步骤，点 **「开始执行」**。
 5. 中途会弹出「保存当前场景」的提示 → 点 **「保存」**（这一步会重建 `main.unity`）。
 6. 等进度条走完（约 10~60 秒，取决于机器）。
@@ -179,9 +190,9 @@ prefab 根节点自带 `scale = 0.5`。M0 的配置默认值是 `scale = 0.5`，
 | `「Enemy_Rat」指向的文件不存在` | 执行 `3. 生成战斗预制体`（或直接再跑一次一键向导） |
 | `Tower_Normal.prefab 仍是 UGUI（带 RectTransform）` | 执行 `2. 转换防御塔预制体` |
 | `Enemy_Rat.prefab 上仍有物理组件` | 执行 `4b. 清理全部战斗预制体的物理组件` |
-| `HudView 缺少子节点「GoldText」` | 执行 `5. 生成 UI 预制体` |
-| `场景中缺少对象「BattleRoot」` | 执行 `7. 搭建 main 场景` |
-| `场景里没有任何对象带 Tag「UICanvas」` | 执行 `6. 配置工程设置`，再执行 `7. 搭建 main 场景` |
+| `HudView 缺少子节点「GoldText」` | 执行「高级（单步重建）▸ 生成 UI 预制体」 |
+| `场景中缺少对象「BattleRoot」` | 执行「高级（单步重建）▸ 重建 main 场景」 |
+| `场景里没有任何对象带 Tag「UICanvas」` | 执行 `6. 配置工程设置`，再执行「高级（单步重建）▸ 重建 main 场景」 |
 | `Tag「UICanvas」缺失` | 执行 `6. 配置工程设置` |
 
 ---
@@ -524,13 +535,13 @@ M0 的 HUD 使用 Unity **内置动态字体**（`LegacyRuntime.ttf`）。
 | `[Res] 资源「xxx」是图片，但未以 Sprite 形式导入` | 贴图 Import 设置不对 | 选中该 png → Inspector → `Texture Type` = **Sprite (2D and UI)** → Apply。`EditorResLoader` 的报错里会直接给出这条修复指引 |
 | `[Config] 读取失败：tbenemydata.json` | 没跑 Luban 导出，或文件不在 `Assets/ConfigJson/` | 第 ① 步；确认 Luban 的输出目录是 `Assets/ConfigJson` |
 | `[Res] 文本资源「xxx」加载失败` 且路径含 `StreamingAssets` | StreamingAssets 下的文件不会导入成 TextAsset | 把配置表移到普通 Assets 目录（本工程用 `Assets/ConfigJson/`） |
-| `[Flow] boardView 未连线` | 场景是手工搭的、引用没连 | 菜单 `7. 搭建 main 场景` |
-| 画面全黑 / 看不到棋盘 | 相机不是 `MainCamera` Tag，或 `Camera.main` 为空 | 选中 Camera → Inspector → Tag 设为 `MainCamera`；或重跑 `7. 搭建 main 场景` |
-| 按钮点了没反应 | 场景没有 `EventSystem` | 重跑 `7. 搭建 main 场景` |
+| `[Flow] boardView 未连线` | 场景是手工搭的、引用没连 | 菜单「高级（单步重建）▸ 重建 main 场景」 |
+| 画面全黑 / 看不到棋盘 | 相机不是 `MainCamera` Tag，或 `Camera.main` 为空 | 选中 Camera → Inspector → Tag 设为 `MainCamera`；或重跑「高级（单步重建）▸ 重建 main 场景」 |
+| 按钮点了没反应 | 场景没有 `EventSystem` | 重跑「高级（单步重建）▸ 重建 main 场景」 |
 | Console 刷 `AnimationEvent 'SetHead' … has no receiver!` | 美术包的 Attack/Death 动画内置了 AnimationEvent，但包里没提供接收脚本 | 已补 `MonsterAnimEventReceiver`（挂在 Animator 所在节点，并预填 正常/愤怒/死亡 三个头部贴图）；重新执行「9. 导入全部怪物」即可消除。缺了它不影响移动与战斗，只是头部贴图不会随状态变化 |
 | **怪物出现了但不会移动、只待在起点** | **管理器被实例化了两份**：`Launcher` 用 `new` 创建管理器，而其它代码走 `.Instance`（懒创建）→ 一份被 tick、另一份承载数据 | 已在代码里修好；`BaseManager<T>` 现在会在检测到直接 `new` 时立刻报 Error。若再出现，看 Console 有没有 `[Manager] 检测到直接 new` |
 | **没有任何怪物出现** | ① 没点「开始」按钮 ② 或 HUD 根本没打开（见上一行） ③ 或 A* 路径不可达 | 先确认左上角有 `金币/生命` 文字；Console 应打印 `[Wave] 回合 1 开始：N 个波次 / M 只怪`；若打印 `[AStar] 起点到终点不可达` 就检查 `LevelMap.xlsx` |
-| 点 HUD 按钮时顺手把塔放下去了 | `EventSystem` 缺失导致 `IsPointerOverGameObject()` 永远 false | 重跑 `7. 搭建 main 场景` |
+| 点 HUD 按钮时顺手把塔放下去了 | `EventSystem` 缺失导致 `IsPointerOverGameObject()` 永远 false | 重跑「高级（单步重建）▸ 重建 main 场景」 |
 | 塔和怪的前后遮挡不对 | `Transparency Sort Mode` 没设 | 菜单 `6. 配置工程设置` |
 | 棋盘生成但**没有路径箭头** | `Path_Arrow` 贴图缺失 | 菜单 `1. 生成占位美术`（箭头缺失不影响玩法，只是看不到路径） |
 | 怪物不动 | 起点 `S` 或终点 `E` 不在 `LevelMap.cells` 里 | 检查 `LevelMap.xlsx`；Console 会打印 `[AStar] 网格缺少起点(S)或终点(E)` |
@@ -579,13 +590,13 @@ M0 的 HUD 使用 Unity **内置动态字体**（`LegacyRuntime.ttf`）。
   → Play
 
 【每次改美术/预制体结构】
-  Tools ▸ 塔防 ▸ 一键完成 M0 资源准备
+  Tools ▸ 塔防 ▸ 一键补齐 M0 资源（安全：只补缺失）
   → Tools ▸ 塔防 ▸ 0. 自检
   → Play
 
 【首次跑起来】
   ① gen_code_json.bat
-  ② Tools ▸ 塔防 ▸ 一键完成 M0 资源准备
+  ② Tools ▸ 塔防 ▸ 一键补齐 M0 资源（安全：只补缺失）
   ③ Tools ▸ 塔防 ▸ 0. 自检
   ④ 打开 Assets/Scenes/main.unity → Play
 

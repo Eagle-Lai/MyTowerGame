@@ -1473,11 +1473,35 @@ public class TowerConfig
 - 索敌策略来自 `TBTower.targetMode`
 - 射程来自 `TBTower.radius`（格 → 像素：`radius * cellSize`）
 
-#### 6.2.4 升级与出售（M2，表结构已就绪）
+#### 6.2.4 升级与出售（M2，**已实现**）
 
-- 需要新增"点击已建塔"的入口：`BoardView` 的格子点击事件 → 找到该格 `Tower` → 打开 `TowerInfoView`
-- 升级：读 `upgradeTo` 行 → 刷新数值 → 扣 `prices`（`TBTowerInfo` 已有 3 级数据）
-- 出售：`AddGold(sellPrice)` → 释放格子 → 触发路径重算
+> v2.2 更新（2026-09-29）：本节由"设计"升级为"实现记录"。
+
+**入口**：点击已建造塔 → 选中 → 打开 `TowerInfoView`
+- 塔是纯 `SpriteRenderer`、无 `Collider`；选中靠 `TowerPlacement.HandleSelectClick`
+  用"屏幕坐标 → `BoardView.ScreenToCell` → `cell.Tower`"反查（与放置预览同一套换算）
+- 选中态由 `TowerPlacement` 单一持有，广播 `TowerSelectedEvent(BaseTower)` / `TowerDeselectedEvent`
+- 面板 `TowerInfoView` 由 `GameFlowManager.OnTowerSelected` **惰性**打开（走 `UIManager` + `ResTable` 逻辑名 `TowerInfoView`）
+
+**升级 = 换实例**（决策见 `Docs/Tower_Interaction_Dev_Plan_v2.md` §1.1）
+- `TowerManager.TryUpgrade(old)`：读 `upgradeTo` 行 → 校验 → **先扣费** → `UnregisterTower(old)` → 释放旧实例
+  → 实例化新 prefab → `Init(nextCfg, cell)` + `SnapToCell(cell)` → 写回 `cell.Tower` → `RegisterTower(new)`
+- **顺序关键**：`UnregisterTower` 必须先于 `RegisterTower`（否则短暂双份 tick）
+- **不触发 `RequestRefresh()`**：格子占用未变，重算只会让怪物无谓改道
+- **回滚**：扣费后任一步失败 → 退还金币 `AddGold(prices)`，格子恢复原状
+- 旧塔释放用 `ResLoader.ReleaseInstance(oldCfg.ResName, oldGo)`（与 `Sell` 同款）
+- 升级后 `TowerPlacement.ReselectAfterSwap` 把选中态迁到新实例（不发 Deselect，避免面板闪烁）
+
+**出售**
+- `TowerManager.Sell(tower)`：返还 = `sellPrice × Global.SellRefundRate` → 释放格子 + `Point.IsWall=false`
+  → `UnregisterTower` → 广播 `DestroyTower` → `ReleaseInstance` → `RequestRefresh()`（**出售必须重算路径**）
+- 交互变更：**右键不再是"直接出售"**，改为"取消选中/关闭面板"；出售统一走面板按钮
+  （`TowerSellRequestEvent` → `GameFlowManager` → `TowerManager.Sell`）
+
+**面板 `TowerInfoView`（逻辑先行版，纯色占位）**
+- 节点：`Bg` / `Panel(Title / Stats / UpgradeBtn / SellBtn / CloseBtn)`，全部查找容错（缺节点只警告）
+- 展示：塔名+等级、攻击/射程/攻速；升级按钮显示费用并按金币置灰，满级显示「已满级」
+- **美术皮肤待接入**（L-7）：换 prefab 即可，`.cs` 不改
 
 ### 6.3 敌人系统
 

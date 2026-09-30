@@ -53,6 +53,62 @@ namespace FTProject.EditorTools
         }
 
         // ------------------------------------------------------------------
+        // 生成器安全护栏（★ 重要）
+        // ------------------------------------------------------------------
+
+        /// <summary>
+        /// 生成器的"可安全重建"判定。
+        ///
+        /// 【为什么需要它】本工程的 Editor 生成器一律是「DeleteAsset + 重建」，
+        /// 与"人在编辑器里手工调 prefab"天然互斥 —— 跑一次向导就抹掉手工成果
+        /// （真实案例：HudView 手工加的三颗塔按钮被生成器删掉）。
+        ///
+        /// 约定：**只允许生成器管理"它自己产出的那套节点"**。
+        /// 若在 prefab 里发现生成器预期之外的一级子节点，说明有人手工加过东西，
+        /// 此时**必须中止并报错**，而不是静默删除。
+        /// </summary>
+        /// <param name="prefabPath">预制体路径</param>
+        /// <param name="expectedChildren">生成器预期会产出的直接子节点名集合</param>
+        /// <param name="extra">发现的"额外节点"（逗号分隔）；无额外节点时为 null</param>
+        /// <returns>true = 结构纯净，可安全重建；false = 有手工痕迹，应中止</returns>
+        public static bool IsSafeToRebuild(string prefabPath, string[] expectedChildren, out string extra)
+        {
+            extra = null;
+            GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
+            if (prefab == null)
+            {
+                return true;    // 不存在 → 首次生成，安全
+            }
+
+            List<string> extras = new List<string>();
+            Transform root = prefab.transform;
+            for (int i = 0; i < root.childCount; i++)
+            {
+                string childName = root.GetChild(i).name;
+                bool known = false;
+                for (int j = 0; j < expectedChildren.Length; j++)
+                {
+                    if (childName == expectedChildren[j])
+                    {
+                        known = true;
+                        break;
+                    }
+                }
+                if (!known)
+                {
+                    extras.Add(childName);
+                }
+            }
+
+            if (extras.Count > 0)
+            {
+                extra = string.Join("、", extras.ToArray());
+                return false;
+            }
+            return true;
+        }
+
+        // ------------------------------------------------------------------
         // 字体（UGUI Text 必须要字体，2022 起 Arial.ttf 已不再是内置名）
         // ------------------------------------------------------------------
 
