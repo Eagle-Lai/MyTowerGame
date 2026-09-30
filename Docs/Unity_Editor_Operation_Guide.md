@@ -246,20 +246,20 @@ prefab 根节点自带 `scale = 0.5`。M0 的配置默认值是 `scale = 0.5`，
 - 左上角两行字：`金币 100` / `生命 10`；顶部中央 `准备中`；
 - 底部两个按钮：`建塔`（左）与 `开始`（右）。
 
-### 验收清单（16 项，逐条勾）
+### 验收清单 · M0 基线（23 项，逐条勾）
 
 **【启动与配置】**
 - [ ] 1. Play 全程 Console 无 `Exception` / `NullReferenceException`
-- [ ] 2. Console 打印 8 张表的记录数，与 Excel 行数一致
+- [ ] 2. Console 打印 **9** 张表的记录数，与 Excel 行数一致（M2 起新增 `TBAudio`）
 - [ ] 3. 棋盘行列数（16×9）、起终点位置与 `TBLevelMap` 配置一致
 
 **【配置驱动验证（关键）】**
 - [ ] 4. 打开 `Luban/Config/Datas/EnemyData.xlsx`，把 id=1 的 `hp` 从 `100` 改成 `50` → 保存 → 重跑 `gen_code_json.bat` → 回 Unity 等导入 → Play：怪物明显更快被打死
 
 **【棋盘与建造】**
-- [ ] 5. 点 `建塔` → 鼠标移动时有一个半透明的塔跟随鼠标
+- [ ] 5. 点底部**塔按钮之一**（M2 起共 5 颗：普通/强力/减速/穿透/激光）→ 鼠标移动时有半透明的塔跟随，并显示**射程圈**
 - [ ] 6. 移到可建造格 → 该格**变绿**；移到障碍格 → 该格**变红**
-- [ ] 7. 在绿格上左键 → 塔落位，金币从 100 减到 **80**（＝ `TBTowerInfo.id=1` 的 `prices`）
+- [ ] 7. 点「普通」按钮后在绿格上左键 → 塔落位，金币从 100 减到 **80**（＝ `TBTowerInfo.id=1` 的 `prices`）
 - [ ] 8. 在已有塔的格上尝试 → 变红 + 提示「该位置已有防御塔」，不扣钱
 - [ ] 9. **堵路测试**：在路径必经的窄口两旁连续建塔，最后一下会提示「不能完全阻断怪物路径」，且**金币没有变化**
 - [ ] 10. 建塔后路径箭头**实时改道**（绕开新塔）—— 这是《坚守阵地》的核心机制
@@ -287,6 +287,47 @@ prefab 根节点自带 `scale = 0.5`。M0 的配置默认值是 `scale = 0.5`，
 
 > 验收 4 / 9 / 14 / 15 是最能证明"做对了"的四条，建议重点看。
 
+### 验收清单 · M2 新增项（20 项，逐条勾）
+
+> 覆盖 M2 的 8 个目标（多塔型 / 升级出售 / 子弹特性 / 怪物扩展 / 飞行 / 音效 / 打击感 / 平衡）。
+> 上面 23 项仍然要全过 —— M2 不应让 M0 的任何一条回退。
+
+**【多塔型 5 类】**
+- [ ] M1. 底部有 **5 颗塔按钮**（普通 / 强力 / 减速 / 穿透 / 激光），金币不足的那颗**自动置灰**
+- [ ] M2. 5 种塔都能建出来；每种的伤害/射程/攻速与 `TowerInfo.xlsx` 对应行一致
+- [ ] M3. 点不同按钮能**切换**塔型；已有塔的格子不能再建
+
+**【子弹特性】**
+- [ ] M4. **AOE（强力塔）**：一次开火能同时打到相邻的多只怪（子弹 `aoeRadius=1.2`）
+- [ ] M5. **穿透（穿透塔）**：一发子弹能连续命中 ≥2 只怪（`pierce=3`）
+- [ ] M6. **减速（减速塔）**：被命中的怪明显变慢，约 2 秒后恢复原速
+- [ ] M7. **激光（激光塔）**：瞬发命中，**看不到弹体**，只有一条一闪而过的光束
+- [ ] M8. 腐蚀弹（`effectType=2`）的持续伤害生效，且**能靠 DOT 打死怪**并正常给金币
+
+**【升级与出售】**
+- [ ] M9. **左键点已建塔** → 该格变**暖黄**、塔身提亮、显示**射程圈**，并弹出塔信息面板
+- [ ] M10. 面板数值（攻击/射程/攻速/DPS）与所选塔的配置行一致
+- [ ] M11. 点「升级」→ 数值变为下一级、金币按下一级 `prices` 扣除、**怪物不会因为升级而改道**
+- [ ] M12. 点「出售」→ 按钮变「**确认出售？**」；**再点一次**才真正卖出，返还 = `sellPrice × sellRefundRate`
+- [ ] M13. 「确认出售？」出现后等 3 秒不动 → 自动复位回「出售 (+N)」
+- [ ] M14. `ESC` 分层：面板打开时关面板；放置中取消放置；否则取消选中
+
+**【怪物扩展与飞行】**
+- [ ] M15. 第 10 回合左右能看到 **Boss**（鼠王 / 虫后 / 苔藓女王），血量明显厚于普通怪
+- [ ] M16. **飞行怪**（`isFlying=1` 的 5 种）**直线飞向终点**，不受塔墙阻挡
+- [ ] M17. 飞行怪经过的格子上**仍然可以建塔**（它不该占住地面）
+
+**【打击感】**
+- [ ] M18. 命中时弹出**伤害数字**（致命一击是红色）；同一只怪的数字不会糊成一片
+- [ ] M19. 受击有一次**闪白**；死亡时**淡出**；漏怪时**屏幕震动**（越疼的怪震得越明显）
+
+**【音效（系统先行）】**
+- [ ] M20. Console **没有** `[Audio]` 报错刷屏（当前工程 0 个音频文件，属预期的静默降级）。
+  想让它发声：把 `.wav/.ogg` 丢进 `Assets/Audio/` → 跑 `python .workbuddy/tools/gen_audio_catalog.py` → **不用改任何代码**。
+
+> M5 / M7 / M12 / M16 是最能证明"这轮真的接上线了"的四条，建议重点看。
+
+
 ### 调试快捷键
 
 | 按键 | 作用 |
@@ -296,7 +337,7 @@ prefab 根节点自带 `scale = 0.5`。M0 的配置默认值是 `scale = 0.5`，
 | `F3` | （已移除）朝向由常数表 `Global.artFaceLeft` 决定；若朝向不对改这一列并重跑导出 |
 | `空格` | 相机回到自适应视野 |
 | `滚轮` | 缩放（自适应尺寸的 0.5× ~ 2.5×） |
-| `右键`（未在放置时） | **售卖鼠标下的防御塔**（M0 简化交互；返还金额见 `Global.sellRefundRate`） |
+| `右键` / `ESC`（未在放置时） | **取消选中 / 关闭塔面板**（M2 变更：出售不再走右键，改到塔面板里） |
 | `右键` / `ESC`（放置中） | 取消建塔放置 |
 
 ---
@@ -453,9 +494,9 @@ Console 首行变为：
 ## 9. 目录与关键文件地图
 
 ```
-D:\FreedomTower\
+D:\FreedomTower_1\                       （注意实际工程根目录带 _1）
 ├── Luban\                              ★ 配置表工具链与源表（唯一配置来源）
-│   ├── Config\Datas\*.xlsx               策划编辑的源表（10 张）
+│   ├── Config\Datas\*.xlsx               策划编辑的源表（9 张数据表 + 3 张定义表）
 │   ├── Config\Defines\__root__.xml       Luban 表定义根
 │   ├── Tools\Luban.ClientServer\         Luban CLI
 │   └── gen_code_json.bat                 ★ 双击导出
@@ -467,27 +508,36 @@ D:\FreedomTower\
 │   ├── Editor\                         ★ Editor 工具（菜单 Tools ▸ 塔防）
 │   ├── Art\Generated\                  程序生成的占位美术
 │   ├── ConfigJson\                     ★ Luban 导出的配置 json（编辑器直读 + 进 config 包）
+│   ├── Audio\                          ★ 音效文件放这里（M2；当前为空 → 静默无音效）
 │   ├── Prefabs\
-│   │   ├── Tower\Tower_Normal.prefab    世界空间 SpriteRenderer（原 UGUI 版在 _UI_Source\）
-│   │   ├── Tower\_UI_Source\            原 UGUI 版备份（不要放进 AB）
+│   │   ├── Tower\Tower_Normal/Power/Retard.prefab   世界空间 SpriteRenderer
 │   │   ├── Bullet\Bullet_Normal.prefab
-│   │   ├── Enemy\Enemy_<怪名>.prefab   ★ 119 个战斗怪物（由「9. 导入全部怪物」生成）
-│   │   └── UI\HudView.prefab, TipsView.prefab
+│   │   ├── Enemy\Enemy_<怪名>.prefab   ★ 119 个战斗怪物（由「导入全部怪物」生成）
+│   │   └── UI\HudView.prefab, TipsView.prefab, TowerInfoView.prefab
 │   ├── _UIAssets\                       美术资源（塔贴图 / 怪物包 / 背景）
 │   └── Scripts\
 │       ├── Core\Res\                   ★ AB 资源系统（ResTable 是唯一寻址源）
 │       ├── Core\Combat\                ★ 去物理战斗系统（EnemyGrid + CombatSystem）
-│       ├── Core\Manager\               管理器基类 + 玩家数据
-│       ├── Data\                       配置读取层（Configs + 6 个包装类）
+│       ├── Core\Manager\               管理器基类 + 玩家数据 + 音效（AudioManager）
+│       ├── Data\                       配置读取层（Configs + 包装类 + 生成清单）
 │       ├── Game\                       棋盘 / 关卡流程 / 路径渲染
 │       ├── Round\WaveManager.cs        波次时间轴
-│       ├── Enemy\  Tower\  Bullet\     战斗实体
-│       ├── UI\  Core\UI\               HUD / 提示 / UI 框架
-│       ├── Camera\CameraController.cs  2D 正交相机
+│       ├── Enemy\  Tower\  Bullet\     战斗实体（含 RangeIndicatorView / LaserBeamView）
+│       ├── UI\  Core\UI\               HUD / 提示 / 塔面板 / 伤害飘字
+│       ├── Camera\CameraController.cs  2D 正交相机（含屏幕震动）
 │       └── AStarWrapper\               A* 寻路（只建数据，不生成物件）
 │
+├── .workbuddy\tools\                   ★ 无 Unity 时的替代验证与生成脚本
+│   ├── check_*.py                       5 个静态校验（括号/事件/成员/using/Unity API）
+│   ├── gen_*_catalog.py                 怪物 / 音频清单生成
+│   ├── apply_m2_*.py                    M2 的配置表变更脚本（带自动备份）
+│   └── balance_sim.py                   ★ 数值平衡顶演（只读）
+│
 └── Docs\
-    ├── TowerDefense_Design_and_Implementation.md   ★ 设计与实施文档（v2.1）
+    ├── TowerDefense_Design_and_Implementation.md   ★ 设计与实施文档（v2.1 + §Z.7 M2 记录）
+    ├── Tower_Interaction_Dev_Plan_v2.md            塔交互计划（M2 依据）
+    ├── HudView_Sync_and_TowerUI_Plan.md            UI 命名契约
+    ├── Progress_Sync_Report.md                     进度同步报告
     └── Unity_Editor_Operation_Guide.md             ★ 本文件
 ```
 
@@ -502,6 +552,13 @@ D:\FreedomTower\
 | 波次时间轴 | `Round/WaveManager.cs` |
 | 棋盘与坐标换算 | `Game/Board.cs`（`BoardGeometry` 是**唯一**坐标换算入口） |
 | HUD 显示 | `UI/HudView.cs`（节点名与 `Editor/UIPrefabBuilder.cs` 必须成对改） |
+| 塔面板 / 升级 / 出售 | `UI/TowerInfoView.cs`（只发事件）+ `Tower/BaseTower.cs` 里的 `TowerManager` |
+| 子弹行为（穿透/爆炸/减速/DOT） | `Bullet/BaseBullet.cs`；参数全在 `BulletData.xlsx` |
+| 状态效果（减速/持续伤害） | `Enemy/BaseEnemy.cs` 的 `ApplySlow` / `ApplyDot` |
+| 飞行单位 | `Enemy/BaseEnemy.cs` 的 `SetupFlyingPath` / `MoveStraight`；开关是 `EnemyData.isFlying` |
+| 射程圈 | `Tower/RangeIndicatorView.cs`（贴图由占位生成器产出） |
+| 伤害飘字 / 震动 | `UI/FloatingTextManager.cs` / `Camera/CameraController.cs`；参数在 `Global.xlsx` |
+| 音效 | `Core/Manager/AudioManager.cs` + `Data/AudioName.cs`；参数在 `TBAudio` |
 
 ---
 
@@ -551,6 +608,15 @@ M0 的 HUD 使用 Unity **内置动态字体**（`LegacyRuntime.ttf`）。
 | `[Combat] 检测到 N 次「无目标开火」` | 逻辑 bug | 这是自检告警，正常应恒为 0。请把该日志连同场景一起反馈 |
 | AB 模式启动报 `包文件不存在` | 没打包 AB，或打的是别的平台的包 | 先切好 Build Target，再执行 `8b. 打包 AssetBundle` |
 | AB 模式下某些资源丢失 | ResTable 的 `Bundle`/`Asset` 与真实资源不一致 | 执行 `8a. 按 ResTable 打 AssetBundle 标记`，再看它有没有报 ✘ |
+| **塔面板怎么点都不出来** | `Assets/Prefabs/UI/TowerInfoView.prefab` **不存在** | 菜单「高级（单步重建）▸ **补缺 UI 预制体（安全：只补缺失）**」。注意别用「生成 UI 预制体（全量重建）」——它会把手工调过的 HudView 一起覆盖 |
+| **Console 报 `[HUD] 缺少按钮节点「Btn_Tower_xxx」`** | HudView.prefab 还是旧的 3 按钮版本 | 同上，先跑「补缺 UI 预制体」；若仍缺，用「生成 UI 预制体（全量重建）」重建 |
+| 跑完一键向导后手工改的 HudView / 塔 prefab 被覆盖了 | 用了「全量重建」入口 | M2 起向导已改调 `EnsureMissing`（只补缺失）。重建类入口都在「高级（单步重建）」下，用前请先备份 |
+| **升级之后塔不见了 / 格子空了** | 旧版本 `TryUpgrade` 会先拆旧塔再建新塔，新塔加载失败就什么都没了 | M2 已改为**先建后拆**：失败时退还金币且原塔保持不变。若仍复现请反馈 |
+| Console 刷 `[Audio] 「sfx_xxx」找不到音频资源` | 工程内没有音频文件（预期） | 属静默降级，不影响玩法。要消除：把音频丢进 `Assets/Audio/` 并跑 `gen_audio_catalog.py`（见 `.workbuddy/tools/`） |
+| **穿透塔打不到第二只怪** | 旧版本穿透逻辑失效 | M2 已修；若复现请反馈（命中判定改用空间哈希找"最近且未打过"的敌人） |
+| 伤害数字不显示 | 配置表开关关了 | `Global.xlsx` 的 `showDamageText` 置 1（同时确认 `damageTextThrottleMs` 不过大） |
+| 屏幕震动停不下来 / 相机偏了 | 震动期间调用了 `FitBoard` | 已在 `FitBoard` 与空格归位里清 `_shakeOffset`；若仍复现请反馈 |
+| **飞行怪还是沿着地面路径走** | `EnemyData.isFlying` 为 0 | 该怪的行改成 1 → 重跑 Luban 导出。飞行单位走"起点→终点"直线，不参与 A* 与堵路判定 |
 
 ---
 
@@ -561,11 +627,14 @@ M0 的 HUD 使用 Unity **内置动态字体**（`LegacyRuntime.ttf`）。
 | 项 | 说明 |
 |---|---|
 | 选关界面 | 启动直接进关卡 1（`GameFlowManager.startLevelId = 0` → 取 `TBSceneInfo` 第一行）。想固定某关就在 `GameFlow.startLevelId` 填 id |
-| 塔升级 / 出售 UI | `TowerManager.Sell()` 与 `TBTowerInfo.upgradeTo` 已就绪，缺 UI 接线（M2） |
-| 伤害飘字 / 击杀特效 / 音效 | M2 |
-| 结算界面 | M0 用 `TipsView` 文本代替 |
-| 切关时的 AB 整包释放 | `ReleaseBundle` 已实现，但 M0 只有一关，未接入流程（M1） |
-| 多塔型 / AOE / 减速 | `TBTowerInfo.effectType` 与 `TBBulletData` 字段已留好，实现留 M2 |
+| ~~塔升级 / 出售 UI~~ | ✅ **M2 已完成**（`TowerInfoView` + 换实例升级 + 两段式出售确认） |
+| ~~伤害飘字 / 击杀特效 / 音效~~ | ✅ **M2 已完成**（飘字/闪白/消散/震动；音效为"系统先行"，等音频文件） |
+| ~~多塔型 / AOE / 减速~~ | ✅ **M2 已完成**（5 类齐备；穿透/激光外观待美术） |
+| 结算界面 | 仍用 `TipsView` 文本代替（原计划 M3） |
+| 切关时的 AB 整包释放 | `ReleaseBundle` 已实现，但只有一关，未接入流程 |
+| 塔面板 / 穿透 / 激光的正式美术 | 目前：面板是纯色占位、穿透与激光复用普通塔外观。换皮 = 改 `resName` + `ResTable`，零代码 |
+| 音频文件 | 工程内 0 个。丢进 `Assets/Audio/` + 跑生成器即生效 |
+| 后期难度曲线 | 顶演显示第 6~8 回合余量 8~9 倍偏宽裕；整体经济调优属 M3 |
 | 其余 118 个怪物 prefab 的战斗接入 | M0 只接了 `Enemy_Rat`；`ResTable` 加条目 + `EnemyData.resName` 指向即可扩展 |
 | `Common/Animations` 下其余家族 | 同上，`EnemyData.animController` 填家族名即可 |
 

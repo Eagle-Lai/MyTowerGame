@@ -2250,18 +2250,18 @@ public List<Point> GetAStarPath(Point start, Point target)
 | 提前召唤下一波 | 玩家可提前召唤，奖励额外金币（原作经典设计） |
 | 倍速 | 1× / 2×（`Time.timeScale`） |
 
-### M2　内容扩展与手感
+### M2　内容扩展与手感　✅ **已交付**（2026-09-30，见 §Z.7）
 
-| 项 | 内容 |
-|---|---|
-| 多塔型 | 补齐 `TBTower.type` 的 5 类：单体 / AOE / 减速 / 穿透 / 激光；各自独立特效与音效 |
-| 塔升级与出售 | 接 `TBTower.upgradeTo` / `sellPrice`；`TowerInfoView` 接线；点击已建塔的入口 |
-| 子弹特性 | `TBBullet` 的 `pierce` / `aoeRadius` / `effectType`（减速、持续伤害） |
-| 怪物扩展 | 接入更多 `TBEnemy` 行；护甲、飞行（`isFlying`）、Boss |
-| 飞行单位 | 单独 grid 或直线寻路；塔增加 `canAttackAir` |
-| 音效系统 | 新增 `AudioManager` + `TBAudio` 配置表 |
-| 打击感 | 伤害数字、屏幕震动、命中闪白、死亡消散 |
-| 数值平衡 | 建立 DPS vs 血量曲线，跑模拟脚本验证难度 |
+| 项 | 内容 | 状态 |
+|---|---|---|
+| 多塔型 | 补齐 `TBTower.type` 的 5 类：单体 / AOE / 减速 / 穿透 / 激光；各自独立特效与音效 | ✅ 5 类全部落地；穿透/激光的外观暂复用普通塔（美术待补，换皮只改表 + ResTable） |
+| 塔升级与出售 | 接 `TBTower.upgradeTo` / `sellPrice`；`TowerInfoView` 接线；点击已建塔的入口 | ✅ 含"换实例"升级、原地两段式出售确认、DPS 展示 |
+| 子弹特性 | `TBBullet` 的 `pierce` / `aoeRadius` / `effectType`（减速、持续伤害） | ✅ 同时修掉了"穿透完全失效"与"AOE 每次命中都 GC"两个真实缺陷 |
+| 怪物扩展 | 接入更多 `TBEnemy` 行；护甲、飞行（`isFlying`）、Boss | ✅ 新增 3 Boss + 1 高护甲精英（type=5 从 0 行变为 3 行），并编入第 10/11/12 波 |
+| 飞行单位 | 单独 grid 或直线寻路；塔增加 `canAttackAir` | ✅ 取"直线寻路"方案；`isFlying` 原有 5 行数据终于被代码接上 |
+| 音效系统 | 新增 `AudioManager` + `TBAudio` 配置表 | ✅ 系统/表/调用点齐备；**工程内 0 个音频文件**，属"系统先行"（见 §Z.7 假设 D-F） |
+| 打击感 | 伤害数字、屏幕震动、命中闪白、死亡消散 | ✅ 四项全部落地，参数进 `Global.xlsx` |
+| 数值平衡 | 建立 DPS vs 血量曲线，跑模拟脚本验证难度 | ✅ `.workbuddy/tools/balance_sim.py`；据此修掉"激光塔被严格压制"与"升级边际性价比为负" |
 
 ### M3　关卡与元进度
 
@@ -2734,7 +2734,65 @@ M0 交付时**无法在本机编译**（安全策略明确禁止调用 `csc`，`
 5. 伤害飘字、击杀特效、音效；结算界面
 
 
+---
 
+## Z.7　M2 实施记录（2026-09-30）
 
+> 本轮依据 `Docs/Tower_Interaction_Dev_Plan_v2.md` 与 `Docs/Unity_Editor_Operation_Guide.md`，
+> 在 Wave 0~7 的分波计划下完成 M2 全部 8 项。以下是**决策与实测事实**，
+> 供后续接手者判断"为什么是这样写的"。
 
+### Z.7.1 关键决策（实现时照此办，不再二次决策）
 
+| # | 决策 | 理由 |
+|---|---|---|
+| D-A | 塔型编号沿用文档：1 单体 / 2 AOE / 3 减速 / 4 穿透 / 5 激光。type=2「Power/强力」的**行为**就是 AOE | 实测 xlsx 里 type=2 的 `effectType=2`，与文档编号天然对齐；改编号会动已上线的 9 行数据与美术命名 |
+| D-B | type=4/5 无美术 → `resName` 暂指向 `Tower_Normal` | 行为完全由配置驱动；美术到位后只改 `TowerInfo.xlsx` 一格 + `ResTable` 两行，**零代码** |
+| D-C | 激光 = **hitscan**（`effectType=4`），不生成弹体 | 做成"速度极高的子弹"会引入高速穿透漏判；且激光本就该立即结算 |
+| D-D | 飞行单位走 **起点→终点直线**，不入 A* 网格 | 文档给的两个选项里对现有 A* 零侵入 |
+| D-E | `canAttackAir` 作为 `TowerInfo.xlsx` **新增列** | 文档明确要求；该列**每行都必须填**（空单元格 Luban 给 0 = 不可攻空） |
+| D-F | 音效只交付"系统 + 表 + 调用点"，无文件时**静默 no-op** | 工程内 0 个音频文件；符合 §3.5「功能缺失不应阻塞」 |
+| D-G | 打击感参数（飘字开关/节流、震动幅度/时长）进 `Global.xlsx` | 该表注释明确"全工程唯一的常数配置表" |
+| D-H | 打击感走 **Manager 直调**，不走事件总线 | 每次命中都派发事件在 200 怪下不可接受；且要守住"CombatSystem 是 UpdateEvent 唯一订阅者" |
+
+### Z.7.2 本轮修掉的真实缺陷（都是"能编译、能跑，但结果是错的"）
+
+| # | 缺陷 | 症状 |
+|---|---|---|
+| 1 | **升级失败会永久丢塔** | `TryUpgrade` 原先"先拆旧塔、后建新塔"，新塔资源加载失败时旧塔已归还对象池 → 玩家花了钱，格子上什么都不剩。改为**先建后拆** |
+| 2 | **穿透完全无效** | 原实现在 `_pierce>0` 时把 `_target` 置 null 后 return，而命中判定要求 `_target != null` → 子弹此后再也不命中 |
+| 3 | **AOE 每次命中都 GC** | `OnHit` 里 `new List<BaseEnemy>(16)` → 改为实例字段复用 |
+| 4 | **`TowerUpgradeSuccess` 契约与注释相反** | 注释写 `(BaseTower, int)`，实际无参触发、无参订阅。已统一为带参（新实例） |
+| 5 | **"下一级"两处口径分叉** | UI 用 `type + level+1`、逻辑用 `upgradeTo`。已收敛到 `Configs.GetNextLevel` |
+| 6 | **选中高亮清不掉** | `Select()` 先 `ClearSelectionHighlight()` 再赋 `_selected`，清理方法读到的永远是"新塔" |
+| 7 | **`CellView` 选中色缺失** | `CellHighlight` 只有 None/Buildable/Blocked |
+| 8 | **升级会搅乱 HUD** | `TryUpgrade` 复用 `BuildTowerSuccess` → HudView 误以为"新建了一座塔"而退出放置态 |
+| 9 | **生成器会把手工按钮冲掉** | `UIPrefabBuilder.BuildInternal` 无条件 DeleteAsset；新增 `EnsureMissing` 只补缺失，向导改调它 |
+| 10 | **激光塔被严格压制** | 性价比 0.700 vs 穿透 2.500，没有任何理由建它。调 power 后 1.200 |
+| 11 | **所有塔的 L1→L2 升级都是坏选择** | 边际性价比 0.889/0.812/0.167/0.948/0.200，全部低于各自 L1。重排 power 后回到 0.59~1.60 |
+
+### Z.7.3 本机环境的关键突破（对后续工作价值很高）
+
+**本机**没有可用的 C# 编译器、Unity 也无法在沙箱里启动 —— 但本轮找到了三条替代路径：
+
+1. **真实编译验证**：Unity 已经生成了 `Assembly-CSharp-Editor.csproj`，
+   直接调用 Visual Studio 的 MSBuild 即可**真正编译**运行时 + 编辑器三个程序集：
+   `"C:\Program Files\Microsoft Visual Studio\18\Community\MSBuild\Current\Bin\MSBuild.exe" Assembly-CSharp-Editor.csproj /t:Build /p:Configuration=Debug`
+   → 这比"括号配平 + 符号核对"强得多，本轮靠它当场抓出 3 个 CS 错误（枚举名被同名属性遮蔽、字段被误删等）。
+   **注意**：新增 `.cs` 文件后 Unity 才会把它写进 csproj；未重新生成 csproj 前，
+   需手工往 csproj 里补一行 `<Compile Include="..." />` 才能参与编译。
+2. **Luban 可脱离 Unity 单独跑**：`Luban.ClientServer.exe` 是自包含 .NET 程序，
+   设 `DOTNET_ROLL_FORWARD=LatestMajor` 后可直接命令行导出，
+   于是"改 xlsx → 导出 → 编译 → 校验"整条链路都能在无人值守下完成。
+3. **配置表脚本化**：见 `.workbuddy/tools/apply_m2_*.py` —— 表结构变更一律走脚本 + 自动备份，
+   不再手改 Excel（手改最容易出"改漏一行/列错位"）。
+
+### Z.7.4 M2 的遗留（不阻塞交付，明确交给后续）
+
+| 项 | 说明 |
+|---|---|
+| 穿透/激光塔的美术 | 暂复用普通塔外观。换皮 = 改 `TowerInfo.xlsx` 的 `resName` 一格 + `ResTable` 两行 |
+| 音效文件 | 0 个。丢进 `Assets/Audio/` + 跑 `gen_audio_catalog.py` 即自动生效，**无需改代码** |
+| 面板正式美术 | `TowerInfoView` 目前是程序生成的纯色占位 |
+| 后期难度曲线 | 顶演显示第 6~8 回合余量充裕（8~9 倍）；建造位用尽后回落。整体经济调优属 M3 |
+| 飞行单位的表现 | 目前是"贴地直线飞行"，没有高度/影子等表现层 |
