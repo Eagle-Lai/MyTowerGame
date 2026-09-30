@@ -74,10 +74,28 @@ namespace FTProject
         public float BodyRadius { get; private set; }
         public EnemyConfig Config { get; private set; }
 
+        /// <summary>
+        /// 下一次允许弹出伤害飘字的时间（Time.unscaledTime）。
+        /// 【为什么挂在怪身上】用"怪 → 时间"的字典做节流时，对象池复用会让字典键失效并持续泄漏；
+        /// 状态跟着对象走就不会有这个问题。由 FloatingTextManager 维护，别处不要写。
+        /// </summary>
+        public float NextDamageTextTime { get; set; }
+
         // ---- 内部 ----
         private List<Point> _path;
         private int _pathIndex;
         private float _speed;
+
+        // ---- 打击感（M2-W5）----
+        /// <summary>身体部位的 SpriteRenderer 缓存（不含血条）。闪白 / 死亡淡出都改它。</summary>
+        private SpriteRenderer[] _bodyRenderers;
+        private float _flashTimer;
+        private float _deathFade = 1f;
+        /// <summary>出生时的最终缩放（配置缩放已生效）。死亡收缩在它基础上插值。</summary>
+        private Vector3 _spawnScale = Vector3.one;
+
+        private const float FlashDurationSec = 0.08f;
+        private static readonly Color FlashColor = new Color(1f, 1f, 1f, 1f);
 
         // ---- 飞行单位（M2-W4）：直线寻路，不入 A* 网格 ----
         /// <summary>本怪是否飞行（由 EnemyConfig.IsFlying 决定，Init 时定型）</summary>
@@ -158,6 +176,12 @@ namespace FTProject
                 _baseScale = transform.localScale;
             }
             transform.localScale = _baseScale * (cfg.Scale > 0f ? cfg.Scale : 1f);
+            _spawnScale = transform.localScale;
+
+            // 表现状态同样要复位：池化复用否则会带着上一只的"半透明尸体"出场
+            _flashTimer = 0f;
+            _deathFade = 1f;
+            NextDamageTextTime = 0f;
 
             // 美术默认朝向来自常数表（Global.artFaceLeft）
             if (Configs.Global != null)
@@ -269,6 +293,15 @@ namespace FTProject
             _path = null;
             _pathIndex = 0;
             GridKey = 0;
+
+            // 表现状态必须还原，否则下一次从池里取出来时：
+            // 身体是透明的、缩放的、或者还白着 —— 都是"看起来像 bug"的经典池化残留。
+            _flashTimer = 0f;
+            _deathFade = 1f;
+            ApplyBodyAlpha(1f);
+            transform.localScale = _spawnScale;
+            NextDamageTextTime = 0f;
+
             GameObjSetActive(false);
         }
 
@@ -290,12 +323,15 @@ namespace FTProject
             if (_pendingRecycle)
             {
                 _recycleTimer -= dt;
+                TickDeathFade(dt);
                 if (_recycleTimer <= 0f)
                 {
                     EnemyManager.Instance.RecycleEnemy(this);
                 }
                 return;
             }
+
+            TickFlash(dt);
 
             // 状态效果先结算：持续伤害可能就在这一步把怪打死，
             // 打死之后就不能再移动了（否则尸体会顺着路径再滑一格）。
@@ -587,12 +623,36 @@ namespace FTProject
             CurrentHp -= real;
             UpdateHpBar();
 
+            // 持续伤害是"每帧一小口"（dps × dt，通常 0.1 上下），
+            // 若也走闪白与飘字，被 DOT 的怪会一直白着、数字也毫无信息量。
+            // 用 1 点伤害作为门槛，把 DOT 的碎伤害挡在外面。
+            if (real >= 1f)
+            {
+                FlashOnHit();
+            }
+
             if (CombatSystem.Instance != null)
             {
                 CombatSystem.Instance.AddHitCount(1);
             }
 
-            if (CurrentHp <= 0f)
+            bool killing = CurrentHp <= 0f;
+            // 【为什么飘字在这里而不是子弹侧】real 是**扣过护甲**的最终伤害，
+            // 只有在这里才知道玩家真正打出了多少。放到子弹侧算会漏掉护甲这一层。
+            if (real >= 1f)
+            {
+                FloatingTextManager.Show(this, transform.position, Mathf.Max(1, Mathf.RoundToInt(real)), killing);
+            }
+
+            // 受击音效加一道"显著伤害"门槛：几十发子弹每秒都响的话，
+            // 音效就不再是信息而是噪音了（与飘字节流同一个理由，只是判据不同）。
+            // 取最大生命的 8% 作为"这一下打得疼"的界线。
+            if (!killing && TotalHp > 0f && real >= TotalHp * 0.08f && AudioManager.Instance != null)
+            {
+                AudioManager.Instance.PlayAt(AudioName.EnemyHit, transform.position);
+            }
+
+            if (killing)
             {
                 Die();
             }
@@ -608,6 +668,10 @@ namespace FTProject
             EventDispatcher.TriggerEvent<BaseEnemy, int>(EventName.EnemyKilledEvent, this, reward);
 
             SetAnimState(EnemyAnimState.Death);
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.PlayAt(AudioName.EnemyDeath, transform.position);
+            }
 
             // 从空间哈希移除，不再参与索敌
             if (CombatSystem.Instance != null && CombatSystem.Instance.Grid != null)
@@ -628,6 +692,18 @@ namespace FTProject
 
             EventDispatcher.TriggerEvent<BaseEnemy, int>(EventName.EnemyReachedEndEvent, this, dmg);
             PlayerDataManager.Instance.LoseHp(dmg);
+
+            // 漏怪是玩家最该立刻感知的负面反馈 → 屏幕震动。
+            // 幅度按"漏这一只有多疼"分级：Boss 漏掉（dmg=10）比小怪（dmg=1）震得明显得多。
+            if (CameraController.Instance != null && Configs.Global != null)
+            {
+                float amp = Configs.Global.ShakeAmplitude * (1f + 0.35f * Mathf.Max(0, dmg - 1));
+                CameraController.Instance.Shake(amp, Configs.Global.ShakeDurationSec);
+            }
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.Play(AudioName.EnemyLeak);
+            }
 
             if (CombatSystem.Instance != null && CombatSystem.Instance.Grid != null)
             {
@@ -694,6 +770,105 @@ namespace FTProject
             if (_anim != null)
             {
                 _anim.SetTrigger(ANIM_ATTACK);
+            }
+        }
+
+        // ------------------------------------------------------------------
+        // 打击感：命中闪白 / 死亡消散（M2-W5）
+        // ------------------------------------------------------------------
+
+        /// <summary>
+        /// 缓存"身体"的 SpriteRenderer（**排除血条**）。
+        /// 闪白与死亡淡出都只该作用于身体：把血条也刷白/刷透明，
+        /// 玩家就没法判断还剩多少血了 —— 表现不能吃掉信息。
+        /// </summary>
+        private void CacheBodyRenderers()
+        {
+            if (_bodyRenderers != null)
+            {
+                return;
+            }
+            SpriteRenderer[] all = GetComponentsInChildren<SpriteRenderer>(true);
+            List<SpriteRenderer> list = new List<SpriteRenderer>(all.Length);
+            for (int i = 0; i < all.Length; i++)
+            {
+                SpriteRenderer sr = all[i];
+                if (sr == null)
+                {
+                    continue;
+                }
+                if (_hpBarRoot != null && sr.transform.IsChildOf(_hpBarRoot))
+                {
+                    continue;
+                }
+                list.Add(sr);
+            }
+            _bodyRenderers = list.ToArray();
+        }
+
+        /// <summary>受击闪白。由 Hurt 在伤害达到门槛时调用（DOT 的碎伤害不闪）。</summary>
+        public void FlashOnHit()
+        {
+            CacheBodyRenderers();
+            if (_bodyRenderers.Length == 0)
+            {
+                return;
+            }
+            for (int i = 0; i < _bodyRenderers.Length; i++)
+            {
+                _bodyRenderers[i].color = FlashColor;
+            }
+            _flashTimer = FlashDurationSec;
+        }
+
+        private void TickFlash(float dt)
+        {
+            if (_flashTimer <= 0f)
+            {
+                return;
+            }
+            _flashTimer -= dt;
+            if (_flashTimer > 0f)
+            {
+                return;
+            }
+            _flashTimer = 0f;
+            // 还原成白色：本工程的怪物美术没有被额外染色，白色即"原样"
+            for (int i = 0; i < _bodyRenderers.Length; i++)
+            {
+                _bodyRenderers[i].color = Color.white;
+            }
+        }
+
+        /// <summary>
+        /// 死亡消散：在"死亡动画播完再回收"的这段时间里做淡出 + 轻微收缩。
+        /// 时长直接复用 DeathRecycleDelayMs —— 两处用同一个数，
+        /// 就不会出现"已经回收了但还没淡完"或者"淡完了还杵在那"的错位。
+        /// </summary>
+        private void TickDeathFade(float dt)
+        {
+            float total = (Configs.Global != null ? Configs.Global.DeathRecycleDelayMs : 600) / 1000f;
+            if (total <= 0f)
+            {
+                return;
+            }
+            _deathFade = Mathf.Clamp01(_deathFade - dt / total);
+            ApplyBodyAlpha(_deathFade);
+            transform.localScale = _spawnScale * (0.85f + 0.15f * _deathFade);
+        }
+
+        private void ApplyBodyAlpha(float a)
+        {
+            CacheBodyRenderers();
+            for (int i = 0; i < _bodyRenderers.Length; i++)
+            {
+                Color c = _bodyRenderers[i].color;
+                if (Mathf.Approximately(c.a, a))
+                {
+                    continue;
+                }
+                c.a = a;
+                _bodyRenderers[i].color = c;
             }
         }
 

@@ -38,6 +38,13 @@ namespace FTProject
         /// <summary>战斗 HUD 与提示</summary>
         public const string UiHud = "ui_hud";
 
+        /// <summary>
+        /// 音效（M2）。逻辑名 Audio_&lt;文件名&gt;，文件来自 Assets/Audio/。
+        /// 【注意】该包只在真的存在音频文件时才进入 All（见下面），
+        /// 否则打 AB 时会多出一个空包，自检里也会一直提示"包为空"。
+        /// </summary>
+        public const string Audio = "audio";
+
         /// <summary>不随怪物清单变化的固定包</summary>
         public static readonly string[] Fixed =
         {
@@ -59,8 +66,13 @@ namespace FTProject
             {
                 if (_all == null)
                 {
-                    List<string> list = new List<string>(Fixed.Length + MonsterCatalog.Bundles.Length);
+                    List<string> list = new List<string>(Fixed.Length + MonsterCatalog.Bundles.Length + 1);
                     list.AddRange(Fixed);
+                    // 有音频文件才把 audio 包纳入（见 Audio 常量注释）
+                    if (AudioCatalog.Count > 0 && !list.Contains(Audio))
+                    {
+                        list.Add(Audio);
+                    }
                     for (int i = 0; i < MonsterCatalog.Bundles.Length; i++)
                     {
                         if (!list.Contains(MonsterCatalog.Bundles[i]))

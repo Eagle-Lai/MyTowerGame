@@ -288,6 +288,10 @@ namespace FTProject
                 Vector2 muzzle = MuzzlePosition;
                 target.Hurt(Config.Power);
                 LaserBeamView.Fire(muzzle, target.Position);
+                if (AudioManager.Instance != null)
+                {
+                    AudioManager.Instance.PlayAt(AudioName.TowerFire(Config.Type), muzzle);
+                }
                 FireCount++;
                 return;
             }
@@ -305,6 +309,10 @@ namespace FTProject
             // 把塔的 effectValue 传下去：减速塔三级强度不同就靠它
             // （子弹自身 effectValue > 0 时会被塔的值覆盖，见 BaseBullet.Init）
             BulletManager.Instance.Fire(target, Config.Power, MuzzlePosition, bulletCfg, Config.EffectValue);
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.PlayAt(AudioName.TowerFire(Config.Type), MuzzlePosition);
+            }
             FireCount++;
         }
 
@@ -483,6 +491,10 @@ namespace FTProject
 
             CombatSystem.Instance.RegisterTower(tower);
             EventDispatcher.TriggerEvent<BaseTower>(EventName.BuildTowerSuccess, tower);
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.PlayAt(AudioName.TowerBuild, cell.Center);
+            }
             astar.RequestRefresh();      // 节流重算，敌人改道
 
             return tower;
@@ -596,6 +608,10 @@ namespace FTProject
             // 【为什么不用 BuildTowerSuccess】它的语义是"新建了一座塔"，
             // HudView 收到会退出放置态并复位按钮 —— 升级时发它会把 HUD 状态搅乱。
             EventDispatcher.TriggerEvent<BaseTower>(EventName.TowerUpgradeSuccess, tower);
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.PlayAt(AudioName.TowerUpgrade, tower.Position);
+            }
             Tips(string.Format("已升级为 {0} Lv.{1}", nextCfg.Name, nextCfg.Level));
 
             return tower;
@@ -628,6 +644,10 @@ namespace FTProject
 
             PlayerDataManager.Instance.AddGold(refund);
             EventDispatcher.TriggerEvent<BaseTower>(EventName.DestroyTower, tower);
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.PlayAt(AudioName.TowerSell, tower.Position);
+            }
             ResLoader.Instance.ReleaseInstance(resName, tower.gameObject);
             AStarManager.Instance.RequestRefresh();
             Tips(string.Format("已出售防御塔，返还 {0} 金币", refund));

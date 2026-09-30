@@ -46,6 +46,9 @@ namespace FTProject
             TowerManager.Instance,
             CombatSystem.Instance,
             UIManager.Instance,
+            // 音效放最后：它依赖 Configs（TBAudio 表）与 ResLoader，
+            // 但两项都是"用到时才查"，早注册晚注册都不影响正确性，放在末尾更符合阅读顺序。
+            AudioManager.Instance,
         };
 
         private bool _booted;

@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 namespace FTProject
 {
@@ -29,15 +29,86 @@ namespace FTProject
         [Tooltip("相对自适应尺寸的最大缩小倍数")]
         public float maxZoomOutFactor = 2f;
 
+        /// <summary>
+        /// 全局唯一实例（供战斗侧触发震动）。
+        /// 【为什么允许为 null 调用】场景没相机时不应该让"漏怪扣血"这种核心逻辑崩掉，
+        /// 调用方统一写成 if (CameraController.Instance != null)。
+        /// </summary>
+        public static CameraController Instance { get; private set; }
+
         private Camera _cam;
         private float _fitSize = 5f;
         private Vector2 _boardCenter = Vector2.zero;
 
+        // ---- 屏幕震动（M2-W5）----
+        private Vector3 _shakeOffset;
+        private float _shakeTimer;
+        private float _shakeAmplitude;
+        private float _shakeDuration;
+
         private void Awake()
         {
+            Instance = this;
             _cam = GetComponent<Camera>();
             _cam.orthographic = true;
             _cam.transform.position = new Vector3(0f, 0f, DefaultZ);
+        }
+
+        private void OnDestroy()
+        {
+            if (Instance == this)
+            {
+                Instance = null;
+            }
+        }
+
+        /// <summary>
+        /// 触发一次屏幕震动。
+        ///
+        /// 【为什么不叠加而是取更强的一次】连续漏怪时如果每次都叠加，
+        /// 相机振幅会迅速累积到看不清操作 —— 震动是反馈，不该变成惩罚。
+        /// 【为什么在 LateUpdate 施加偏移】Update 里 FitBoard / 缩放改的是"真实位置"，
+        /// 偏移必须最后叠加，否则会被它们覆盖掉（或者反过来污染真实位置）。
+        /// </summary>
+        public void Shake(float amplitude, float durationSec)
+        {
+            if (amplitude <= 0f || durationSec <= 0f)
+            {
+                return;
+            }
+            _shakeAmplitude = Mathf.Max(_shakeAmplitude, amplitude);
+            _shakeDuration = Mathf.Max(_shakeDuration, durationSec);
+            _shakeTimer = Mathf.Max(_shakeTimer, durationSec);
+        }
+
+        private void LateUpdate()
+        {
+            // 先把上一帧的偏移减掉，还原出"真实位置"
+            Vector3 basePos = transform.position - _shakeOffset;
+
+            if (_shakeTimer > 0f)
+            {
+                _shakeTimer -= Time.deltaTime;
+                if (_shakeTimer <= 0f)
+                {
+                    _shakeTimer = 0f;
+                    _shakeAmplitude = 0f;
+                    _shakeDuration = 0f;
+                    _shakeOffset = Vector3.zero;
+                }
+                else
+                {
+                    float k = _shakeDuration > 0.0001f ? _shakeTimer / _shakeDuration : 0f;
+                    Vector2 r = Random.insideUnitCircle * (_shakeAmplitude * k);
+                    _shakeOffset = new Vector3(r.x, r.y, 0f);
+                }
+            }
+            else
+            {
+                _shakeOffset = Vector3.zero;
+            }
+
+            transform.position = basePos + _shakeOffset;
         }
 
         /// <summary>
@@ -65,6 +136,8 @@ namespace FTProject
 
             _boardCenter = boardCenter;
             _cam.orthographicSize = _fitSize;
+            // 归位时清掉震动偏移：否则 LateUpdate 会把"上一帧的偏移"从新位置里减掉，导致对不准
+            _shakeOffset = Vector3.zero;
             transform.position = new Vector3(boardCenter.x, boardCenter.y, DefaultZ);
         }
 
@@ -82,6 +155,7 @@ namespace FTProject
                 {
                     // 一键回到自适应视野
                     _cam.orthographicSize = _fitSize;
+                    _shakeOffset = Vector3.zero;
                     transform.position = new Vector3(_boardCenter.x, _boardCenter.y, DefaultZ);
                 }
                 return;

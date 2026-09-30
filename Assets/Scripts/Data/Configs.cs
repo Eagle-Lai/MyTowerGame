@@ -36,6 +36,8 @@ namespace FTProject
         public static TBSceneInfo LevelTable { get; private set; }
         public static TBLevelMap LevelMapTable { get; private set; }
         public static TBGlobal GlobalTable { get; private set; }
+        /// <summary>音效表（M2）。没有音频文件时表里仍有行，只是资源取不到 → 静默不播。</summary>
+        public static TBAudio AudioTable { get; private set; }
 
         /// <summary>全局参数（单行）</summary>
         public static GlobalConfig Global { get; private set; }
@@ -48,7 +50,7 @@ namespace FTProject
         private static readonly string[] ConfigKeys =
         {
             "tbenemydata", "tbtowerinfo", "tbbulletdata", "tbenemylist",
-            "tbrounddata", "tbsceneinfo", "tblevelmap", "tbglobal"
+            "tbrounddata", "tbsceneinfo", "tblevelmap", "tbglobal", "tbaudio"
         };
 
         // ------------------------------------------------------------------
@@ -83,6 +85,8 @@ namespace FTProject
                 LevelTable = LoadTable("tbsceneinfo", n => new TBSceneInfo(n));
                 LevelMapTable = LoadTable("tblevelmap", n => new TBLevelMap(n));
                 GlobalTable = LoadTable("tbglobal", n => new TBGlobal(n));
+                AudioTable = LoadTable("tbaudio", n => new TBAudio(n));
+                _audioByLogicalName = null;   // 换了一份表数据 → 索引缓存必须作废
 
                 // Global 是单行表，单独取
                 if (GlobalTable != null)
@@ -169,10 +173,12 @@ namespace FTProject
                 "  TBRoundData  : {5} 条\n" +
                 "  TBSceneInfo  : {6} 条\n" +
                 "  TBLevelMap   : {7} 条\n" +
-                "  TBGlobal     : {8} 条",
+                "  TBGlobal     : {8} 条\n" +
+                "  TBAudio      : {9} 条",
                 ok ? "完成" : "完成（有失败项）",
                 Count(EnemyTable), Count(TowerTable), Count(BulletTable), Count(WaveTable),
-                Count(RoundTable), Count(LevelTable), Count(LevelMapTable), Count(GlobalTable));
+                Count(RoundTable), Count(LevelTable), Count(LevelMapTable), Count(GlobalTable),
+                Count(AudioTable));
 
             if (ok)
             {
@@ -192,6 +198,7 @@ namespace FTProject
         private static int Count(TBSceneInfo t) { return t != null && t.DataList != null ? t.DataList.Count : 0; }
         private static int Count(TBLevelMap t) { return t != null && t.DataList != null ? t.DataList.Count : 0; }
         private static int Count(TBGlobal t) { return t != null && t.DataList != null ? t.DataList.Count : 0; }
+        private static int Count(TBAudio t) { return t != null && t.DataList != null ? t.DataList.Count : 0; }
 
         /// <summary>交叉引用自检：波次引用的怪物、关卡引用的回合/棋盘是否都存在</summary>
         private static void ValidateCrossReferences()
@@ -467,6 +474,46 @@ namespace FTProject
             }
             list.Sort((a, b) => a.Type.CompareTo(b.Type));
             return list;
+        }
+
+        // ------------------------------------------------------------------
+        // 音效（M2）
+        // ------------------------------------------------------------------
+
+        /// <summary>
+        /// 按逻辑名索引的音效配置缓存。
+        /// 【为什么要缓存】TBAudio 的查找键是**逻辑名字符串**，而 DataList 只能按 id 取。
+        /// 每帧开火都线性扫 16 行也能跑，但没必要 —— 建一次字典，查表变 O(1)。
+        /// 换表数据时（LoadAsync）把它置空即可。
+        /// </summary>
+        private static Dictionary<string, AudioConfig> _audioByLogicalName;
+
+        /// <summary>
+        /// 按逻辑名取音效配置，找不到返回 null（**不打印错误**）。
+        /// 【为什么静默】音效是最典型的"缺失也不该阻塞"的功能：
+        /// 本轮交付时工程内 0 个音频文件，若这里报错，Console 会被开火日志刷爆。
+        /// 真正的提示由 AudioManager 做一次限流警告。
+        /// </summary>
+        public static AudioConfig GetAudio(string logicalName)
+        {
+            if (AudioTable == null || AudioTable.DataList == null || string.IsNullOrEmpty(logicalName))
+            {
+                return null;
+            }
+            if (_audioByLogicalName == null)
+            {
+                _audioByLogicalName = new Dictionary<string, AudioConfig>(AudioTable.DataList.Count);
+                for (int i = 0; i < AudioTable.DataList.Count; i++)
+                {
+                    AudioData a = AudioTable.DataList[i];
+                    if (a != null && !string.IsNullOrEmpty(a.LogicalName))
+                    {
+                        _audioByLogicalName[a.LogicalName] = new AudioConfig(a);
+                    }
+                }
+            }
+            AudioConfig cfg;
+            return _audioByLogicalName.TryGetValue(logicalName, out cfg) ? cfg : null;
         }
 
         /// <summary>取第一个关卡 id（用于 M0 直接开局）</summary>

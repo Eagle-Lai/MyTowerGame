@@ -113,6 +113,10 @@ namespace FTProject
             {
                 IsGameOver = true;
                 Debug.Log("[Player] 生命归零，判定失败");
+                if (AudioManager.Instance != null)
+                {
+                    AudioManager.Instance.Play(AudioName.Defeat);
+                }
                 EventDispatcher.TriggerEvent<bool>(EventName.GameOverEvent, false);
             }
         }
@@ -126,6 +130,10 @@ namespace FTProject
             }
             IsGameOver = true;
             Debug.Log("[Player] 全部回合完成，判定胜利");
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.Play(AudioName.Victory);
+            }
             EventDispatcher.TriggerEvent<bool>(EventName.GameOverEvent, true);
         }
 

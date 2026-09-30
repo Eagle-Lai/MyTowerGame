@@ -22,6 +22,7 @@ public sealed partial class Tables
     public TBBulletData TBBulletData {get; }
     public TBLevelMap TBLevelMap {get; }
     public TBGlobal TBGlobal {get; }
+    public TBAudio TBAudio {get; }
 
     public Tables(System.Func<string, JSONNode> loader)
     {
@@ -42,6 +43,8 @@ public sealed partial class Tables
         tables.Add("TBLevelMap", TBLevelMap);
         TBGlobal = new TBGlobal(loader("tbglobal")); 
         tables.Add("TBGlobal", TBGlobal);
+        TBAudio = new TBAudio(loader("tbaudio")); 
+        tables.Add("TBAudio", TBAudio);
         PostInit();
 
         TBEnemyData.Resolve(tables); 
@@ -52,6 +55,7 @@ public sealed partial class Tables
         TBBulletData.Resolve(tables); 
         TBLevelMap.Resolve(tables); 
         TBGlobal.Resolve(tables); 
+        TBAudio.Resolve(tables); 
         PostResolve();
     }
 
@@ -65,6 +69,7 @@ public sealed partial class Tables
         TBBulletData.TranslateText(translator); 
         TBLevelMap.TranslateText(translator); 
         TBGlobal.TranslateText(translator); 
+        TBAudio.TranslateText(translator); 
     }
     
     partial void PostInit();

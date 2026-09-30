@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace FTProject
@@ -323,6 +323,10 @@ namespace FTProject
             _wave.BeginRound(round);
             State = GameFlowState.RoundRunning;
             EventDispatcher.TriggerEvent<int>(EventName.RoundStartEvent, _roundCursor + 1);
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.Play(AudioName.RoundStart);
+            }
             Tips(string.Format("回合 {0}/{1} 开始", _roundCursor + 1, _roundIds.Count));
         }
 
@@ -368,6 +372,10 @@ namespace FTProject
             }
 
             EventDispatcher.TriggerEvent<int>(EventName.RoundClearEvent, finishedIndex);
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.Play(AudioName.RoundClear);
+            }
 
             _roundCursor++;
             if (_roundCursor >= _roundIds.Count)
