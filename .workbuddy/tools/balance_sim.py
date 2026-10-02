@@ -225,76 +225,79 @@ def simulate():
             print("      L%d  DPS %7.2f  累计成本 %4d  综合性价比 %6.3f   %s"
                   % (lvl, d, cost, d / max(1, cost), " ".join(tags)))
 
-    slots = build_slots(LEVEL, best["radius"])
-    print("\n【三、逐回合防御能力 vs 需求】")
-    print("   基准塔：%s（半径 %d 格，%.2f DPS）" % (best["name"], best["radius"], best["dps"]))
-    print("   能覆盖到路径的可建造格 = %d 个 ← 这是塔数的**物理上限**，金币再多也摆不下" % slots)
-    print("   %4s %5s %5s %10s %9s %9s %9s %9s %8s"
-          % ("回合", "波数", "敌数", "有效血量", "窗口(s)", "需求DPS", "可建塔", "供给DPS", "余量"))
-    print("   " + "-" * 92)
+    print("\n【三、逐关难度与防御余量（全部 %d 关）】" % len(levels))
+    print("   基准塔：%s（半径 %d 格，%.2f DPS，价 %d）" % (best["name"], best["radius"], best["dps"], best["price"]))
+    print("   每关的「可建造格」按各自的棋盘单独计算 —— 棋盘不同，能摆的塔数上限也不同。")
+    print("")
+    print("   %4s %6s %6s %10s %8s %8s %8s %8s   %s"
+          % ("关卡", "回合数", "可建格", "末回合血量", "最低余量", "最高余量", "平均余量", "初始金币", "判定"))
+    print("   " + "-" * 96)
 
-    gold = START_GOLD
-    problems = []
-    for rid in round_ids:
-        rd = rounds.get(rid)
-        if rd is None:
-            continue
-        wave_ids = rd.get("EnemyIndexs", [])
-        total_ehp = 0.0
-        count = 0
-        kill_gold = 0.0
-        wave_seconds = 0.0
-        traversal_sum = 0.0
-        for wid in wave_ids:
-            w = waves.get(wid)
-            if w is None:
+    all_problems = []
+    for lv in levels:
+        lid = lv.get("id")
+        rid_list = lv.get("RoundList") or []
+        path_len = path_length(lv)
+        slots = build_slots(lv, best["radius"])
+        gold = lv.get("initialGold", 100) or 100
+        margins = []
+        last_ehp = 0.0
+        for rid in rid_list:
+            rd = rounds.get(rid)
+            if rd is None:
                 continue
-            ids = w.get("EnemyIndexs", [])
-            count += len(ids)
-            wave_seconds += len(ids) * (w.get("enemyInterval", 500) / 1000.0)
-            for eid in ids:
-                e = enemies.get(eid)
-                if e is None:
+            total_ehp = 0.0
+            count = 0
+            kill_gold = 0.0
+            wave_seconds = 0.0
+            traversal_sum = 0.0
+            for wid in (rd.get("EnemyIndexs") or []):
+                w = waves.get(wid)
+                if w is None:
                     continue
-                total_ehp += e["hp"] / max(0.01, 1.0 - e["armor"])
-                traversal_sum += PATH_LEN / max(0.05, e["speed"])
-                kill_gold += e.get("reward", 0) + 1
-        if count == 0:
+                ids = w.get("EnemyIndexs", [])
+                count += len(ids)
+                wave_seconds += len(ids) * (w.get("enemyInterval", 500) / 1000.0)
+                for eid in ids:
+                    e = enemies.get(eid)
+                    if e is None:
+                        continue
+                    total_ehp += e["hp"] / max(0.01, 1.0 - e["armor"])
+                    traversal_sum += path_len / max(0.05, e["speed"])
+                    kill_gold += e.get("reward", 0) + 1
+            if count == 0:
+                continue
+            window = max(1.0, wave_seconds + traversal_sum / count)
+            needed_dps = total_ehp / window
+            usable = min(int(gold // max(1, best["price"])), slots)
+            margin = (usable * best["dps"]) / needed_dps if needed_dps > 0 else float("inf")
+            margins.append(margin)
+            last_ehp = total_ehp
+            gold += rd.get("rewardGold", 0) + kill_gold
+
+        if not margins:
             continue
-        avg_traversal = traversal_sum / count
-        window = max(1.0, wave_seconds + avg_traversal)
-        needed_dps = total_ehp / window
-
-        # 能建多少座塔 = min(买得起的, 摆得下的)
-        affordable = int(gold // max(1, best["price"]))
-        usable = min(affordable, slots)
-        supply_dps = usable * best["dps"]
-        margin = supply_dps / needed_dps if needed_dps > 0 else float("inf")
-
-        flag = ""
-        if margin < 1.0:
-            flag = "  ← 输出不足，很可能漏怪"
-            problems.append((rid, margin))
-        elif margin > 8.0:
-            flag = "  ← 余量非常充裕（这一段偏简单）"
-        print("   %4d %5d %5d %10.0f %9.1f %9.1f %9d %9.1f %8.2f%s"
-              % (rid, len(wave_ids), count, total_ehp, window, needed_dps,
-                 usable, supply_dps, margin, flag))
-
-        gold += rd.get("rewardGold", 0) + kill_gold
+        lo, hi = min(margins), max(margins)
+        avg = sum(margins) / len(margins)
+        verdict = "正常"
+        if lo < 1.0:
+            verdict = "✘ 有回合输出不足"
+            all_problems.append((lid, lo))
+        elif lo > 6.0:
+            verdict = "偏简单（最低余量都 > 6）"
+        print("   %4d %6d %6d %10.0f %8.2f %8.2f %8.2f %8d   %s"
+              % (lid, len(margins), slots, last_ehp, lo, hi, avg,
+                 lv.get("initialGold", 100), verdict))
 
     print("\n【四、结论】")
-    if problems:
-        for rid, m in problems:
-            print("   回合 %d：余量 %.2f —— 建议下调该回合敌人血量/护甲，或上调 rewardGold" % (rid, m))
+    if all_problems:
+        for lid, m in all_problems:
+            print("   关卡 %d：最低余量 %.2f —— 建议下调该关敌人强度或上调 initialGold" % (lid, m))
     else:
-        print("   所有回合余量 ≥ 1：摆满可建造格即可覆盖需求，没有「必败回合」。")
-    print("   逐回合余量的**走势**比单点数值更重要：")
-    print("     · 建造位用尽之前，余量随金币累积上升；")
-    print("     · 用尽之后（本例约第 8 回合，%d 个可用位）余量转为下降 ——" % slots)
-    print("       这才是后期真正的难度来源，也说明**升级**在此时才有价值。")
+        print("   8 关全部：每一回合的防御余量都 ≥ 1，没有「必败回合」。")
     print("   注 1：减速塔的价值是乘数（让别的塔多打几秒），本模型不计入 —— 低 DPS ≠ 没用。")
-    print("   注 2：本模型假设 100% 命中与满覆盖，实战输出会明显低于此值。")
+    print("   注 2：本模型假设 100% 命中与满覆盖；实战输出会低于此值，所以余量 1.5~3 才算舒适。")
+    print("   注 3：本模型按「每关各自的金币从头累积」估算，不含跨关继承。")
 
 
 if __name__ == "__main__":
