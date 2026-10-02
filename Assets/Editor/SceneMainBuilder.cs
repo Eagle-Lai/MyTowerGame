@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -270,6 +270,9 @@ namespace FTProject.EditorTools
             bgSr.sprite = bg;
             bgSr.sortingOrder = BoardSorting.Background;
             bgSr.color = new Color(1f, 1f, 1f, 0.55f);
+            // M4-4：背景视差。Init 必须在设完缩放与颜色之后调用 —— 它要记住这两者的基准值。
+            BackgroundParallax parallax = bgGo.AddComponent<BackgroundParallax>();
+            parallax.Init();
             if (bg == null)
             {
                 report.Warn("背景贴图未找到或未导入为 Sprite：" + BackgroundSpritePath);

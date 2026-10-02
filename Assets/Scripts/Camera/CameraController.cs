@@ -36,9 +36,21 @@ namespace FTProject
         /// </summary>
         public static CameraController Instance { get; private set; }
 
+        [Header("平移（M4-2）")]
+        [Tooltip("中键拖拽的灵敏度（1 = 跟手）")]
+        public float panDragFactor = 1f;
+        [Tooltip("键盘（WASD / 方向键）平移速度系数，会按当前缩放折算")]
+        public float panKeySpeed = 1.2f;
+        [Tooltip("鼠标贴到屏幕边缘时自动平移。放置/选中塔时会自动禁用，避免误触")]
+        public bool enableEdgeScroll = true;
+        [Tooltip("边缘触发带宽度（像素）")]
+        public float edgeBandPx = 18f;
+
         private Camera _cam;
         private float _fitSize = 5f;
         private Vector2 _boardCenter = Vector2.zero;
+        /// <summary>棋盘半尺寸（FitBoard 写入）。平移夹取用。</summary>
+        private Vector2 _boardHalf = Vector2.zero;
 
         // ---- 屏幕震动（M2-W5）----
         private Vector3 _shakeOffset;
@@ -135,6 +147,7 @@ namespace FTProject
             _fitSize = Mathf.Max(halfH, halfW / aspect);
 
             _boardCenter = boardCenter;
+            _boardHalf = new Vector2(cols * cellSize * 0.5f, rows * cellSize * 0.5f);
             _cam.orthographicSize = _fitSize;
             // 归位时清掉震动偏移：否则 LateUpdate 会把"上一帧的偏移"从新位置里减掉，导致对不准
             _shakeOffset = Vector3.zero;
@@ -144,6 +157,96 @@ namespace FTProject
         private void Update()
         {
             HandleZoom();
+            HandlePan();
+        }
+
+        /// <summary>
+        /// 平移：中键拖拽 / WASD·方向键 / 鼠标贴屏幕边缘。
+        ///
+        /// 【为什么用中键而不是右键】右键已经被 TowerPlacement 用作"取消放置 / 取消选中"。
+        ///
+        /// 【为什么速度要乘 orthographicSize】放大之后，同样的像素拖拽对应的世界距离更小。
+        /// 按视口高度折算，才能做到"不管缩放多少，推起来手感一致"。
+        /// </summary>
+        private void HandlePan()
+        {
+            if (_cam == null || Time.timeScale <= 0f)
+            {
+                return;   // 暂停时不平移
+            }
+
+            float dt = Time.deltaTime;
+            float speed = _cam.orthographicSize * panKeySpeed;
+            Vector3 delta = Vector3.zero;
+
+            // ① 键盘
+            float h = Input.GetAxisRaw("Horizontal");
+            float v = Input.GetAxisRaw("Vertical");
+            if (Mathf.Abs(h) > 0.01f || Mathf.Abs(v) > 0.01f)
+            {
+                delta += new Vector3(h, v, 0f).normalized * (speed * dt);
+            }
+
+            // ② 中键拖拽
+            if (Input.GetMouseButton(2))
+            {
+                delta += new Vector3(-Input.GetAxisRaw("Mouse X"), -Input.GetAxisRaw("Mouse Y"), 0f)
+                         * (_cam.orthographicSize * 0.05f * panDragFactor);
+            }
+
+            // ③ 边缘自动平移（放置/选中塔时禁用，否则拖塔到边缘会把镜头一起带走）
+            if (enableEdgeScroll && !IsInteractingWithTower())
+            {
+                Vector3 m = Input.mousePosition;
+                if (m.x >= 0f && m.x <= Screen.width && m.y >= 0f && m.y <= Screen.height)
+                {
+                    Vector2 dir = Vector2.zero;
+                    if (m.x < edgeBandPx) dir.x -= 1f;
+                    else if (m.x > Screen.width - edgeBandPx) dir.x += 1f;
+                    if (m.y < edgeBandPx) dir.y -= 1f;
+                    else if (m.y > Screen.height - edgeBandPx) dir.y += 1f;
+                    if (dir.sqrMagnitude > 0.01f)
+                    {
+                        delta += (Vector3)(dir.normalized * (speed * dt));
+                    }
+                }
+            }
+
+            if (delta.sqrMagnitude <= 0f)
+            {
+                return;
+            }
+            transform.position = ClampToBoard(transform.position + delta);
+        }
+
+        private static bool IsInteractingWithTower()
+        {
+            TowerPlacement tp = TowerPlacement.Instance;
+            return tp != null && (tp.IsPlacing || tp.SelectedTower != null);
+        }
+
+        /// <summary>
+        /// 把相机位置夹在棋盘范围内。
+        ///
+        /// 【为什么不是简单夹到棋盘矩形】正交相机看到的是一个矩形视口：
+        /// 当视野比棋盘还大（缩到最远）时，"把中心夹进棋盘"反而会导致画面抖动。
+        /// 正确做法是夹取半径 = 棋盘半尺寸 − 视野半尺寸；差值为负时直接锁死在棋盘中心
+        /// （Mathf.Clamp 在 min &gt; max 时行为未定义，必须显式处理）。
+        /// </summary>
+        private Vector3 ClampToBoard(Vector3 pos)
+        {
+            if (_cam == null || _boardHalf.x <= 0f || _boardHalf.y <= 0f)
+            {
+                return pos;
+            }
+            float halfH = _cam.orthographicSize;
+            float halfW = halfH * _cam.aspect;
+            float rx = Mathf.Max(0f, _boardHalf.x - halfW);
+            float ry = Mathf.Max(0f, _boardHalf.y - halfH);
+            return new Vector3(
+                Mathf.Clamp(pos.x, _boardCenter.x - rx, _boardCenter.x + rx),
+                Mathf.Clamp(pos.y, _boardCenter.y - ry, _boardCenter.y + ry),
+                DefaultZ);
         }
 
         private void HandleZoom()
@@ -153,10 +256,10 @@ namespace FTProject
             {
                 if (Input.GetKeyDown(KeyCode.Space))
                 {
-                    // 一键回到自适应视野
+                    // 一键回到自适应视野（同时把平移偏移也归零）
                     _cam.orthographicSize = _fitSize;
                     _shakeOffset = Vector3.zero;
-                    transform.position = new Vector3(_boardCenter.x, _boardCenter.y, DefaultZ);
+                    transform.position = ClampToBoard(new Vector3(_boardCenter.x, _boardCenter.y, DefaultZ));
                 }
                 return;
             }
@@ -165,6 +268,8 @@ namespace FTProject
             float max = _fitSize * Mathf.Max(1.01f, maxZoomInFactor);
             float next = Mathf.Clamp(_cam.orthographicSize - scroll * zoomSpeed, min, max);
             _cam.orthographicSize = next;
+            // 缩放后视野变了，原来的位置可能已经越界 —— 立刻夹一次
+            transform.position = ClampToBoard(transform.position - _shakeOffset);
         }
 
         /// <summary>屏幕坐标 → 世界坐标（z 取相机所在深度平面）</summary>

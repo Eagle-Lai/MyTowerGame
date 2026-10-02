@@ -77,6 +77,9 @@ namespace FTProject
                 _managers[i].OnInit();
             }
 
+            // M5-3：性能探针常驻（只在按 F3 / 到达自动打印间隔时才输出，平时零日志）
+            PerfProbe.Ensure();
+
             // 所有管理器就绪后，把存档里的设置推给音频系统。
             // 【为什么放在循环之后】SaveManager 读档时 AudioManager 可能还没 OnInit，
             // 那时 ApplyToAudio 会因为 Instance 还没准备好而空转。

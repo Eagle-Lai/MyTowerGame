@@ -49,6 +49,15 @@ namespace FTProject
                         return null;
                     }
                     _uiCanvas = go.GetComponent<RectTransform>();
+
+                    // M4-1：安全区适配。
+                    // 【为什么在这里自动补挂而不是要求重建场景】UICanvas 是按 Tag 在运行时找到的，
+                    // 在这里补挂不需要改场景，老场景也能立刻生效 ——
+                    // 否则每个已有工程都得重跑一次「搭建 main 场景」才不挡刘海。
+                    if (_uiCanvas != null && _uiCanvas.GetComponent<SafeAreaFitter>() == null)
+                    {
+                        _uiCanvas.gameObject.AddComponent<SafeAreaFitter>();
+                    }
                 }
                 return _uiCanvas;
             }
@@ -124,7 +133,30 @@ namespace FTProject
                 rt.localScale = Vector3.one;
             }
             _opened[logicalName] = go;
+            EnsureFadeIn(go);
             return go;
+        }
+
+        /// <summary>界面淡入时长（秒，走 unscaled 时间 —— 暂停界面是在 timeScale=0 下打开的）</summary>
+        private const float FadeInSec = 0.12f;
+
+        /// <summary>
+        /// 给新打开的界面补一个淡入（M4-3）。
+        ///
+        /// 【为什么"自带 CanvasGroup 的界面就跳过"】TipsView 用 CanvasGroup 自己管淡入淡出，
+        /// 我们再插一脚就会两边抢 alpha，表现为"提示一闪一闪"。
+        /// 约定：prefab 自带 CanvasGroup ⇒ 该界面自己负责透明度，UIManager 不插手。
+        /// 这样不改任何 prefab 就能给 M3 新界面加上转场。
+        /// </summary>
+        private static void EnsureFadeIn(GameObject go)
+        {
+            if (go == null || go.GetComponent<CanvasGroup>() != null)
+            {
+                return;
+            }
+            CanvasGroup cg = go.AddComponent<CanvasGroup>();
+            UIFader fader = go.AddComponent<UIFader>();
+            fader.Begin(cg, FadeInSec);
         }
 
         /// <summary>打开并取组件</summary>

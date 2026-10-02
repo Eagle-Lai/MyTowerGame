@@ -806,7 +806,7 @@ namespace FTProject
                 }
             }
 
-            // 调试快捷键：F1 打印完整状态，F2 强制获胜（联调时省时间）
+            // 调试快捷键：F1 打印完整状态，F2 强制获胜，F3 性能报告（联调/压测用）
             if (Input.GetKeyDown(KeyCode.F1))
             {
                 Debug.Log(DumpDebugInfo());
@@ -814,6 +814,11 @@ namespace FTProject
             else if (Input.GetKeyDown(KeyCode.F2))
             {
                 PlayerDataManager.Instance.Win();
+            }
+            else if (Input.GetKeyDown(KeyCode.F3))
+            {
+                // M5-3：真机压测就靠它把"手感"变成可贴出来的数字
+                Debug.Log(PerfProbe.Ensure().Report());
             }
         }
     }

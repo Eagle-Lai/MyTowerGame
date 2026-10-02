@@ -58,6 +58,15 @@ namespace FTProject
 
         private const float MinRotateStep = 0.5f;
 
+        // ---- 开火后坐（M4-3）----
+        /// <summary>炮管后坐距离（世界单位）。要小到"几乎看不见但能感觉到"。</summary>
+        private const float RecoilDistance = 0.07f;
+        /// <summary>后坐回位时长（秒）</summary>
+        private const float RecoilDurationSec = 0.09f;
+        private float _recoilTimer;
+        private Vector3 _barrelBasePos;
+        private bool _barrelBaseCached;
+
         /// <summary>
         /// 炮管贴图**自身画朝哪个方向**（Unity 角度，0°=右、90°=上）。
         ///
@@ -163,8 +172,9 @@ namespace FTProject
                 return;   // ★ 无目标绝不开火
             }
 
-            // ③ 塔头转向
+            // ③ 塔头转向 + 后坐回位
             RotateBarrelTowards(_target.Position, dt);
+            TickRecoil(dt);
 
             // ④ 冷却结束才开火
             _fireTimer += dt;
@@ -174,6 +184,42 @@ namespace FTProject
             }
             _fireTimer = 0f;
             Fire(_target);
+        }
+
+        /// <summary>
+        /// 开火后坐：炮管沿自身"向后"退一点再回位。
+        ///
+        /// 【为什么要乘 localRotation】炮管是跟着目标转的，直接改 localPosition.y
+        /// 在后坐方向上就错了（转 90° 时变成横着平移）。
+        /// 正确做法是把"本地朝下"这个方向用炮管自身的旋转转换到父空间
+        /// —— 炮管贴图原生朝上（见 BarrelNativeAngle），所以本地 -Y 就是"向后"。
+        /// </summary>
+        private void TickRecoil(float dt)
+        {
+            if (_barrel == null)
+            {
+                return;
+            }
+            if (!_barrelBaseCached)
+            {
+                _barrelBasePos = _barrel.localPosition;
+                _barrelBaseCached = true;
+            }
+            if (_recoilTimer <= 0f)
+            {
+                return;
+            }
+
+            _recoilTimer -= dt;
+            if (_recoilTimer <= 0f)
+            {
+                _recoilTimer = 0f;
+                _barrel.localPosition = _barrelBasePos;
+                return;
+            }
+            float k = Mathf.Clamp01(_recoilTimer / RecoilDurationSec);
+            Vector3 back = _barrel.localRotation * Vector3.down;
+            _barrel.localPosition = _barrelBasePos + back * (RecoilDistance * k);
         }
 
         private bool InRange(BaseEnemy e)
@@ -275,6 +321,8 @@ namespace FTProject
 
         private void Fire(BaseEnemy target)
         {
+            _recoilTimer = RecoilDurationSec;   // M4-3：开火即后坐，回位在 TickRecoil 里推进
+
             // ---- 激光：瞬发命中（hitscan），不生成弹体 ----
             // 【为什么不做成"速度极高的子弹"】那会引入高速穿透漏判
             // （BulletConfig.IsSpeedSafeAtFps 就是为这个坑准备的自检），
