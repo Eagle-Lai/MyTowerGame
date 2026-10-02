@@ -586,6 +586,7 @@ D:\FreedomTower_1\                       （注意实际工程根目录带 _1）
 │   ├── gen_m3_waves_rounds.py           ★ 40 波/40 回合战役编排（目标血量法）
 │   ├── apply_m2_*.py                    M2 的配置表变更脚本（带自动备份）
 │   ├── apply_levelmap_export.py         ★ 地图编辑器导出 → 回写 LevelMap.xlsx
+│   ├── gen_m3_ui_prefabs.py             ★ 离线生成 M3 三个 UI prefab（克隆 Unity 模板）
 │   └── balance_sim.py                   ★ 数值平衡顶演（只读，逐关）
 │
 └── Docs\
@@ -678,7 +679,7 @@ M0 的 HUD 使用 Unity **内置动态字体**（`LegacyRuntime.ttf`）。
 | 伤害数字不显示 | 配置表开关关了 | `Global.xlsx` 的 `showDamageText` 置 1（同时确认 `damageTextThrottleMs` 不过大） |
 | 屏幕震动停不下来 / 相机偏了 | 震动期间调用了 `FitBoard` | 已在 `FitBoard` 与空格归位里清 `_shakeOffset`；若仍复现请反馈 |
 | **飞行怪还是沿着地面路径走** | `EnemyData.isFlying` 为 0 | 该怪的行改成 1 → 重跑 Luban 导出。飞行单位走"起点→终点"直线，不参与 A* 与堵路判定 |
-| **Play 后一直停在空白 / 没有选关界面** | `SelectView.prefab` 没生成 | 跑「补缺 UI 预制体（安全：只补缺失）」。**不会卡死**：代码里有降级 —— 选关打不开时直接进第 1 关，Console 会有 `[Flow] SelectView 打开失败…降级` |
+| **Play 后一直停在空白 / 没有选关界面** | `SelectView.prefab` 缺失或损坏 | 三个 M3 界面的 prefab **已随仓库提供**，正常不需要生成。若缺失/被改坏，跑「补缺 UI 预制体（安全：只补缺失）」重建；或用 `python .workbuddy/tools/gen_m3_ui_prefabs.py` 离线重建。**不会卡死**：代码有降级，选关打不开时直接进第 1 关，Console 会有 `[Flow] SelectView 打开失败…降级` |
 | **按 P 没反应 / 暂停后回不来** | 暂停热键读的是 `GetKeyDown`，不受 `timeScale` 影响，正常一定能恢复 | 若真的回不来，看 Console 有没有 `[UI] UICanvas 下缺少子节点`。暂停面板挂在 NormalPanel 上，缺层就打不开 |
 | **暂停后游戏一直卡住** | `Time.timeScale` 没被恢复 | `PauseView.OnDisable` 里无条件恢复；若仍复现请反馈。**注意**：不要在暂停状态下用 Console 手动改 timeScale 调试，会和面板状态打架 |
 | **切关后出现"幽灵塔" / 空引用** | 上一关的塔/怪/弹没清干净 | 切关走 `GameFlowManager.TeardownLevel`（先清怪→弹→塔，再关界面）。若复现请反馈 |
