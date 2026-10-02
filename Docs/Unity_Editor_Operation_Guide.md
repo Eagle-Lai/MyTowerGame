@@ -1,7 +1,8 @@
-# FreeTower M0 · Unity 编辑器操作指南
+# FreeTower · Unity 编辑器操作指南
 
-> 适用工程：`D:\FreedomTower`　|　主场景：`Assets/Scenes/main.unity`
-> 配置表目录：`D:\FreedomTower\Luban`　|　目标：**单回合闭环可跑通并验收**
+> 适用工程：`D:\FreedomTower_1`（注意带 `_1`）　|　主场景：`Assets/Scenes/main.unity`
+> 配置表目录：`D:\FreedomTower_1\Luban`
+> 目标：**M0~M3 全部可跑通并验收**
 > 本指南按「照着点就能跑起来」组织。每一步都写了：**在哪点 → 设什么 → 应该看到什么 → 出问题怎么办**。
 
 ---
@@ -10,10 +11,13 @@
 
 ```
 ① Luban 导出配置表          （双击一个 .bat）
-② Unity 菜单：一键资源准备   （点一次，等它跑完）
+② Unity 菜单：一键补齐资源   （点一次，等它跑完）
 ③ Unity 菜单：自检           （点一次，看有没有 ✘）
-④ 打开 main.unity → Play     （按 16 项验收清单过一遍）
+④ 打开 main.unity → Play     （按 M0 基线 + M2 + M3 验收清单过一遍）
 ```
+
+> **M3 起开机流程变了**：Play 之后先出现**关卡选择界面**，点关卡才进对局。
+> 调试时想跳过选关：在场景 `GameFlow` 对象的 `GameFlowManager` 上，把 `startLevelId` 填成关卡号即可。
 
 只有第 ⑤ 步以后（验证真 AB / 出包）才需要额外操作。
 
@@ -43,10 +47,17 @@
 | `生成战斗预制体` | 子弹 + **全部 119 个怪物** | 覆盖子弹/怪物 prefab |
 | `清理选中预制体的物理组件` | 手动清理指定预制体 | 改选中资源 |
 | `清理全部战斗预制体的物理组件` | 批量清理 | 批量改 119 个 |
-| `生成 UI 预制体` | HUD + 提示层 + **塔信息面板** | **重建 UI prefab**；若含生成器不认识的节点会**中止** |
+| `补缺 UI 预制体（安全：只补缺失）` | 只生成**不存在**的 UI prefab | 无（已存在的一律跳过） |
+| `生成 UI 预制体（全量重建）` | HUD + 提示层 + 塔面板 + **关卡选择 / 暂停 / 设置** | **重建 UI prefab**；若含生成器不认识的节点会**中止** |
 | `重建 main 场景（危险：会清空重建）` | 清空 main.unity 全部根对象后重建 | **抹掉场景里的手工接线**（原文件先备份到 `Assets/Scenes/_Backup/`） |
 | `清除 ResTable 范围内的 AssetBundle 标记` | 重新规划分包时用 | 只清 `ResTable` 登记的资源，不再清全工程 |
 | `5b. 严格模式打包（引用缺失即失败）` | 引用缺失即构建失败 | 出正式包前 |
+
+**地图编辑（M3 新增）**
+
+| 菜单项 | 作用 |
+|---|---|
+| `地图编辑器（可视化刷格子）` | 刷格子 / 标起终点 / 实时 BFS 连通性校验 / 导出 cells 字符串 |
 
 ---
 
@@ -327,16 +338,57 @@ prefab 根节点自带 `scale = 0.5`。M0 的配置默认值是 `scale = 0.5`，
 
 > M5 / M7 / M12 / M16 是最能证明"这轮真的接上线了"的四条，建议重点看。
 
+### 验收清单 · M3 新增项（关卡与元进度）
+
+**【关卡选择与解锁】**
+- [ ] N1. Play 后**先出现关卡选择界面**（不是直接进第 1 关），能看到 8 个关卡按钮
+- [ ] N2. 第 1 关可点；第 2~8 关初始显示「未解锁」，点了提示「先通关上一关才能解锁」
+- [ ] N3. 每个按钮显示关卡名 / 星级（☆☆☆）/ 难度标签
+- [ ] N4. 通关第 1 关后返回选关，**第 2 关变为可点**，且第 1 关显示获得的星级
+
+**【8 关与难度曲线】**
+- [ ] N5. 8 关的棋盘**各不相同**（障碍布局不同，可建造格从 142 递减到 70）
+- [ ] N6. 每关的初始金币不同（100 → 2400），越后面的关给得越多
+- [ ] N7. 第 4 关起每关最后一回合会遇到 **Boss**（鼠王 / 虫后 / 苔藓女王）
+
+**【地图编辑器】**
+- [ ] N8. `Tools ▸ 塔防 ▸ 地图编辑器` 打开后能载入当前关卡棋盘
+- [ ] N9. 左键刷、右键擦；点「校验连通性」对故意堵死的地图报「S 到 E 不可达」
+- [ ] N10. 点「一键写入 xlsx」后回 Unity，跑一次 Luban 导出，改动生效
+
+**【暂停与设置】**
+- [ ] N11. 对局中按 `P` 暂停（时间停住、弹出暂停面板）；再按 `P` 或点「继续」恢复
+- [ ] N12. 暂停面板的「重新开始本关」能重开且**不会被卡在暂停**（时间已恢复）
+- [ ] N13. 设置界面能调音量 / 静音；**关掉游戏再进，设置还在**（存档生效）
+- [ ] N14. 「重置存档」后回到选关界面，8 关全部回到未解锁状态
+
+**【存档与局内快照】**
+- [ ] N15. 打到第 3 回合，用暂停面板「返回关卡选择」，再进同一关 → **从第 3 回合继续**，金币/生命/已建的塔都还在
+- [ ] N16. 存档文件位于 `%USERPROFILE%\AppData\LocalLow\<公司名>\<产品名>\freetower_save.json`（Console 报错时会打印完整路径）
+
+**【M4 表现】**
+- [ ] N17. 相机可用中键拖拽 / WASD 平移，且**拖不出棋盘边界**；按空格回正
+- [ ] N18. 塔开火时炮管有轻微后坐
+- [ ] N19. 打开任意界面时有淡入（不是硬切）
+- [ ] N20. 背景随相机移动得比棋盘慢（视差）
+
+> N4 / N15 是最能证明"元进度真的通了"的两条；N1 是这轮最大的行为变化（开机先到选关）。
+
+
 
 ### 调试快捷键
 
 | 按键 | 作用 |
 |---|---|
 | `F1` | 打印完整状态（流程 / 玩家 / 波次 / 战斗 / 空间哈希） |
-| `F2` | 直接获胜（省去打完 10 回合的时间） |
-| `F3` | （已移除）朝向由常数表 `Global.artFaceLeft` 决定；若朝向不对改这一列并重跑导出 |
-| `空格` | 相机回到自适应视野 |
+| `F2` | 直接获胜（省去打完一整关的时间） |
+| `F3` | **性能报告**（M5）：p50 / p95 / p99 / 最差帧 / 托管堆增量 / 战斗计数。**真机压测就靠它** |
+| `P` | **暂停 / 继续**（M3）。不用 ESC 是因为 ESC 已被"取消放置 / 取消选中"占用 |
+| `空格` | 相机回到自适应视野（同时把平移偏移归零） |
 | `滚轮` | 缩放（自适应尺寸的 0.5× ~ 2.5×） |
+| `中键拖拽` | 平移相机（M4） |
+| `WASD / 方向键` | 平移相机（M4） |
+| `鼠标贴屏幕边缘` | 边缘自动平移（M4）；放置或选中塔时自动禁用，避免拖塔时把镜头带走 |
 | `右键` / `ESC`（未在放置时） | **取消选中 / 关闭塔面板**（M2 变更：出售不再走右键，改到塔面板里） |
 | `右键` / `ESC`（放置中） | 取消建塔放置 |
 
@@ -513,25 +565,28 @@ D:\FreedomTower_1\                       （注意实际工程根目录带 _1）
 │   │   ├── Tower\Tower_Normal/Power/Retard.prefab   世界空间 SpriteRenderer
 │   │   ├── Bullet\Bullet_Normal.prefab
 │   │   ├── Enemy\Enemy_<怪名>.prefab   ★ 119 个战斗怪物（由「导入全部怪物」生成）
-│   │   └── UI\HudView.prefab, TipsView.prefab, TowerInfoView.prefab
+│   │   └── UI\HudView / TipsView / TowerInfoView / SelectView / PauseView / SettingView .prefab
 │   ├── _UIAssets\                       美术资源（塔贴图 / 怪物包 / 背景）
 │   └── Scripts\
 │       ├── Core\Res\                   ★ AB 资源系统（ResTable 是唯一寻址源）
 │       ├── Core\Combat\                ★ 去物理战斗系统（EnemyGrid + CombatSystem）
-│       ├── Core\Manager\               管理器基类 + 玩家数据 + 音效（AudioManager）
-│       ├── Data\                       配置读取层（Configs + 包装类 + 生成清单）
-│       ├── Game\                       棋盘 / 关卡流程 / 路径渲染
+│       ├── Core\Manager\               管理器基类 + 玩家数据 + 音效 + **存档(SaveManager)** + 性能探针
+│       ├── Data\                       配置读取层（Configs + 包装类 + 生成清单 + **SaveData**）
+│       ├── Game\                       棋盘 / 关卡流程 / 路径渲染 / **背景视差**
 │       ├── Round\WaveManager.cs        波次时间轴
 │       ├── Enemy\  Tower\  Bullet\     战斗实体（含 RangeIndicatorView / LaserBeamView）
-│       ├── UI\  Core\UI\               HUD / 提示 / 塔面板 / 伤害飘字
-│       ├── Camera\CameraController.cs  2D 正交相机（含屏幕震动）
+│       ├── UI\  Core\UI\               HUD / 提示 / 塔面板 / 伤害飘字 / **选关 / 暂停 / 设置 / 安全区 / 淡入**
+│       ├── Camera\CameraController.cs  2D 正交相机（震动 + **平移/边缘拖拽/边界夹取**）
 │       └── AStarWrapper\               A* 寻路（只建数据，不生成物件）
 │
 ├── .workbuddy\tools\                   ★ 无 Unity 时的替代验证与生成脚本
 │   ├── check_*.py                       5 个静态校验（括号/事件/成员/using/Unity API）
 │   ├── gen_*_catalog.py                 怪物 / 音频清单生成
+│   ├── gen_m3_levelmaps.py              ★ 8 张关卡棋盘生成（含 BFS 连通性自检）
+│   ├── gen_m3_waves_rounds.py           ★ 40 波/40 回合战役编排（目标血量法）
 │   ├── apply_m2_*.py                    M2 的配置表变更脚本（带自动备份）
-│   └── balance_sim.py                   ★ 数值平衡顶演（只读）
+│   ├── apply_levelmap_export.py         ★ 地图编辑器导出 → 回写 LevelMap.xlsx
+│   └── balance_sim.py                   ★ 数值平衡顶演（只读，逐关）
 │
 └── Docs\
     ├── TowerDefense_Design_and_Implementation.md   ★ 设计与实施文档（v2.1 + §Z.7 M2 记录）
@@ -553,6 +608,12 @@ D:\FreedomTower_1\                       （注意实际工程根目录带 _1）
 | 棋盘与坐标换算 | `Game/Board.cs`（`BoardGeometry` 是**唯一**坐标换算入口） |
 | HUD 显示 | `UI/HudView.cs`（节点名与 `Editor/UIPrefabBuilder.cs` 必须成对改） |
 | 塔面板 / 升级 / 出售 | `UI/TowerInfoView.cs`（只发事件）+ `Tower/BaseTower.cs` 里的 `TowerManager` |
+| **选关 / 解锁 / 星级** | `UI/SelectView.cs`（展示）+ `Core/Manager/SaveManager.cs`（规则） |
+| **暂停 / 设置** | `UI/PauseView.cs` / `UI/SettingView.cs`；暂停热键在 `GameFlowManager.Update` |
+| **关卡切换 / 清场** | `GameFlowManager.TeardownLevel`（顺序：怪→弹→塔→界面） |
+| **局内快照** | `GameFlowManager.SaveSnapshotNow` / `TryRestoreSnapshot` |
+| **地图数据** | `Luban/Config/Datas/LevelMap.xlsx`；用菜单「地图编辑器」画，别手写字符串 |
+| **性能度量** | `Core/Manager/PerfProbe.cs`（F3 打印报告） |
 | 子弹行为（穿透/爆炸/减速/DOT） | `Bullet/BaseBullet.cs`；参数全在 `BulletData.xlsx` |
 | 状态效果（减速/持续伤害） | `Enemy/BaseEnemy.cs` 的 `ApplySlow` / `ApplyDot` |
 | 飞行单位 | `Enemy/BaseEnemy.cs` 的 `SetupFlyingPath` / `MoveStraight`；开关是 `EnemyData.isFlying` |
@@ -617,6 +678,14 @@ M0 的 HUD 使用 Unity **内置动态字体**（`LegacyRuntime.ttf`）。
 | 伤害数字不显示 | 配置表开关关了 | `Global.xlsx` 的 `showDamageText` 置 1（同时确认 `damageTextThrottleMs` 不过大） |
 | 屏幕震动停不下来 / 相机偏了 | 震动期间调用了 `FitBoard` | 已在 `FitBoard` 与空格归位里清 `_shakeOffset`；若仍复现请反馈 |
 | **飞行怪还是沿着地面路径走** | `EnemyData.isFlying` 为 0 | 该怪的行改成 1 → 重跑 Luban 导出。飞行单位走"起点→终点"直线，不参与 A* 与堵路判定 |
+| **Play 后一直停在空白 / 没有选关界面** | `SelectView.prefab` 没生成 | 跑「补缺 UI 预制体（安全：只补缺失）」。**不会卡死**：代码里有降级 —— 选关打不开时直接进第 1 关，Console 会有 `[Flow] SelectView 打开失败…降级` |
+| **按 P 没反应 / 暂停后回不来** | 暂停热键读的是 `GetKeyDown`，不受 `timeScale` 影响，正常一定能恢复 | 若真的回不来，看 Console 有没有 `[UI] UICanvas 下缺少子节点`。暂停面板挂在 NormalPanel 上，缺层就打不开 |
+| **暂停后游戏一直卡住** | `Time.timeScale` 没被恢复 | `PauseView.OnDisable` 里无条件恢复；若仍复现请反馈。**注意**：不要在暂停状态下用 Console 手动改 timeScale 调试，会和面板状态打架 |
+| **切关后出现"幽灵塔" / 空引用** | 上一关的塔/怪/弹没清干净 | 切关走 `GameFlowManager.TeardownLevel`（先清怪→弹→塔，再关界面）。若复现请反馈 |
+| **进关卡后从一半继续，但我想从头打** | 局内快照生效了（这是特性） | 暂停面板点「重新开始本关」；或删掉 `freetower_save.json`（Console 报错时会打印完整路径） |
+| **选关界面里第 2 关点不动** | 第 1 关还没通关（解锁规则：前一关至少通关一次） | 先通第 1 关。调试时可在 `GameFlow` 的 `startLevelId` 里直接填关卡号跳过解锁 |
+| **地图编辑器改了但游戏里没变** | 忘了跑 Luban 导出 | 窗口「一键写入 xlsx」只写到 Excel。之后必须再跑 `3. 导出配置表（Luban）` |
+| **地图编辑器「一键写入 xlsx」报找不到 python** | 本机 Python 不在 PATH | 手工执行 `python .workbuddy/tools/apply_levelmap_export.py`。该脚本自带备份与连通性复检 |
 
 ---
 
@@ -626,7 +695,7 @@ M0 的 HUD 使用 Unity **内置动态字体**（`LegacyRuntime.ttf`）。
 
 | 项 | 说明 |
 |---|---|
-| 选关界面 | 启动直接进关卡 1（`GameFlowManager.startLevelId = 0` → 取 `TBSceneInfo` 第一行）。想固定某关就在 `GameFlow.startLevelId` 填 id |
+| ~~选关界面~~ | ✅ **M3 已完成**（`SelectView`，含解锁/星级/难度标签）。开机先进选关；调试可填 `GameFlowManager.startLevelId` 跳过 |
 | ~~塔升级 / 出售 UI~~ | ✅ **M2 已完成**（`TowerInfoView` + 换实例升级 + 两段式出售确认） |
 | ~~伤害飘字 / 击杀特效 / 音效~~ | ✅ **M2 已完成**（飘字/闪白/消散/震动；音效为"系统先行"，等音频文件） |
 | ~~多塔型 / AOE / 减速~~ | ✅ **M2 已完成**（5 类齐备；穿透/激光外观待美术） |
@@ -680,3 +749,53 @@ M0 的 HUD 使用 Unity **内置动态字体**（`LegacyRuntime.ttf`）。
   → Tools ▸ 塔防 ▸ 8b. 打包 AssetBundle
   → File ▸ Build Settings ▸ Build
 ```
+
+---
+
+## 14. 回归用例清单（M5-3）
+
+> 用途：**每次改完代码或配置表，按这份清单过一遍**。它比"逐条验收"短，但覆盖了所有"改一处会连带弄坏别处"的耦合点。
+> 建议固定用同一关卡走完：**关卡 1**（棋盘最开阔、回合最短，5 个回合能跑完）。
+
+### 14.1 冒烟（每次改动后必跑，约 5 分钟）
+
+| # | 步骤 | 期望 |
+|---|---|---|
+| 1 | Play | 出现**选关界面**，Console 无 `Exception` / `NullReferenceException` |
+| 2 | 点关卡 1 | 棋盘按配置生成，Console 打印 `[Flow] 关卡 1「…」就绪` 与 9 张表的记录数 |
+| 3 | 按 `F3` | Console 打印 `[Perf]` 报告，且其中**「空放」必须为 0** |
+| 4 | 建 1 座普通塔 | 金币按配置扣减；路径箭头实时改道 |
+| 5 | 点「开始」，打完第 1 回合 | 顶部显示「回合 1 完成」，金币收到回合奖励 |
+| 6 | 点已建的塔 | 弹出塔面板，数值与 `TowerInfo.xlsx` 一致 |
+| 7 | 按 `P` 暂停再恢复 | 时间停住/恢复，游戏不卡死 |
+| 8 | 暂停面板 →「返回关卡选择」 | 回到选关；再进关卡 1 → **从第 2 回合继续**，塔还在 |
+| 9 | 暂停面板 →「重新开始本关」 | 回到第 1 回合，塔与金币重置为关卡初始值 |
+
+### 14.2 耦合点专项（改到相关模块时跑）
+
+| 改了什么 | 必须额外验证 |
+|---|---|
+| `TowerInfo.xlsx` / `BulletData.xlsx` | 5 种塔都能建出来；AOE 一次打多只；穿透连打 ≥2 只；减速怪变慢；激光无弹体 |
+| `EnemyData.xlsx` | 改过的那只怪属性在游戏里生效；`isFlying=1` 的怪走直线且不挡建塔 |
+| `LevelMap.xlsx` | 每张图 S→E 可达；`cells` 每行长度 = `cols`（否则 Console 报 `[Flow] 棋盘配置校验未通过`） |
+| `EventName.cs` | 跑 `python .workbuddy/tools/check_events.py`（校验 Trigger/Add 的 arity 一致） |
+| `ResTable.cs` | 跑菜单 `0. 自检`，② 资源地址表必须全 ✔ |
+| `UIPrefabBuilder.cs` | 跑「生成 UI 预制体（全量重建）」后 Play：HUD 7 个直接子节点齐备、5 颗塔按钮都在 |
+| `BaseTower.cs` | 建塔/升级/出售三条路径都试一遍；升级后塔仍在原格且能开火；**升级失败时塔不丢** |
+| `SaveManager.cs` | 改设置 → 退出 → 重进，设置仍在；删存档后 8 关回到未解锁 |
+| `CameraController.cs` | 缩放/平移/空格回正都正常；暂停时相机不动 |
+| 新增 `.cs` 文件 | **手工往 `Assembly-CSharp.csproj` 补 `<Compile Include="…" />`**，否则 MSBuild 编译看不到它（Unity 刷新后会自动补） |
+
+### 14.3 出包前（真机 / AB）
+
+| # | 步骤 | 期望 |
+|---|---|---|
+| 1 | 菜单 `4. 按 ResTable 打 AssetBundle 标记` | 无 ✘ |
+| 2 | 菜单 `5. 打包 AssetBundle` | 每个包都有产物；`tower_power` / `tower_retard` 不再缺失 |
+| 3 | 加 `FORCE_AB` 宏跑一局 | 与编辑器直读表现一致；Console 无 `[Res] 包「xxx」尚未加载` |
+| 4 | 撤掉 `FORCE_AB` | —— |
+| 5 | 真机跑一关（尽量多怪）→ 按 `F3` | p95 ≤ 16.7ms；托管堆增量接近 0；空放为 0 |
+| 6 | 真机按 `P` 暂停（后台切走再回来） | 不卡死、不丢进度 |
+
+> 第 5 条就是设计文档 M5 的"低端机 200 怪 + 50 塔 60fps"验收 ——
+> **它必须在真机上跑**，编辑器里的数字不作数（PC 与手机差一个数量级）。
