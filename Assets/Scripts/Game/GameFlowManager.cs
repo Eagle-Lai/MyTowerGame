@@ -86,6 +86,15 @@ namespace FTProject
             EventDispatcher.AddEventListener<BaseTower>(EventName.TowerSelectedEvent, OnTowerSelected);
             EventDispatcher.AddEventListener<BaseTower>(EventName.TowerUpgradeRequestEvent, OnTowerUpgradeRequest);
             EventDispatcher.AddEventListener<BaseTower>(EventName.TowerSellRequestEvent, OnTowerSellRequest);
+            // M3：关卡选择 / 暂停 / 设置
+            EventDispatcher.AddEventListener<int>(EventName.SelectLevelRequestEvent, OnSelectLevelRequest);
+            EventDispatcher.AddEventListener(EventName.CloseSelectRequestEvent, OnCloseSelectRequest);
+            EventDispatcher.AddEventListener(EventName.PauseRequestEvent, OnPauseRequest);
+            EventDispatcher.AddEventListener(EventName.ResumeRequestEvent, OnResumeRequest);
+            EventDispatcher.AddEventListener(EventName.RestartLevelRequestEvent, OnRestartRequest);
+            EventDispatcher.AddEventListener(EventName.QuitToSelectRequestEvent, OnQuitToSelectRequest);
+            EventDispatcher.AddEventListener(EventName.OpenSettingsRequestEvent, OnOpenSettingsRequest);
+            EventDispatcher.AddEventListener(EventName.CloseSettingsRequestEvent, OnCloseSettingsRequest);
         }
 
         private void OnDisable()
@@ -96,6 +105,14 @@ namespace FTProject
             EventDispatcher.RemoveEventListener<BaseTower>(EventName.TowerSelectedEvent, OnTowerSelected);
             EventDispatcher.RemoveEventListener<BaseTower>(EventName.TowerUpgradeRequestEvent, OnTowerUpgradeRequest);
             EventDispatcher.RemoveEventListener<BaseTower>(EventName.TowerSellRequestEvent, OnTowerSellRequest);
+            EventDispatcher.RemoveEventListener<int>(EventName.SelectLevelRequestEvent, OnSelectLevelRequest);
+            EventDispatcher.RemoveEventListener(EventName.CloseSelectRequestEvent, OnCloseSelectRequest);
+            EventDispatcher.RemoveEventListener(EventName.PauseRequestEvent, OnPauseRequest);
+            EventDispatcher.RemoveEventListener(EventName.ResumeRequestEvent, OnResumeRequest);
+            EventDispatcher.RemoveEventListener(EventName.RestartLevelRequestEvent, OnRestartRequest);
+            EventDispatcher.RemoveEventListener(EventName.QuitToSelectRequestEvent, OnQuitToSelectRequest);
+            EventDispatcher.RemoveEventListener(EventName.OpenSettingsRequestEvent, OnOpenSettingsRequest);
+            EventDispatcher.RemoveEventListener(EventName.CloseSettingsRequestEvent, OnCloseSettingsRequest);
         }
 
         private void OnDestroy()
@@ -116,8 +133,23 @@ namespace FTProject
                 return;
             }
 
-            int levelId = startLevelId > 0 ? startLevelId : Configs.GetFirstLevelId();
-            InitLevel(levelId);
+            // M3：开机先进关卡选择。
+            // 【为什么保留 startLevelId 直进】调试时要跳过选关，在 Inspector 里填 startLevelId 即可，
+            // 不用改代码、也不用把选关界面拆掉。
+            if (startLevelId > 0)
+            {
+                InitLevel(startLevelId);
+                return;
+            }
+
+            SelectView sv = UIManager.Instance.Open<SelectView>(SelectView.LogicalName, UILayout.NormalPanel);
+            if (sv == null)
+            {
+                // 【降级】SelectView.prefab 还没生成时不能把玩家卡在黑屏 ——
+                // 直接进第一关，玩法照常，只是没有选关界面。
+                Debug.LogWarning("[Flow] SelectView 打开失败（prefab 可能还没生成），降级为直接进入第一关");
+                InitLevel(Configs.GetFirstLevelId());
+            }
         }
 
         // ==================================================================
@@ -381,6 +413,15 @@ namespace FTProject
             if (_roundCursor >= _roundIds.Count)
             {
                 State = GameFlowState.GameOver;
+
+                // 【为什么结算要写在 Win() 之前】Win() 会派发 GameOverEvent，
+                // 界面可能立刻切走；如果存档晚一步写，"刚通关却没解锁下一关"。
+                PlayerDataManager pd = PlayerDataManager.Instance;
+                int stars = SaveManager.EvaluateStars(pd.Hp, pd.MaxHp);
+                SaveManager.Instance.RecordClear(Level.Id, stars, pd.Hp);
+                EventDispatcher.TriggerEvent<int, int, int>(EventName.LevelClearEvent, Level.Id, stars, pd.Hp);
+                Tips(string.Format("通关！获得 {0}", SelectView.Stars(stars)));
+
                 PlayerDataManager.Instance.Win();
             }
             else
@@ -456,6 +497,126 @@ namespace FTProject
         }
 
         // ------------------------------------------------------------------
+        // 关卡切换 / 暂停 / 设置（M3）
+        // ------------------------------------------------------------------
+
+        /// <summary>
+        /// 彻底清掉当前关卡的一切运行时状态。
+        ///
+        /// 【为什么必须有这一步】所有管理器都是**静态单例**，不随场景重建而重置。
+        /// 直接再 InitLevel 一次的话：上一关的塔还挂在已被销毁的格子上、
+        /// 怪物还留在空间哈希里、子弹还在飞 —— 会立刻出现一堆空引用与"幽灵塔"。
+        /// 顺序也有讲究：先清战斗实体（它们互相引用），再关界面，最后恢复时间。
+        /// </summary>
+        public void TeardownLevel()
+        {
+            _autoNextTimer = 0f;
+            Time.timeScale = 1f;
+
+            if (EnemyManager.Instance != null) EnemyManager.Instance.ClearAll();
+            if (BulletManager.Instance != null) BulletManager.Instance.RecycleAll();
+            if (TowerManager.Instance != null) TowerManager.Instance.ClearAll();
+
+            if (TowerPlacement.Instance != null) TowerPlacement.Instance.Deselect();
+            if (CombatSystem.Instance != null) CombatSystem.Instance.ResetStats();
+
+            UIManager.Instance.Close(TowerInfoView.LogicalName);
+            UIManager.Instance.Close(PauseView.LogicalName);
+            UIManager.Instance.Close(SettingView.LogicalName);
+            _hud = null;
+        }
+
+        /// <summary>切到指定关卡（或重开同一关）。</summary>
+        public void StartLevel(int levelId)
+        {
+            if (levelId <= 0)
+            {
+                return;
+            }
+            TeardownLevel();
+            UIManager.Instance.Close(SelectView.LogicalName);
+            // 开新局 → 旧快照作废，否则下次进关会莫名其妙"接着上一局"
+            SaveManager.Instance.ClearSnapshot(true);
+            InitLevel(levelId);
+        }
+
+        public void RestartLevel()
+        {
+            if (Level == null)
+            {
+                return;
+            }
+            StartLevel(Level.Id);
+        }
+
+        /// <summary>退出当前对局，回到关卡选择。</summary>
+        public void QuitToSelect()
+        {
+            TeardownLevel();
+            State = GameFlowState.None;
+            OpenSelect();
+        }
+
+        public void OpenSelect()
+        {
+            UIManager.Instance.Open<SelectView>(SelectView.LogicalName, UILayout.NormalPanel);
+        }
+
+        private void OnSelectLevelRequest(int levelId)
+        {
+            StartLevel(levelId);
+        }
+
+        private void OnCloseSelectRequest()
+        {
+            UIManager.Instance.Close(SelectView.LogicalName);
+            // 已经在关卡里就什么都不做（返回按钮主要用于"没有对局时"）
+        }
+
+        private void OnPauseRequest()
+        {
+            if (State == GameFlowState.GameOver)
+            {
+                return;   // 已结算就别再暂停了
+            }
+            UIManager.Instance.Open<PauseView>(PauseView.LogicalName, UILayout.NormalPanel);
+        }
+
+        private void OnResumeRequest()
+        {
+            UIManager.Instance.Close(PauseView.LogicalName);
+            UIManager.Instance.Close(SettingView.LogicalName);
+            Time.timeScale = 1f;
+        }
+
+        private void OnRestartRequest()
+        {
+            RestartLevel();
+        }
+
+        private void OnQuitToSelectRequest()
+        {
+            QuitToSelect();
+        }
+
+        private void OnOpenSettingsRequest()
+        {
+            UIManager.Instance.Open<SettingView>(SettingView.LogicalName, UILayout.NormalPanel);
+        }
+
+        private void OnCloseSettingsRequest()
+        {
+            UIManager.Instance.Close(SettingView.LogicalName);
+        }
+
+        /// <summary>
+        /// 暂停热键。
+        /// 【为什么用 P 而不是 ESC】ESC 已经被 TowerPlacement 用作"取消放置 / 取消选中"，
+        /// 两个系统同帧抢同一个键必然出现"按一下既取消选中又暂停"。P 无歧义。
+        /// 【为什么用 unscaledDeltaTime】暂停时 timeScale=0，用 deltaTime 的话热键轮询会停摆，
+        /// 一旦暂停就再也按不回来了。
+        /// </summary>
+        // ------------------------------------------------------------------
         // 塔选中 / 升级 / 出售（M2）
         // ------------------------------------------------------------------
 
@@ -530,6 +691,25 @@ namespace FTProject
 
         private void Update()
         {
+            // ---- M3：暂停热键 ----
+            // 【为什么是 P 而不是 ESC】ESC 已被 TowerPlacement 用作"取消放置 / 取消选中"，
+            // 两个系统同帧抢同一个键，必然出现"按一下既取消选中又暂停"。
+            //
+            // 【为什么这里不用 deltaTime】暂停时 Time.timeScale = 0，
+            // 任何依赖 scaled time 的轮询都会停摆 —— 一旦暂停就再也按不回来。
+            // GetKeyDown 不受 timeScale 影响，所以这个热键在暂停中依然有效。
+            if (Input.GetKeyDown(KeyCode.P))
+            {
+                if (UIManager.Instance.IsOpen(PauseView.LogicalName))
+                {
+                    OnResumeRequest();
+                }
+                else
+                {
+                    OnPauseRequest();
+                }
+            }
+
             // 调试快捷键：F1 打印完整状态，F2 强制获胜（联调时省时间）
             if (Input.GetKeyDown(KeyCode.F1))
             {

@@ -302,6 +302,8 @@ namespace FTProject
 
         private int _maxPoolSize = 256;
         private bool _inited;
+        /// <summary>RecycleAll 的复用缓冲</summary>
+        private readonly List<BaseBullet> _clearBuf = new List<BaseBullet>(256);
 
         public override void OnInit()
         {
@@ -441,6 +443,30 @@ namespace FTProject
                 return;
             }
             pool.Release(b);
+        }
+
+        /// <summary>
+        /// 回收全部在场子弹（切关 / 重开用）。
+        /// 【为什么必须走 RecycleBullet 而不是直接 OnRecycle】
+        /// 只有走对象池的 Release 才会把 reset 回调跑全、并把对象真正放回池子；
+        /// 直接调 OnRecycle 会让子弹"看起来回收了、其实既不在场上也不在池里"，下次开火凭空少一发。
+        /// </summary>
+        public void RecycleAll()
+        {
+            _clearBuf.Clear();
+            if (CombatSystem.Instance != null)
+            {
+                CombatSystem.Instance.CopyBullets(_clearBuf);
+            }
+            for (int i = _clearBuf.Count - 1; i >= 0; i--)
+            {
+                BaseBullet b = _clearBuf[i];
+                if (b != null && b.State == BulletState.Fire)
+                {
+                    RecycleBullet(b);
+                }
+            }
+            _clearBuf.Clear();
         }
 
         /// <summary>空闲子弹总数（自检/调试用）</summary>

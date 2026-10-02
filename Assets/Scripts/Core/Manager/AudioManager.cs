@@ -105,8 +105,16 @@ namespace FTProject
             PlayInternal(logicalName, worldPos, true);
         }
 
-        /// <summary>静音开关（预留给将来的设置界面）</summary>
+        /// <summary>静音开关（由设置界面写入）</summary>
         public bool Muted { get; set; }
+
+        /// <summary>
+        /// 主音量 0~1（由设置界面写入）。
+        /// 【为什么乘在每条音效自己的 volume 上，而不是去改 AudioListener.volume】
+        /// 改全局 Listener 音量会连带影响以后可能加入的其它音频来源；
+        /// 乘在这里则"每条音效的相对轻重"保持不变，符合玩家的直觉。
+        /// </summary>
+        public float MasterVolume { get; set; } = 1f;
 
         // ------------------------------------------------------------------
         // 内部
@@ -142,7 +150,7 @@ namespace FTProject
                 return;
             }
             src.clip = clip;
-            src.volume = cfg.Volume;
+            src.volume = cfg.Volume * Mathf.Clamp01(MasterVolume);
             src.pitch = cfg.Pitch;
             src.loop = cfg.Loop;
             src.spatialBlend = cfg.Is3d ? 1f : 0f;

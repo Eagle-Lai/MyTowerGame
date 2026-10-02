@@ -47,6 +47,15 @@ namespace FTProject.EditorTools
         public const string TipsPath = "Assets/Prefabs/UI/TipsView.prefab";
         public const string TowerInfoPath = "Assets/Prefabs/UI/TowerInfoView.prefab";
 
+        // ---- M3 新增的三个界面 ----
+        public const string SelectPath = "Assets/Prefabs/UI/SelectView.prefab";
+        public const string PausePath = "Assets/Prefabs/UI/PauseView.prefab";
+        public const string SettingPath = "Assets/Prefabs/UI/SettingView.prefab";
+
+        private static readonly string[] SelectChildren = { "Bg", "Panel" };
+        private static readonly string[] PauseChildren = { "Bg", "Panel" };
+        private static readonly string[] SettingChildren = { "Bg", "Panel" };
+
         // TowerInfoView 由本生成器管理的直接子节点集合（用于重建前的安全护栏）
         private static readonly string[] TowerInfoChildren = { "Bg", "Panel" };
 
@@ -124,6 +133,9 @@ namespace FTProject.EditorTools
             BuildHud(report);
             BuildTips(report);
             BuildTowerInfo(report);
+            BuildSelect(report);
+            BuildPause(report);
+            BuildSetting(report);
         }
 
         /// <summary>
@@ -145,6 +157,9 @@ namespace FTProject.EditorTools
             EnsureOne(HudPath, "HudView", report);
             EnsureOne(TipsPath, "TipsView", report);
             EnsureOne(TowerInfoPath, "TowerInfoView", report);
+            EnsureOne(SelectPath, "SelectView", report);
+            EnsureOne(PausePath, "PauseView", report);
+            EnsureOne(SettingPath, "SettingView", report);
         }
 
         private static void EnsureOne(string path, string name, EditorUtil.Report report)
@@ -155,18 +170,12 @@ namespace FTProject.EditorTools
                 return;
             }
             report.Ok(string.Format("{0}.prefab 缺失 → 补齐", name));
-            if (path == HudPath)
-            {
-                BuildHud(report);
-            }
-            else if (path == TipsPath)
-            {
-                BuildTips(report);
-            }
-            else
-            {
-                BuildTowerInfo(report);
-            }
+            if (path == HudPath) BuildHud(report);
+            else if (path == TipsPath) BuildTips(report);
+            else if (path == TowerInfoPath) BuildTowerInfo(report);
+            else if (path == SelectPath) BuildSelect(report);
+            else if (path == PausePath) BuildPause(report);
+            else BuildSetting(report);
         }
 
         // ------------------------------------------------------------------
@@ -330,6 +339,180 @@ namespace FTProject.EditorTools
                 return;
             }
             report.Ok("TowerInfoView.prefab（Bg / Panel( Title / Stats / UpgradeBtn / SellBtn / CloseBtn )）");
+        }
+
+        // ------------------------------------------------------------------
+        // M3 新增：关卡选择 / 暂停 / 设置
+        //
+        // 【为什么三者共用 CreateDialogShell】骨架完全一样（全屏 Bg + 居中 Panel + 标题），
+        // 各抄一遍迟早分叉 —— 而分叉之后"改一处忘一处"正是本项目反复踩的坑。
+        // ------------------------------------------------------------------
+
+        private static GameObject CreateDialogShell(string rootName, string title,
+            Vector2 panelSize, EditorUtil.Report report, out GameObject panel)
+        {
+            GameObject root = new GameObject(rootName, typeof(RectTransform));
+            Stretch((RectTransform)root.transform);
+
+            GameObject bg = new GameObject("Bg", typeof(RectTransform));
+            bg.transform.SetParent(root.transform, false);
+            Stretch((RectTransform)bg.transform);
+            Image bgImg = bg.AddComponent<Image>();
+            bgImg.color = new Color(0f, 0f, 0f, 0.55f);
+            Button bgBtn = bg.AddComponent<Button>();
+            bgBtn.targetGraphic = bgImg;
+
+            panel = new GameObject("Panel", typeof(RectTransform));
+            panel.transform.SetParent(root.transform, false);
+            RectTransform prt = (RectTransform)panel.transform;
+            prt.anchorMin = new Vector2(0.5f, 0.5f);
+            prt.anchorMax = new Vector2(0.5f, 0.5f);
+            prt.pivot = new Vector2(0.5f, 0.5f);
+            prt.anchoredPosition = Vector2.zero;
+            prt.sizeDelta = panelSize;
+            Image panelImg = panel.AddComponent<Image>();
+            panelImg.color = new Color(0.12f, 0.16f, 0.24f, 0.96f);
+
+            CreateText(panel.transform, "Title", title,
+                new Vector2(0.5f, 1f), new Vector2(0f, -36f), new Vector2(panelSize.x - 60f, 56f),
+                TextAnchor.MiddleCenter, BigFontSize);
+
+            return root;
+        }
+
+        private static void BuildSelect(EditorUtil.Report report)
+        {
+            report.Head("生成关卡选择 → " + SelectPath);
+            string extra;
+            if (!EditorUtil.IsSafeToRebuild(SelectPath, SelectChildren, out extra))
+            {
+                report.Error("SelectView.prefab 检测到生成器不识别的节点：" + extra + "　→ 已中止");
+                return;
+            }
+            AssetDatabase.DeleteAsset(SelectPath);
+            EditorUtil.EnsureFolderOfFile(SelectPath);
+
+            GameObject panel;
+            GameObject root = CreateDialogShell("SelectView", "选择关卡",
+                new Vector2(1120f, 640f), report, out panel);
+            root.AddComponent<SelectView>();
+
+            CreateText(panel.transform, "Summary", "已通关 0/8　★ 0/24",
+                new Vector2(0.5f, 1f), new Vector2(0f, -92f), new Vector2(1000f, 44f),
+                TextAnchor.MiddleCenter, SmallFontSize);
+
+            // 关卡按钮容器：模板按钮在里面，运行时被克隆成 N 份
+            GameObject list = new GameObject("List", typeof(RectTransform));
+            list.transform.SetParent(panel.transform, false);
+            RectTransform lrt = (RectTransform)list.transform;
+            lrt.anchorMin = new Vector2(0.5f, 1f);
+            lrt.anchorMax = new Vector2(0.5f, 1f);
+            lrt.pivot = new Vector2(0.5f, 1f);
+            lrt.anchoredPosition = new Vector2(0f, -130f);
+            lrt.sizeDelta = new Vector2(1040f, 400f);
+
+            CreatePanelButton(list.transform, "LevelButtonTemplate", "关卡", Vector2.zero);
+            Transform tpl = list.transform.Find("LevelButtonTemplate");
+            if (tpl != null)
+            {
+                RectTransform trt = (RectTransform)tpl;
+                // 锚点改左上：与 SelectView.CreateLevelButton 的排布口径一致（手排网格，不用 LayoutGroup）
+                trt.anchorMin = new Vector2(0f, 1f);
+                trt.anchorMax = new Vector2(0f, 1f);
+                trt.pivot = new Vector2(0f, 1f);
+                trt.sizeDelta = new Vector2(240f, 96f);
+                trt.anchoredPosition = Vector2.zero;
+                Text tl = tpl.GetComponentInChildren<Text>(true);
+                if (tl != null)
+                {
+                    tl.alignment = TextAnchor.MiddleCenter;
+                    tl.horizontalOverflow = HorizontalWrapMode.Wrap;
+                    tl.verticalOverflow = VerticalWrapMode.Overflow;
+                }
+                tpl.gameObject.SetActive(false);
+            }
+
+            CreatePanelButton(panel.transform, "CloseBtn", "返回", new Vector2(0f, -270f));
+
+            GameObject saved = PrefabUtility.SaveAsPrefabAsset(root, SelectPath);
+            Object.DestroyImmediate(root);
+            if (saved == null)
+            {
+                report.Error("保存失败：" + SelectPath);
+                return;
+            }
+            report.Ok("SelectView.prefab（Bg / Panel( Title / Summary / List(LevelButtonTemplate) / CloseBtn )）");
+        }
+
+        private static void BuildPause(EditorUtil.Report report)
+        {
+            report.Head("生成暂停界面 → " + PausePath);
+            string extra;
+            if (!EditorUtil.IsSafeToRebuild(PausePath, PauseChildren, out extra))
+            {
+                report.Error("PauseView.prefab 检测到生成器不识别的节点：" + extra + "　→ 已中止");
+                return;
+            }
+            AssetDatabase.DeleteAsset(PausePath);
+            EditorUtil.EnsureFolderOfFile(PausePath);
+
+            GameObject panel;
+            GameObject root = CreateDialogShell("PauseView", "暂停",
+                new Vector2(560f, 520f), report, out panel);
+            root.AddComponent<PauseView>();
+
+            CreatePanelButton(panel.transform, "ResumeBtn", "继续", new Vector2(0f, 60f));
+            CreatePanelButton(panel.transform, "RestartBtn", "重新开始本关", new Vector2(0f, -30f));
+            CreatePanelButton(panel.transform, "SettingsBtn", "设置", new Vector2(0f, -120f));
+            CreatePanelButton(panel.transform, "QuitBtn", "返回关卡选择", new Vector2(0f, -210f));
+
+            GameObject saved = PrefabUtility.SaveAsPrefabAsset(root, PausePath);
+            Object.DestroyImmediate(root);
+            if (saved == null)
+            {
+                report.Error("保存失败：" + PausePath);
+                return;
+            }
+            report.Ok("PauseView.prefab（Bg / Panel( Title / ResumeBtn / RestartBtn / SettingsBtn / QuitBtn )）");
+        }
+
+        private static void BuildSetting(EditorUtil.Report report)
+        {
+            report.Head("生成设置界面 → " + SettingPath);
+            string extra;
+            if (!EditorUtil.IsSafeToRebuild(SettingPath, SettingChildren, out extra))
+            {
+                report.Error("SettingView.prefab 检测到生成器不识别的节点：" + extra + "　→ 已中止");
+                return;
+            }
+            AssetDatabase.DeleteAsset(SettingPath);
+            EditorUtil.EnsureFolderOfFile(SettingPath);
+
+            GameObject panel;
+            GameObject root = CreateDialogShell("SettingView", "设置",
+                new Vector2(620f, 600f), report, out panel);
+            root.AddComponent<SettingView>();
+
+            CreateText(panel.transform, "VolumeText", "音量 80%",
+                new Vector2(0.5f, 0.5f), new Vector2(0f, 120f), new Vector2(520f, 56f),
+                TextAnchor.MiddleCenter, BigFontSize);
+
+            // 音量用 -/+ 两个按钮而不是 Slider：Slider 需要 Fill/Handle 一整套子节点与互相引用，
+            // 写在生成器里长且易错；当前只有两个设置项，按钮调档更简单也更好点。
+            CreatePanelButton(panel.transform, "VolDownBtn", "音量 −", new Vector2(-170f, 40f));
+            CreatePanelButton(panel.transform, "VolUpBtn", "音量 ＋", new Vector2(170f, 40f));
+            CreatePanelButton(panel.transform, "MuteBtn", "静音", new Vector2(0f, -50f));
+            CreatePanelButton(panel.transform, "ResetBtn", "重置存档", new Vector2(0f, -140f));
+            CreatePanelButton(panel.transform, "CloseBtn", "关闭", new Vector2(0f, -230f));
+
+            GameObject saved = PrefabUtility.SaveAsPrefabAsset(root, SettingPath);
+            Object.DestroyImmediate(root);
+            if (saved == null)
+            {
+                report.Error("保存失败：" + SettingPath);
+                return;
+            }
+            report.Ok("SettingView.prefab（Bg / Panel( Title / VolumeText / VolDownBtn / VolUpBtn / MuteBtn / ResetBtn / CloseBtn )）");
         }
 
         /// <summary>面板内按钮：居中锚点、固定尺寸，带 Label 子节点</summary>

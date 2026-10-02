@@ -394,6 +394,24 @@ namespace FTProject
         public void AddHitCount(int n) { StatHitCount += n; }
         public void AddIdleFireAttempt(int n) { StatIdleFireAttempt += n; }
 
+        /// <summary>
+        /// 把在场塔复制到 dst（切关时统一清理用）。
+        /// 【为什么给快照而不是暴露内部列表】直接暴露 _towers 会让调用方在遍历时改到它 ——
+        /// 本项目在 TickEnemies 里已经因为同类问题崩过一次（见那里的长注释）。
+        /// </summary>
+        public void CopyTowers(List<BaseTower> dst)
+        {
+            dst.Clear();
+            dst.AddRange(_towers);
+        }
+
+        /// <summary>把在场子弹复制到 dst（切关时统一回收用）</summary>
+        public void CopyBullets(List<BaseBullet> dst)
+        {
+            dst.Clear();
+            dst.AddRange(_bullets);
+        }
+
         public int TowerCount { get { return _towers.Count; } }
         public int BulletCount { get { return _bullets.Count; } }
         public int EnemyCount { get { return _enemies.Count; } }

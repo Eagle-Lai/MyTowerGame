@@ -98,6 +98,9 @@ namespace FTProject
             { "HudView",      new ResAddress(ResBundle.UiHud, "HudView",  "Assets/Prefabs/UI/HudView.prefab") },
             { "TipsView",     new ResAddress(ResBundle.UiHud, "TipsView", "Assets/Prefabs/UI/TipsView.prefab") },
             { "TowerInfoView", new ResAddress(ResBundle.UiHud, "TowerInfoView", "Assets/Prefabs/UI/TowerInfoView.prefab") },
+            { "SelectView",   new ResAddress(ResBundle.UiHud, "SelectView",   "Assets/Prefabs/UI/SelectView.prefab") },
+            { "PauseView",    new ResAddress(ResBundle.UiHud, "PauseView",    "Assets/Prefabs/UI/PauseView.prefab") },
+            { "SettingView",  new ResAddress(ResBundle.UiHud, "SettingView",  "Assets/Prefabs/UI/SettingView.prefab") },
         };
 
         static ResTable()

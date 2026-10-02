@@ -83,6 +83,37 @@ namespace FTProject
         /// <summary>玩家点击「开始」请求开打本回合</summary>
         public const string StartRoundRequestEvent = "StartRoundRequestEvent";
 
+        // ------------------------------------------------------------------
+        // 关卡选择 / 暂停 / 设置（M3 元进度）
+        // ------------------------------------------------------------------
+
+        /// <summary>请求开始某一关，参数：int 关卡 id</summary>
+        public const string SelectLevelRequestEvent = "SelectLevelRequestEvent";
+
+        /// <summary>请求关闭关卡选择界面（回到当前对局 / 退出）</summary>
+        public const string CloseSelectRequestEvent = "CloseSelectRequestEvent";
+
+        /// <summary>请求暂停</summary>
+        public const string PauseRequestEvent = "PauseRequestEvent";
+
+        /// <summary>请求继续（取消暂停）</summary>
+        public const string ResumeRequestEvent = "ResumeRequestEvent";
+
+        /// <summary>请求重开当前关卡</summary>
+        public const string RestartLevelRequestEvent = "RestartLevelRequestEvent";
+
+        /// <summary>请求退出当前对局、回到关卡选择</summary>
+        public const string QuitToSelectRequestEvent = "QuitToSelectRequestEvent";
+
+        /// <summary>请求打开设置界面</summary>
+        public const string OpenSettingsRequestEvent = "OpenSettingsRequestEvent";
+
+        /// <summary>请求关闭设置界面</summary>
+        public const string CloseSettingsRequestEvent = "CloseSettingsRequestEvent";
+
+        /// <summary>关卡通关结算，参数：(int 关卡 id, int 星级, int 剩余生命)</summary>
+        public const string LevelClearEvent = "LevelClearEvent";
+
         /// <summary>玩家点击塔按钮，请求进入放置模式。参数：(int type, int level)</summary>
         public const string BuildTowerRequestEvent = "BuildTowerRequestEvent";
 

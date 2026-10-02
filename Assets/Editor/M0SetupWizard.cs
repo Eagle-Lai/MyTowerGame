@@ -291,6 +291,9 @@ namespace FTProject.EditorTools
                         "Btn_Tower_Pierce", "Btn_Tower_Laser" });
             CheckUiPrefab(report, UIPrefabBuilder.TipsPath, "TipsView", new[] { "TipText" });
             CheckUiPrefab(report, UIPrefabBuilder.TowerInfoPath, "TowerInfoView", new[] { "Bg", "Panel" });
+            CheckUiPrefab(report, UIPrefabBuilder.SelectPath, "SelectView", new[] { "Bg", "Panel" });
+            CheckUiPrefab(report, UIPrefabBuilder.PausePath, "PauseView", new[] { "Bg", "Panel" });
+            CheckUiPrefab(report, UIPrefabBuilder.SettingPath, "SettingView", new[] { "Bg", "Panel" });
         }
 
         /// <summary>

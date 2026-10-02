@@ -378,6 +378,8 @@ namespace FTProject
         public Transform TowerParent { get; private set; }
 
         private readonly List<BaseTower> _towers = new List<BaseTower>(64);
+        /// <summary>ClearAll 的复用缓冲（避免每次切关都分配一个 List）</summary>
+        private readonly List<BaseTower> _clearBuf = new List<BaseTower>(64);
 
         public IList<BaseTower> Towers { get { return _towers; } }
 
@@ -652,6 +654,46 @@ namespace FTProject
             AStarManager.Instance.RequestRefresh();
             Tips(string.Format("已出售防御塔，返还 {0} 金币", refund));
             return true;
+        }
+
+        /// <summary>
+        /// 清除全部防御塔（切关 / 重开用）。**不返还金币** ——
+        /// 这是关卡重置，不是玩家卖塔，返还会让"重开"变成刷钱手段。
+        ///
+        /// 【为什么用 CombatSystem 的快照而不是遍历 _towers】
+        /// ReleaseInstance 会销毁 GameObject，可能连带触发回调；
+        /// 拿一份快照再逐个清理，遍历期间就不受这些副作用影响。
+        /// </summary>
+        public void ClearAll()
+        {
+            _clearBuf.Clear();
+            if (CombatSystem.Instance != null)
+            {
+                CombatSystem.Instance.CopyTowers(_clearBuf);
+            }
+            for (int i = _clearBuf.Count - 1; i >= 0; i--)
+            {
+                BaseTower t = _clearBuf[i];
+                if (t == null)
+                {
+                    continue;
+                }
+                CellData cell = t.Cell;
+                if (cell != null)
+                {
+                    cell.Tower = null;
+                    if (cell.Point != null)
+                    {
+                        cell.Point.IsWall = false;
+                    }
+                }
+                string resName = t.Config != null ? t.Config.ResName : "Tower_Normal";
+                t.MarkDestroyed();
+                CombatSystem.Instance.UnregisterTower(t);
+                ResLoader.Instance.ReleaseInstance(resName, t.gameObject);
+            }
+            _towers.Clear();
+            _clearBuf.Clear();
         }
 
         private static void Tips(string msg)
