@@ -58,6 +58,26 @@ namespace FTProject
         }
 
         /// <summary>
+        /// 从局内快照恢复（M3-5）。
+        /// 【为什么不复用 InitFromLevel】那个方法会把金币/生命重置成关卡初始值并清空统计，
+        /// 而恢复的场景恰恰相反 —— 要**保留**玩家打到一半的状态。
+        /// </summary>
+        public void RestoreState(int levelId, int gold, int hp, int maxHp)
+        {
+            CurrentLevelId = levelId;
+            Gold = Mathf.Max(0, gold);
+            MaxHp = Mathf.Max(1, maxHp);
+            Hp = Mathf.Clamp(hp, 0, MaxHp);
+            IsGameOver = false;
+
+            EventDispatcher.TriggerEvent<int, int>(EventName.GoldChangeEvent, Gold, 0);
+            EventDispatcher.TriggerEvent<int, int>(EventName.PlayerHpChangeEvent, Hp, 0);
+            EventDispatcher.TriggerEvent(EventName.PlayerStateInitEvent);
+
+            Debug.Log(string.Format("[Player] 从快照恢复：金币 {0}，生命 {1}/{2}", Gold, Hp, MaxHp));
+        }
+
+        /// <summary>
         /// 只读检查余额是否够（不扣除）。
         /// 塔放置预览需要每帧判断能否建造，用这个而不是 TrySpend —— 后者会产生副作用。
         /// </summary>

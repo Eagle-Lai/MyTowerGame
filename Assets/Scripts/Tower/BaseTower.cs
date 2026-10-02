@@ -395,6 +395,24 @@ namespace FTProject
         /// </summary>
         public BaseTower TryBuild(int type, int level, int row, int col)
         {
+            return TryBuildInternal(type, level, row, col, true);
+        }
+
+        /// <summary>
+        /// 按快照恢复一座塔（M3-5）：与 TryBuild 走**同一套**实例化/注册流程，
+        /// 唯一区别是**不扣钱**（钱已经在上次游戏时扣过了）。
+        ///
+        /// 【为什么复用 TryBuildInternal 而不是另写一份】
+        /// "建塔"这件事牵扯格子占用、A* 墙标记、战斗注册、对象池取出，
+        /// 复制一份出来迟早会分叉 —— 而分叉点往往在某个不常走的分支上，很难发现。
+        /// </summary>
+        public BaseTower RestoreTower(int type, int level, int row, int col)
+        {
+            return TryBuildInternal(type, level, row, col, false);
+        }
+
+        private BaseTower TryBuildInternal(int type, int level, int row, int col, bool charge)
+        {
             BoardView board = BoardView.Instance;
             if (board == null)
             {
@@ -455,7 +473,8 @@ namespace FTProject
             }
 
             // ② 扣费（放在路径校验之后，避免扣了钱建不成）
-            if (!PlayerDataManager.Instance.TrySpend(cfg.Prices))
+            //    charge=false 是"按快照恢复"路径：钱在上次游戏时已经扣过，不能再扣一次。
+            if (charge && !PlayerDataManager.Instance.TrySpend(cfg.Prices))
             {
                 if (point != null)
                 {
@@ -473,7 +492,10 @@ namespace FTProject
                 {
                     point.IsWall = oldWall;
                 }
-                PlayerDataManager.Instance.AddGold(cfg.Prices);   // 退还
+                if (charge)
+                {
+                    PlayerDataManager.Instance.AddGold(cfg.Prices);   // 退还（恢复路径没扣过，自然也不用退）
+                }
                 Tips("防御塔资源加载失败");
                 Debug.LogError("[Tower] 建塔失败：无法加载 " + cfg.ResName);
                 return null;

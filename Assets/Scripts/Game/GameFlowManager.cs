@@ -239,6 +239,10 @@ namespace FTProject
             _roundIds = Level.RoundIds != null ? new List<int>(Level.RoundIds) : new List<int>();
             _roundCursor = 0;
 
+            // ⑩ M3-5：若本关存在局内快照，恢复到"上次退出的那一刻"。
+            //    放在最后：棋盘/管理器/HUD 都已就绪，恢复出来的塔才有地方落。
+            TryRestoreSnapshot(Level.Id);
+
             State = GameFlowState.Preparing;
             Debug.Log(string.Format(
                 "[Flow] 关卡 {0}「{1}」就绪：棋盘 {2}×{3}，格子 {4} 世界单位，回合 {5} 个\n{6}",
@@ -410,6 +414,12 @@ namespace FTProject
             }
 
             _roundCursor++;
+
+            // M3-5：每回合结束存一次快照 —— 这是"退出后继续"的粒度。
+            // 【为什么是回合边界】只有此刻状态是自洽的：场上无残留怪物、金币与塔都已结算。
+            // 半途存盘就得额外记录每只怪的位置/血量/波次进度，复杂度与收益完全不成比例。
+            SaveSnapshotNow();
+
             if (_roundCursor >= _roundIds.Count)
             {
                 State = GameFlowState.GameOver;
@@ -494,6 +504,92 @@ namespace FTProject
             Debug.Log(string.Format("[Flow] 本局结束：{0}\n{1}",
                 victory ? "胜利" : "失败", PlayerDataManager.Instance.DumpDebugInfo()));
             Tips(victory ? "恭喜通关！" : "防御失败……");
+        }
+
+        // ------------------------------------------------------------------
+        // 局内快照（M3-5）
+        // ------------------------------------------------------------------
+
+        /// <summary>把当前局内状态写进快照并落盘。</summary>
+        public void SaveSnapshotNow()
+        {
+            if (Level == null)
+            {
+                return;
+            }
+            LevelSnapshot snap = new LevelSnapshot();
+            snap.valid = true;
+            snap.levelId = Level.Id;
+            snap.roundCursor = _roundCursor;
+            snap.gold = PlayerDataManager.Instance.Gold;
+            snap.hp = PlayerDataManager.Instance.Hp;
+            snap.maxHp = PlayerDataManager.Instance.MaxHp;
+
+            System.Collections.Generic.IList<BaseTower> towers = TowerManager.Instance.Towers;
+            for (int i = 0; i < towers.Count; i++)
+            {
+                BaseTower t = towers[i];
+                if (t == null || t.Cell == null || t.Config == null)
+                {
+                    continue;
+                }
+                TowerSnapshot ts = new TowerSnapshot();
+                ts.row = t.Cell.Row;
+                ts.col = t.Cell.Col;
+                ts.type = t.Config.Type;
+                ts.level = t.Config.Level;
+                snap.towers.Add(ts);
+            }
+
+            SaveManager.Instance.SetSnapshot(snap);
+        }
+
+        /// <summary>
+        /// 尝试用快照恢复本关进度。
+        ///
+        /// 【为什么 roundCursor &lt;= 0 就跳过】还没打完第一回合时，"继续"和"重开"没有区别，
+        /// 而重开的状态更干净（不会有半截的塔）。这种时候宁可让玩家从头开始。
+        /// </summary>
+        private void TryRestoreSnapshot(int levelId)
+        {
+            if (!SaveManager.Instance.HasSnapshot)
+            {
+                return;
+            }
+            LevelSnapshot snap = SaveManager.Instance.Snapshot;
+            if (snap == null || snap.levelId != levelId || snap.roundCursor <= 0)
+            {
+                return;
+            }
+
+            PlayerDataManager.Instance.RestoreState(levelId, snap.gold, snap.hp, snap.maxHp);
+
+            int built = 0;
+            for (int i = 0; i < snap.towers.Count; i++)
+            {
+                TowerSnapshot ts = snap.towers[i];
+                if (TowerManager.Instance.RestoreTower(ts.type, ts.level, ts.row, ts.col) != null)
+                {
+                    built++;
+                }
+            }
+
+            _roundCursor = Mathf.Clamp(snap.roundCursor, 0, Mathf.Max(0, _roundIds.Count - 1));
+
+            // 【必须重算路径】恢复出来的塔会重新设置 A* 的墙标记，地图阻挡关系变了，
+            // 不重算的话怪物会按"没塔时"的旧路径走，一路穿塔而过。
+            if (AStarManager.Instance != null)
+            {
+                AStarManager.Instance.RequestRefresh();
+            }
+            if (pathArrowView != null && AStarManager.Instance != null)
+            {
+                pathArrowView.Render(AStarManager.Instance.CurrentPathWorld);
+            }
+
+            Debug.Log(string.Format("[Flow] 已恢复第 {0} 关的局内快照：回合进度 {1}/{2}，塔 {3} 座",
+                levelId, _roundCursor, _roundIds.Count, built));
+            Tips(string.Format("已从上次进度继续（下一回合：第 {0} 回合）", _roundCursor + 1));
         }
 
         // ------------------------------------------------------------------

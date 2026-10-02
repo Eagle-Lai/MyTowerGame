@@ -319,6 +319,14 @@ namespace FTProject
             }
         }
 
+        /// <summary>写入局内快照并立刻落盘（回合结束时由 GameFlowManager 调用）。</summary>
+        public void SetSnapshot(LevelSnapshot snap)
+        {
+            EnsureLoaded();
+            _data.snapshot = snap != null ? snap : new LevelSnapshot();
+            Save();
+        }
+
         /// <summary>开始新一局时作废快照。</summary>
         public void ClearSnapshot(bool save)
         {
