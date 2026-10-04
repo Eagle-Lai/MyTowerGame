@@ -1,7 +1,7 @@
 # FreeTower 进度同步报告
 
 > 扫描范围：`D:\FreedomTower_1`（当前工作目录，含子目录）
-> 报告日期：2026-09-29
+> 报告日期：2026-09-29（**2026-10-04 复核更新**，见文末「附：2026-10-04 复核与完整收尾计划」）
 > 依据：`Docs/TowerDefense_Design_and_Implementation.md`(v2.1 + 附录 Z)、`Docs/Unity_Editor_Operation_Guide.md`、
 > 源码与资源实测、`git log`、`.workbuddy/memory/` 工作日志、工作区未提交改动
 
@@ -237,3 +237,46 @@ D:\FreedomTower_1\
 | M5 真机性能压测 | **度量工具已交付**（`PerfProbe`，F3），但设备不在开发侧 |
 | M5 打包 PC / Android | 需要 Unity 构建 + 签名 |
 | M5 仓库瘦身 | `git filter-repo` 破坏性，须明确确认 |
+
+---
+
+## 附：2026-10-04 复核与完整收尾计划
+
+### 复核结论（实测，非推断）
+
+| 检查项 | 结果 |
+|---|---|
+| 运行时脚本数 | **73 个**（`Assets/Scripts`，09-29 报告中的 54 已过时） |
+| 编辑器工具数 | **17 个**（`Assets/Editor`） |
+| 配置表（ConfigJson 实测行数） | TowerInfo **15**（5 塔型 × 3 级）、BulletData **5**、EnemyData **132**、EnemyList **40**、RoundData **40**、LevelMap **8**、SceneInfo **8**、tbaudio **16** —— 与 M2/M3 交付一致 |
+| Excel 锁文件 | ✅ **0 个**（P1-4 已自愈） |
+| 未提交改动 | ✅ **已清零**（7 个脚本 .meta + packages-lock.json 已于今日提交 `7537c89e0`） |
+| AB 产物 | ⚠️ 仍只有 `StreamingAssets/AssetBundles/Android`，且为旧包 |
+| 仓库体积 | ⚠️ 仍 **2.17 GiB**（git pack），瘦身未执行 |
+| 仓库冗余物 | ⚠️ `tips.apk` / `tips.zip` / `ttttt/` / `test_*` / `tips_*` 目录仍在 |
+
+**总判定：M0–M3 全部交付，M4/M5 代码侧全部交付，配置数据与工程状态健康。剩余工作全部是"需要人/设备/美术/破坏性确认"的门外项。**
+
+### 完整收尾计划（按优先级与依赖排序）
+
+**第一阶段 — 无需外部资源，本周可做完**
+1. ~~提交遗留改动~~ ✅ 已完成（2026-10-04，`7537c89e0`）
+2. 在 Unity 中完整编译一次，跑 `Tools ▸ 塔防 ▸ 0. 自检`（20+ 项），确认 M3 离线生成的 3 个 UI prefab 在编辑器内表现正常
+3. 重打 Android AB（现网包过期），真 AB 链路（FORCE_AB）跑一遍冒烟
+4. 清理冗余物：`tips.apk` / `tips.zip` / `ttttt/` / 两个 `*_BurstDebugInformation_DoNotShip/`（从 git 移除并加 .gitignore）
+5. 文档回填：脚本数 54→73、编辑器 12→17、`D:\FreedomTower`→`D:\FreedomTower_1`、删 `Luaban` 残留、重排附录 Z 编号、补 09-27/28 决策留痕
+
+**第二阶段 — 需要设备/构建环境**
+6. PC + Android 出包（Unity 构建 + Android 签名）
+7. 真机压测：`PerfProbe`（F3）验证 200 怪 + 50 塔 60fps，记录低端机数据
+8. 依据真实包体数据做 AB 优化（拆包 / 压缩 / 去重）与 UGUI 优化（SpriteAtlas 合批，Frame Debugger 验证）
+
+**第三阶段 — 需要美术资源（代码接口已就位）**
+9. 美术统一替换占位图（`Art/Generated/`）
+10. 怪物帧动画接入（`MonsterAnimEventReceiver` 已挂接）
+11. 打击粒子特效（事件已抛出，等特效 prefab）
+
+**第四阶段 — 破坏性操作，须单独确认**
+12. 仓库瘦身：`git filter-repo` 清理历史大文件（2.17 GiB → 目标 <100 MB），会重写全部 commit hash，所有协作者须重新克隆
+
+> 计划原则：**先做 1→5 把仓库收口到"随时可出包"状态**；6→8 与 9→11 可并行（一边是设备，一边是美术）；12 放在最后，等确认无回滚需求再做。
