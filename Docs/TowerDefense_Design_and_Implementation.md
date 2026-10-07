@@ -2254,7 +2254,7 @@ public List<Point> GetAStarPath(Point start, Point target)
 
 | 项 | 内容 | 状态 |
 |---|---|---|
-| 多塔型 | 补齐 `TBTower.type` 的 5 类：单体 / AOE / 减速 / 穿透 / 激光；各自独立特效与音效 | ✅ 5 类全部落地；穿透/激光的外观暂复用普通塔（美术待补，换皮只改表 + ResTable） |
+| 多塔型 | 补齐 `TBTower.type` 的 5 类：单体 / AOE / 减速 / 穿透 / 激光；各自独立特效与音效 | ✅ 5 类全部落地；**减速塔于 M3 后改为范围光环**（见 §Z.9）；穿透/激光的外观暂复用普通塔（美术待补，换皮只改表 + ResTable） |
 | 塔升级与出售 | 接 `TBTower.upgradeTo` / `sellPrice`；`TowerInfoView` 接线；点击已建塔的入口 | ✅ 含"换实例"升级、原地两段式出售确认、DPS 展示 |
 | 子弹特性 | `TBBullet` 的 `pierce` / `aoeRadius` / `effectType`（减速、持续伤害） | ✅ 同时修掉了"穿透完全失效"与"AOE 每次命中都 GC"两个真实缺陷 |
 | 怪物扩展 | 接入更多 `TBEnemy` 行；护甲、飞行（`isFlying`）、Boss | ✅ 新增 3 Boss + 1 高护甲精英（type=5 从 0 行变为 3 行），并编入第 10/11/12 波 |
@@ -2862,3 +2862,46 @@ M0 交付时**无法在本机编译**（安全策略明确禁止调用 `csc`，`
 
 > 这六项**不是"没来得及做"，而是"在不越权/不假装的前提下做不到"**。
 > 把它们标成完成才是真正的问题。
+
+---
+
+## Z.9　减速塔改为范围光环（2026-10-07）
+
+### Z.9.1 需求与动机
+
+原实现：减速塔发射一颗减速弹，命中**单个**敌人后施加 2s 减速。
+问题：单体减速在怪群压力下几乎无价值 —— 一次只能影响一只，且子弹飞行期间目标可能已死。
+改为：**不发射子弹，持续把射程内的所有敌人减速**（典型的"冰霜塔/光环塔"模型）。
+
+### Z.9.2 关键决策
+
+| # | 决策 | 理由 |
+|---|---|---|
+| F-A | 判定用 `TowerType.Slow(=3)`，**不用** `effectType` | 塔表里仍保留 `effectType=1` 仅为 UI 分类与图例口径一致；光环塔的差异是**塔型级**的（有无索敌/开火/转向），不是命中效果。混用会让"给了减速弹的普通塔"也变成光环 |
+| F-B | `TickAttack` 里开一条**独立支路**，不塞进单目标流程 | 光环与"锁单目标→转向→开火"是两套语义，硬塞 if 会让两条流程互相污染 |
+| F-C | 按**冷却间隔**（CD）施加，时长 = `CD + 0.3s` | 若每帧刷 `ApplySlow`，怪的减速时长会被顶满，**离开光环后多久恢复取决于帧率**。按 CD 结算 + 固定余量，恢复时间是确定的 |
+| F-D | 不过滤 `canAttackAir`、不用 `targetMode` | 光环没有"选谁"的概念，射程内一律减速（飞行单位也吃减速）。`targetMode` 对光环无意义 |
+| F-E | `bulletId` 由 4 改为 **0** | 语义正确（不发射），且 `Configs` 的交叉引用自检会跳过 bulletId≤0 —— 少一条"引用了不该引用的子弹"的隐性依赖 |
+| F-F | 表现复用 `Range_Ring.png`，**不新增贴图** | 与 `LaserBeamView` 同一考量：新增贴图必须先在 Unity 里跑占位美术生成器；换色即可表达"光环"。零新增资产 |
+| F-G | 光环表现**挂在塔的 transform 下**，不是全局单例 | 同屏可能多座减速塔，各要一个圈；挂塔下可随塔自动销毁与跟随 |
+| F-H | 结算（`TickSlowAura`）与表现（`TickVisual`）**分两个节拍** | 结算每 CD 一次，脉冲渐隐必须每帧推进，否则脉冲会"跳"没 |
+| F-I | 光环子节点缩放要**除回父级 lossyScale** | 塔根节点有 0.8 缩放，子节点若直接套公式，光环会比实际射程小 20%，与 `Config.RadiusWorld` 的判定对不上 |
+
+### Z.9.3 改动清单
+
+| 文件 | 改动 |
+|---|---|
+| `Assets/Scripts/Tower/BaseTower.cs` | `TickAttack` 增加光环支路；新增 `TickSlowAura`（结算，遍历空间哈希逐个 `ApplySlow`）与 `TickVisual`（脉冲渐隐）；`Init` 里为减速塔挂/更新光环；`MarkDestroyed` 清引用 |
+| `Assets/Scripts/Tower/SlowAuraView.cs` | **新增**。纯表现：常亮射程圈（浅蓝）+ 命中脉冲；挂塔下；缩放除回父级 |
+| `Assets/Scripts/Tower/RetardTower.cs` | 类注释更新为新语义 |
+| `Assets/Scripts/Data/TowerConfig.cs` | 新增 `IsSlowAura`；`FiresBullet` 排除光环塔 |
+| `Assets/Scripts/Core/Combat/CombatSystem.cs` | `TickTowers` 加 `t.TickVisual(dt)` |
+| `Assets/Scripts/Core/Enum/EnumFile.cs` | `EffectType` 注释补"减速塔是例外"说明 |
+| `Luban/Config/Datas/TowerInfo.xlsx` | id 7/8/9 的 `bulletId` 4→0；表头注释行同步为光环口径 |
+| `Assets/ConfigJson/tbtowerinfo.json` | Luban 重导产物（已同步） |
+
+### Z.9.4 未改动的部分与理由
+
+- **减速塔的 `power` 列未清零**：光环塔不造成伤害，该列目前不参与运行。保留原值是为了将来若要做"冰霜伤害"时数据还在，且清零会让"塔的强度"在表面上看不出层级。已在表头注明"减速塔=光环，本列不参与运行"。
+- **`TBBulletData` 的 id=4"减速弹"未删**：它仍是合法的子弹定义（将来可能有"命中减速"的普通塔想用它）。删行会牵动 id 稳定性，收益为零。
+

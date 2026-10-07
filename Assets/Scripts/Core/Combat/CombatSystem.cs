@@ -313,6 +313,7 @@ namespace FTProject
                     continue;
                 }
                 t.TickAttack(dt);
+                t.TickVisual(dt);   // 光环脉冲渐隐等纯表现，必须每帧推进
             }
         }
 

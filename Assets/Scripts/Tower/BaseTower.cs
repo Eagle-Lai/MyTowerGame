@@ -9,7 +9,8 @@ namespace FTProject
     ///
     /// 【命名与行为的偏差，只在这里解释一次】
     ///   · Power(2) 是美术名「强力塔」，其**行为**是范围伤害（AOE）—— 见 TBTowerInfo.effectType=3；
-    ///   · Slow(3) 的行为是减速，而美术、节点名、资源目录一律叫 "Retard"
+    ///   · Slow(3) 的行为是**范围减速光环**（进入射程的怪持续被减速，不发射子弹），
+    ///     而美术、节点名、资源目录一律叫 "Retard"
     ///     （映射表在 HudView.TowerTypeOf，别处不要再推导一遍）。
     /// </summary>
     public enum TowerType
@@ -19,7 +20,7 @@ namespace FTProject
         Normal = 1,
         /// <summary>范围伤害：强力塔（美术名 Power，行为是 AOE）</summary>
         Aoe = 2,
-        /// <summary>减速：美术名 Retard</summary>
+        /// <summary>减速：美术名 Retard。**行为是范围光环**（见 SlowAuraView），不发射子弹</summary>
         Slow = 3,
         /// <summary>穿透：一发子弹可连续命中多个敌人</summary>
         Pierce = 4,
@@ -57,6 +58,19 @@ namespace FTProject
         private Vector2 _lastDir = Vector2.right;
 
         private const float MinRotateStep = 0.5f;
+
+        // ---- 减速光环（Slow / 美术名 Retard）----
+        /// <summary>
+        /// 减速时长的额外余量（秒）：实际时长 = 塔的冷却间隔 + 本值。
+        /// 取 0.3s，让"走出光环后还带一小会儿减速"有肉眼可见的缓冲，
+        /// 又不至于让玩家觉得"明明出圈了还慢"。
+        /// </summary>
+        private const float SlowAuraLingerSec = 0.3f;
+
+        /// <summary>光环命中时的视觉脉冲时长（秒），每次结算触发一次。</summary>
+        private const float AuraPulseSec = 0.15f;
+        private float _auraPulseTimer;
+        private SlowAuraView _auraView;
 
         // ---- 开火后坐（M4-3）----
         /// <summary>炮管后坐距离（世界单位）。要小到"几乎看不见但能感觉到"。</summary>
@@ -122,6 +136,28 @@ namespace FTProject
                 _muzzle = _barrel.Find("BarrelPoint");
             }
             SetTint(Color.white);
+
+            // 减速塔：挂一个光环表现（射程圈 + 命中脉冲），并常亮显示射程
+            if (cfg.IsSlowAura)
+            {
+                if (_auraView == null)
+                {
+                    _auraView = SlowAuraView.Attach(transform, cfg.RadiusWorld);
+                }
+                else
+                {
+                    _auraView.SetRadius(cfg.RadiusWorld);
+                }
+                if (_auraView != null)
+                {
+                    _auraView.SetVisible(true);
+                }
+            }
+            else if (_auraView != null)
+            {
+                _auraView.SetVisible(false);
+            }
+            _auraPulseTimer = 0f;
         }
 
         public Vector2 Position
@@ -153,13 +189,22 @@ namespace FTProject
                 return;
             }
 
-            // ① 目标有效性检查：死亡/回收/走出射程 → 立即解除锁定
+            // ① 光环塔（减速）：逻辑与普通塔完全不同 —— 不索敌、不转向、不开火，
+            //    只是把射程内的**所有**敌人持续施加减速。单独一条支路，避免
+            //    在下面那条"锁定单目标"的流程里塞 if，两者语义本就不同。
+            if (Config.IsSlowAura)
+            {
+                TickSlowAura(dt);
+                return;
+            }
+
+            // ② 目标有效性检查：死亡/回收/走出射程 → 立即解除锁定
             if (_target != null && (!_target.IsAlive || !InRange(_target)))
             {
                 _target = null;
             }
 
-            // ② 节流索敌：已有锁定目标时不重复搜索
+            // ③ 节流索敌：已有锁定目标时不重复搜索
             _searchTimer += dt;
             if (_target == null && _searchTimer >= Config.SearchIntervalSec)
             {
@@ -172,11 +217,11 @@ namespace FTProject
                 return;   // ★ 无目标绝不开火
             }
 
-            // ③ 塔头转向 + 后坐回位
+            // ④ 塔头转向 + 后坐回位
             RotateBarrelTowards(_target.Position, dt);
             TickRecoil(dt);
 
-            // ④ 冷却结束才开火
+            // ⑤ 冷却结束才开火
             _fireTimer += dt;
             if (_fireTimer < Config.CooldownSec)
             {
@@ -184,6 +229,94 @@ namespace FTProject
             }
             _fireTimer = 0f;
             Fire(_target);
+        }
+
+        /// <summary>
+        /// 减速光环：把射程内全部存活敌人施加/刷新减速。
+        ///
+        /// 【为什么按冷却间隔结算，而不是每帧刷】每帧调用 ApplySlow 会把怪的
+        /// _slowTimer 一直顶在满值，那么"离开光环后该多久恢复"就取决于帧率 ——
+        /// 用冷却间隔（CD）作为**施加节拍**，时长取 CD + 一个固定余量，
+        /// 于是"站在光环里 = 一直被减速，走出去 0.x 秒后恢复"这件事是确定的。
+        ///
+        /// 【为什么不做目标列表缓存】减速塔射程内的怪随时进出，缓存要维护增删，
+        /// 而空间哈希查询本身就是常数级 —— 直接查更简单也更不容易出错。
+        ///
+        /// 【为什么不过滤 canAttackAir / 目标模式】那是"选哪个目标打"的概念，
+        /// 光环没有选择行为，射程内一律减速（飞行单位也吃减速，符合塔防直觉）。
+        /// </summary>
+        private void TickSlowAura(float dt)
+        {
+            _fireTimer += dt;
+            if (_fireTimer < Config.CooldownSec)
+            {
+                return;
+            }
+            _fireTimer = 0f;
+
+            CombatSystem cs = CombatSystem.Instance;
+            if (cs == null || cs.Grid == null)
+            {
+                return;
+            }
+
+            float radius = Config.RadiusWorld;
+            _candidates.Clear();
+            cs.Grid.QueryCircle(Position, radius, _candidates);
+            if (_candidates.Count == 0)
+            {
+                return;
+            }
+
+            float r2 = radius * radius;
+            Vector2 self = Position;
+            float ratio = Config.EffectValue;          // 减速比例（塔三级 0.5/0.6/0.7）
+            float duration = Config.CooldownSec + SlowAuraLingerSec;
+            int applied = 0;
+            for (int i = 0; i < _candidates.Count; i++)
+            {
+                BaseEnemy e = _candidates[i];
+                if (e == null || !e.IsAlive)
+                {
+                    continue;
+                }
+                // 网格查询会带出圆形包围盒外的元素，这里精确过滤成圆形射程
+                if ((e.Position - self).sqrMagnitude > r2)
+                {
+                    continue;
+                }
+                e.ApplySlow(ratio, duration);
+                applied++;
+            }
+
+            // 有怪被减速才算"开火"，供自检区分"空放"与"有效作用"
+            if (applied > 0)
+            {
+                FireCount++;
+                _auraPulseTimer = AuraPulseSec;   // 触发一次视觉脉冲
+            }
+        }
+
+        /// <summary>
+        /// 光环表现的每帧推进（脉冲渐隐）。**独立于结算节拍** ——
+        /// 结算每 CD 才跑一次，而渐隐必须每帧推进，否则脉冲会"跳"没。
+        /// 由 CombatSystem 的 TickTowers 每帧调用（与 TickAttack 并列）。
+        /// </summary>
+        public void TickVisual(float dt)
+        {
+            if (_auraView == null)
+            {
+                return;
+            }
+            if (_auraPulseTimer > 0f)
+            {
+                _auraPulseTimer -= dt;
+                if (_auraPulseTimer < 0f)
+                {
+                    _auraPulseTimer = 0f;
+                }
+            }
+            _auraView.SetPulse(_auraPulseTimer / AuraPulseSec);
         }
 
         /// <summary>
@@ -346,7 +479,7 @@ namespace FTProject
 
             if (!Config.FiresBullet)
             {
-                return;
+                return;   // 减速光环塔走 TickSlowAura，永远不会到这里
             }
 
             BulletConfig bulletCfg = Configs.GetBullet(Config.BulletId);
@@ -354,7 +487,7 @@ namespace FTProject
             {
                 return;
             }
-            // 把塔的 effectValue 传下去：减速塔三级强度不同就靠它
+            // 把塔的 effectValue 传下去：AOE / 穿透塔不必在表里重复填同样的强度
             // （子弹自身 effectValue > 0 时会被塔的值覆盖，见 BaseBullet.Init）
             BulletManager.Instance.Fire(target, Config.Power, MuzzlePosition, bulletCfg, Config.EffectValue);
             if (AudioManager.Instance != null)
@@ -411,6 +544,10 @@ namespace FTProject
         {
             IsBuilt = false;
             _target = null;
+            // 光环表现是挂在**塔自己**的 transform 上的子物体，随塔一起销毁；
+            // 这里只把引用清掉，避免持有已销毁对象
+            _auraView = null;
+            _auraPulseTimer = 0f;
         }
     }
 

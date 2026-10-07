@@ -91,11 +91,11 @@ public sealed partial class TowerInfo :  Bright.Config.BeanBase
     /// </summary>
     public int Radius { get; private set; }
     /// <summary>
-    /// 攻击力
+    /// 攻击力（减速塔=光环，本列不参与运行）
     /// </summary>
     public int Power { get; private set; }
     /// <summary>
-    /// 攻击间隔
+    /// 攻击间隔（减速塔=光环施加节拍）
     /// </summary>
     public float CD { get; private set; }
     /// <summary>
@@ -103,7 +103,7 @@ public sealed partial class TowerInfo :  Bright.Config.BeanBase
     /// </summary>
     public int Prices { get; private set; }
     /// <summary>
-    /// 发射的子弹 id → TBBulletData
+    /// 发射的子弹 id → TBBulletData（减速塔填 0，不发射）
     /// </summary>
     public int BulletId { get; private set; }
     /// <summary>
@@ -127,11 +127,11 @@ public sealed partial class TowerInfo :  Bright.Config.BeanBase
     /// </summary>
     public int SellPrice { get; private set; }
     /// <summary>
-    /// 特殊效果类型 0无/1减速/2持续伤害/3范围伤害/4激光
+    /// 特殊效果类型 0无/1减速(光环)/2持续伤害/3范围伤害/4激光
     /// </summary>
     public int EffectType { get; private set; }
     /// <summary>
-    /// 特殊效果参数
+    /// 特殊效果参数（减速=减速比例 0~1）
     /// </summary>
     public float EffectValue { get; private set; }
     /// <summary>

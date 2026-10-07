@@ -93,8 +93,20 @@ namespace FTProject
         /// <summary>激光塔：瞬发命中（hitscan），不发射弹体</summary>
         public bool IsLaser { get { return Effect == EffectType.Laser; } }
 
-        /// <summary>本塔是否会生成弹体。激光塔不会。</summary>
-        public bool FiresBullet { get { return !IsLaser && _t.BulletId > 0; } }
+        /// <summary>
+        /// 减速光环塔：**不发射子弹**，而是持续把射程内的所有敌人减速。
+        ///
+        /// 【为什么用 Type 而不是 Effect 判定】Effect 描述的是"命中后对单个目标做什么"，
+        /// 减速塔改造后根本没有"命中"这个动作 —— 它的行为差异是**塔型级别**的
+        /// （有无索敌/开火/转向），所以判定依据必须是 TowerType.Slow，
+        /// 而不是 effectType=1（那个编号现在只用于 UI 分类展示与图例一致性）。
+        /// </summary>
+        public bool IsSlowAura { get { return Type == (int)TowerType.Slow; } }
+
+        /// <summary>
+        /// 本塔是否会生成弹体。激光塔与减速光环塔都不会。
+        /// </summary>
+        public bool FiresBullet { get { return !IsLaser && !IsSlowAura && _t.BulletId > 0; } }
 
         /// <summary>
         /// 是否可攻击飞行单位（TBTowerInfo.canAttackAir，1=可 / 0=不可）。
