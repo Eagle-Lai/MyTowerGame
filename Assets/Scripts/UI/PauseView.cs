@@ -1,3 +1,4 @@
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -22,7 +23,7 @@ namespace FTProject
         private Button _restartBtn;
         private Button _settingsBtn;
         private Button _quitBtn;
-        private Text _title;
+        private TMP_Text _title;
 
         private void Awake()
         {
@@ -80,7 +81,7 @@ namespace FTProject
             EventDispatcher.TriggerEvent(EventName.QuitToSelectRequestEvent);
         }
 
-        private Text FindText(string path)
+        private TMP_Text FindText(string path)
         {
             Transform tr = transform.Find(path);
             if (tr == null)
@@ -88,7 +89,7 @@ namespace FTProject
                 Debug.LogWarning("[Pause] 缺少文本节点「" + path + "」");
                 return null;
             }
-            return tr.GetComponent<Text>();
+            return tr.GetComponent<TMP_Text>();
         }
 
         private Button FindButton(string path)

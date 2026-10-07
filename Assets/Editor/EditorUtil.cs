@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Text;
+using TMPro;
 using UnityEditor;
 using UnityEngine;
 
@@ -109,34 +110,58 @@ namespace FTProject.EditorTools
         }
 
         // ------------------------------------------------------------------
-        // 字体（UGUI Text 必须要字体，2022 起 Arial.ttf 已不再是内置名）
+        // 字体（全工程统一 TextMeshPro，不再使用 UGUI Text）
         // ------------------------------------------------------------------
 
-        private static Font _cachedFont;
+        private static TMP_FontAsset _cachedTmpFont;
 
         /// <summary>
-        /// 取一个可用的内置字体。
-        /// 【坑】Unity 2022 之前内置字体叫 "Arial.ttf"，2022 起改名为 "LegacyRuntime.ttf"，
-        /// 用错名字会得到 null，UGUI Text 就不显示任何字。
+        /// 取工程默认的 TMP 中文字体资产（Assets/Font/SiYuanSongTi SDF.asset）。
+        ///
+        /// 【为什么不再取内置 LegacyRuntime/Arial】全工程已统一为 TextMeshPro ——
+        ///   UGUI Text 已弃用，内置字体对中文也不可靠（PC 包可用、移动包成方块）。
+        ///   TMP 走"字体资产（SDF Atlas）"，中文必须由**包含中文字形的字体资产**承载，
+        ///   所以这里显式解析 SiYuanSongTi（源思源宋体）。
+        ///
+        /// 【解析顺序】① TMP Settings 里配置的默认字体资产（工程已指向 SiYuanSongTi）
+        ///              ② 兜底：直接按路径 AssetDatabase 载入 SiYuanSongTi SDF
+        ///              ③ 再兜底：TMP 自带 LiberationSans（只有拉丁字形，中文会成方块）
+        /// 返回 null 时调用方应跳过设置字体（用 TMP 组件自身的默认值）。
         /// </summary>
-        public static Font GetDefaultFont()
+        public static TMP_FontAsset GetDefaultTmpFont()
         {
-            if (_cachedFont != null)
+            if (_cachedTmpFont != null)
             {
-                return _cachedFont;
+                return _cachedTmpFont;
             }
-            _cachedFont = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            if (_cachedFont == null)
+
+            // ① TMP Settings 的默认字体资产
+            _cachedTmpFont = TMP_Settings.defaultFontAsset;
+
+            // ② 按路径兜底（若 TMP Settings 未指向中文字体）
+            if (_cachedTmpFont == null)
             {
-                _cachedFont = Resources.GetBuiltinResource<Font>("Arial.ttf");
+                _cachedTmpFont = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(ChineseTmpFontPath);
             }
-            if (_cachedFont == null)
+
+            // ③ 最后兜底：TMP 自带拉丁字体（中文会成方块，仅保证不崩）
+            if (_cachedTmpFont == null)
             {
-                Debug.LogWarning("[EditorUtil] 找不到内置字体，UGUI 文本可能不显示。" +
-                                 "请在场景里手动给 Text 组件指定字体。");
+                _cachedTmpFont = TMP_Settings.fallbackFontAssets != null && TMP_Settings.fallbackFontAssets.Count > 0
+                    ? TMP_Settings.fallbackFontAssets[0]
+                    : null;
+                if (_cachedTmpFont == null)
+                {
+                    Debug.LogWarning("[EditorUtil] 找不到 TMP 中文字体资产（" + ChineseTmpFontPath +
+                                     "）。请确认 TMP Settings 的默认字体，或该资产是否存在；" +
+                                     "否则中文将显示为方块。");
+                }
             }
-            return _cachedFont;
+            return _cachedTmpFont;
         }
+
+        /// <summary>工程中文字体资产路径（TMP SDF）</summary>
+        public const string ChineseTmpFontPath = "Assets/Font/SiYuanSongTi SDF.asset";
 
         // ------------------------------------------------------------------
         // 贴图生成

@@ -1,3 +1,4 @@
+using TMPro;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UI;
@@ -29,10 +30,11 @@ namespace FTProject.EditorTools
     ///   TipsView（CanvasGroup）
     ///   └── TipText
     ///
-    /// 【关于中文字体】这里用 Unity 内置动态字体（LegacyRuntime.ttf）。
-    /// 在 Windows / macOS 编辑器与 PC 包中它能正常渲染中文；
-    /// 但 Android / iOS 包内没有系统字体可回退，中文会显示成方块 ——
-    /// 出移动包前需要换成自带中文字形的 TTF（见操作指南「字体」一节）。
+    /// 【关于中文字体】全工程统一使用 **TextMeshPro（TMP）**，不再使用 UGUI Text。
+    /// 字体取 TMP 默认字体资产（`Assets/Font/SiYuanSongTi SDF.asset`，源思源宋体，
+    /// 已配置在 TMP Settings 的 m_defaultFontAsset）。TMP 的 SDF 字体资产包含中文字形，
+    /// 编辑器 / PC 包 / 移动包都能正常显示中文，不需要再回退系统字体。
+    /// 描边不再用 UGUI 的 Outline 组件（TMP 不支持），改用 TMP 的 faceted/outline 材质属性。
     ///
     /// 菜单：
     ///   Tools ▸ 塔防 ▸ 高级（单步重建） ▸ 补缺 UI 预制体（安全：只补缺失）
@@ -98,7 +100,6 @@ namespace FTProject.EditorTools
         private static readonly Color TextColor = new Color(1f, 1f, 1f, 1f);
         private static readonly Color ButtonColor = new Color(0.18f, 0.24f, 0.34f, 0.92f);
         private static readonly Color OutlineColor = new Color(0f, 0f, 0f, 0.85f);
-
         [MenuItem("Tools/塔防/高级（单步重建）/补缺 UI 预制体（安全：只补缺失）", false, 304)]
         public static void EnsureMissingFromMenu()
         {
@@ -253,11 +254,11 @@ namespace FTProject.EditorTools
             cg.interactable = false;
             root.AddComponent<TipsView>();
 
-            Text tip = CreateText(root.transform, "TipText", string.Empty,
+            TextMeshProUGUI tip = CreateText(root.transform, "TipText", string.Empty,
                 new Vector2(0.5f, 0.30f), Vector2.zero, new Vector2(1100f, 60f),
                 TextAnchor.MiddleCenter, BigFontSize);
-            tip.horizontalOverflow = HorizontalWrapMode.Wrap;
-            tip.verticalOverflow = VerticalWrapMode.Overflow;
+            tip.enableWordWrapping = true;
+            tip.overflowMode = TextOverflowModes.Overflow;
 
             GameObject saved = PrefabUtility.SaveAsPrefabAsset(root, TipsPath);
             Object.DestroyImmediate(root);
@@ -320,10 +321,10 @@ namespace FTProject.EditorTools
                 new Vector2(0.5f, 1f), new Vector2(0f, -34f), new Vector2(500f, 52f),
                 TextAnchor.MiddleCenter, BigFontSize);
 
-            Text stats = CreateText(panel.transform, "Stats", "攻击 -   射程 -   攻速 -",
+            TextMeshProUGUI stats = CreateText(panel.transform, "Stats", "攻击 -   射程 -   攻速 -",
                 new Vector2(0.5f, 1f), new Vector2(0f, -100f), new Vector2(500f, 44f),
                 TextAnchor.MiddleCenter, SmallFontSize);
-            stats.horizontalOverflow = HorizontalWrapMode.Wrap;
+            stats.enableWordWrapping = true;
 
             // 三个按钮（竖排）
             CreatePanelButton(panel.transform, "UpgradeBtn", "升级", new Vector2(0f, -20f));
@@ -422,12 +423,12 @@ namespace FTProject.EditorTools
                 trt.pivot = new Vector2(0f, 1f);
                 trt.sizeDelta = new Vector2(240f, 96f);
                 trt.anchoredPosition = Vector2.zero;
-                Text tl = tpl.GetComponentInChildren<Text>(true);
+                TextMeshProUGUI tl = tpl.GetComponentInChildren<TextMeshProUGUI>(true);
                 if (tl != null)
                 {
-                    tl.alignment = TextAnchor.MiddleCenter;
-                    tl.horizontalOverflow = HorizontalWrapMode.Wrap;
-                    tl.verticalOverflow = VerticalWrapMode.Overflow;
+                    tl.alignment = TextAlignmentOptions.Center;
+                    tl.enableWordWrapping = true;
+                    tl.overflowMode = TextOverflowModes.Overflow;
                 }
                 tpl.gameObject.SetActive(false);
             }
@@ -540,7 +541,7 @@ namespace FTProject.EditorTools
             cb.disabledColor = new Color(0.5f, 0.5f, 0.5f, 0.6f);
             btn.colors = cb;
 
-            Text t = CreateText(go.transform, "Label", label,
+            TextMeshProUGUI t = CreateText(go.transform, "Label", label,
                 new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(320f, 72f),
                 TextAnchor.MiddleCenter, SmallFontSize);
             RectTransform lrt = (RectTransform)t.transform;
@@ -555,7 +556,7 @@ namespace FTProject.EditorTools
         // 构件
         // ------------------------------------------------------------------
 
-        private static Text CreateText(Transform parent, string name, string content,
+        private static TextMeshProUGUI CreateText(Transform parent, string name, string content,
             Vector2 anchor, Vector2 anchoredPos, Vector2 size, TextAnchor align, int fontSize)
         {
             GameObject go = new GameObject(name, typeof(RectTransform));
@@ -569,19 +570,101 @@ namespace FTProject.EditorTools
             rt.anchoredPosition = anchoredPos;
             rt.sizeDelta = size;
 
-            Text t = go.AddComponent<Text>();
-            t.font = EditorUtil.GetDefaultFont();
+            // 【为什么用 TextMeshProUGUI（UGUI 版 TMP）而不是 TextMeshPro】
+            //   TextMeshProUGUI 才是 Canvas 下渲染的组件；TextMeshPro 是世界空间网格版。
+            //   UI 层的所有文本都必须用 TextMeshProUGUI，否则不会出现在 Canvas 里。
+            TextMeshProUGUI t = go.AddComponent<TextMeshProUGUI>();
+            TMP_FontAsset font = EditorUtil.GetDefaultTmpFont();
+            if (font != null)
+            {
+                t.font = font;
+            }
             t.text = content;
             t.fontSize = fontSize;
-            t.alignment = align;
+            t.alignment = ToTmpAlignment(align);
             t.color = TextColor;
             t.raycastTarget = false;    // 文本不吃点击，避免挡住按钮
 
-            // 描边：背景是浅色纸张纹理时纯白字会看不清
-            Outline o = go.AddComponent<Outline>();
-            o.effectColor = OutlineColor;
-            o.effectDistance = new Vector2(1.5f, -1.5f);
+            // 描边：背景是浅色纸张纹理时纯白字会看不清。
+            // 【TMP 不支持 UGUI 的 Outline 组件】UGUI 描边是靠复制顶点实现的组件；
+            //   TMP 的描边是**材质属性**（_OutlineWidth / _OutlineColor），必须给文本
+            //   指定一份开启了 outline 的材质预设。这里在生成期取/建该材质并赋上。
+            //   取不到字体时不设置材质，退化为无描边（不影响功能）。
+            Material outlineMat = GetOrCreateOutlineMaterial(font);
+            if (outlineMat != null)
+            {
+                t.fontSharedMaterial = outlineMat;
+            }
+
+            // 不自动换行 + 溢出可见：与旧版 UGUI Text 默认行为一致，
+            // 需要换行的少数节点（Tips / Stats / 关卡按钮）再单独打开 enableWordWrapping。
+            t.enableWordWrapping = false;
+            t.overflowMode = TextOverflowModes.Overflow;
             return t;
+        }
+
+        /// <summary>
+        /// 取一份"开启描边"的 TMP 字体材质（预设资产）。
+        ///
+        /// 【为什么要落到资产文件】TMP 的材质是资产；若每个文本都 new 一份材质，
+        ///   ① 会产生大量运行时材质实例、破坏合批 ② 存进 prefab 后会变成内嵌资产，
+        ///   一堆重复。所以这里统一建一份共享材质资产，所有文本引用同一份。
+        /// 首次调用时创建，之后直接复用（幂等）。
+        /// </summary>
+        private static Material GetOrCreateOutlineMaterial(TMP_FontAsset font)
+        {
+            if (font == null)
+            {
+                return null;
+            }
+            Material cached = AssetDatabase.LoadAssetAtPath<Material>(OutlineMaterialPath);
+            if (cached != null)
+            {
+                return cached;
+            }
+
+            // 以字体自带的默认材质为模板复制一份，开启 outline
+            Material mat = new Material(font.material);
+            mat.name = "SiYuanSongTi SDF - Outline";
+            mat.SetColor(ShaderUtilities.ID_OutlineColor, OutlineColor);
+            mat.SetFloat(ShaderUtilities.ID_OutlineWidth, 0.12f);
+            mat.EnableKeyword(ShaderUtilities.Keyword_Outline);
+
+            EditorUtil.EnsureFolderOfFile(OutlineMaterialPath);
+            AssetDatabase.CreateAsset(mat, OutlineMaterialPath);
+            AssetDatabase.SaveAssets();
+
+            // 描边材质被所有 UI 预制体共享引用（和字体一样是共享依赖）。
+            // 【为什么在这里不直接设 AB 名】AB 名由 ResTable → ABNameSetter 统一写入
+            //   （唯一权威来源）。ResTable 已登记 "Font_Outline_Mat" → bundle "font"，
+            //   故此处只需保证资产存在，随后向导里的 ABNameSetter 步骤会赋名，避免重复逻辑。
+            return mat;
+        }
+
+        /// <summary>统一的中文字体描边材质资产路径</summary>
+        private const string OutlineMaterialPath = "Assets/Font/SiYuanSongTi SDF - Outline.mat";
+
+        /// <summary>
+        /// UGUI `TextAnchor` → TMP `TextAlignmentOptions` 的映射。
+        ///
+        /// 【为什么需要显式映射】TMP 用 (水平+垂直) 两位组合的枚举，UGUI 用九宫格 TextAnchor；
+        ///   二者无隐式转换。这里逐项翻译，保持生成器接口签名不变（调用点二十多处）。
+        /// </summary>
+        private static TextAlignmentOptions ToTmpAlignment(TextAnchor a)
+        {
+            switch (a)
+            {
+                case TextAnchor.UpperLeft:    return TextAlignmentOptions.TopLeft;
+                case TextAnchor.UpperCenter:  return TextAlignmentOptions.Top;
+                case TextAnchor.UpperRight:   return TextAlignmentOptions.TopRight;
+                case TextAnchor.MiddleLeft:   return TextAlignmentOptions.Left;
+                case TextAnchor.MiddleCenter: return TextAlignmentOptions.Center;
+                case TextAnchor.MiddleRight:  return TextAlignmentOptions.Right;
+                case TextAnchor.LowerLeft:    return TextAlignmentOptions.BottomLeft;
+                case TextAnchor.LowerCenter:  return TextAlignmentOptions.Bottom;
+                case TextAnchor.LowerRight:   return TextAlignmentOptions.BottomRight;
+                default:                      return TextAlignmentOptions.Center;
+            }
         }
 
         private static void CreateButton(Transform parent, string name, string label, Vector2 anchoredPos)
@@ -608,7 +691,7 @@ namespace FTProject.EditorTools
             cb.disabledColor = new Color(0.5f, 0.5f, 0.5f, 0.6f);
             btn.colors = cb;
 
-            Text t = CreateText(go.transform, "Label", label,
+            TextMeshProUGUI t = CreateText(go.transform, "Label", label,
                 new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(220f, 72f),
                 TextAnchor.MiddleCenter, SmallFontSize);
             // Label 要铺满按钮，单独设一次
@@ -671,7 +754,7 @@ namespace FTProject.EditorTools
             // 需要显示价格时用 PriceText 子节点，不要复用 Label —— 否则"按钮上的文字"
             // 会同时承担"塔名"和"价格"两种语义，将来加角标或换图标栏时必然打架。
             // 本轮只建节点、文案留空，由 HudView 按当前配置表价格刷新。
-            Text pt = CreateText(go.transform, "PriceText", string.Empty,
+            TextMeshProUGUI pt = CreateText(go.transform, "PriceText", string.Empty,
                 new Vector2(0.5f, 0f), new Vector2(0f, 4f), new Vector2(128f, 36f),
                 TextAnchor.LowerCenter, SmallFontSize);
             pt.raycastTarget = false;   // 不吃点击，点击交给父级 Button

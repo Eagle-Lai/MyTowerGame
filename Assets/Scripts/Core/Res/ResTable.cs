@@ -107,6 +107,20 @@ namespace FTProject
             { "SelectView",   new ResAddress(ResBundle.UiHud, "SelectView",   "Assets/Prefabs/UI/SelectView.prefab") },
             { "PauseView",    new ResAddress(ResBundle.UiHud, "PauseView",    "Assets/Prefabs/UI/PauseView.prefab") },
             { "SettingView",  new ResAddress(ResBundle.UiHud, "SettingView",  "Assets/Prefabs/UI/SettingView.prefab") },
+
+            // ------------------------------------------------------------------
+            // 字体（TextMeshPro）
+            //
+            // 【为什么必须登记】全工程 UI 文本统一用 TMP，其字体资产是 ui_hud 各 prefab 的
+            //   共享依赖。登记进 ResTable 有**两个**作用：
+            //     ① ABNameSetter 会给它们打上 font 包标记 → 打包时进入独立 font 包，
+            //        而不是被隐式复制进每个引用它的 UI 包（字体图集大，重复是浪费）。
+            //     ② 自检脚本能核对"登记了 → 文件存在"，字体丢失会被提前发现。
+            //   运行时不通过 ResLoader 加载它们（TMP 靠引用直接取用），登记只为打包与自检。
+            { "Font_SiYuanSongTi_SDF", new ResAddress(ResBundle.Font, "SiYuanSongTi SDF", "Assets/Font/SiYuanSongTi SDF.asset") },
+
+            // 描边材质（UIPrefabBuilder 生成；不存在时文本退化为无描边，不报错）
+            { "Font_Outline_Mat", new ResAddress(ResBundle.Font, "SiYuanSongTi SDF - Outline", "Assets/Font/SiYuanSongTi SDF - Outline.mat") },
         };
 
         static ResTable()

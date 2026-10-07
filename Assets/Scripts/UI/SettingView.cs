@@ -1,3 +1,4 @@
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -21,14 +22,14 @@ namespace FTProject
         /// <summary>每次点击调整的音量步长</summary>
         private const float Step = 0.1f;
 
-        private Text _volumeText;
+        private TMP_Text _volumeText;
         private Button _volDown;
         private Button _volUp;
         private Button _muteBtn;
-        private Text _muteLabel;
+        private TMP_Text _muteLabel;
         private Button _resetBtn;
         private Button _closeBtn;
-        private Text _title;
+        private TMP_Text _title;
 
         private void Awake()
         {
@@ -96,7 +97,7 @@ namespace FTProject
             SetText(_muteLabel, s.muted ? "取消静音" : "静音");
         }
 
-        private Text FindText(string path)
+        private TMP_Text FindText(string path)
         {
             Transform tr = transform.Find(path);
             if (tr == null)
@@ -104,7 +105,7 @@ namespace FTProject
                 Debug.LogWarning("[Setting] 缺少文本节点「" + path + "」");
                 return null;
             }
-            return tr.GetComponent<Text>();
+            return tr.GetComponent<TMP_Text>();
         }
 
         private Button FindButton(string path)
@@ -118,7 +119,7 @@ namespace FTProject
             return tr.GetComponent<Button>();
         }
 
-        private static void SetText(Text t, string v)
+        private static void SetText(TMP_Text t, string v)
         {
             if (t != null && t.text != v)
             {

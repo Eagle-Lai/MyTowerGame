@@ -1,3 +1,4 @@
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -21,14 +22,14 @@ namespace FTProject
     /// </summary>
     public class HudView : MonoBehaviour
     {
-        // ---- 文本 ----
-        private Text _goldText;
-        private Text _hpText;
-        private Text _roundText;
+        // ---- 文本（全工程统一 TMP，不再用 UGUI Text）----
+        private TMP_Text _goldText;
+        private TMP_Text _hpText;
+        private TMP_Text _roundText;
 
         // ---- 开始按钮 ----
         private Button _startButton;
-        private Text _startLabel;
+        private TMP_Text _startLabel;
 
         /// <summary>
         /// 塔按钮：节点名 → (按钮, 塔型, 价格文本)。
@@ -36,7 +37,7 @@ namespace FTProject
         /// </summary>
         private Button[] _towerButtons;
         private int[] _towerButtonTypes;
-        private Text[] _towerPriceTexts;
+        private TMP_Text[] _towerPriceTexts;
 
         /// <summary>当前选中的塔类型与等级（M2 起由按钮决定 type；level 固定 1 = 建造等级）</summary>
         private int _towerType = 1;
@@ -113,7 +114,7 @@ namespace FTProject
             // 塔按钮（五类）
             _towerButtons = new Button[TowerNodeNames.Length];
             _towerButtonTypes = new int[TowerNodeNames.Length];
-            _towerPriceTexts = new Text[TowerNodeNames.Length];
+            _towerPriceTexts = new TMP_Text[TowerNodeNames.Length];
             for (int i = 0; i < TowerNodeNames.Length; i++)
             {
                 int type = TowerNodeTypes[i];
@@ -144,9 +145,9 @@ namespace FTProject
             EventDispatcher.AddEventListener(EventName.PlayerStateInitEvent, RefreshAll);
         }
 
-        private Text FindText(string path)
+        private TMP_Text FindText(string path)
         {
-            Text t = FindChildText(path);
+            TMP_Text t = FindChildText(path);
             if (t == null)
             {
                 Debug.LogError(string.Format("[HUD] 缺少文本节点「{0}」（prefab 与 HudView.cs 不一致）", path));
@@ -154,10 +155,15 @@ namespace FTProject
             return t;
         }
 
-        private Text FindChildText(string path)
+        /// <summary>
+        /// 取子节点上的 TMP 文本组件。
+        /// 【TMP_Text 而不是 TextMeshProUGUI】取基类即可，读取 .text 与颜色都不依赖具体子类；
+        ///   基类还能兼容以后的 TextMeshPro（世界空间）节点，耦合更小。
+        /// </summary>
+        private TMP_Text FindChildText(string path)
         {
             Transform tr = transform.Find(path);
-            return tr != null ? tr.GetComponent<Text>() : null;
+            return tr != null ? tr.GetComponent<TMP_Text>() : null;
         }
 
         private Button FindButton(string path)
@@ -362,7 +368,7 @@ namespace FTProject
             }
         }
 
-        private static void SetText(Text t, string value)
+        private static void SetText(TMP_Text t, string value)
         {
             if (t != null && t.text != value)
             {

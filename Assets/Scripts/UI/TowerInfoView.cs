@@ -1,3 +1,4 @@
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -33,14 +34,14 @@ namespace FTProject
     public class TowerInfoView : MonoBehaviour
     {
         // 文本
-        private Text _title;
-        private Text _stats;
+        private TMP_Text _title;
+        private TMP_Text _stats;
 
         // 按钮
         private Button _upgradeBtn;
-        private Text _upgradeLabel;
+        private TMP_Text _upgradeLabel;
         private Button _sellBtn;
-        private Text _sellLabel;
+        private TMP_Text _sellLabel;
         private Button _closeBtn;
         private Button _bgBtn;
 
@@ -108,7 +109,7 @@ namespace FTProject
             }
         }
 
-        private Text FindText(string path)
+        private TMP_Text FindText(string path)
         {
             Transform tr = transform.Find(path);
             if (tr == null)
@@ -117,7 +118,7 @@ namespace FTProject
                     "[TowerInfoView] 缺少文本节点「{0}」—— 面板将跳过该项刷新（美术补齐后自动恢复）", path));
                 return null;
             }
-            return tr.GetComponent<Text>();
+            return tr.GetComponent<TMP_Text>();
         }
 
         private Button FindButton(string path)
@@ -377,7 +378,7 @@ namespace FTProject
             }
         }
 
-        private static void SetText(Text t, string value)
+        private static void SetText(TMP_Text t, string value)
         {
             if (t != null && t.text != value)
             {

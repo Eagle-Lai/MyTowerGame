@@ -9,7 +9,7 @@
 """
 import io, os, re, sys, collections
 
-ROOT = r'D:\FreedomTower\Assets'
+ROOT = r'D:\FreedomTower_1\Assets'
 DIRS = [os.path.join(ROOT, 'Scripts'), os.path.join(ROOT, 'Editor'), os.path.join(ROOT, 'Gen')]
 
 # 类型名 -> 命名空间
@@ -48,6 +48,12 @@ reg('System.Collections', 'IEnumerator ArrayList Hashtable')
 reg('System.Collections.Generic', 'List Dictionary HashSet Queue Stack KeyValuePair IList IEnumerable ICollection IDictionary')
 reg('System.IO', 'File Directory Path StreamReader StreamWriter MemoryStream FileStream')
 reg('System.Text', 'StringBuilder Encoding')
+reg('TMPro', """
+TMP_Text TextMeshProUGUI TextMeshPro TMP_FontAsset TMP_SpriteAsset TMP_Settings TMP_InputField
+TMP_Dropdown TextAlignmentOptions TextOverflowModes FontStyles FontWeight TextWrappingModes
+ShaderUtilities TMP_TextInfo TMP_CharacterInfo TMP_UpdateManager
+""")
+reg('SimpleJSON', 'JSONNode JSONArray JSONObject JSONString JSONNumber JSONBool JSONNull')
 reg('SimpleJSON', 'JSONNode JSONArray JSONObject JSONString JSONNumber JSONBool JSONNull')
 reg('cfg', 'EnemyData TowerInfo BulletData Global LevelMap RoundData SceneInfo EnemyList EnemyDataList TowerInfoList BulletDataList LevelMapList GlobalList SceneInfoList RoundDataList EnemyListList Tables')
 reg('cfg.item', 'Item TbItem ItemExchange')

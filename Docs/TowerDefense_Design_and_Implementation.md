@@ -2952,3 +2952,69 @@ Tick() ① 制导：_dir = (_target.Position - transform.position).normalized
 - **爆炸半径 `aoeRadius=1.2` 未调**：属数值平衡，与本轮"攻击方式"修复无关，避免把两件事混在一次改动里。
 - **未给强力塔加独立射程圈表现**：现有 `RangeIndicatorView` 只在**放置预览**时显示塔射程；AOE 的"爆炸半径"是另一回事（子弹命中表现），本轮不引入新表现资产。
 
+
+---
+
+## Z.11　全工程字体组件统一为 TextMeshPro（2026-10-07）
+
+### Z.11.1 需求与动机
+
+要求：**把项目里所有字体组件统一为 TMP（TextMeshPro）**。
+
+现状：UI 层 7 个脚本 + UI 预制体生成器全部使用 **UGUI `UnityEngine.UI.Text`**。
+UGUI Text 的问题：① 官方已不再演进（TMP 是其继任）② 中文在移动包内没有系统字体可回退，
+会显示成方块 ③ 缩放发虚、无 SDF。
+
+### Z.11.2 关键发现（决定了方案可行性）
+
+工程里其实**早已备好** TMP 中文字体基础设施，只是没人用：
+- `Assets/Font/SiYuanSongTi SDF.asset` —— 源思源宋体的 TMP 字体资产（含中文字形）
+- `Assets/TextMesh Pro/Resources/TMP Settings.asset` 的 `m_defaultFontAsset` **已指向它**
+- `Packages/manifest.json` 已含 `com.unity.textmeshpro: 3.0.7`，TMP Essentials 已导入
+
+所以迁移的核心不是"造字体"，而是**把文本组件从 UGUI 换成 TMP**，且**中文字体零额外成本**。
+
+### Z.11.3 关键决策
+
+| # | 决策 | 理由 |
+|---|---|---|
+| H-A | 用 `UnityEngine.UI.Text` → `TMP_Text`（运行时）/ `TextMeshProUGUI`（UI 节点） | `TMP_Text` 是基类，读 `.text`/颜色足够；`TextMeshProUGUI` 才是 Canvas 下能渲染的组件（`TextMeshPro` 是世界空间网格版） |
+| H-B | **就地替换组件**（`UiTmpMigrator`）而不是跑 UIPrefabBuilder 全量重建 | 生成器是 DeleteAsset + 重建，会抹掉手工摆位（HudView 手工加过塔按钮）。就地替换只换组件、不动节点树与坐标 |
+| H-C | 迁移走 Unity API（AddComponent + DestroyImmediate），**不手改 prefab YAML** | Text 与 TMP 序列化字段完全不同（Font vs TMP_FontAsset、horizontalOverflow vs enableWordWrapping），手拼 YAML 必出"组件丢失/字不显示" |
+| H-D | 描边改用 **TMP 材质属性**（`_OutlineWidth`/`_OutlineColor`）而非 UGUI `Outline` 组件 | TMP 不支持 UGUI Outline（那是复制顶点的组件）；TMP 描边是字体材质属性。统一建一份共享材质资产 `SiYuanSongTi SDF - Outline.mat`，避免每个文本各持一份材质实例、破坏合批 |
+| H-E | **字体单独打一个 AB 包 `font`**，并列入常驻包 | 字体是所有 UI prefab 的共享依赖；不分包则 Unity 把它隐式复制进每个引用它的包（图集大 → 包体与内存双浪费）。常驻加载一次即可 |
+| H-F | 字体资产登记进 ResTable（逻辑名 `Font_SiYuanSongTi_SDF` / `Font_Outline_Mat`） | ResTable 是唯一寻址源；登记后 ABNameSetter 才能给它们打 `font` 包标记，自检也能核对"登记→文件存在" |
+| H-G | `EditorUtil.GetDefaultFont()`（LegacyRuntime）**删除**，改为 `GetDefaultTmpFont()` | 全工程不再有 UGUI Text，内置 Font 的坑（2022 起 Arial.ttf 改名）随之消失 |
+| H-H | 飘字（FloatingTextManager）改为取 `TMP_Settings.defaultFontAsset` | 不再"借场景 UI 文本的 Font"——那是 UGUI 概念；TMP 直接用字体资产 |
+
+### Z.11.4 改动清单
+
+| 文件 | 改动 |
+|---|---|
+| `Assets/Scripts/UI/HudView.cs` | `Text`→`TMP_Text`（字段/查找/SetText） |
+| `Assets/Scripts/UI/TipsView.cs` | 同上 |
+| `Assets/Scripts/UI/TowerInfoView.cs` | 同上（含 `FindText`/`SetText`） |
+| `Assets/Scripts/UI/SelectView.cs` | 同上 + 关卡按钮克隆时取 `TMP_Text` |
+| `Assets/Scripts/UI/PauseView.cs` / `SettingView.cs` | 同上（保留 `using UnityEngine.UI` 供 `Button`） |
+| `Assets/Scripts/UI/FloatingTextManager.cs` | 世界空间飘字改 `TextMeshProUGUI`；字体取 `TMP_Settings.defaultFontAsset`；删 `Resources.GetBuiltinResource<Font>` |
+| `Assets/Editor/EditorUtil.cs` | 删 `GetDefaultFont`，新增 `GetDefaultTmpFont` + `ChineseTmpFontPath`；加 `using TMPro` |
+| `Assets/Editor/UIPrefabBuilder.cs` | `CreateText` 产 `TextMeshProUGUI`；新增 `ToTmpAlignment`（TextAnchor→TextAlignmentOptions）；新增 `GetOrCreateOutlineMaterial`；移除 UGUI `Outline` |
+| `Assets/Editor/UiTmpMigrator.cs` | **新增**。就地迁移工具：把已有 UI prefab 的 Text 换 TMP（幂等） |
+| `Assets/Editor/M0SetupWizard.cs` | 向导加步骤 8.5（迁移）；自检 `CheckUiPrefab` 加"不得含 UGUI Text"校验 |
+| `Assets/Scripts/Core/Res/ResBundle.cs` | 新增 `Font` 包常量，加入 `Fixed` 与 `Persistent` |
+| `Assets/Scripts/Core/Res/ResTable.cs` | 登记字体资产与描边材质 |
+| `.workbuddy/tools/check_usings.py` | 加 `TMPro` 类型映射；修正过期 ROOT 路径（`FreedomTower`→`FreedomTower_1`） |
+
+### Z.11.5 操作步骤（在 Unity 里执行）
+
+1. 运行 **Tools ▸ 塔防 ▸ 0. 自检** → 会提示六个 UI prefab 仍含 UGUI Text
+2. 运行 **Tools ▸ 塔防 ▸ 高级（单步重建）▸ 把 UI 预制体的 Text 迁移为 TextMeshPro**
+   （或直接跑 **Tools ▸ 塔防 ▸ 1. 一键补齐资源**，步骤 8.5 会自动迁移）
+3. 再跑一次自检，六个 prefab 应显示"文本全部使用 TextMeshPro"
+4. 打包 AB（字体进独立 `font` 包）
+
+### Z.11.6 未改动的部分与理由
+
+- **`UnityEngine.UI` 命名空间本身仍被引用**（`Button` / `Image` / `CanvasScaler`）：
+  只迁字体组件，按钮/图片等 UGUI 组件不属于本次范围，且 TMP 不提供它们的替代品。
+- **塔/怪物/子弹等非 UI 文本**：工程里本来就没有（没有 TextMesh/世界文字），无需处理。

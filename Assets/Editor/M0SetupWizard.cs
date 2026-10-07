@@ -81,6 +81,11 @@ namespace FTProject.EditorTools
             // 8. 场景（缺失才搭建；已有则跳过，保住手工接线）
             SceneMainBuilder.EnsureOrBuildInternal(report);
 
+            // 8.5 UI 文本统一 TextMeshPro：把已有 UI prefab 里的 UGUI Text 就地换成 TMP。
+            //     幂等（已是 TMP 的跳过），且不动节点树/坐标，手工摆位不受影响。
+            //     【为什么放在这里】是"修复已有 prefab"的性质，必须在 UI prefab 已存在之后跑。
+            UiTmpMigrator.MigrateAll(report);
+
             // 9. AB 打标（只打标不打包；真正的打包耗时较长，单独一个菜单）
             ABNameSetter.Apply(report);
 
@@ -417,6 +422,25 @@ namespace FTProject.EditorTools
             if (missing == 0)
             {
                 report.Ok(Path.GetFileName(path) + "：节点齐备（" + string.Join(" / ", childNames) + "）");
+            }
+
+            // 【字体组件口径】全工程统一 TextMeshPro：prefab 里不允许再出现 UGUI Text。
+            //   这条一旦回归，症状是"文字在移动包成方块 / 工程里两套字体并存"，
+            //   很难从运行日志看出来，所以在自检里显式拦住。
+            UnityEngine.UI.Text legacy = go.GetComponentInChildren<UnityEngine.UI.Text>(true);
+            if (legacy != null)
+            {
+                report.Error(string.Format(
+                    "{0} 仍含 UGUI Text 组件（节点「{1}」）—— 请执行「高级（单步重建）▸ 把 UI 预制体的 Text 迁移为 TextMeshPro」",
+                    Path.GetFileName(path), legacy.gameObject.name));
+            }
+            else if (go.GetComponentInChildren<TMPro.TMP_Text>(true) == null)
+            {
+                report.Warn(Path.GetFileName(path) + " 里没有任何 TMP 文本组件（若该界面本就没有文字可忽略）");
+            }
+            else
+            {
+                report.Ok(Path.GetFileName(path) + "：文本全部使用 TextMeshPro");
             }
         }
 

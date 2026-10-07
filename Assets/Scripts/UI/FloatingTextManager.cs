@@ -1,10 +1,10 @@
+using TMPro;
 using UnityEngine;
-using UnityEngine.UI;
 
 namespace FTProject
 {
     /// <summary>
-    /// 伤害飘字（M2-W5）。世界空间 Canvas + 对象池 Text。
+    /// 伤害飘字（M2-W5）。世界空间 Canvas + 对象池 TMP 文本。
     ///
     /// 【为什么是"管理器 + 懒创建"，而不是挂在场景里的 prefab】
     ///   挂 prefab 就多一个必须在 Unity 里生成的资产；而飘字属于纯表现，
@@ -19,9 +19,9 @@ namespace FTProject
     ///   高频塔（穿透塔 CD=200ms、激光塔更密）每跳都弹的话，屏幕会被数字糊满，
     ///   反而看不出伤害高低 —— 这是"表现"与"信息量"的取舍。
     ///
-    /// 【字体从哪来】优先借用场景里已有 UI 文本的字体：
-    ///   那个 font 已经被 prefab 引用，打包时一定被包含；
-    ///   而 Resources.GetBuiltinResource 在 Player 里的行为不稳定，只作兜底。
+    /// 【字体从哪来】全工程统一 TMP。TMP 的 SDF 字体资产自带中文字形，
+    ///   这里取 TMP Settings 配置的默认字体（工程已指向 SiYuanSongTi SDF），
+    ///   不依赖 UGUI 的 Font / Resources.GetBuiltinResource（那套已弃用）。
     /// </summary>
     public class FloatingTextManager : MonoBehaviour
     {
@@ -35,7 +35,7 @@ namespace FTProject
 
         private static FloatingTextManager _instance;
 
-        private Text[] _texts;
+        private TextMeshProUGUI[] _texts;
         private RectTransform[] _rects;
         private float[] _life;
         private int _next;
@@ -82,10 +82,10 @@ namespace FTProject
 
         private static FloatingTextManager Create()
         {
-            Font font = ResolveFont();
+            TMP_FontAsset font = ResolveFont();
             if (font == null)
             {
-                Debug.LogWarning("[FloatText] 找不到可用字体，伤害飘字已跳过（不影响战斗）");
+                Debug.LogWarning("[FloatText] 找不到可用 TMP 字体资产，伤害飘字已跳过（不影响战斗）");
                 return null;
             }
 
@@ -105,21 +105,25 @@ namespace FTProject
             return m;
         }
 
-        private static Font ResolveFont()
+        /// <summary>
+        /// 取 TMP 字体资产。
+        /// 【为什么不再借场景 UI 文本的 Font】那套是 UGUI 的；TMP 用的是**字体资产**。
+        ///   直接取 TMP Settings 的默认字体（工程已配置为 SiYuanSongTi SDF，含中文字形），
+        ///   该资产已随 TMP 资源配置进包，不需要再从场景里"借"一个引用。
+        /// </summary>
+        private static TMP_FontAsset ResolveFont()
         {
-            // ① 借场景里已有 UI 文本的字体（打包一定包含它）
-            Text sample = Object.FindObjectOfType<Text>();
-            if (sample != null && sample.font != null)
+            TMP_FontAsset font = TMP_Settings.defaultFontAsset;
+            if (font == null && TMP_Settings.fallbackFontAssets != null && TMP_Settings.fallbackFontAssets.Count > 0)
             {
-                return sample.font;
+                font = TMP_Settings.fallbackFontAssets[0];
             }
-            // ② 兜底：内置字体（编辑器与 PC 包可用）
-            return Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            return font;
         }
 
-        private void Init(Font font)
+        private void Init(TMP_FontAsset font)
         {
-            _texts = new Text[PoolSize];
+            _texts = new TextMeshProUGUI[PoolSize];
             _rects = new RectTransform[PoolSize];
             _life = new float[PoolSize];
 
@@ -134,13 +138,16 @@ namespace FTProject
                 rt.pivot = new Vector2(0.5f, 0.5f);
                 rt.sizeDelta = new Vector2(200f, 60f);
 
-                Text t = go.AddComponent<Text>();
-                t.font = font;
+                TextMeshProUGUI t = go.AddComponent<TextMeshProUGUI>();
+                if (font != null)
+                {
+                    t.font = font;
+                }
                 t.fontSize = FontSize;
-                t.alignment = TextAnchor.MiddleCenter;
+                t.alignment = TextAlignmentOptions.Center;
                 t.raycastTarget = false;      // 飘字绝不能吃掉点击
-                t.horizontalOverflow = HorizontalWrapMode.Overflow;
-                t.verticalOverflow = VerticalWrapMode.Overflow;
+                t.enableWordWrapping = false;
+                t.overflowMode = TextOverflowModes.Overflow;
                 t.color = NormalColor;
 
                 _texts[i] = t;
@@ -170,7 +177,7 @@ namespace FTProject
             // 【为什么要缓存数字字符串】每跳 ToString 都会产生托管分配，
             // 在 200 怪 + 高频塔的场景下足以在 Profiler 里看出来。
             // 伤害值种类有限，用一个小缓存把它变成零分配。
-            Text t = _texts[i];
+            TextMeshProUGUI t = _texts[i];
             t.text = NumberCache.Get(amount);
             t.color = killing ? KillColor : NormalColor;
 

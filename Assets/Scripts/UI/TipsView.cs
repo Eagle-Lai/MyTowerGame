@@ -1,6 +1,6 @@
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
-using UnityEngine.UI;
 
 namespace FTProject
 {
@@ -9,7 +9,7 @@ namespace FTProject
     /// 监听 ShowTipEvent，把消息排队显示，避免短时间内多条提示互相覆盖
     ///（塔防里"金币不足"很容易在一秒内被触发好几次）。
     ///
-    /// 节点：根 TipsView（CanvasGroup + 本脚本）→ 子节点 TipText(Text)
+    /// 节点：根 TipsView（CanvasGroup + 本脚本）→ 子节点 TipText(TMP)
     /// </summary>
     public class TipsView : MonoBehaviour
     {
@@ -25,7 +25,7 @@ namespace FTProject
         }
 
         private readonly Queue<Tip> _queue = new Queue<Tip>(8);
-        private Text _text;
+        private TMP_Text _text;
         private CanvasGroup _group;
         private float _alpha;
         private float _fadeTarget;
@@ -50,10 +50,10 @@ namespace FTProject
             }
             else
             {
-                _text = tr.GetComponent<Text>();
+                _text = tr.GetComponent<TMP_Text>();
                 if (_text == null)
                 {
-                    Debug.LogError("[Tips] 节点「TipText」上没有 Text 组件");
+                    Debug.LogError("[Tips] 节点「TipText」上没有 TMP 文本组件");
                 }
             }
 

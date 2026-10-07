@@ -39,6 +39,17 @@ namespace FTProject
         public const string UiHud = "ui_hud";
 
         /// <summary>
+        /// 字体（TMP 字体资产与描边材质）。
+        ///
+        /// 【为什么要单独分包】全工程 UI 文本统一用 TextMeshPro，字体资产
+        /// （`SiYuanSongTi SDF.asset` + 它的图集贴图 + 描边材质）是**所有 UI prefab 的共享依赖**。
+        ///   若不给它单独打包，Unity 会把它**隐式复制进每一个引用了它的包**（ui_hud 等），
+        ///   字体图集较大，重复打包既浪费包体又是内存隐患。
+        ///   单独成包后，各 UI 包只是"引用"它，运行时加载一次即可。
+        /// </summary>
+        public const string Font = "font";
+
+        /// <summary>
         /// 音效（M2）。逻辑名 Audio_&lt;文件名&gt;，文件来自 Assets/Audio/。
         /// 【注意】该包只在真的存在音频文件时才进入 All（见下面），
         /// 否则打 AB 时会多出一个空包，自检里也会一直提示"包为空"。
@@ -48,13 +59,13 @@ namespace FTProject
         /// <summary>不随怪物清单变化的固定包</summary>
         public static readonly string[] Fixed =
         {
-            Config, CoreArt, TowerNormal, TowerPower, TowerRetard, BulletNormal, UiHud
+            Config, CoreArt, Font, TowerNormal, TowerPower, TowerRetard, BulletNormal, UiHud
         };
 
         /// <summary>常驻包：初始化后不参与卸载</summary>
         public static readonly string[] Persistent =
         {
-            Config, CoreArt
+            Config, CoreArt, Font
         };
 
         private static string[] _all;

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -14,7 +15,7 @@ namespace FTProject
     ///   加关卡 = 加配置行，界面自动多一个按钮。
     ///
     /// 【为什么用模板克隆而不是代码 new GameObject】
-    ///   新建的 Text 需要字体，而字体引用在 prefab 里（打包时才会被包含）。
+    ///   新建的 TMP 文本需要字体资产引用，而它就在 prefab 里（打包时才会被包含）。
     ///   克隆模板能天然继承字体、颜色、按钮过渡等一切设置。
     ///
     /// 【节点容错】与 TowerInfoView 同一口径：缺节点只警告、不阻断，
@@ -31,8 +32,8 @@ namespace FTProject
         private const float GapY = 20f;
         private const int Columns = 4;
 
-        private Text _title;
-        private Text _summary;
+        private TMP_Text _title;
+        private TMP_Text _summary;
         private RectTransform _list;
         private Button _closeBtn;
 
@@ -139,7 +140,7 @@ namespace FTProject
             int stars = SaveManager.Instance.GetStars(levelId);
             int diff = raw.Difficulty;
 
-            Text label = go.GetComponentInChildren<Text>(true);
+            TMP_Text label = go.GetComponentInChildren<TMP_Text>(true);
             if (label != null)
             {
                 label.text = string.Format("{0}\n{1}\n{2}",
@@ -199,7 +200,7 @@ namespace FTProject
         // 节点查找（容错）
         // ------------------------------------------------------------------
 
-        private Text FindText(string path)
+        private TMP_Text FindText(string path)
         {
             Transform tr = transform.Find(path);
             if (tr == null)
@@ -207,7 +208,7 @@ namespace FTProject
                 Debug.LogWarning("[Select] 缺少文本节点「" + path + "」");
                 return null;
             }
-            return tr.GetComponent<Text>();
+            return tr.GetComponent<TMP_Text>();
         }
 
         private Button FindButton(string path)
@@ -232,7 +233,7 @@ namespace FTProject
             return tr as RectTransform;
         }
 
-        private static void SetText(Text t, string v)
+        private static void SetText(TMP_Text t, string v)
         {
             if (t != null && t.text != v)
             {
