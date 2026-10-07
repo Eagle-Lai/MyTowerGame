@@ -58,10 +58,22 @@ namespace FTProject
             // ------------------------------------------------------------------
             // 防御塔
             // ------------------------------------------------------------------
-            { "Tower_Normal", new ResAddress(ResBundle.TowerNormal, "Tower_Normal", "Assets/Prefabs/Tower/Tower_Normal.prefab") },
+            // 【M-3 分等级模型】普通塔也是 3 个**独立 prefab**，每级一套美术：
+            //   Tower_Normal0|1|2 → Assets/Prefabs/Tower/Normal/ （贴图 turret[_mkii|_mkiii]_base|barrel_128）
+            // 0 级沿用原 Tower_Normal 的美术（turret_base/barrel_128），1/2 级为 mkii/mkiii。
+            // ⚠️ 逐级登记而不是靠目录扫描：ResTable 是唯一寻址源，漏登记运行时报"找不到资源地址"。
+            // 另注：Pierce(4)/Laser(5) 塔暂无独立美术，配置里仍复用 Tower_Normal0 作占位模型。
+            { "Tower_Normal0", new ResAddress(ResBundle.TowerNormal, "Tower_Normal0", "Assets/Prefabs/Tower/Normal/Tower_Normal0.prefab") },
+            { "Tower_Normal1", new ResAddress(ResBundle.TowerNormal, "Tower_Normal1", "Assets/Prefabs/Tower/Normal/Tower_Normal1.prefab") },
+            { "Tower_Normal2", new ResAddress(ResBundle.TowerNormal, "Tower_Normal2", "Assets/Prefabs/Tower/Normal/Tower_Normal2.prefab") },
+
             // 塔身贴图显式登记：否则 AB 构建时它们会作为"隐式依赖"被复制进每个引用到的包
-            { "Tower_Base_Sprite",   new ResAddress(ResBundle.TowerNormal, "turret_base_128",   "Assets/_UIAssets/Tower/Normal/turret_base_128.png") },
-            { "Tower_Barrel_Sprite", new ResAddress(ResBundle.TowerNormal, "turret_barrel_128", "Assets/_UIAssets/Tower/Normal/turret_barrel_128.png") },
+            { "Tower_Base_Sprite",        new ResAddress(ResBundle.TowerNormal, "turret_base_128",        "Assets/_UIAssets/Tower/Normal/turret_base_128.png") },
+            { "Tower_Barrel_Sprite",      new ResAddress(ResBundle.TowerNormal, "turret_barrel_128",      "Assets/_UIAssets/Tower/Normal/turret_barrel_128.png") },
+            { "Tower_Base_Lv2_Sprite",    new ResAddress(ResBundle.TowerNormal, "turret_mkii_base_128",   "Assets/_UIAssets/Tower/Normal/turret_mkii_base_128.png") },
+            { "Tower_Barrel_Lv2_Sprite",  new ResAddress(ResBundle.TowerNormal, "turret_mkii_barrel_128", "Assets/_UIAssets/Tower/Normal/turret_mkii_barrel_128.png") },
+            { "Tower_Base_Lv3_Sprite",    new ResAddress(ResBundle.TowerNormal, "turret_mkiii_base_128",  "Assets/_UIAssets/Tower/Normal/turret_mkiii_base_128.png") },
+            { "Tower_Barrel_Lv3_Sprite",  new ResAddress(ResBundle.TowerNormal, "turret_mkiii_barrel_128","Assets/_UIAssets/Tower/Normal/turret_mkiii_barrel_128.png") },
 
             // 【M-3 分等级模型】强力塔 / 减速塔各有 3 个**独立 prefab**，每级一套美术：
             //   Tower_Power0|1|2  → Assets/Prefabs/Tower/Power/  （贴图 tower_base[_lv2|_lv3]）

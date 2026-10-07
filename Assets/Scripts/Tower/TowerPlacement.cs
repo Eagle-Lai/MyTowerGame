@@ -178,7 +178,7 @@ namespace FTProject
         {
             if (_ghost != null)
             {
-                ResLoader.Instance.ReleaseInstance(_cfg != null ? _cfg.ResName : "Tower_Normal", _ghost);
+                ResLoader.Instance.ReleaseInstance(_cfg != null ? _cfg.ResName : "Tower_Normal0", _ghost);
                 _ghost = null;
             }
         }

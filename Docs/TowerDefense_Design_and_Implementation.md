@@ -2747,7 +2747,7 @@ M0 交付时**无法在本机编译**（安全策略明确禁止调用 `csc`，`
 | # | 决策 | 理由 |
 |---|---|---|
 | D-A | 塔型编号沿用文档：1 单体 / 2 AOE / 3 减速 / 4 穿透 / 5 激光。type=2「Power/强力」的**行为**就是 AOE | 实测 xlsx 里 type=2 的 `effectType=2`，与文档编号天然对齐；改编号会动已上线的 9 行数据与美术命名 |
-| D-B | type=4/5 无美术 → `resName` 暂指向 `Tower_Normal` | 行为完全由配置驱动；美术到位后只改 `TowerInfo.xlsx` 一格 + `ResTable` 两行，**零代码** |
+| D-B | type=4/5 无美术 → `resName` 暂指向普通塔模型 | 行为完全由配置驱动；美术到位后只改 `TowerInfo.xlsx` 一格 + `ResTable` 两行，**零代码**。（原指向 `Tower_Normal`；该逻辑名于 §Z.12 拆为分等级后，占位目标改为 `Tower_Normal0`，行为不变） |
 | D-C | 激光 = **hitscan**（`effectType=4`），不生成弹体 | 做成"速度极高的子弹"会引入高速穿透漏判；且激光本就该立即结算 |
 | D-D | 飞行单位走 **起点→终点直线**，不入 A* 网格 | 文档给的两个选项里对现有 A* 零侵入 |
 | D-E | `canAttackAir` 作为 `TowerInfo.xlsx` **新增列** | 文档明确要求；该列**每行都必须填**（空单元格 Luban 给 0 = 不可攻空） |
@@ -3018,3 +3018,58 @@ UGUI Text 的问题：① 官方已不再演进（TMP 是其继任）② 中文�
 - **`UnityEngine.UI` 命名空间本身仍被引用**（`Button` / `Image` / `CanvasScaler`）：
   只迁字体组件，按钮/图片等 UGUI 组件不属于本次范围，且 TMP 不提供它们的替代品。
 - **塔/怪物/子弹等非 UI 文本**：工程里本来就没有（没有 TextMesh/世界文字），无需处理。
+
+## Z.12　普通塔接入分等级模型（2026-10-07）
+
+### Z.12.1 需求与动机
+
+用户替换了 `Assets/Prefabs/Tower/Normal/` 目录，由原来的**单个** `Tower_Normal.prefab`
+改为**三个分等级 prefab**（`Tower_Normal0|1|2`），并为 mkii / mkiii 两级提供了新美术
+（`turret_mkii_*_128.png` / `turret_mkiii_*_128.png`）。
+要求"同步该文件夹内容，把新的预制体应用起来"——即让三级普通塔在游戏里各显示对应模型。
+
+### Z.12.2 关键决策
+
+| 编号 | 决策 | 理由 |
+|------|------|------|
+| I-A | 复用 Power/Retard 已确立的**分等级 prefab 模式**（level0/1/2 → 独立 prefab） | 三塔口径统一，升级换实例逻辑已有（`BaseTower` 逐级预载） |
+| I-B | `TowerInfo.xlsx` 的 resName 由 `Tower_Normal`（三行相同）改为逐级 `Tower_Normal0/1/2` | resName 是运行时唯一寻址键（`BaseTower` / `TowerPlacement` 直接用它 `Instantiate`） |
+| I-C | `ResTable` 由单条 `Tower_Normal` 拆为 `Tower_Normal0/1/2`，editorPath 指向 `Normal/` 目录 | ResTable 是唯一寻址源，漏登记运行时报"找不到资源地址" |
+| I-D | **Pierce(4) / Laser(5) 塔的 resName 一并由 `Tower_Normal` 改为 `Tower_Normal0`** | 这两种塔尚无独立美术，原就是"占位复用普通塔模型"；`Tower_Normal` 逻辑名已不存在，占位目标顺势指向 base 级模型，行为不变（零代码，接 §Z.7.1 D-B） |
+| I-E | 不改 `TowerPrefabConverter` 的生成产物（prefab 已由用户提供），只更新其 `Specs`/`TowerResNames`/`TowerPath` 三处，使**重生成能力**与现状一致 | 保持生成器与仓库现状不脱节，自检（`M0SetupWizard` 消费 `TowerResNames`）能继续生效 |
+| I-F | 补齐 6 个塔身贴图的 ResTable 登记（base/barrel × 3 级） | 显式登记避免 AB 构建时贴图作为隐式依赖被复制；`ABNameSetter` 会据登记自动赋 `tower_normal` 包名 |
+
+### Z.12.3 改动清单（四层同步）
+
+1. **配置**：`Luban/Config/Datas/TowerInfo.xlsx`
+   - id 1/2/3（Normal）：`Tower_Normal` → `Tower_Normal0` / `Tower_Normal1` / `Tower_Normal2`
+   - id 10~15（Pierce/Laser）：`Tower_Normal` → `Tower_Normal0`（占位）
+   - 重导 Luban → `Assets/ConfigJson/tbtowerinfo.json`（`== succ ==`）
+2. **寻址**：`Assets/Scripts/Core/Res/ResTable.cs`
+   - 单条 `Tower_Normal` → `Tower_Normal0|1|2`（路径 `Assets/Prefabs/Tower/Normal/`）
+   - 新增 4 条贴图登记（mkii/mkiii 的 base/barrel）
+3. **代码兜底/预载**：
+   - `GameFlowManager.PreloadLevelResources`：`Tower_Normal` → `Tower_Normal0/1/2`
+   - `BaseTower.cs` / `TowerPlacement.cs` 的 `"Tower_Normal"` 兜底字面量 → `"Tower_Normal0"`
+   - `TowerPrefabConverter`：`TowerResNames` 扩为 9 项、`TowerPath` 加 Normal 子目录分支、`Specs()` 三档 Normal
+4. **资源**：`Assets/Prefabs/Tower/Normal/Tower_Normal0|1|2.prefab`（用户提供，AB 名 `tower_normal`）
+   + 四级美术贴图；旧 `Tower_Normal.prefab`（及 meta）删除。
+
+### Z.12.4 校验
+
+- 交叉脚本：`tbtowerinfo.json` 的 9 个 resName **全部**能在 ResTable 找到登记，且登记路径**全部存在**。
+- 三个 Normal prefab 均引用 `NormalTower` 脚本 GUID、均挂在 `tower_normal` 包；
+  节点结构一致（`barbette/Img_gun/BarrelPoint`），与 `BaseTower` 查找口径吻合。
+- 五项静态检查（check_code / check_usings / check_members / check_unity_api / check_events）全 PASS。
+
+### Z.12.5 操作步骤（在 Unity 里执行）
+
+1. 运行 **Tools ▸ 塔防 ▸ 0. 自检** → 确认三种塔的 9 个分等级 prefab 齐备
+2. 运行 **Tools ▸ 塔防 ▸ 高级（单步重建）▸ 8a. 打标记**（按 ResTable 赋 AB 名，含新贴图）
+3. 打包 AB → 进游戏验证：普通塔升到 2/3 级时模型应换成 mkii/mkiii
+
+### Z.12.6 未改动的部分与理由
+
+- **`TowerPrefabConverter` 不重跑**：prefab 已由用户提供且结构正确，重跑反而可能覆盖手工调整。
+- **mkii/mkiii 贴图的 AB 名暂留空**：与 Power/Retard 现状一致（靠 prefab 依赖隐式打包或
+  由 ResTable→ABNameSetter 统一赋名），不手改 meta 以免与唯一权威源分叉。

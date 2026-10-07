@@ -51,3 +51,9 @@
 - 塔型：`TowerType` 枚举 `Normal=1, Aoe=2, Slow=3, Pierce=4, Laser=5`。
   美术/节点/资源目录里 "**Power**"=Aoe 塔、"**Retard**"=Slow 塔 —— 这处不一致只在少数几处映射，别处不要各写一份。
 - `EffectType`（塔表与子弹表共用）：`None=0, Slow=1, Dot=2, Aoe=3, Laser=4`。
+- **塔分等级 prefab（三种塔统一口径）**：每种塔 3 个独立 prefab `Tower_<Type>0|1|2`（level0/1/2），
+  放 `Assets/Prefabs/Tower/<Type>/`（目录名 `Normal`/`Power`/`Retard`）。
+  `TowerInfo.xlsx` 的 `resName` **逐级**指向它们（不是三级同名）；`BaseTower` 升级时换实例并逐级预载。
+  `TowerPrefabConverter.TowerResNames` 是自检清单（9 项），与配置 resName 必须逐行一致。
+  ⚠️ 新增/替换塔美术时，这条链要**四层同步**：配置 resName → `ResTable` → 代码兜底/预载 → prefab+meta(AB 名)。
+  Pierce(4)/Laser(5) 暂无独立美术，resName 占位指向 `Tower_Normal0`（详见设计文档 §Z.7.1 D-B、§Z.12）。

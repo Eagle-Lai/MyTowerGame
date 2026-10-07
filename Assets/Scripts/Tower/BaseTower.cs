@@ -894,7 +894,7 @@ namespace FTProject
                         cell.Point.IsWall = false;
                     }
                 }
-                string resName = t.Config != null ? t.Config.ResName : "Tower_Normal";
+                string resName = t.Config != null ? t.Config.ResName : "Tower_Normal0";
                 t.MarkDestroyed();
                 CombatSystem.Instance.UnregisterTower(t);
                 ResLoader.Instance.ReleaseInstance(resName, t.gameObject);

@@ -6,7 +6,7 @@ namespace FTProject
     ///   - 编辑器 且 定义了 FORCE_AB  → BundleResLoader（用于验证真 AB 链路）
     ///   - 打包后（Player）          → BundleResLoader
     ///
-    /// 用法：ResLoader.Instance.Instantiate("Tower_Normal", parent)
+    /// 用法：ResLoader.Instance.Instantiate("Tower_Normal0", parent)
     ///
     /// 想验证真 AB 链路时，在 Player Settings → Other Settings → Scripting Define Symbols
     /// 里加上 FORCE_AB 即可，无需改代码。

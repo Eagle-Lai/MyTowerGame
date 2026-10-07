@@ -19,10 +19,10 @@ namespace FTProject
         /// <summary>AssetBundle 名，如 "tower_normal"</summary>
         public string Bundle;
 
-        /// <summary>包内资产名，如 "Tower_Normal"</summary>
+        /// <summary>包内资产名，如 "Tower_Normal0"</summary>
         public string Asset;
 
-        /// <summary>编辑器下的资源路径（相对工程根），如 "Assets/Prefabs/Tower/Tower_Normal.prefab"</summary>
+        /// <summary>编辑器下的资源路径（相对工程根），如 "Assets/Prefabs/Tower/Normal/Tower_Normal0.prefab"</summary>
         public string EditorPath;
 
         public ResAddress(string bundle, string asset, string editorPath)

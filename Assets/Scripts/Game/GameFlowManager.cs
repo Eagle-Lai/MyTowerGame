@@ -280,10 +280,12 @@ namespace FTProject
         private void PreloadLevelResources()
         {
             List<string> keys = new List<string>(32);
-            keys.Add("Tower_Normal");
-            // 【为什么逐级登记】Power / Retard 各有 3 个分等级 prefab，升级时要换实例。
+            // 【为什么逐级登记】Normal / Power / Retard 各有 3 个分等级 prefab，升级时要换实例。
             // 这里一次全预载：塔就那么几座，省掉升级瞬间的加载卡顿比省内存更划算。
             // 新增塔型/等级时此处必须同步 —— 漏了会在升级时报"资源加载失败"。
+            keys.Add("Tower_Normal0");
+            keys.Add("Tower_Normal1");
+            keys.Add("Tower_Normal2");
             keys.Add("Tower_Power0");
             keys.Add("Tower_Power1");
             keys.Add("Tower_Power2");

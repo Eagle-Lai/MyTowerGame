@@ -38,23 +38,27 @@ namespace FTProject.EditorTools
         /// <summary>
         /// 全部塔等级 prefab 的逻辑名（= ResTable 逻辑名 = prefab 文件名）。
         ///
-        /// 【M-3 起改为分等级清单】强力塔 / 减速塔各有 3 个独立 prefab，一级一套美术；
-        /// Normal 仍是单 prefab（三级共用一套美术，靠配置表数值递进）。
+        /// 【M-3 起改为分等级清单】三种塔各 3 个独立 prefab，一级一套美术：
+        ///   Normal0|1|2（turret[_mkii|_mkiii]_base|barrel_128）、Power0|1|2、Retard0|1|2。
         /// 这些名字必须与 tbtowerinfo.json 的 resName 逐行一致，自检失败即表示两边分叉。
         /// </summary>
         public static readonly string[] TowerResNames =
         {
-            "Tower_Normal",
+            "Tower_Normal0", "Tower_Normal1", "Tower_Normal2",
             "Tower_Power0", "Tower_Power1", "Tower_Power2",
             "Tower_Retard0", "Tower_Retard1", "Tower_Retard2",
         };
 
         /// <summary>
         /// 按逻辑名取塔 prefab 资产路径（供自检等外部调用，勿再写死单塔常量）。
-        /// Power / Retard 分等级 prefab 放在与其塔型同名的子目录下。
+        /// 分等级 prefab 放在与其塔型同名的子目录下（Normal / Power / Retard）。
         /// </summary>
         public static string TowerPath(string resName)
         {
+            if (resName.StartsWith("Tower_Normal"))
+            {
+                return TowerDir + "/Normal/" + resName + ".prefab";
+            }
             if (resName.StartsWith("Tower_Power"))
             {
                 return TowerDir + "/Power/" + resName + ".prefab";
@@ -76,7 +80,7 @@ namespace FTProject.EditorTools
         /// 单座塔的生成规格。
         /// ResName 既作 prefab 文件名，也作 ResTable 逻辑名（M-2 起三塔统一命名）。
         /// 【贴图名不统一】三座塔的美术文件名各不相同，必须逐塔指定，不能靠拼字符串：
-        ///   Normal: turret_base_128.png / turret_barrel_128.png
+        ///   Normal: turret_base|barrel_128.png / turret_mkii_*_128.png / turret_mkiii_*_128.png
         ///   Power : tower_base[_lv2|_lv3].png      / tower_barrel[_lv2|_lv3].png
         ///   Retard: slowtower_base[_lv2|_lv3].png  / slowtower_crystal[_lv2|_lv3].png
         ///           （目录名是小写 retard，且美术已按等级提供 3 套）
@@ -96,11 +100,24 @@ namespace FTProject.EditorTools
         {
             return new TowerSpec[]
             {
+                // ---- 普通塔：3 个等级各有独立 prefab 与美术（M-3 起同 Power/Retard 口径）----
                 new TowerSpec
                 {
-                    ResName = "Tower_Normal", ArtDir = "Normal",
+                    ResName = "Tower_Normal0", ArtDir = "Normal",
                     BaseSprite = "turret_base_128.png", BarrelSprite = "turret_barrel_128.png",
-                    RootName = "Tower_Normal", Behaviour = typeof(NormalTower),
+                    RootName = "Tower_Normal0", Behaviour = typeof(NormalTower),
+                },
+                new TowerSpec
+                {
+                    ResName = "Tower_Normal1", ArtDir = "Normal",
+                    BaseSprite = "turret_mkii_base_128.png", BarrelSprite = "turret_mkii_barrel_128.png",
+                    RootName = "Tower_Normal1", Behaviour = typeof(NormalTower),
+                },
+                new TowerSpec
+                {
+                    ResName = "Tower_Normal2", ArtDir = "Normal",
+                    BaseSprite = "turret_mkiii_base_128.png", BarrelSprite = "turret_mkiii_barrel_128.png",
+                    RootName = "Tower_Normal2", Behaviour = typeof(NormalTower),
                 },
                 // ---- 强力塔：3 个等级各有独立 prefab 与美术 ----
                 new TowerSpec
