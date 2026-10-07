@@ -63,13 +63,18 @@ namespace FTProject
             { "Tower_Base_Sprite",   new ResAddress(ResBundle.TowerNormal, "turret_base_128",   "Assets/_UIAssets/Tower/Normal/turret_base_128.png") },
             { "Tower_Barrel_Sprite", new ResAddress(ResBundle.TowerNormal, "turret_barrel_128", "Assets/_UIAssets/Tower/Normal/turret_barrel_128.png") },
 
-            { "Tower_Power", new ResAddress(ResBundle.TowerPower, "Tower_Power", "Assets/Prefabs/Tower/Tower_Power.prefab") },
-            { "Tower_Power_Base_Sprite",   new ResAddress(ResBundle.TowerPower, "tower_base",   "Assets/_UIAssets/Tower/Power/tower_base.png") },
-            { "Tower_Power_Barrel_Sprite", new ResAddress(ResBundle.TowerPower, "tower_barrel", "Assets/_UIAssets/Tower/Power/tower_barrel.png") },
+            // 【M-3 分等级模型】强力塔 / 减速塔各有 3 个**独立 prefab**，每级一套美术：
+            //   Tower_Power0|1|2  → Assets/Prefabs/Tower/Power/  （贴图 tower_base[_lv2|_lv3]）
+            //   Tower_Retard0|1|2 → Assets/Prefabs/Tower/Retard/ （贴图 slowtower_base[_lv2|_lv3]）
+            // tbtowerinfo.json 的 resName 逐级指向它们，升级时 BaseTower 会换实例。
+            // ⚠️ 逐级登记而不是靠目录扫描：ResTable 是唯一寻址源，漏登记运行时报"找不到资源地址"。
+            { "Tower_Power0", new ResAddress(ResBundle.TowerPower, "Tower_Power0", "Assets/Prefabs/Tower/Power/Tower_Power0.prefab") },
+            { "Tower_Power1", new ResAddress(ResBundle.TowerPower, "Tower_Power1", "Assets/Prefabs/Tower/Power/Tower_Power1.prefab") },
+            { "Tower_Power2", new ResAddress(ResBundle.TowerPower, "Tower_Power2", "Assets/Prefabs/Tower/Power/Tower_Power2.prefab") },
 
-            { "Tower_Retard", new ResAddress(ResBundle.TowerRetard, "Tower_Retard", "Assets/Prefabs/Tower/Tower_Retard.prefab") },
-            { "Tower_Retard_Base_Sprite",   new ResAddress(ResBundle.TowerRetard, "slowtower_base",    "Assets/_UIAssets/Tower/retard/slowtower_base.png") },
-            { "Tower_Retard_Barrel_Sprite", new ResAddress(ResBundle.TowerRetard, "slowtower_crystal", "Assets/_UIAssets/Tower/retard/slowtower_crystal.png") },
+            { "Tower_Retard0", new ResAddress(ResBundle.TowerRetard, "Tower_Retard0", "Assets/Prefabs/Tower/Retard/Tower_Retard0.prefab") },
+            { "Tower_Retard1", new ResAddress(ResBundle.TowerRetard, "Tower_Retard1", "Assets/Prefabs/Tower/Retard/Tower_Retard1.prefab") },
+            { "Tower_Retard2", new ResAddress(ResBundle.TowerRetard, "Tower_Retard2", "Assets/Prefabs/Tower/Retard/Tower_Retard2.prefab") },
 
             // ------------------------------------------------------------------
             // 子弹

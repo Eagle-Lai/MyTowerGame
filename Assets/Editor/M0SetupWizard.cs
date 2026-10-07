@@ -224,8 +224,9 @@ namespace FTProject.EditorTools
         {
             report.Head("③ 关键预制体与组件");
 
-            // 塔：三座塔逐一检查（Normal / Power / Retard）
-            // 每座都必须：世界空间（无 RectTransform）+ SpriteRenderer + barbette/Img_gun + 根组件继承 BaseTower
+            // 塔：逐个等级检查（Normal 1 个 + Power 3 级 + Retard 3 级）
+            // 每个都必须：世界空间（无 RectTransform）+ SpriteRenderer + barbette/Img_gun + 根组件继承 BaseTower
+            // 清单来自 TowerPrefabConverter.TowerResNames（与 tbtowerinfo.json 的 resName 一一对应）
             for (int i = 0; i < TowerPrefabConverter.TowerResNames.Length; i++)
             {
                 CheckOneTower(TowerPrefabConverter.TowerResNames[i], report);
@@ -297,8 +298,8 @@ namespace FTProject.EditorTools
         }
 
         /// <summary>
-        /// 单座防御塔自检：世界空间（无 RectTransform）+ SpriteRenderer + barbette/Img_gun + 根组件继承 BaseTower。
-        /// 三塔（Normal / Power / Retard）共用同一套结构，逐一调用。
+        /// 单个塔 prefab 自检：世界空间（无 RectTransform）+ SpriteRenderer + barbette/Img_gun + 根组件继承 BaseTower。
+        /// Normal 与 Power/Retard 各等级共用同一套结构，逐一调用。
         /// </summary>
         private static void CheckOneTower(string resName, EditorUtil.Report report)
         {

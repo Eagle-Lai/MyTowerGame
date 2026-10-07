@@ -35,15 +35,34 @@ namespace FTProject.EditorTools
         private const string TowerDir = "Assets/Prefabs/Tower";
         private const string BackupDir = "Assets/Prefabs/Tower/_UI_Source";
 
-        /// <summary>三塔逻辑名（M-2 起统一命名，也是 ResTable 逻辑名与 prefab 文件名）</summary>
+        /// <summary>
+        /// 全部塔等级 prefab 的逻辑名（= ResTable 逻辑名 = prefab 文件名）。
+        ///
+        /// 【M-3 起改为分等级清单】强力塔 / 减速塔各有 3 个独立 prefab，一级一套美术；
+        /// Normal 仍是单 prefab（三级共用一套美术，靠配置表数值递进）。
+        /// 这些名字必须与 tbtowerinfo.json 的 resName 逐行一致，自检失败即表示两边分叉。
+        /// </summary>
         public static readonly string[] TowerResNames =
         {
-            "Tower_Normal", "Tower_Power", "Tower_Retard",
+            "Tower_Normal",
+            "Tower_Power0", "Tower_Power1", "Tower_Power2",
+            "Tower_Retard0", "Tower_Retard1", "Tower_Retard2",
         };
 
-        /// <summary>按逻辑名取塔 prefab 资产路径（供自检等外部调用，勿再写死单塔常量）</summary>
+        /// <summary>
+        /// 按逻辑名取塔 prefab 资产路径（供自检等外部调用，勿再写死单塔常量）。
+        /// Power / Retard 分等级 prefab 放在与其塔型同名的子目录下。
+        /// </summary>
         public static string TowerPath(string resName)
         {
+            if (resName.StartsWith("Tower_Power"))
+            {
+                return TowerDir + "/Power/" + resName + ".prefab";
+            }
+            if (resName.StartsWith("Tower_Retard"))
+            {
+                return TowerDir + "/Retard/" + resName + ".prefab";
+            }
             return TowerDir + "/" + resName + ".prefab";
         }
 
@@ -58,12 +77,13 @@ namespace FTProject.EditorTools
         /// ResName 既作 prefab 文件名，也作 ResTable 逻辑名（M-2 起三塔统一命名）。
         /// 【贴图名不统一】三座塔的美术文件名各不相同，必须逐塔指定，不能靠拼字符串：
         ///   Normal: turret_base_128.png / turret_barrel_128.png
-        ///   Power : tower_base.png      / tower_barrel.png
-        ///   Retard: slowtower_base.png  / slowtower_crystal.png （目录名是小写 retard）
+        ///   Power : tower_base[_lv2|_lv3].png      / tower_barrel[_lv2|_lv3].png
+        ///   Retard: slowtower_base[_lv2|_lv3].png  / slowtower_crystal[_lv2|_lv3].png
+        ///           （目录名是小写 retard，且美术已按等级提供 3 套）
         /// </summary>
         private struct TowerSpec
         {
-            public string ResName;         // Tower_Normal / Tower_Power / Tower_Retard
+            public string ResName;         // Tower_Normal / Tower_Power0..2 / Tower_Retard0..2
             public string ArtDir;          // 美术目录（注意 retard 是小写）
             public string BaseSprite;      // 炮座贴图文件名
             public string BarrelSprite;    // 炮管贴图文件名
@@ -82,17 +102,43 @@ namespace FTProject.EditorTools
                     BaseSprite = "turret_base_128.png", BarrelSprite = "turret_barrel_128.png",
                     RootName = "Tower_Normal", Behaviour = typeof(NormalTower),
                 },
+                // ---- 强力塔：3 个等级各有独立 prefab 与美术 ----
                 new TowerSpec
                 {
-                    ResName = "Tower_Power", ArtDir = "Power",
+                    ResName = "Tower_Power0", ArtDir = "Power",
                     BaseSprite = "tower_base.png", BarrelSprite = "tower_barrel.png",
-                    RootName = "Tower_Power", Behaviour = typeof(PowerTower),
+                    RootName = "Tower_Power0", Behaviour = typeof(PowerTower),
                 },
                 new TowerSpec
                 {
-                    ResName = "Tower_Retard", ArtDir = "retard",
+                    ResName = "Tower_Power1", ArtDir = "Power",
+                    BaseSprite = "tower_base_lv2.png", BarrelSprite = "tower_barrel_lv2.png",
+                    RootName = "Tower_Power1", Behaviour = typeof(PowerTower),
+                },
+                new TowerSpec
+                {
+                    ResName = "Tower_Power2", ArtDir = "Power",
+                    BaseSprite = "tower_base_lv3.png", BarrelSprite = "tower_barrel_lv3.png",
+                    RootName = "Tower_Power2", Behaviour = typeof(PowerTower),
+                },
+                // ---- 减速塔：同上 ----
+                new TowerSpec
+                {
+                    ResName = "Tower_Retard0", ArtDir = "retard",
                     BaseSprite = "slowtower_base.png", BarrelSprite = "slowtower_crystal.png",
-                    RootName = "Tower_Retard", Behaviour = typeof(RetardTower),
+                    RootName = "Tower_Retard0", Behaviour = typeof(RetardTower),
+                },
+                new TowerSpec
+                {
+                    ResName = "Tower_Retard1", ArtDir = "retard",
+                    BaseSprite = "slowtower_base_lv2.png", BarrelSprite = "slowtower_crystal_lv2.png",
+                    RootName = "Tower_Retard1", Behaviour = typeof(RetardTower),
+                },
+                new TowerSpec
+                {
+                    ResName = "Tower_Retard2", ArtDir = "retard",
+                    BaseSprite = "slowtower_base_lv3.png", BarrelSprite = "slowtower_crystal_lv3.png",
+                    RootName = "Tower_Retard2", Behaviour = typeof(RetardTower),
                 },
             };
         }
@@ -123,7 +169,7 @@ namespace FTProject.EditorTools
             for (int i = 0; i < specs.Length; i++)
             {
                 TowerSpec spec = specs[i];
-                string targetPath = TowerDir + "/" + spec.ResName + ".prefab";
+                string targetPath = TowerPath(spec.ResName);
 
                 // 已合规 → 跳过（★ 不删不建，保住美术/手工调过的内容）
                 if (IsAlreadyConverted(targetPath))
@@ -150,7 +196,7 @@ namespace FTProject.EditorTools
         /// 依据：根下存在 barbette，且 barbette 上挂着 SpriteRenderer。
         /// 满足即认为已经转换过 —— 不重复重建（保住手工改动）。
         ///
-        /// 【为什么不再校验根组件的子类】实测 Tower_Power / Tower_Retard 挂的是 NormalTower，
+        /// 【为什么不再校验根组件的子类】实测 Tower_Power0/1/2、Tower_Retard0/1/2 挂的都是 NormalTower，
         /// 但三个子类都是 BaseTower 的空派生，功能上完全等价（差异全在配置表驱动）。
         /// 为这点"类名一致性"去重建 prefab，反而会抹掉美术/手工微调 —— 不划算，改为只提示。
         /// </summary>
