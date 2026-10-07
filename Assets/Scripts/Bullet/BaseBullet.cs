@@ -61,6 +61,13 @@ namespace FTProject
         private float _effectValue;
         private SpriteRenderer _sr;
 
+        // ---- AOE 专用（见 Init 里的说明）----
+        /// <summary>是否为 AOE 弹：飞向**发射瞬间锁定的落点**，到达即引爆，不追尾。</summary>
+        private bool _isAoe;
+        /// <summary>AOE 落点（世界坐标，发射瞬间确定，之后不再改变）</summary>
+        private Vector2 _aoeTargetPos;
+        /// <summary>引爆判定的到达阈值（世界单位）。取小值：让弹体基本飞到落点才炸。</summary>
+        private const float AoeArriveEpsilon = 0.08f;
         /// <summary>命中判定 / AOE 的候选缓冲。实例字段复用 → 命中过程零 GC。</summary>
         private readonly List<BaseEnemy> _queryBuf = new List<BaseEnemy>(32);
 
@@ -101,13 +108,21 @@ namespace FTProject
                 transform.localScale = Vector3.one * cfg.Scale;
             }
 
-            if (target != null && target.IsAlive)
+            // AOE 弹：目标不是"要打中的那只怪"，而是"要炸掉的落点"。
+            //   落点在发射瞬间就锁定（怪物死了/飞走了都不改），弹体直飞到落点引爆 ——
+            //   这才是"范围攻击"；若仍追着怪跑，就退化成了单体攻击（哪怕炸开有溅射）。
+            _isAoe = _aoeRadius > 0f;
+            if (_isAoe)
             {
-                Vector2 d = target.Position - (Vector2)transform.position;
-                if (d.sqrMagnitude > 0.000001f)
-                {
-                    _dir = d.normalized;
-                }
+                _aoeTargetPos = target != null ? target.Position : (Vector2)transform.position;
+            }
+
+            // 初始朝向：AOE 朝落点，普通弹朝目标当前位置
+            Vector2 aimAt = _isAoe ? _aoeTargetPos : (target != null ? target.Position : (Vector2)transform.position);
+            Vector2 d = aimAt - (Vector2)transform.position;
+            if (d.sqrMagnitude > 0.000001f)
+            {
+                _dir = d.normalized;
             }
             gameObject.SetActive(true);
         }
@@ -120,10 +135,22 @@ namespace FTProject
                 return;
             }
 
-            // ① 追踪：只在"还没打中任何敌人"时制导。
-            //    一旦打中过（穿透弹），就改为保持最后方向直线飞行 ——
-            //    否则子弹会拐回去追已经被打过的那只，穿透就变成了"绕圈"。
-            if (_hitSet.Count == 0 && _target != null && _target.IsAlive)
+            // ① 制导：
+            //    - AOE 弹**不追踪**，直飞落点（见 Init）；到达即引爆。
+            //    - 普通弹只在"还没打中任何敌人"时制导。一旦打中过（穿透弹），
+            //      就保持最后方向直线飞行 —— 否则子弹会拐回去追已被打过的那只，穿透变绕圈。
+            if (_isAoe)
+            {
+                Vector2 toPos = _aoeTargetPos - (Vector2)transform.position;
+                // 到达（或越过）落点 → 引爆
+                if (toPos.sqrMagnitude <= AoeArriveEpsilon * AoeArriveEpsilon)
+                {
+                    transform.position = new Vector3(_aoeTargetPos.x, _aoeTargetPos.y, 0f);
+                    Explode(_aoeTargetPos);
+                    return;
+                }
+            }
+            else if (_hitSet.Count == 0 && _target != null && _target.IsAlive)
             {
                 Vector2 d = _target.Position - (Vector2)transform.position;
                 if (d.sqrMagnitude > 0.000001f)
@@ -137,7 +164,28 @@ namespace FTProject
             pos += _dir * (_speed * dt);
             transform.position = new Vector3(pos.x, pos.y, 0f);
 
-            // ③ 命中判定：找最近的、本发子弹还没打过的敌人
+            // ③ AOE 弹位移后可能正好跨过落点：再判一次（高速弹 + 大 dt 时必需），
+            //    到达即引爆并回收，不做穿透/命中扫描。
+            if (_isAoe)
+            {
+                Vector2 after = _aoeTargetPos - pos;
+                if (after.sqrMagnitude <= AoeArriveEpsilon * AoeArriveEpsilon
+                    || Vector2.Dot(_aoeTargetPos - pos, _dir) <= 0f)   // 已越过落点
+                {
+                    transform.position = new Vector3(_aoeTargetPos.x, _aoeTargetPos.y, 0f);
+                    Explode(_aoeTargetPos);
+                    return;
+                }
+                // 飞行中未到达：只走超时回收
+                _lifeTimer += dt;
+                if (_lifeTimer >= _lifeTime)
+                {
+                    Explode(Position);   // 超时也别白飞：就地炸掉
+                }
+                return;
+            }
+
+            // ③′ 普通弹命中判定：找最近的、本发子弹还没打过的敌人
             BaseEnemy hit = FindHit(pos);
             if (hit != null)
             {
@@ -204,36 +252,50 @@ namespace FTProject
             ApplyEffect(e);
             _hitSet.Add(e);
 
-            // AOE：对半径内的其他敌人也造成同等伤害
+            // AOE 弹：理论上走不到这里（Tick 里到达落点就直接 Explode 了），
+            // 但保留此分支作为兜底 —— 万一飞行途中撞到别的怪，也应当就地炸开。
             if (_aoeRadius > 0f)
             {
-                CombatSystem cs = CombatSystem.Instance;
-                if (cs != null && cs.Grid != null)
-                {
-                    _queryBuf.Clear();
-                    cs.Grid.QueryCircle(Position, _aoeRadius, _queryBuf);
-                    float r2 = _aoeRadius * _aoeRadius;
-                    for (int i = 0; i < _queryBuf.Count; i++)
-                    {
-                        BaseEnemy other = _queryBuf[i];
-                        if (other == null || !other.IsAlive || other == e || _hitSet.Contains(other))
-                        {
-                            continue;
-                        }
-                        if ((other.Position - Position).sqrMagnitude <= r2)
-                        {
-                            other.Hurt(_damage);
-                            ApplyEffect(other);
-                            _hitSet.Add(other);
-                        }
-                    }
-                }
+                Explode(Position);
+                return;
             }
 
             if (_pierce > 0)
             {
                 _pierce--;
                 return;   // 不回收：继续沿当前方向飞，找下一个目标
+            }
+            Recycle();
+        }
+
+        /// <summary>
+        /// 在 <paramref name="center"/> 处引爆：对半径 _aoeRadius 内的**全部**存活敌人
+        /// 造成伤害并施加效果，然后回收自身。
+        ///
+        /// AOE 的口径是"范围攻击"而非"单体 + 溅射"：伤害范围从落点算，
+        /// 与落点上是否站怪无关 —— 怪死了/没打中，只要在范围内一样吃伤害。
+        /// </summary>
+        private void Explode(Vector2 center)
+        {
+            CombatSystem cs = CombatSystem.Instance;
+            if (cs != null && cs.Grid != null && _aoeRadius > 0f)
+            {
+                _queryBuf.Clear();
+                cs.Grid.QueryCircle(center, _aoeRadius, _queryBuf);
+                float r2 = _aoeRadius * _aoeRadius;
+                for (int i = 0; i < _queryBuf.Count; i++)
+                {
+                    BaseEnemy other = _queryBuf[i];
+                    if (other == null || !other.IsAlive)
+                    {
+                        continue;
+                    }
+                    if ((other.Position - center).sqrMagnitude <= r2)
+                    {
+                        other.Hurt(_damage);
+                        ApplyEffect(other);
+                    }
+                }
             }
             Recycle();
         }
@@ -277,6 +339,8 @@ namespace FTProject
             _pierce = 0;
             _damage = 0f;
             _aoeRadius = 0f;
+            _isAoe = false;
+            _aoeTargetPos = Vector2.zero;
             _effect = EffectType.None;
             _effectValue = 0f;
             _hitSet.Clear();

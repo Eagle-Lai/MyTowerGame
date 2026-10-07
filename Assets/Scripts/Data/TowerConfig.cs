@@ -94,6 +94,16 @@ namespace FTProject
         public bool IsLaser { get { return Effect == EffectType.Laser; } }
 
         /// <summary>
+        /// 范围攻击塔（强力塔，TowerType.Aoe）：弹体飞向"发射瞬间锁定的落点"，
+        /// 到达即引爆，对落点半径内的**全部**敌人造成伤害 —— 不是单体攻击。
+        ///
+        /// 【判定依据】用 TowerType.Aoe，与 IsSlowAura 同一口径：这是**塔型级别**
+        /// 的行为差异（发射的是"落点弹"而非"追踪弹"），不是命中效果差异。
+        /// 底层仍靠子弹的 aoeRadius&gt;0 生效，此处属性供分类/自检/未来分支使用。
+        /// </summary>
+        public bool IsAoe { get { return Type == (int)TowerType.Aoe; } }
+
+        /// <summary>
         /// 减速光环塔：**不发射子弹**，而是持续把射程内的所有敌人减速。
         ///
         /// 【为什么用 Type 而不是 Effect 判定】Effect 描述的是"命中后对单个目标做什么"，
