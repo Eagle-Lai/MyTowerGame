@@ -6,7 +6,15 @@
 ## 技术栈与工程约定
 
 - **引擎** Unity 2022.3.62f3c1，2D 塔防（"FreeTower"），工程根 `D:\FreedomTower_1`。
-- **远程仓库**：`origin`=Gitee（默认上游），`github`=GitHub `Eagle-Lai/MyTowerGame.git`（2026-10-08 建立）。GitHub 走本机代理 `127.0.0.1:7892`（端口可能变）。⚠️ 本地 `.git` 因历史改写积压约 2.18GB **孤儿对象**，但 `main` 可达内容仅 ~137MB；**估推送量必须按可达对象算，别看 `git count-objects` 的 `size-pack`**。
+- **远程仓库**：**只有 `origin` = GitHub `Eagle-Lai/MyTowerGame.git`**（2026-10-08 起，原 Gitee `origin` 已移除）。GitHub 走本机代理 `127.0.0.1:7892`（端口可能变，用 `netstat -ano | grep 127.0.0.1` 查真实端口）。
+- ★★ **`git push` 静默挂死的根因与解法**（每次推送都会踩，2026-10-08 定位）：鉴权其实已成功，
+  卡点在 `git credential-helper-selector store` 调用了 **`git config --system -e`** —— 它想把选择写进
+  `C:/Program Files/WorkBuddy/.../etc/gitconfig`，于是**开了交互式编辑器**永久等待。
+  **判据**：`git ls-remote` 正常、`git push` 却零输出卡住不动（后台能挂 6 分钟以上）。
+  解法二选一：① 绕行（无副作用）：`GIT_CONFIG_SYSTEM=/dev/null git push origin main`；
+  ② 根治：先删陈旧锁 `rm -f .../PortableGit/etc/gitconfig.lock`，再
+  `git config --system credential.helperselector.selected manager`（已做）。
+  ⚠️ 注意凭据**不缺**——`git credential fill` 秒回 `username=Eagle-Lai`，别往"没令牌"方向查。⚠️ 本地 `.git` 因历史改写积压约 2.18GB **孤儿对象**，但 `main` 可达内容仅 ~137MB；**估推送量必须按可达对象算，别看 `git count-objects` 的 `size-pack`**。
 - **配置表** Luban：`Luban/Config/Datas/*.xlsx` → `Assets/Gen/*.cs` + `Assets/ConfigJson/*.json`。改表必须重导（`Luban/gen_code_json.bat`；或直调 `Luban.ClientServer.exe`，需 `DOTNET_ROLL_FORWARD=LatestMajor`）。**新表先在 `__tables__.xlsx` 登记**。
 - **资源寻址** `ResTable.cs` 是唯一寻址源（逻辑名 → bundle / assetName / editorPath），**新资源必须登记**。盲区：`check_code.py` 只扫 `ResTable.Get("字面量")`，不扫 `Configs.ConfigKeys` 数组 —— 给 ConfigKeys 加表须**手工**同步 ResTable。
 - **AB 分包** 包名常量在 `ResBundle.cs`（全小写下划线）；`Fixed` 定打包范围，`Persistent` 定开机常驻。
