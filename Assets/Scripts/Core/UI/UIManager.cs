@@ -134,6 +134,7 @@ namespace FTProject
             }
             _opened[logicalName] = go;
             EnsureFadeIn(go);
+            EnsureClickSfx(go);
             return go;
         }
 
@@ -157,6 +158,23 @@ namespace FTProject
             CanvasGroup cg = go.AddComponent<CanvasGroup>();
             UIFader fader = go.AddComponent<UIFader>();
             fader.Begin(cg, FadeInSec);
+        }
+
+        /// <summary>
+        /// 给界面挂一个"全局点击音"（M4-W7）。已挂则跳过。
+        ///
+        /// 【为什么统一挂在这里，而不是让每个 View 自己播】
+        ///   本项目按钮多且部分是运行时创建的（SelectView 每次显示都会重造关卡按钮）。
+        ///   统一代管的收益是：新加按钮**自动**有声音，不用记得写、也不用全局搜字符串；
+        ///   代价只是每个界面每 0.4 秒重扫一次按钮（见 <see cref="UiClickSfx"/>）。
+        /// </summary>
+        private static void EnsureClickSfx(GameObject go)
+        {
+            if (go == null || go.GetComponent<UiClickSfx>() != null)
+            {
+                return;
+            }
+            go.AddComponent<UiClickSfx>();
         }
 
         /// <summary>打开并取组件</summary>

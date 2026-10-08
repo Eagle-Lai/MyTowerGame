@@ -40,6 +40,10 @@ namespace FTProject
         // ---- UI ----
         public const string UiClick = "sfx_ui_click";
 
+        // ---- BGM（循环背景乐，走 AudioManager 的 BGM 通道）----
+        public const string BgmSelect = "bgm_select";
+        public const string BgmBattle = "bgm_battle";
+
         /// <summary>
         /// 按塔型取开火音效逻辑名。
         /// 【为什么要显式映射】与 HudView 的按钮名同理：Slow(3) 的节点/资源名是 Retard，
