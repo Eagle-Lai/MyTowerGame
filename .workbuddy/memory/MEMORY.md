@@ -6,6 +6,7 @@
 ## 技术栈与工程约定
 
 - **引擎** Unity 2022.3.62f3c1，2D 塔防（"FreeTower"），工程根 `D:\FreedomTower_1`。
+- **远程仓库**：`origin`=Gitee（默认上游），`github`=GitHub `Eagle-Lai/MyTowerGame.git`（2026-10-08 建立）。GitHub 走本机代理 `127.0.0.1:7892`（端口可能变）。⚠️ 本地 `.git` 因历史改写积压约 2.18GB **孤儿对象**，但 `main` 可达内容仅 ~137MB；**估推送量必须按可达对象算，别看 `git count-objects` 的 `size-pack`**。
 - **配置表** Luban：`Luban/Config/Datas/*.xlsx` → `Assets/Gen/*.cs` + `Assets/ConfigJson/*.json`。改表必须重导（`Luban/gen_code_json.bat`；或直调 `Luban.ClientServer.exe`，需 `DOTNET_ROLL_FORWARD=LatestMajor`）。**新表先在 `__tables__.xlsx` 登记**。
 - **资源寻址** `ResTable.cs` 是唯一寻址源（逻辑名 → bundle / assetName / editorPath），**新资源必须登记**。盲区：`check_code.py` 只扫 `ResTable.Get("字面量")`，不扫 `Configs.ConfigKeys` 数组 —— 给 ConfigKeys 加表须**手工**同步 ResTable。
 - **AB 分包** 包名常量在 `ResBundle.cs`（全小写下划线）；`Fixed` 定打包范围，`Persistent` 定开机常驻。
