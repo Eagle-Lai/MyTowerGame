@@ -15,7 +15,10 @@
 """
 import io, os, re, sys, collections
 
-ROOT = r'D:\FreedomTower\Assets'
+# ★ ROOT 由脚本自身位置推导（旧版硬编码 'D:\FreedomTower\Assets' 少了 _1，
+#   会导致扫 0 个文件却打印 PASS —— 见文件里的自检）
+_HERE = os.path.dirname(os.path.abspath(__file__))
+ROOT = os.path.join(os.path.dirname(os.path.dirname(_HERE)), 'Assets')
 DIRS = [os.path.join(ROOT, 'Scripts'), os.path.join(ROOT, 'Editor')]
 
 
@@ -79,6 +82,15 @@ for d in DIRS:
             if fn.endswith('.cs'):
                 files.append(os.path.join(dp, fn))
 files.sort()
+
+# ★ 自检：一个 .cs 都没扫到，说明 ROOT 写错了，必须 FAIL —— 不能沉默地报 PASS
+if not files:
+    print('目录下没扫到任何 .cs 文件，ROOT 很可能写错了：')
+    for d in DIRS:
+        print('    %s%s' % (d, '' if os.path.isdir(d) else '   <- 该目录不存在'))
+    print('RESULT: FAIL (扫描到 0 个文件)')
+    sys.exit(1)
+print('扫描 %d 个 .cs 文件' % len(files))
 
 # 方法签名表（同文件内解析）
 METHOD_RE = re.compile(

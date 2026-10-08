@@ -185,6 +185,10 @@ namespace FTProject
                 _opened.Remove(logicalName);
                 if (go != null)
                 {
+                    // 【为什么要先 SetActive(false)】Destroy 要到本帧末才真正生效。
+                    // 而"切关"是在同一帧里 Close 旧的 + Open 新的（例如 HUD），
+                    // 不先隐藏的话，同屏会短暂存在两份界面，且旧界面仍会响应事件。
+                    go.SetActive(false);
                     ResLoader.Instance.ReleaseInstance(logicalName, go);
                 }
             }

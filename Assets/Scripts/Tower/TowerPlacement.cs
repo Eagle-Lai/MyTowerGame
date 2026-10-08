@@ -126,6 +126,18 @@ namespace FTProject
             Tips(string.Format("{0}：移动到可建造格上点击放置，右键/ESC 取消", cfg.Name));
         }
 
+        /// <summary>
+        /// 取消放置态（切关 / 重开时由流程层调用）。
+        ///
+        /// 【为什么不能只调 Deselect】Deselect 管的是"已建造塔的选中态"，
+        /// 而放置中的预览体（_ghost）与射程圈走的是另一条分支 ——
+        /// 关卡结束时若正处在放置态，预览塔会跟着进到下一关，并且继续跟着鼠标跑。
+        /// </summary>
+        public void CancelPlacement()
+        {
+            ExitPlacement(false);
+        }
+
         private void ExitPlacement(bool built)
         {
             if (!_active)

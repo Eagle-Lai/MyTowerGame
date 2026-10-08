@@ -119,6 +119,7 @@ namespace FTProject
             { "SelectView",   new ResAddress(ResBundle.UiHud, "SelectView",   "Assets/Prefabs/UI/SelectView.prefab") },
             { "PauseView",    new ResAddress(ResBundle.UiHud, "PauseView",    "Assets/Prefabs/UI/PauseView.prefab") },
             { "SettingView",  new ResAddress(ResBundle.UiHud, "SettingView",  "Assets/Prefabs/UI/SettingView.prefab") },
+            { "LevelClearView", new ResAddress(ResBundle.UiHud, "LevelClearView", "Assets/Prefabs/UI/LevelClearView.prefab") },
 
             // ------------------------------------------------------------------
             // 字体（TextMeshPro）

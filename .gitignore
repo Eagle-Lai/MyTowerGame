@@ -50,6 +50,12 @@ crashlytics-build.properties
 # AssetBundle 构建产物（每个平台一份，可重新打包）
 /Assets/StreamingAssets/AssetBundles/
 
+# YooAsset 构建产物目录（由「Tools ▸ 塔防 ▸ YooAsset 接入」向导生成，可重新构建）
+/Assets/StreamingAssets/yoo/
+
+# 独立 AB 打包输出目录（工程根目录，随构建重新生成）
+/Bundles/
+
 # 注意：Assets/ConfigJson/ 是 Luban 的输出目录，属于**源数据**，必须入库！
 # （它不在忽略列表里。历史上曾把它当"派生副本"忽略并放在 StreamingAssets/json，
 #   但 StreamingAssets 下的文件不会导入成 TextAsset，编辑器读不到内容，已改正。）
@@ -78,6 +84,19 @@ Luban/Config/Datas/~$*.xlsx
 # 入库只会让仓库随改动次数线性膨胀。需要历史版本时用 git 即可。
 # 注意：只忽略 backup/，.workbuddy/tools/ 与 .workbuddy/memory/ 必须入库。
 /.workbuddy/backup/
+/.workbuddy/backups/
+
+# Python 工具脚本的运行缓存（由解释器自动生成，可丢弃）
+__pycache__/
+*.pyc
+
+# ---------------------------------------------------------------------------
+# 4c. 地图编辑器的页面导出中转文件（M3-7）
+# ---------------------------------------------------------------------------
+# 编辑器「一键写入 xlsx」会先把页面上的棋盘写成 .workbuddy/levelmap_export.json，
+# 再由 Python 脚本读它写回 LevelMap.xlsx —— 每次点击都会被整体覆盖。
+# 它随时是"上一个正在编辑的半成品"，入库没有意义，更容易被误当成权威数据。
+/.workbuddy/levelmap_export.json
 
 # ---------------------------------------------------------------------------
 # 5. IDE / 编辑器生成的工程文件（Unity 会自动重新生成）

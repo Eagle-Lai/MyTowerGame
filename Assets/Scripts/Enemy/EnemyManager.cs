@@ -169,17 +169,35 @@ namespace FTProject
             pool.Release(e);
         }
 
-        /// <summary>清除全部怪物（关卡重置用）</summary>
+        /// <summary>
+        /// 清除全部怪物（关卡重置用）。
+        ///
+        /// 【为什么必须走 RecycleEnemy，而不是直接 e.OnRecycle()】
+        ///   OnRecycle 只是"把怪藏起来 + 清状态"，它**不会把对象放回池子**（那是 pool.Release 的事）。
+        ///   直接调它的后果是：这批怪从此既不在场上、也不在池里，池子下次取不到就再 new 一批 ——
+        ///   切一次关泄漏一批 GameObject（而且 _all 一直持有引用，GC 也回收不掉）。
+        ///
+        /// 【为什么必须跳过 IsFullyRecycled 的那些】
+        ///   _all 记录的是"创建过的全部"，其中已经躺在池子里的那些 IsFullyRecycled = true。
+        ///   再归还一次就会被压进池子两次，之后 pool.Get() 会把**同一个实例**同时发给两只怪
+        ///   —— 这是比泄漏严重得多的故障。
+        /// </summary>
         public void ClearAll()
         {
             for (int i = _all.Count - 1; i >= 0; i--)
             {
                 BaseEnemy e = _all[i];
-                if (e != null)
+                if (e == null)
                 {
-                    CombatSystem.Instance.UnregisterEnemy(e);
-                    e.OnRecycle();
+                    continue;
                 }
+                if (e.IsFullyRecycled)
+                {
+                    continue;   // 已在池中，不能重复归还
+                }
+                // 能走到这里的一定是"Init 过、还没归还"的，Config 必然非空，
+                // 所以 RecycleEnemy 内部按 ResName 分池是安全的。
+                RecycleEnemy(e);
             }
         }
 

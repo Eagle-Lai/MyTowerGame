@@ -300,6 +300,9 @@ namespace FTProject.EditorTools
             CheckUiPrefab(report, UIPrefabBuilder.SelectPath, "SelectView", new[] { "Bg", "Panel" });
             CheckUiPrefab(report, UIPrefabBuilder.PausePath, "PauseView", new[] { "Bg", "Panel" });
             CheckUiPrefab(report, UIPrefabBuilder.SettingPath, "SettingView", new[] { "Bg", "Panel" });
+            // 关卡结算弹窗：没有它，通关后玩家看不到任何结算界面
+            // （深一层的节点契约由 .workbuddy/tools/check_ui_contract.py 校验）
+            CheckUiPrefab(report, UIPrefabBuilder.LevelClearPath, "LevelClearView", new[] { "Bg", "Panel" });
         }
 
         /// <summary>

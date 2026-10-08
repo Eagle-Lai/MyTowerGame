@@ -149,8 +149,13 @@ namespace FTProject
             _boardCenter = boardCenter;
             _boardHalf = new Vector2(cols * cellSize * 0.5f, rows * cellSize * 0.5f);
             _cam.orthographicSize = _fitSize;
-            // 归位时清掉震动偏移：否则 LateUpdate 会把"上一帧的偏移"从新位置里减掉，导致对不准
+            // 归位时清掉震动状态：否则上一关结束前触发的震动会带进新关卡，
+            // 表现为"刚进关画面还在抖"。偏移必须清，计时与幅度也要清，
+            // 不然 LateUpdate 会在下一帧按旧幅度重新生成偏移。
             _shakeOffset = Vector3.zero;
+            _shakeTimer = 0f;
+            _shakeAmplitude = 0f;
+            _shakeDuration = 0f;
             transform.position = new Vector3(boardCenter.x, boardCenter.y, DefaultZ);
         }
 

@@ -80,6 +80,38 @@ namespace FTProject
             _instance.ShowInternal(worldPos, amount, killing);
         }
 
+        /// <summary>
+        /// 立刻收起所有正在飘的伤害数字（切关 / 重开用）。
+        ///
+        /// 【为什么要它】飘字有 0.7 秒寿命，而切关是同一帧完成的 ——
+        /// 不清的话，上一关的伤害数字会继续飘进新关卡，看起来像"新关卡凭空掉血"。
+        /// 实例还没被创建过时是空操作（那就本来没有东西可清）。
+        /// </summary>
+        public static void ClearAll()
+        {
+            if (_instance != null)
+            {
+                _instance.ClearInternal();
+            }
+        }
+
+        private void ClearInternal()
+        {
+            if (!_ready)
+            {
+                return;
+            }
+            for (int i = 0; i < _texts.Length; i++)
+            {
+                _life[i] = 0f;
+                TextMeshProUGUI t = _texts[i];
+                if (t != null && t.gameObject.activeSelf)
+                {
+                    t.gameObject.SetActive(false);
+                }
+            }
+        }
+
         private static FloatingTextManager Create()
         {
             TMP_FontAsset font = ResolveFont();

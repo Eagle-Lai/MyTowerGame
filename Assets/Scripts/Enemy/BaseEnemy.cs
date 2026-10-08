@@ -665,6 +665,10 @@ namespace FTProject
             // ★ 击杀奖励（v1.0 遗漏：原实现死亡时不发奖励）
             int reward = Config.Reward;
             PlayerDataManager.Instance.AddGold(reward);
+            // 统计口径：结算界面的「击杀 N」读的就是这个计数器。
+            // 【为什么必须在这里调】OnEnemyKilled 存在但**全工程没有任何调用点**，
+            // 于是 TotalKilled 恒为 0 —— 结算弹窗永远显示"击杀 0"。
+            PlayerDataManager.Instance.OnEnemyKilled();
             EventDispatcher.TriggerEvent<BaseEnemy, int>(EventName.EnemyKilledEvent, this, reward);
 
             SetAnimState(EnemyAnimState.Death);

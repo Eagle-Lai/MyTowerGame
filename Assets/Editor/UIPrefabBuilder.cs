@@ -30,6 +30,20 @@ namespace FTProject.EditorTools
     ///   TipsView（CanvasGroup）
     ///   └── TipText
     ///
+    /// LevelClearView 节点（通关 / 失败结算弹窗）：
+    ///   LevelClearView
+    ///   ├── Bg（全屏遮罩；刻意**不接**"点击关闭"，见 LevelClearView.cs 的说明）
+    ///   └── Panel（640×680）
+    ///       ├── Title         通关完成！ / 防御失败
+    ///       ├── LevelName     关卡名
+    ///       ├── Stars         本次星级（大号，★☆ 字形）
+    ///       ├── StarDetail    本次 vs 历史最高
+    ///       ├── RecordTip     新纪录提示（默认隐藏）
+    ///       ├── Stats         剩余生命 / 击杀 / 漏怪
+    ///       ├── NextBtn       → SelectLevelRequestEvent(nextLevelId)
+    ///       ├── RetryBtn      → RestartLevelRequestEvent
+    ///       └── SelectBtn     → QuitToSelectRequestEvent
+    ///
     /// 【关于中文字体】全工程统一使用 **TextMeshPro（TMP）**，不再使用 UGUI Text。
     /// 字体取 TMP 默认字体资产（`Assets/Font/SiYuanSongTi SDF.asset`，源思源宋体，
     /// 已配置在 TMP Settings 的 m_defaultFontAsset）。TMP 的 SDF 字体资产包含中文字形，
@@ -53,10 +67,12 @@ namespace FTProject.EditorTools
         public const string SelectPath = "Assets/Prefabs/UI/SelectView.prefab";
         public const string PausePath = "Assets/Prefabs/UI/PauseView.prefab";
         public const string SettingPath = "Assets/Prefabs/UI/SettingView.prefab";
+        public const string LevelClearPath = "Assets/Prefabs/UI/LevelClearView.prefab";
 
         private static readonly string[] SelectChildren = { "Bg", "Panel" };
         private static readonly string[] PauseChildren = { "Bg", "Panel" };
         private static readonly string[] SettingChildren = { "Bg", "Panel" };
+        private static readonly string[] LevelClearChildren = { "Bg", "Panel" };
 
         // TowerInfoView 由本生成器管理的直接子节点集合（用于重建前的安全护栏）
         private static readonly string[] TowerInfoChildren = { "Bg", "Panel" };
@@ -96,6 +112,9 @@ namespace FTProject.EditorTools
         // 参考分辨率下的字号
         private const int SmallFontSize = 32;
         private const int BigFontSize = 38;
+
+        /// <summary>结算弹窗的星级字号：星星是那一屏的主角，明显大于正文</summary>
+        private const int StarFontSize = 76;
 
         private static readonly Color TextColor = new Color(1f, 1f, 1f, 1f);
         private static readonly Color ButtonColor = new Color(0.18f, 0.24f, 0.34f, 0.92f);
@@ -137,6 +156,7 @@ namespace FTProject.EditorTools
             BuildSelect(report);
             BuildPause(report);
             BuildSetting(report);
+            BuildLevelClear(report);
         }
 
         /// <summary>
@@ -161,6 +181,7 @@ namespace FTProject.EditorTools
             EnsureOne(SelectPath, "SelectView", report);
             EnsureOne(PausePath, "PauseView", report);
             EnsureOne(SettingPath, "SettingView", report);
+            EnsureOne(LevelClearPath, "LevelClearView", report);
         }
 
         private static void EnsureOne(string path, string name, EditorUtil.Report report)
@@ -176,6 +197,8 @@ namespace FTProject.EditorTools
             else if (path == TowerInfoPath) BuildTowerInfo(report);
             else if (path == SelectPath) BuildSelect(report);
             else if (path == PausePath) BuildPause(report);
+            else if (path == SelectPath) BuildSelect(report);
+            else if (path == LevelClearPath) BuildLevelClear(report);
             else BuildSetting(report);
         }
 
@@ -516,8 +539,79 @@ namespace FTProject.EditorTools
             report.Ok("SettingView.prefab（Bg / Panel( Title / VolumeText / VolDownBtn / VolUpBtn / MuteBtn / ResetBtn / CloseBtn )）");
         }
 
-        /// <summary>面板内按钮：居中锚点、固定尺寸，带 Label 子节点</summary>
-        private static void CreatePanelButton(Transform parent, string name, string label, Vector2 anchoredPos)
+        // ------------------------------------------------------------------
+        // 关卡结算弹窗（通关 / 失败）
+        //
+        // 【节点契约】与 Assets/Scripts/UI/LevelClearView.cs 的 FindText/FindButton 一一对应，
+        //   改这里必须同步改那里（两边都写死了节点名，没有中间映射层）。
+        // ------------------------------------------------------------------
+
+        private static void BuildLevelClear(EditorUtil.Report report)
+        {
+            report.Head("生成关卡结算界面 → " + LevelClearPath);
+            string extra;
+            if (!EditorUtil.IsSafeToRebuild(LevelClearPath, LevelClearChildren, out extra))
+            {
+                report.Error("LevelClearView.prefab 检测到生成器不识别的节点：" + extra + "　→ 已中止");
+                return;
+            }
+            AssetDatabase.DeleteAsset(LevelClearPath);
+            EditorUtil.EnsureFolderOfFile(LevelClearPath);
+
+            GameObject panel;
+            GameObject root = CreateDialogShell("LevelClearView", "通关完成！",
+                new Vector2(640f, 680f), report, out panel);
+            root.AddComponent<LevelClearView>();
+
+            CreateText(panel.transform, "LevelName", "第 1 关",
+                new Vector2(0.5f, 0.5f), new Vector2(0f, 210f), new Vector2(560f, 48f),
+                TextAnchor.MiddleCenter, SmallFontSize);
+
+            // 本次星级是弹窗的主角，字号明显大于其它文本
+            CreateText(panel.transform, "Stars", "☆☆☆",
+                new Vector2(0.5f, 0.5f), new Vector2(0f, 118f), new Vector2(560f, 96f),
+                TextAnchor.MiddleCenter, StarFontSize);
+
+            // 「本次」与「历史最高」并排 —— 存档里的星级是只升不降的合并值，
+            // 不分开显示的话，二次通关打出低分反而会看到高分。
+            CreateText(panel.transform, "StarDetail", "本次 ☆☆☆　　历史最高 ☆☆☆",
+                new Vector2(0.5f, 0.5f), new Vector2(0f, 42f), new Vector2(560f, 44f),
+                TextAnchor.MiddleCenter, SmallFontSize);
+
+            // 新纪录提示：默认隐藏，由 LevelClearView.Show 依据数据决定是否点亮
+            TextMeshProUGUI recordTip = CreateText(panel.transform, "RecordTip",
+                "★ 新纪录！刷新了本关最高星级",
+                new Vector2(0.5f, 0.5f), new Vector2(0f, -6f), new Vector2(560f, 40f),
+                TextAnchor.MiddleCenter, SmallFontSize);
+            recordTip.gameObject.SetActive(false);
+
+            CreateText(panel.transform, "Stats", "剩余生命 0/0　　击杀 0　　漏怪 0",
+                new Vector2(0.5f, 0.5f), new Vector2(0f, -66f), new Vector2(560f, 46f),
+                TextAnchor.MiddleCenter, SmallFontSize);
+
+            // 按钮加宽到 420：Label 文案含关卡名（"下一关：雪原前哨"），
+            // 而 CreateText 关掉了自动换行，320 宽会溢出到面板外。
+            CreatePanelButton(panel.transform, "NextBtn", "下一关", new Vector2(0f, -136f), 420f);
+            CreatePanelButton(panel.transform, "RetryBtn", "重玩本关", new Vector2(0f, -216f), 420f);
+            CreatePanelButton(panel.transform, "SelectBtn", "返回关卡选择", new Vector2(0f, -290f), 420f);
+
+            GameObject saved = PrefabUtility.SaveAsPrefabAsset(root, LevelClearPath);
+            Object.DestroyImmediate(root);
+            if (saved == null)
+            {
+                report.Error("保存失败：" + LevelClearPath);
+                return;
+            }
+            report.Ok("LevelClearView.prefab（Bg / Panel( Title / LevelName / Stars / StarDetail / RecordTip / Stats / NextBtn / RetryBtn / SelectBtn )）");
+        }
+
+        /// <summary>
+        /// 面板内按钮：居中锚点、固定尺寸，带 Label 子节点。
+        /// <paramref name="width"/> 默认 320；结算界面要放"下一关：关卡名"这类较长文案，
+        /// 会显式传更宽的值（TMP 此处关掉了自动换行，宽度不够会直接溢出到面板外）。
+        /// </summary>
+        private static void CreatePanelButton(Transform parent, string name, string label, Vector2 anchoredPos,
+            float width = 320f)
         {
             GameObject go = new GameObject(name, typeof(RectTransform));
             go.transform.SetParent(parent, false);
@@ -527,7 +621,7 @@ namespace FTProject.EditorTools
             rt.anchorMax = new Vector2(0.5f, 0.5f);
             rt.pivot = new Vector2(0.5f, 0.5f);
             rt.anchoredPosition = anchoredPos;
-            rt.sizeDelta = new Vector2(320f, 72f);
+            rt.sizeDelta = new Vector2(width, 72f);
 
             Image img = go.AddComponent<Image>();
             img.color = ButtonColor;
@@ -542,7 +636,7 @@ namespace FTProject.EditorTools
             btn.colors = cb;
 
             TextMeshProUGUI t = CreateText(go.transform, "Label", label,
-                new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(320f, 72f),
+                new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(width, 72f),
                 TextAnchor.MiddleCenter, SmallFontSize);
             RectTransform lrt = (RectTransform)t.transform;
             lrt.anchorMin = Vector2.zero;

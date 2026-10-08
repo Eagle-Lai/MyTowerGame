@@ -62,6 +62,16 @@ namespace FTProject
         /// <summary>HUD 引用（倒计时需要更新按钮文字）</summary>
         private HudView _hud;
 
+        /// <summary>
+        /// 刚算好、等待结算界面展示的这一局成绩。
+        ///
+        /// 【为什么要暂存一层】结算发生在 <see cref="FinishRound"/>，而弹窗是在
+        ///   <see cref="OnGameOver"/> 里统一打开的（胜负两条路都从那里出来）。
+        ///   中间隔着 Win() → GameOverEvent 的一次派发，若在那里重新推算，
+        ///   "本局**之前**的历史星级"就已经被 RecordClear 覆盖了，再也拿不回来。
+        /// </summary>
+        private LevelClearInfo _pendingResult;
+
         /// <summary>塔升级/出售面板是否已打开（惰性打开，见 OnTowerSelected）</summary>
         private bool _towerPanelOpened;
 
@@ -215,7 +225,7 @@ namespace FTProject
             }
 
             // ⑥ 打开 UI
-            HudView hud = UIManager.Instance.Open<HudView>("HudView", UILayout.NormalPanel);
+            HudView hud = UIManager.Instance.Open<HudView>(HudView.LogicalName, UILayout.NormalPanel);
             if (hud == null)
             {
                 Debug.LogWarning("[Flow] HUD 未能打开，玩法仍可运行（无法用鼠标操作，请检查 ui_hud 包）");
@@ -293,9 +303,12 @@ namespace FTProject
             keys.Add("Tower_Retard1");
             keys.Add("Tower_Retard2");
             keys.Add("Bullet_Normal");
-            keys.Add("HudView");
+            keys.Add(HudView.LogicalName);
             keys.Add("TipsView");
             keys.Add("TowerInfoView");
+            // 结算弹窗在本关结束的那一刻才需要，但那正是最不能卡顿的瞬间
+            // （玩法已经停了，界面却要等 IO），所以提前预载。
+            keys.Add("LevelClearView");
 
             if (Level.RoundIds != null)
             {
@@ -437,7 +450,16 @@ namespace FTProject
                 // 界面可能立刻切走；如果存档晚一步写，"刚通关却没解锁下一关"。
                 PlayerDataManager pd = PlayerDataManager.Instance;
                 int stars = SaveManager.EvaluateStars(pd.Hp, pd.MaxHp);
+
+                // ★ 必须**先读后写**：RecordClear 是"只升不降"的合并，
+                //   先写再读就只能拿到合并后的最好成绩，界面便无法区分
+                //   "本次打了 2 星"与"历史上最好 3 星"，"新纪录"也就无从判断。
+                int previousBest = SaveManager.Instance.GetStars(Level.Id);
                 SaveManager.Instance.RecordClear(Level.Id, stars, pd.Hp);
+
+                // 成绩先攒着，由 OnGameOver 统一弹结算界面（胜负共用同一条路径）
+                _pendingResult = BuildClearInfo(true, stars, previousBest);
+
                 EventDispatcher.TriggerEvent<int, int, int>(EventName.LevelClearEvent, Level.Id, stars, pd.Hp);
                 Tips(string.Format("通关！获得 {0}", SelectView.Stars(stars)));
 
@@ -513,6 +535,108 @@ namespace FTProject
             Debug.Log(string.Format("[Flow] 本局结束：{0}\n{1}",
                 victory ? "胜利" : "失败", PlayerDataManager.Instance.DumpDebugInfo()));
             Tips(victory ? "恭喜通关！" : "防御失败……");
+
+            ShowClearPopup(victory);
+        }
+
+        // ------------------------------------------------------------------
+        // 关卡结算弹窗
+        //
+        // 【为什么要有这一段】原实现只做了「写档 + 触发 LevelClearEvent + 弹一条 Tips」，
+        //   而 **LevelClearEvent 全工程没有任何监听者** —— 事件空放，
+        //   所以玩家打通关后看不到任何结算界面。这里把"打开界面"明确落在流程管理器上
+        //   （与 PauseView / SettingView / SelectView 的开法一致：UI 只发事件，
+        //    由流程层决定开什么、开在哪一层）。
+        // ------------------------------------------------------------------
+
+        private void ShowClearPopup(bool victory)
+        {
+            LevelClearInfo info;
+            if (victory && _pendingResult != null)
+            {
+                info = _pendingResult;              // 正常通关：直接用 FinishRound 算好的成绩
+            }
+            else
+            {
+                // 走到这里只有两种情况：
+                //   ① 失败 —— 本就没有星级，按当前状态现场拼一份；
+                //   ② 调试键 F2 强制获胜 —— 没经过 FinishRound，_pendingResult 是空的。
+                // 为了让 F2 也能真实检验"结算 + 记录星级 + 重进游戏读回"这条链路，
+                // 这里对胜利补做一次与正式通关完全相同的结算，而不是只画个空壳界面。
+                PlayerDataManager pd = PlayerDataManager.Instance;
+                int stars = victory && pd != null
+                    ? SaveManager.EvaluateStars(pd.Hp, pd.MaxHp)
+                    : 0;
+                int previousBest = Level != null ? SaveManager.Instance.GetStars(Level.Id) : 0;
+                if (victory && Level != null)
+                {
+                    SaveManager.Instance.RecordClear(Level.Id, stars, pd.Hp);
+                }
+                info = BuildClearInfo(victory, stars, previousBest);
+            }
+            _pendingResult = null;
+
+            LevelClearView view = UIManager.Instance.Open<LevelClearView>(
+                LevelClearView.LogicalName, UILayout.NormalPanel);
+            if (view == null)
+            {
+                Debug.LogWarning("[Flow] 结算弹窗未能打开（请确认 ui_hud 包里已生成 LevelClearView.prefab）");
+                return;
+            }
+            view.Show(info);
+        }
+
+        /// <summary>把"这一局的结果"组装成结算界面需要的数据。</summary>
+        private LevelClearInfo BuildClearInfo(bool victory, int stars, int previousBest)
+        {
+            PlayerDataManager pd = PlayerDataManager.Instance;
+            LevelClearInfo info = new LevelClearInfo();
+            info.victory = victory;
+            info.levelId = Level != null ? Level.Id : 0;
+            info.levelName = Level != null ? Level.Name : null;
+            info.stars = Mathf.Clamp(stars, 0, 3);
+            info.previousBest = Mathf.Clamp(previousBest, 0, 3);
+            // 只有"打得比历史最好还好"才算刷新记录；平了不算
+            info.newRecord = victory && info.stars > info.previousBest;
+            info.hp = pd != null ? pd.Hp : 0;
+            info.maxHp = pd != null ? pd.MaxHp : 0;
+            info.killed = pd != null ? pd.TotalKilled : 0;
+            info.leaked = pd != null ? pd.TotalLeaked : 0;
+            FindNextLevel(info);
+            return info;
+        }
+
+        /// <summary>
+        /// 找下一关：**id 大于本关的最小一关**。
+        /// 【为什么不是简单 +1】与 SaveManager.PreviousLevelId 同一口径 ——
+        ///   按配置表实际存在的关卡取相邻项，这样以后中间插入关卡也不会把链路走错。
+        /// </summary>
+        private void FindNextLevel(LevelClearInfo info)
+        {
+            info.nextLevelId = 0;
+            info.nextLevelName = null;
+            info.hasNext = false;
+
+            if (Level == null || Configs.LevelTable == null || Configs.LevelTable.DataList == null)
+            {
+                return;
+            }
+            int cur = Level.Id;
+            List<cfg.SceneInfo> all = Configs.LevelTable.DataList;
+            for (int i = 0; i < all.Count; i++)
+            {
+                cfg.SceneInfo s = all[i];
+                if (s == null || s.Id <= cur)
+                {
+                    continue;
+                }
+                if (info.nextLevelId == 0 || s.Id < info.nextLevelId)
+                {
+                    info.nextLevelId = s.Id;
+                    info.nextLevelName = s.Name;
+                }
+            }
+            info.hasNext = info.nextLevelId > 0;
         }
 
         // ------------------------------------------------------------------
@@ -608,26 +732,65 @@ namespace FTProject
         /// <summary>
         /// 彻底清掉当前关卡的一切运行时状态。
         ///
-        /// 【为什么必须有这一步】所有管理器都是**静态单例**，不随场景重建而重置。
-        /// 直接再 InitLevel 一次的话：上一关的塔还挂在已被销毁的格子上、
+        /// 【为什么必须有这一步】所有管理器都是**静态单例**，不随场景重建而重置；
+        /// 而棋盘容器 BoardRoot / PathRoot / TowerRoot… 都是**场景常驻**节点，
+        /// 谁往里面建了东西，谁就得负责拆。直接再 InitLevel 一次的话：
+        /// 上一关的格子还挂在 BoardRoot 下、塔还挂在已被销毁的格子上、
         /// 怪物还留在空间哈希里、子弹还在飞 —— 会立刻出现一堆空引用与"幽灵塔"。
-        /// 顺序也有讲究：先清战斗实体（它们互相引用），再关界面，最后恢复时间。
+        ///
+        /// 【顺序有讲究，本身就是正确性的一部分】
+        ///   ① 先收回"玩家操作态"（放置预览 / 选中高亮 / 射程圈）：
+        ///      它们要访问塔与格子（还原塔身颜色、复位格子高亮），
+        ///      实体清完再收，就是在操作已经销毁的对象。
+        ///   ② 再清战斗实体（它们互相引用：塔注册在 CombatSystem、怪在空间哈希）。
+        ///   ③ 然后清棋盘与路径箭头 —— 这两样是"场景视觉残留"的主要来源。
+        ///   ④ 最后关界面、恢复时间。
         /// </summary>
         public void TeardownLevel()
         {
             _autoNextTimer = 0f;
             Time.timeScale = 1f;
 
+            // ① 玩家操作态
+            if (TowerPlacement.Instance != null)
+            {
+                // ★ 光调 Deselect 不够：放置中的预览体走的是另一条分支，
+                //   关卡结束时正在放塔的话，幽灵塔会跟着进下一关。
+                TowerPlacement.Instance.CancelPlacement();
+                TowerPlacement.Instance.Deselect();
+            }
+            // 面板的"已打开过"标记跟着实例一起作废，否则下次选中塔会走错分支
+            _towerPanelOpened = false;
+
+            // ② 战斗实体（互相引用，一起清）
+            _wave.Stop();
             if (EnemyManager.Instance != null) EnemyManager.Instance.ClearAll();
             if (BulletManager.Instance != null) BulletManager.Instance.RecycleAll();
             if (TowerManager.Instance != null) TowerManager.Instance.ClearAll();
-
-            if (TowerPlacement.Instance != null) TowerPlacement.Instance.Deselect();
             if (CombatSystem.Instance != null) CombatSystem.Instance.ResetStats();
 
+            // ③ 场景视觉残留：棋盘格子 + 路径箭头。
+            //    ★ 这里是"通关后地图没被清掉"的根因所在 —— 原实现只清了实体，
+            //      完全没碰 BoardView 建出来的那一堆格子。
+            if (boardView != null) boardView.Clear();
+            if (pathArrowView != null) pathArrowView.Clear();
+            // 飘字 / 激光束都是"一次性表现"，寿命很短、自己也会消失，但它们同样是
+            // "上一关的画面"。一起收掉，让 TeardownLevel 成为一个完整的闭环 ——
+            // 以后新增这类短命特效时，也照这个模式在这里登记一笔。
+            FloatingTextManager.ClearAll();
+            LaserBeamView.ClearAll();
+
+            // ④ 界面
             UIManager.Instance.Close(TowerInfoView.LogicalName);
             UIManager.Instance.Close(PauseView.LogicalName);
             UIManager.Instance.Close(SettingView.LogicalName);
+            // 结算弹窗也归这里关：点「下一关 / 重玩 / 返回选关」都会走到 StartLevel/QuitToSelect，
+            // 两者第一步都是 TeardownLevel —— 不在这里关，弹窗会跟着进到新关卡里盖住画面。
+            UIManager.Instance.Close(LevelClearView.LogicalName);
+            // ★ HUD 也必须关。它是**被复用**的界面（UIManager.Open 对已存在的实例直接返回），
+            //   不销毁就等于把上一局的按钮状态（"已通关"且不可点）原样带进新关卡 ——
+            //   玩家进新关后会发现「开始」按钮点不动，第一回合永远开不了。
+            UIManager.Instance.Close(HudView.LogicalName);
             _hud = null;
         }
 

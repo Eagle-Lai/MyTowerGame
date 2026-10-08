@@ -387,6 +387,9 @@ namespace FTProject
             StatFireCount = 0;
             StatHitCount = 0;
             StatIdleFireAttempt = 0;
+            // 一次性告警的"已报过"标志也要复位 —— 否则切到新关卡后即使真的再次出现
+            // 无目标开火，也不会再报（那个报错是正确性不变量，不能只报全局一次）。
+            _idleFireReported = false;
         }
 
         /// <summary>由塔内部统计（集中上报，便于自检）</summary>

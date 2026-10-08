@@ -48,6 +48,37 @@ namespace FTProject
             _instance.Show(from, to);
         }
 
+        /// <summary>
+        /// 立刻熄灭全部激光束（切关 / 重开用）。
+        /// 【为什么要它】光束寿命只有 0.06 秒，正常情况下自己就消失了；
+        /// 但切关时"上一关最后几发激光"若正好还在亮着，会闪到新关卡里。
+        /// 实例还没创建过时是空操作。
+        /// </summary>
+        public static void ClearAll()
+        {
+            if (_instance != null)
+            {
+                _instance.ClearInternal();
+            }
+        }
+
+        private void ClearInternal()
+        {
+            if (!_ready)
+            {
+                return;
+            }
+            for (int i = 0; i < _srs.Length; i++)
+            {
+                _life[i] = 0f;
+                SpriteRenderer sr = _srs[i];
+                if (sr != null && sr.gameObject.activeSelf)
+                {
+                    sr.gameObject.SetActive(false);
+                }
+            }
+        }
+
         private static LaserBeamView Create()
         {
             Sprite sp = ResLoader.Instance.Load<Sprite>(LogicalName);

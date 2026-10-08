@@ -9,7 +9,9 @@
 """
 import io, os, re, sys, collections
 
-ROOT = r'D:\FreedomTower_1\Assets'
+# ★ ROOT 由脚本自身位置推导，避免硬编码路径写错后"扫 0 个文件却 PASS"
+_HERE = os.path.dirname(os.path.abspath(__file__))
+ROOT = os.path.join(os.path.dirname(os.path.dirname(_HERE)), 'Assets')
 DIRS = [os.path.join(ROOT, 'Scripts'), os.path.join(ROOT, 'Editor'), os.path.join(ROOT, 'Gen')]
 
 # 类型名 -> 命名空间
@@ -26,6 +28,7 @@ Collider Collider2D Rigidbody Rigidbody2D Joint Joint2D CharacterController Phys
 TextureFormat TextureWrapMode FilterMode HideFlags Coroutine WaitForEndOfFrame WaitForSeconds AsyncOperation
 TextAnchor HorizontalWrapMode VerticalWrapMode RuntimeAnimatorController AnimationClip ScriptableObject
 LayerMask Space KeyCode Input Random Material Shader ParticleSystem AudioSource AudioClip
+GUILayout
 """)
 # ColorBlock 实际在 UnityEngine.UI
 NS.pop('ColorBlock_placeholder', None)
@@ -41,7 +44,9 @@ EditorBuildSettingsScene EditorUserBuildSettings BuildPipeline BuildAssetBundleO
 SerializedObject SerializedProperty MenuItem UIOrientation TextureImporter TextureImporterType SpriteImportMode
 TextureImporterCompression ImportAssetOptions ObjectFactory EditorApplication EditorGUI EditorGUILayout
 AssetDatabaseLoadOperation PrefabAssetType EditorPrefs BuildTargetGroup
+EditorWindow EditorStyles MessageType
 """)
+reg('UnityEditor.Build', 'NamedBuildTarget')
 reg('UnityEditor.SceneManagement', 'EditorSceneManager OpenSceneMode NewSceneSetup NewSceneMode PrefabStage')
 reg('System', 'Action Func Exception IEnumerator IDisposable DateTime TimeSpan StringComparer Nullable')
 reg('System.Collections', 'IEnumerator ArrayList Hashtable')
@@ -60,12 +65,23 @@ reg('cfg.item', 'Item TbItem ItemExchange')
 reg('AStar', 'Point AStarWrapper Singleton')
 reg('FTProject', """
 Configs ResLoader ResTable ResBundle ResAddress ResPathUtil EditorResLoader BundleResLoader ResLoaderRunner
-ResLoaderRunnerBehaviour IResLoader EventDispatcher EventName ObjectPool TimerManager BaseManager IManagerInterface
+ResLoaderRunnerBehaviour IResLoader YooAssetResLoader EventDispatcher EventName ObjectPool TimerManager BaseManager IManagerInterface
 PlayerDataManager CombatSystem EnemyGrid BaseEnemy EnemyManager BaseBullet BulletManager BulletState BaseTower
 NormalTower TowerManager TowerConfig TowerType TargetMode TowerPlacement LevelConfig LevelMapConfig RoundConfig
 WaveGroupConfig EnemyConfig BulletConfig GlobalConfig WaveManager GameFlowManager GameFlowState BoardView CellView
 CellData CellType CellHighlight BoardGeometry BoardSorting PathArrowView Launcher GameSceneLauncher UIManager
 UILayout HudView TipsView CameraController EnemyType EnemyAnimState AStarManager
+""")
+reg('FTProject.EditorTools', 'FTBundlePackRule FTYooAssetDefine FTYooAssetSetupWizard')
+# YooAsset 3.0.6（UPM 包）：运行时程序集 YooAsset / 编辑器程序集 YooAsset.Editor
+reg('YooAsset', 'EBundleType EFileNameStyle PackageBuildResult EditorSimulateBuildInvoker')
+reg('YooAsset.Editor', """
+IBundlePackRule BundlePackRuleData BundlePackRuleResult DisplayName DisplayNameAttribute
+DefaultBundlePackRule BundleCollectorSetting BundleCollectorSettingData BundleCollectorPackage
+BundleCollectorGroup BundleCollector ECollectorType AddressByFileName CollectAll NormalIgnoreRule
+EnableGroup DisableGroup BundleSimulateBuilder ScriptableBuildPipeline ScriptableBuildParameters
+BuildResult BuildParameters EBuildPipeline EBundledCopyOption ECompressOption BundleBuilderHelper
+CollectResult CollectAssetInfo EditorAssetInfo
 """)
 
 
@@ -131,6 +147,15 @@ for d in DIRS:
             if fn.endswith('.cs'):
                 files.append(os.path.join(dp, fn))
 files.sort()
+
+# ★ 自检：一个 .cs 都没扫到，说明 ROOT 写错了，必须 FAIL —— 不能沉默地报 PASS
+if not files:
+    print('目录下没扫到任何 .cs 文件，ROOT 很可能写错了：')
+    for d in DIRS:
+        print('    %s%s' % (d, '' if os.path.isdir(d) else '   <- 该目录不存在'))
+    print('RESULT: FAIL (扫描到 0 个文件)')
+    sys.exit(1)
+print('扫描 %d 个 .cs 文件' % len(files))
 
 problems = []
 for f in files:

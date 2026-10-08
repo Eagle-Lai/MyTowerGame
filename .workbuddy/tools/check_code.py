@@ -10,7 +10,11 @@ M0 代码静态校验（本机没有可用的 C# 编译器，用脚本替代结�
 """
 import io, os, re, sys, collections
 
-ROOT = r'D:\FreedomTower\Assets'
+# ★ ROOT 由脚本自身位置推导（<工程根>/.workbuddy/tools/ 的上两级）。
+#   旧版硬编码 'D:\FreedomTower\Assets'（少了 _1），os.walk 扫不到任何文件，
+#   却每次都打印 PASS —— 这个"假通过"曾长期误导排查，故改为自动推导。
+_HERE = os.path.dirname(os.path.abspath(__file__))
+ROOT = os.path.join(os.path.dirname(os.path.dirname(_HERE)), 'Assets')
 DIRS = [os.path.join(ROOT, 'Scripts'), os.path.join(ROOT, 'Editor')]
 
 
@@ -124,6 +128,15 @@ for d in DIRS:
             if fn.endswith('.cs'):
                 files.append(os.path.join(dp, fn))
 files.sort()
+
+# ★ 自检：一个 .cs 都没扫到，必须 FAIL。
+#   旧版正是"路径写错 → 扫 0 个文件 → 一路打印 PASS"，所以这个自检不能省。
+if not files:
+    print('目录下没扫到任何 .cs 文件，ROOT 很可能写错了：')
+    for d in DIRS:
+        print('    %s%s' % (d, '' if os.path.isdir(d) else '   <- 该目录不存在'))
+    print('RESULT: FAIL (扫描到 0 个文件)')
+    sys.exit(1)
 print('扫描 %d 个 .cs 文件\n' % len(files))
 
 balance_fail = []
@@ -298,7 +311,13 @@ for f in files:
     rel = os.path.relpath(f, ROOT)
     if rel.endswith('ResTable.cs'):
         continue
-    for m in CALL_RE.finditer(strip_comments_only(srcs[f])):
+    code = strip_comments_only(srcs[f])
+    for m in CALL_RE.finditer(code):
+        # 排除"拼接前缀"：Load<AudioClip>("Audio_" + name) 里的 "Audio_" 只是片段，
+        # 不是完整的逻辑名。早期版本会把它当成逻辑名 → 误报"未登记"
+        # （已真实发生在 AudioManager.cs:139），故这里看紧随其后是否还有 '+'
+        if code[m.end():m.end() + 8].lstrip().startswith('+'):
+            continue
         literal_calls[m.group(1)].add(rel)
 missing_key = sorted(k for k in literal_calls if k not in registered)
 if missing_key:

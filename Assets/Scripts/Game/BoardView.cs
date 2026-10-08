@@ -54,6 +54,13 @@ namespace FTProject
         /// </summary>
         public void Build(LevelMapConfig map, float cellSize, Vector2 origin, Transform root)
         {
+            // ★ 先清掉上一次建的格子。
+            // 【为什么必须放在最前面】格子是 new GameObject 出来的，父节点 boardRoot
+            // 是**场景常驻**的（不随关卡切换销毁）。不清就再 Build 一次的话，
+            // 上一关的整张地图会原样留在场景里 —— 通关后进下一关/回选关，
+            // 看到的是"两张地图叠在一起"。
+            Clear();
+
             _root = root != null ? root : transform;
             _cellSize = cellSize;
             _origin = origin;
@@ -99,6 +106,50 @@ namespace FTProject
             {
                 Debug.LogError("[Board] 棋盘缺少起点(S)或终点(E)，请检查 TBLevelMap 的 cells 配置");
             }
+        }
+
+        /// <summary>
+        /// 清掉棋盘上所有格子视图（切关 / 重开用）。
+        ///
+        /// 【为什么必须有这一步】格子是 Build 时 `new GameObject` 出来的，而父节点
+        /// boardRoot 是场景常驻对象 —— 不显式销毁，上一关的地图就会一直留在场景里。
+        ///
+        /// 【只销毁自己产出的节点】遍历 _views（Build 时记下的那一批），
+        /// 不清空 boardRoot 的全部子物体 —— 万一日后有人往 boardRoot 下挂别的东西，
+        /// 整层 Clean 会把它一起误删。
+        /// </summary>
+        public void Clear()
+        {
+            if (_views != null)
+            {
+                for (int r = 0; r < _rows; r++)
+                {
+                    for (int c = 0; c < _cols; c++)
+                    {
+                        CellView v = _views[r, c];
+                        if (v == null)
+                        {
+                            continue;
+                        }
+                        GameObject go = v.gameObject;
+                        if (go == null)
+                        {
+                            continue;
+                        }
+                        // 先 SetActive(false) 再 Destroy：Destroy 要到本帧末才真正生效，
+                        // 而 Build 常常在同一帧紧接着执行 —— 不先隐藏的话，
+                        // 会有整整一帧新旧两套格子同时可见（画面闪一下双地图）。
+                        go.SetActive(false);
+                        Destroy(go);
+                    }
+                }
+            }
+            _views = null;
+            _cells = null;
+            _rows = 0;
+            _cols = 0;
+            SpawnCell = null;
+            EndCell = null;
         }
 
         private void LoadCellSprites()

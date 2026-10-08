@@ -22,6 +22,9 @@ namespace FTProject
     /// </summary>
     public class HudView : MonoBehaviour
     {
+        /// <summary>ResTable / UIManager 用的逻辑名（别再各处写字符串字面量）</summary>
+        public const string LogicalName = "HudView";
+
         // ---- 文本（全工程统一 TMP，不再用 UGUI Text）----
         private TMP_Text _goldText;
         private TMP_Text _hpText;
