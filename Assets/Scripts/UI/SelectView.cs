@@ -143,10 +143,22 @@ namespace FTProject
             TMP_Text label = go.GetComponentInChildren<TMP_Text>(true);
             if (label != null)
             {
-                label.text = string.Format("{0}\n{1}\n{2}",
+                // 【字号必须比普通按钮小】关卡按钮只有 240×96，却要塞三行文案；
+                //   沿用生成器的 32 号会让 3 行溢出到按钮外（表现为文字压在框上/框外）。
+                //   富文本逐行给号，与效果图 01（26 / 26 / 22）对齐；
+                //   基础字号也一并调小 —— 即便富文本标签失效，3 行（≈80px）仍落在 96px 内。
+                // 【为什么要着色】效果图里实心星是金色、空心星与难度是暗蓝灰，
+                //   全靠富文本在**一段文本内**分色，否则得拆成三个 TMP 节点。
+                label.fontSize = 22f;
+                label.text = string.Format(
+                    "<size=26><color=#E8F0FA>{0}</color></size>\n" +
+                    "<size=26>{1}</size>\n" +
+                    "<size=20>{2}</size>",
                     raw.Name,
-                    Stars(stars),
-                    unlocked ? Difficulty(diff) : "未解锁");
+                    StarRichText(stars),
+                    unlocked
+                        ? "<color=#7A8CA6>" + Difficulty(diff) + "</color>"
+                        : "<color=#5A6B80>未解锁</color>");
             }
 
             Button btn = go.GetComponent<Button>();
@@ -162,7 +174,9 @@ namespace FTProject
         {
             int cleared = SaveManager.Instance.ClearedCount;
             int stars = SaveManager.Instance.TotalStars;
-            SetText(_summary, string.Format("已通关 {0}/{1}　★ {2}/{3}",
+            // 数字提亮、星级用金色（效果图 01 的 Summary 配色）
+            SetText(_summary, string.Format(
+                "已通关 <color=#E8F0FA>{0}/{1}</color>　<color=#FFC94D>★ {2}/{3}</color>",
                 cleared, levelCount, stars, levelCount * 3));
             SetText(_title, "选择关卡");
         }
@@ -172,6 +186,15 @@ namespace FTProject
         {
             n = Mathf.Clamp(n, 0, 3);
             return new string('★', n) + new string('☆', 3 - n);
+        }
+
+        /// <summary>星级富文本：已得星金色、未得星暗蓝灰（效果图 01）。**公开**给结算界面复用，
+        /// 否则"同一个星级在两处长得不一样"（与 Stars() 同样的理由）。</summary>
+        public static string StarRichText(int n)
+        {
+            n = Mathf.Clamp(n, 0, 3);
+            return "<color=#FFC94D>" + new string('★', n) + "</color>" +
+                   "<color=#3F4E63>" + new string('☆', 3 - n) + "</color>";
         }
 
         public static string Difficulty(int d)

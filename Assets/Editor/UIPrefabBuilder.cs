@@ -80,10 +80,11 @@ namespace FTProject.EditorTools
         // HudView 由本生成器管理的直接子节点集合（用于重建前的安全护栏）
         private static readonly string[] HudChildren =
         {
+            "Bg_Gold", "Bg_Hp", "Bg_Round",
             "GoldText", "HpText", "RoundText",
             "Btn_Tower_Normal", "Btn_Tower_Power", "Btn_Tower_Retard",
             "Btn_Tower_Pierce", "Btn_Tower_Laser",
-            "StartButton",
+            "StartButton", "SpeedButton",
         };
 
         // 塔按钮：节点名 / 塔型枚举 / 参考位置（锚点左下）。
@@ -116,9 +117,66 @@ namespace FTProject.EditorTools
         /// <summary>结算弹窗的星级字号：星星是那一屏的主角，明显大于正文</summary>
         private const int StarFontSize = 76;
 
+        /// <summary>
+        /// 倍速/开始两颗按钮（各 220×72）相对画布中心的横向偏移。
+        ///
+        /// 【为什么不放在"底中"】效果图 02 与策划案 §6.2.2 都把这两颗按钮放在底中 (∓140, 60)，
+        ///   但那一条 y=49..177 的底带**已经被五颗 128×128 塔按钮占满**（x 348..1572）：
+        ///   放在底中会盖住第 3、4 颗塔按钮，点击被 StartButton 抢走
+        ///   —— 等于"减速塔/穿透塔点不了"，是实打实的功能缺陷（效果图本身的几何冲突）。
+        ///   因此把两颗按钮挪到塔栏**两侧的空白区**（各留 64px 间距），
+        ///   纵向与塔栏同一中心线，视觉上仍是"底部一排"，但互不遮挡。
+        /// </summary>
+        private const float SideBtnX = 786f;   // 中心 x = 960 ± 786，避开塔栏的 348 / 1572
+        private const float SideBtnY = 77f;    // 与塔栏同中心线（距画布底边 113，按钮 72 高）
+
         private static readonly Color TextColor = new Color(1f, 1f, 1f, 1f);
         private static readonly Color ButtonColor = new Color(0.18f, 0.24f, 0.34f, 0.92f);
         private static readonly Color OutlineColor = new Color(0f, 0f, 0f, 0.85f);
+
+        // ------------------------------------------------------------------
+        // 深色科幻皮肤（Assets/_UIAssets/UI/，由 UISkinArtGenerator 生成）
+        //
+        // 【为什么 sprite 取不到就退化成纯色】皮肤是"表现层"，缺失不应让生成器失败。
+        //   取不到 → 用旧的纯色，UI 依然可用可读（与 PlaceholderArtGenerator 同一哲学）。
+        // 【九宫格必须配 Image.Type.Sliced】否则 45° 切角与发光会被拉伸成斜楔。
+        // ------------------------------------------------------------------
+
+        private const string UiArtDir = "Assets/_UIAssets/UI";
+
+        private static Sprite LoadUiSprite(string name)
+        {
+            return AssetDatabase.LoadAssetAtPath<Sprite>(UiArtDir + "/" + name + ".png");
+        }
+
+        /// <summary>给 Image 套九宫格皮肤；皮肤缺失时退化为 fallbackColor 纯色</summary>
+        private static void ApplySlicedSkin(Image img, string spriteName, Color fallbackColor)
+        {
+            Sprite sp = LoadUiSprite(spriteName);
+            if (sp != null)
+            {
+                img.sprite = sp;
+                img.type = Image.Type.Sliced;
+                img.color = Color.white;
+            }
+            else
+            {
+                img.color = fallbackColor;
+            }
+        }
+
+        /// <summary>塔型 → 建造栏图标 sprite 名（Normal/Power/Retard/Pierce/Laser）</summary>
+        private static string TowerIconSpriteName(int towerType)
+        {
+            switch (towerType)
+            {
+                case 2: return "UI_TowerIcon_Power";
+                case 3: return "UI_TowerIcon_Retard";
+                case 4: return "UI_TowerIcon_Pierce";
+                case 5: return "UI_TowerIcon_Laser";
+                default: return "UI_TowerIcon_Normal";
+            }
+        }
         [MenuItem("Tools/塔防/高级（单步重建）/补缺 UI 预制体（安全：只补缺失）", false, 304)]
         public static void EnsureMissingFromMenu()
         {
@@ -145,6 +203,20 @@ namespace FTProject.EditorTools
             EditorUtility.DisplayDialog("生成 UI 预制体",
                 string.Format("{0}\n\n{1}",
                     report.Errors > 0 ? "有错误，请查看 Console" : "完成", report.Text), "好");
+        }
+
+        /// <summary>
+        /// 无弹窗全量重建（供 Unity MCP / 批处理调用）。
+        /// 【为什么单开一个】带 EditorUtility.DisplayDialog 的菜单会**阻塞编辑器**，自动化会卡死。
+        /// </summary>
+        [MenuItem("Tools/塔防/自动化（无弹窗）/生成 UI 预制体（全量重建）", false, 902)]
+        public static void BuildNoDialog()
+        {
+            EditorUtil.Report report = new EditorUtil.Report();
+            BuildInternal(report);
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+            Debug.Log("[M0] UI 预制体生成结果：\n" + report.Text);
         }
 
         /// <summary>供一键向导调用（不弹窗）。**全量重建**，会覆盖手工改过的 prefab。</summary>
@@ -226,6 +298,14 @@ namespace FTProject.EditorTools
             Stretch((RectTransform)root.transform);
             root.AddComponent<HudView>();
 
+            // 芯片底（先建，保证在文本之下）：金币 / 生命 / 回合
+            CreateChip(root.transform, "Bg_Gold", new Vector2(0f, 1f), new Vector2(40f, -30f),
+                new Vector2(268f, 52f), "UI_Chip_Gold");
+            CreateChip(root.transform, "Bg_Hp", new Vector2(0f, 1f), new Vector2(40f, -84f),
+                new Vector2(268f, 52f), "UI_Chip_HP");
+            CreateChip(root.transform, "Bg_Round", new Vector2(0.5f, 1f), new Vector2(0f, -30f),
+                new Vector2(320f, 56f), "UI_Chip_Neutral");
+
             // 左上：金币 / 生命
             CreateText(root.transform, "GoldText", "金币 0",
                 new Vector2(0f, 1f), new Vector2(40f, -30f), new Vector2(520f, 52f),
@@ -240,12 +320,14 @@ namespace FTProject.EditorTools
                 new Vector2(0.5f, 1f), new Vector2(0f, -30f), new Vector2(700f, 56f),
                 TextAnchor.MiddleCenter, BigFontSize);
 
-            // 底部：三颗塔按钮 + 开始
+            // 底部：五颗塔按钮 + 倍速 + 开始
             for (int i = 0; i < TowerButtons.Length; i++)
             {
                 CreateTowerButton(root.transform, TowerButtons[i]);
             }
-            CreateButton(root.transform, "StartButton", "开始", new Vector2(140f, 60f));
+            // 左=倍速（工具类，次要）、右=开始（主 CTA）—— 与"原设计里 倍速在左、开始在右"一致
+            CreateButton(root.transform, "SpeedButton", "×1", new Vector2(-SideBtnX, SideBtnY));
+            CreateButton(root.transform, "StartButton", "开始", new Vector2(SideBtnX, SideBtnY), true);
 
             GameObject saved = PrefabUtility.SaveAsPrefabAsset(root, HudPath);
             Object.DestroyImmediate(root);
@@ -255,7 +337,25 @@ namespace FTProject.EditorTools
                 report.Error("保存失败：" + HudPath);
                 return;
             }
-            report.Ok("HudView.prefab（GoldText / HpText / RoundText / Btn_Tower_Normal·Power·Retard·Pierce·Laser / StartButton）");
+            report.Ok("HudView.prefab（Bg_Gold/Bg_Hp/Bg_Round / GoldText / HpText / RoundText / " +
+                      "Btn_Tower_Normal·Power·Retard·Pierce·Laser / StartButton / SpeedButton）");
+        }
+
+        /// <summary>HUD 上的"芯片底"（金币/生命/回合），不吃点击</summary>
+        private static void CreateChip(Transform parent, string name, Vector2 anchor, Vector2 anchoredPos,
+            Vector2 size, string spriteName)
+        {
+            GameObject go = new GameObject(name, typeof(RectTransform));
+            go.transform.SetParent(parent, false);
+            RectTransform rt = (RectTransform)go.transform;
+            rt.anchorMin = anchor;
+            rt.anchorMax = anchor;
+            rt.pivot = new Vector2(anchor.x, anchor.y);
+            rt.anchoredPosition = anchoredPos;
+            rt.sizeDelta = size;
+            Image img = go.AddComponent<Image>();
+            img.raycastTarget = false;
+            ApplySlicedSkin(img, spriteName, new Color(0.12f, 0.16f, 0.24f, 0.85f));
         }
 
         // ------------------------------------------------------------------
@@ -276,6 +376,19 @@ namespace FTProject.EditorTools
             cg.blocksRaycasts = false;
             cg.interactable = false;
             root.AddComponent<TipsView>();
+
+            // 提示条底（在文字之下；与 TipText 的 pivot(0.5,0.3) 对齐到同一中心）
+            GameObject bar = new GameObject("TipBar", typeof(RectTransform));
+            bar.transform.SetParent(root.transform, false);
+            RectTransform brt = (RectTransform)bar.transform;
+            brt.anchorMin = new Vector2(0.5f, 0.30f);
+            brt.anchorMax = new Vector2(0.5f, 0.30f);
+            brt.pivot = new Vector2(0.5f, 0.5f);
+            brt.anchoredPosition = new Vector2(0f, 18f);
+            brt.sizeDelta = new Vector2(1160f, 84f);
+            Image barImg = bar.AddComponent<Image>();
+            barImg.raycastTarget = false;
+            ApplySlicedSkin(barImg, "UI_Tip_Bar", new Color(0.06f, 0.09f, 0.13f, 0.72f));
 
             TextMeshProUGUI tip = CreateText(root.transform, "TipText", string.Empty,
                 new Vector2(0.5f, 0.30f), Vector2.zero, new Vector2(1100f, 60f),
@@ -337,7 +450,7 @@ namespace FTProject.EditorTools
             prt.anchoredPosition = Vector2.zero;
             prt.sizeDelta = new Vector2(560f, 460f);
             Image panelImg = panel.AddComponent<Image>();
-            panelImg.color = new Color(0.12f, 0.16f, 0.24f, 0.96f);
+            ApplySlicedSkin(panelImg, "UI_Panel_Cyan", new Color(0.12f, 0.16f, 0.24f, 0.96f));
 
             // 标题 / 属性
             CreateText(panel.transform, "Title", "防御塔  Lv.1",
@@ -350,7 +463,7 @@ namespace FTProject.EditorTools
             stats.enableWordWrapping = true;
 
             // 三个按钮（竖排）
-            CreatePanelButton(panel.transform, "UpgradeBtn", "升级", new Vector2(0f, -20f));
+            CreatePanelButton(panel.transform, "UpgradeBtn", "升级", new Vector2(0f, -20f), 320f, true);
             CreatePanelButton(panel.transform, "SellBtn", "出售", new Vector2(0f, -110f));
             CreatePanelButton(panel.transform, "CloseBtn", "关闭", new Vector2(0f, -200f));
 
@@ -395,7 +508,7 @@ namespace FTProject.EditorTools
             prt.anchoredPosition = Vector2.zero;
             prt.sizeDelta = panelSize;
             Image panelImg = panel.AddComponent<Image>();
-            panelImg.color = new Color(0.12f, 0.16f, 0.24f, 0.96f);
+            ApplySlicedSkin(panelImg, "UI_Panel_Cyan", new Color(0.12f, 0.16f, 0.24f, 0.96f));
 
             CreateText(panel.transform, "Title", title,
                 new Vector2(0.5f, 1f), new Vector2(0f, -36f), new Vector2(panelSize.x - 60f, 56f),
@@ -456,7 +569,7 @@ namespace FTProject.EditorTools
                 tpl.gameObject.SetActive(false);
             }
 
-            CreatePanelButton(panel.transform, "CloseBtn", "返回", new Vector2(0f, -270f));
+            CreatePanelButton(panel.transform, "CloseBtn", "返回", new Vector2(0f, -270f), 320f, true);
 
             GameObject saved = PrefabUtility.SaveAsPrefabAsset(root, SelectPath);
             Object.DestroyImmediate(root);
@@ -590,10 +703,10 @@ namespace FTProject.EditorTools
                 TextAnchor.MiddleCenter, SmallFontSize);
 
             // 按钮加宽到 420：Label 文案含关卡名（"下一关：雪原前哨"），
-            // 而 CreateText 关掉了自动换行，320 宽会溢出到面板外。
-            CreatePanelButton(panel.transform, "NextBtn", "下一关", new Vector2(0f, -136f), 420f);
-            CreatePanelButton(panel.transform, "RetryBtn", "重玩本关", new Vector2(0f, -216f), 420f);
-            CreatePanelButton(panel.transform, "SelectBtn", "返回关卡选择", new Vector2(0f, -290f), 420f);
+            // 而 CreateText 关掉了自动换行，320 宽会溢出到面板外。其余两枚回 320（规范口径）。
+            CreatePanelButton(panel.transform, "NextBtn", "下一关", new Vector2(0f, -136f), 420f, true);
+            CreatePanelButton(panel.transform, "RetryBtn", "重玩本关", new Vector2(0f, -216f));
+            CreatePanelButton(panel.transform, "SelectBtn", "返回关卡选择", new Vector2(0f, -290f));
 
             GameObject saved = PrefabUtility.SaveAsPrefabAsset(root, LevelClearPath);
             Object.DestroyImmediate(root);
@@ -611,7 +724,7 @@ namespace FTProject.EditorTools
         /// 会显式传更宽的值（TMP 此处关掉了自动换行，宽度不够会直接溢出到面板外）。
         /// </summary>
         private static void CreatePanelButton(Transform parent, string name, string label, Vector2 anchoredPos,
-            float width = 320f)
+            float width = 320f, bool primary = false)
         {
             GameObject go = new GameObject(name, typeof(RectTransform));
             go.transform.SetParent(parent, false);
@@ -624,7 +737,7 @@ namespace FTProject.EditorTools
             rt.sizeDelta = new Vector2(width, 72f);
 
             Image img = go.AddComponent<Image>();
-            img.color = ButtonColor;
+            ApplySlicedSkin(img, primary ? "UI_Btn_Primary" : "UI_Btn_Secondary", ButtonColor);
 
             Button btn = go.AddComponent<Button>();
             btn.targetGraphic = img;
@@ -761,7 +874,8 @@ namespace FTProject.EditorTools
             }
         }
 
-        private static void CreateButton(Transform parent, string name, string label, Vector2 anchoredPos)
+        private static void CreateButton(Transform parent, string name, string label, Vector2 anchoredPos,
+            bool primary = false)
         {
             GameObject go = new GameObject(name, typeof(RectTransform));
             go.transform.SetParent(parent, false);
@@ -774,7 +888,7 @@ namespace FTProject.EditorTools
             rt.sizeDelta = new Vector2(220f, 72f);
 
             Image img = go.AddComponent<Image>();
-            img.color = ButtonColor;    // sprite 为空时 Image 会画一个纯色矩形，够用
+            ApplySlicedSkin(img, primary ? "UI_Btn_Primary" : "UI_Btn_Secondary", ButtonColor);
 
             Button btn = go.AddComponent<Button>();
             btn.targetGraphic = img;    // ★ 必须显式指定，否则按钮没有按下反馈
@@ -807,14 +921,18 @@ namespace FTProject.EditorTools
             go.transform.SetParent(parent, false);
 
             RectTransform rt = (RectTransform)go.transform;
-            rt.anchorMin = new Vector2(0f, 0f);     // 左下锚点，与手工版坐标一致
-            rt.anchorMax = new Vector2(0f, 0f);
-            rt.pivot = new Vector2(0f, 0f);
+            // 【锚点必须是"屏幕中心"，不是左下角】spec.Pos 是按"画布中心为原点"量的
+            //   （效果图：五颗按钮的中心 x = -548/-274/0/274/548，y = -427）。
+            //   改成左下锚点会让整排按钮跑到画布外（表现为"塔建造栏整排消失、无法建塔"）——
+            //   这是 prefab 重建时真实发生过的回归，改动前请对照 Docs/ui_mockups/02b 的坐标。
+            rt.anchorMin = new Vector2(0.5f, 0.5f);
+            rt.anchorMax = new Vector2(0.5f, 0.5f);
+            rt.pivot = new Vector2(0.5f, 0.5f);
             rt.anchoredPosition = spec.Pos;
             rt.sizeDelta = new Vector2(128f, 128f);
 
             Image img = go.AddComponent<Image>();
-            img.color = ButtonColor;    // sprite 为空时画纯色矩形
+            ApplySlicedSkin(img, "UI_TowerBtn_Frame", ButtonColor);
 
             Button btn = go.AddComponent<Button>();
             btn.targetGraphic = img;
@@ -825,15 +943,16 @@ namespace FTProject.EditorTools
             cb.disabledColor = new Color(0.5f, 0.5f, 0.5f, 0.6f);
             btn.colors = cb;
 
-            // 图标占位子节点（美术资源到位后往这里塞 sprite）
+            // 图标子节点：占据按钮**上部**，底部留给价格签。
+            // 【为什么不是铺满整格】铺满会与底部的价格芯片重叠，数字直接压在图标上。
             GameObject icon = new GameObject("Image", typeof(RectTransform));
             icon.transform.SetParent(go.transform, false);
             RectTransform irt = (RectTransform)icon.transform;
-            irt.anchorMin = Vector2.zero;
-            irt.anchorMax = Vector2.one;
-            irt.pivot = new Vector2(0.5f, 0.5f);
-            irt.anchoredPosition = Vector2.zero;
-            irt.sizeDelta = Vector2.zero;
+            irt.anchorMin = new Vector2(0.5f, 1f);
+            irt.anchorMax = new Vector2(0.5f, 1f);
+            irt.pivot = new Vector2(0.5f, 1f);
+            irt.anchoredPosition = new Vector2(0f, -4f);
+            irt.sizeDelta = new Vector2(84f, 84f);   // 128 - 4 - 84 = 40 > 价格签顶边 36，留 4px 缝
             Image iconImg = icon.AddComponent<Image>();
             iconImg.color = new Color(1f, 1f, 1f, 0.85f);
             iconImg.raycastTarget = false;  // 不吃点击，点击交给父级 Button
@@ -844,13 +963,26 @@ namespace FTProject.EditorTools
                 iconImg.color = Color.white;
             }
 
+            // 价格签底（可选节点，HudView 视为可选）
+            GameObject priceBg = new GameObject("PriceBg", typeof(RectTransform));
+            priceBg.transform.SetParent(go.transform, false);
+            RectTransform pbrt = (RectTransform)priceBg.transform;
+            pbrt.anchorMin = new Vector2(0.5f, 0f);
+            pbrt.anchorMax = new Vector2(0.5f, 0f);
+            pbrt.pivot = new Vector2(0.5f, 0f);
+            pbrt.anchoredPosition = new Vector2(0f, 2f);
+            pbrt.sizeDelta = new Vector2(96f, 34f);
+            Image priceBgImg = priceBg.AddComponent<Image>();
+            priceBgImg.raycastTarget = false;
+            ApplySlicedSkin(priceBgImg, "UI_Chip_Neutral", new Color(0.08f, 0.11f, 0.16f, 0.8f));
+
             // 【契约】塔按钮**不配 Label**（Docs/HudView_Sync_and_TowerUI_Plan.md §2）：
             // 需要显示价格时用 PriceText 子节点，不要复用 Label —— 否则"按钮上的文字"
             // 会同时承担"塔名"和"价格"两种语义，将来加角标或换图标栏时必然打架。
             // 本轮只建节点、文案留空，由 HudView 按当前配置表价格刷新。
             TextMeshProUGUI pt = CreateText(go.transform, "PriceText", string.Empty,
                 new Vector2(0.5f, 0f), new Vector2(0f, 4f), new Vector2(128f, 36f),
-                TextAnchor.LowerCenter, SmallFontSize);
+                TextAnchor.LowerCenter, 24);   // 24 号才塞得进 96×34 的价格芯片（32 号会溢出）
             pt.raycastTarget = false;   // 不吃点击，点击交给父级 Button
         }
 
@@ -862,6 +994,14 @@ namespace FTProject.EditorTools
         /// </summary>
         private static Sprite LoadIcon(int towerType)
         {
+            // ① 优先用程序生成的深色科幻塔图标（UISkinArtGenerator 产出）
+            Sprite ui = LoadUiSprite(TowerIconSpriteName(towerType));
+            if (ui != null)
+            {
+                return ui;
+            }
+
+            // ② 退化为塔身贴图
             string path;
             switch (towerType)
             {

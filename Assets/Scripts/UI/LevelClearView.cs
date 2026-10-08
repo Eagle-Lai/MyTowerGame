@@ -96,18 +96,22 @@ namespace FTProject
                 : info.levelName);
 
             // ---- 星级评价 ----
-            // 星星字形统一走 SelectView.Stars，避免"同一个星级在两处长得不一样"
-            SetText(_stars, SelectView.Stars(info.stars));
+            // 星星字形统一走 SelectView.StarRichText，避免"同一个星级在两处长得不一样"
+            // （金色实心 + 暗蓝灰空心，与效果图 05 一致）
+            SetText(_stars, SelectView.StarRichText(info.stars));
 
             if (info.victory)
             {
-                SetText(_starDetail, string.Format("本次 {0}　　历史最高 {1}",
-                    SelectView.Stars(info.stars), SelectView.Stars(info.previousBest)));
+                SetText(_starDetail, string.Format(
+                    "<color=#9FB3C8>本次</color> {0}　　<color=#9FB3C8>历史最高</color> {1}",
+                    SelectView.StarRichText(info.stars), SelectView.StarRichText(info.previousBest)));
             }
             else
             {
                 // 失败不给星，但历史成绩仍然要显示 —— 这正是"重新进游戏也能看到记录"的体现
-                SetText(_starDetail, string.Format("历史最高 {0}", SelectView.Stars(info.previousBest)));
+                SetText(_starDetail, string.Format(
+                    "<color=#9FB3C8>历史最高</color> {0}",
+                    SelectView.StarRichText(info.previousBest)));
             }
 
             // "新纪录"只在真的超过历史最好成绩时出现

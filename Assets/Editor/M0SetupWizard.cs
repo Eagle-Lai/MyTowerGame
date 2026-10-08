@@ -121,6 +121,28 @@ namespace FTProject.EditorTools
         public static void SelfCheck()
         {
             EditorUtil.Report report = new EditorUtil.Report();
+            RunSelfCheckInternal(report);
+
+            Debug.Log("[M0] 自检报告：\n" + report.Text);
+            EditorUtility.DisplayDialog("M0 自检",
+                string.Format("错误 {0} · 警告 {1}\n\n详见 Console 的 [M0] 日志。",
+                    report.Errors, report.Warnings), "好");
+        }
+
+        /// <summary>
+        /// 无弹窗自检（供 Unity MCP / 批处理调用）。
+        /// 【为什么单开一个】带 EditorUtility.DisplayDialog 的菜单会**阻塞编辑器**，自动化会卡死。
+        /// </summary>
+        [MenuItem("Tools/塔防/自动化（无弹窗）/0. 自检", false, 903)]
+        public static void SelfCheckNoDialog()
+        {
+            EditorUtil.Report report = new EditorUtil.Report();
+            RunSelfCheckInternal(report);
+            Debug.Log("[M0] 自检报告：\n" + report.Text);
+        }
+
+        private static void RunSelfCheckInternal(EditorUtil.Report report)
+        {
             report.Head("M0 交付自检（" + System.DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + "）");
 
             CheckConfigJson(report);
@@ -143,11 +165,6 @@ namespace FTProject.EditorTools
             {
                 report.Error(string.Format("发现 {0} 个阻塞项，请按上面的 ✘ 逐条修复。", report.Errors));
             }
-
-            Debug.Log("[M0] 自检报告：\n" + report.Text);
-            EditorUtility.DisplayDialog("M0 自检",
-                string.Format("错误 {0} · 警告 {1}\n\n详见 Console 的 [M0] 日志。",
-                    report.Errors, report.Warnings), "好");
         }
 
         // ------------------------------------------------------------------
@@ -292,7 +309,7 @@ namespace FTProject.EditorTools
             }
             // UI
             CheckUiPrefab(report, UIPrefabBuilder.HudPath, "HudView",
-                new[] { "GoldText", "HpText", "RoundText", "StartButton",
+                new[] { "GoldText", "HpText", "RoundText", "StartButton", "SpeedButton",
                         "Btn_Tower_Normal", "Btn_Tower_Power", "Btn_Tower_Retard",
                         "Btn_Tower_Pierce", "Btn_Tower_Laser" });
             CheckUiPrefab(report, UIPrefabBuilder.TipsPath, "TipsView", new[] { "TipText" });

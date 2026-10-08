@@ -181,8 +181,32 @@ namespace FTProject.EditorTools
             ApplySpriteSettings(assetPath, ppu);
         }
 
+        /// <summary>
+        /// 把一张贴图写成 PNG 并设为九宫格 Sprite。
+        ///
+        /// 【为什么要单独一个入口】九宫格图（45° 切角面板 / 按钮）必须同时设置
+        /// `spriteBorder`（九宫格边距）与消费端的 `Image.type = Sliced`。
+        /// 只设其一 = 静默视觉 bug：切角与发光会被拉伸成巨大的斜楔 / 被裁掉。
+        /// border 必须 ≥ 切角尺寸 + 发光外扩半径，否则四角在拉伸时变形。
+        /// </summary>
+        public static void WriteSlicedSprite(string assetPath, Texture2D tex, Vector4 border, float ppu = DefaultPPU)
+        {
+            EnsureFolderOfFile(assetPath);
+            byte[] png = tex.EncodeToPNG();
+            Object.DestroyImmediate(tex);
+            System.IO.File.WriteAllBytes(assetPath, png);
+            AssetDatabase.ImportAsset(assetPath, ImportAssetOptions.ForceUpdate);
+            ApplySpriteSettings(assetPath, ppu, border);
+        }
+
         /// <summary>把一张贴图设为 Sprite（Single 模式、无压缩、不生成 mipmap）</summary>
         public static void ApplySpriteSettings(string assetPath, float ppu)
+        {
+            ApplySpriteSettings(assetPath, ppu, Vector4.zero);
+        }
+
+        /// <summary>同上，额外设置九宫格边距（left,bottom,right,top）</summary>
+        public static void ApplySpriteSettings(string assetPath, float ppu, Vector4 border)
         {
             TextureImporter ti = AssetImporter.GetAtPath(assetPath) as TextureImporter;
             if (ti == null)
@@ -192,6 +216,7 @@ namespace FTProject.EditorTools
             ti.textureType = TextureImporterType.Sprite;
             ti.spriteImportMode = SpriteImportMode.Single;
             ti.spritePixelsPerUnit = ppu;
+            ti.spriteBorder = border;
             ti.filterMode = FilterMode.Bilinear;
             ti.mipmapEnabled = false;
             ti.alphaIsTransparency = true;
@@ -299,14 +324,13 @@ namespace FTProject.EditorTools
         {
             int texW = tex.width;
             int texH = tex.height;
-            float aa = 1f;
             for (int iy = 0; iy < texH; iy++)
             {
                 for (int ix = 0; ix < texW; ix++)
                 {
                     Vector2 p = new Vector2(ix + 0.5f, iy + 0.5f);
-                    float d = EdgeDistance(p, a, b, c);
-                    float alpha = Mathf.Clamp01(0.5f - d / aa);
+                    float d = EdgeDistance(p, a, b, c);   // >0 在内部（像素距离）
+                    float alpha = Mathf.Clamp01(d + 0.5f);
                     if (alpha <= 0f)
                     {
                         continue;
@@ -318,19 +342,22 @@ namespace FTProject.EditorTools
             }
         }
 
-        /// <summary>点到三角形三条边的最小有向距离（负值表示在内部）</summary>
+        /// <summary>
+        /// 点到三角形三条边的有符号距离（单位：像素）。**返回值 >0 表示在内部**，与顶点绕向无关。
+        ///
+        /// 【为什么不能用 max(叉积)】叉积是面积量（像素²），必须除以边长才是距离；
+        /// 且内部点对三条边同号 —— 顺时针为负、逆时针为正。
+        /// 取 max 在逆时针（内部皆正）时会得到"很大的正数"，被判成外部 → 三角形整个消失。
+        /// 这里改为 max(min, -max)，两种绕向都能得到正确的内部正值。
+        /// </summary>
         private static float EdgeDistance(Vector2 p, Vector2 a, Vector2 b, Vector2 c)
         {
-            float d1 = Cross(p, a, b);
-            float d2 = Cross(p, b, c);
-            float d3 = Cross(p, c, a);
-            float max = Mathf.Max(d1, Mathf.Max(d2, d3));
-            // 归一化到"像素距离"
-            float scale = 1f / Mathf.Max(0.0001f, Mathf.Max(new float[]
-            {
-                (b - a).magnitude, (c - b).magnitude, (a - c).magnitude
-            }));
-            return max * scale;
+            float d1 = Cross(p, a, b) / Mathf.Max(0.0001f, (b - a).magnitude);
+            float d2 = Cross(p, b, c) / Mathf.Max(0.0001f, (c - b).magnitude);
+            float d3 = Cross(p, c, a) / Mathf.Max(0.0001f, (a - c).magnitude);
+            float dmin = Mathf.Min(d1, Mathf.Min(d2, d3));
+            float dmax = Mathf.Max(d1, Mathf.Max(d2, d3));
+            return Mathf.Max(dmin, -dmax);
         }
 
         private static float Cross(Vector2 p, Vector2 a, Vector2 b)
