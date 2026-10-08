@@ -122,3 +122,15 @@ __pycache__/
 .DS_Store
 Thumbs.db
 Desktop.ini
+
+# ---------------------------------------------------------------------------
+# 7. P1 工程卫生：退役归档区（移出主干但不物理删除，保留可回溯）
+# ---------------------------------------------------------------------------
+# 存放 Luban 示例遗留（Csharp_CustomTemplate_AsyncLoad / GenerateDatas / Luban_Config_Gen）
+# 与历史打包 demo（tips.zip / tips.apk / ttttt_buildplayer）。均不参与 Unity 编译。
+# 需要时从 git 历史按原路径取回；平时不入库以免仓库随改动膨胀。
+/.deprecated/
+
+# 历史遗留的 38MB 打包 demo 压缩包（已移入 .deprecated/）
+/tips.zip
+/tips.apk
