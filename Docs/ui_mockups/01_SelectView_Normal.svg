@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 01_SelectView_Normal.svg — 选关界面（兼主菜单）正常态【正式版·深色科幻】
+     几何与 SelectView.prefab 实测一致（勿改坐标）；视觉为深色科幻重设计
+     数据源: Assets/Prefabs/UI/SelectView.prefab + SelectView.cs
+     Panel 1120×640 居中；关卡按钮运行时按 tbsceneinfo 克隆：4 列网格 240×96，GapX 24 / GapY 20 -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" width="1920" height="1080">
+  <defs>
+    <linearGradient id="ds-panel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2A3444"/><stop offset="0.5" stop-color="#1B2330"/><stop offset="1" stop-color="#222C3B"/>
+    </linearGradient>
+    <radialGradient id="ds-vig" cx="0.5" cy="0.5" r="0.75">
+      <stop offset="0.62" stop-color="#0B0E14" stop-opacity="0"/><stop offset="1" stop-color="#0B0E14" stop-opacity="0.66"/>
+    </radialGradient>
+    <filter id="ds-neon" x="-60%" y="-60%" width="220%" height="220%">
+      <feDropShadow dx="0" dy="0" stdDeviation="3" flood-color="#35E0FF" flood-opacity="0.85"/>
+    </filter>
+    <filter id="ds-neon-gold" x="-60%" y="-60%" width="220%" height="220%">
+      <feDropShadow dx="0" dy="0" stdDeviation="2.5" flood-color="#FFC94D" flood-opacity="0.75"/>
+    </filter>
+    <pattern id="ds-stars" width="220" height="220" patternUnits="userSpaceOnUse">
+      <circle cx="30" cy="40" r="1.2" fill="#E8F0FA" fill-opacity="0.4"/>
+      <circle cx="130" cy="22" r="0.8" fill="#E8F0FA" fill-opacity="0.28"/>
+      <circle cx="186" cy="104" r="1.4" fill="#35E0FF" fill-opacity="0.3"/>
+      <circle cx="74" cy="150" r="0.9" fill="#E8F0FA" fill-opacity="0.22"/>
+    </pattern>
+  </defs>
+
+  <!-- 背景：暗色战场虚化（启动即进选关，背景为场景实拍感） -->
+  <rect width="1920" height="1080" fill="#10141D"/>
+  <rect width="1920" height="1080" fill="url(#ds-stars)"/>
+  <g opacity="0.35">
+    <rect x="240" y="140" width="1440" height="800" fill="#131A26"/>
+    <path d="M240 300H1680M240 460H1680M240 620H1680M240 780H1680" stroke="#1C2532" stroke-width="2"/>
+    <path d="M560 140V940M880 140V940M1200 140V940M1520 140V940" stroke="#1C2532" stroke-width="2"/>
+    <rect x="240" y="140" width="1440" height="800" fill="none" stroke="#233246" stroke-width="2"/>
+    <path d="M320 540 H1600" stroke="#35E0FF" stroke-opacity="0.25" stroke-width="20"/>
+    <circle cx="640" cy="420" r="30" fill="#2E4A66" stroke="#5E7396" stroke-width="3"/>
+    <circle cx="1120" cy="660" r="30" fill="#1C2532" stroke="#5E7396" stroke-width="3"/>
+  </g>
+  <!-- Bg 遮罩（点击不关闭）+ 暗角 -->
+  <rect width="1920" height="1080" fill="#000000" fill-opacity="0.45"/>
+  <rect width="1920" height="1080" fill="url(#ds-vig)"/>
+
+  <!-- Panel 1120×640 → x400..1520, y220..860（切角金属面板） -->
+  <polygon points="400,236 416,220 1504,220 1520,236 1520,844 1504,860 416,860 400,844" fill="url(#ds-panel)" stroke="#3A4A63" stroke-width="2"/>
+  <polygon points="404,238 418,224 1502,224 1516,238 1516,842 1502,856 418,856 404,842" fill="none" stroke="#35E0FF" stroke-opacity="0.22" stroke-width="1"/>
+  <path d="M416 221 H1504" stroke="#35E0FF" stroke-opacity="0.4" stroke-width="2"/>
+
+  <!-- Title pos(0,-36) 1060×56 38号（顶中锚） -->
+  <path d="M800 282 H856" stroke="#35E0FF" stroke-opacity="0.5" stroke-width="2"/>
+  <polygon points="868,274 876,282 868,290 860,282" fill="#35E0FF" fill-opacity="0.7"/>
+  <polygon points="1052,274 1060,282 1052,290 1044,282" fill="#35E0FF" fill-opacity="0.7"/>
+  <path d="M1064 282 H1120" stroke="#35E0FF" stroke-opacity="0.5" stroke-width="2"/>
+  <text x="960" y="296" font-size="40" fill="#E8F0FA" font-weight="700" text-anchor="middle">选择关卡</text>
+  <!-- Summary pos(0,-92) 1000×44：运行时 "已通关 {c}/{n}　★ {s}/{n*3}" -->
+  <text x="960" y="352" font-size="30" fill="#9FB3C8" text-anchor="middle">已通关 <tspan fill="#E8F0FA">3/8</tspan>　<tspan fill="#FFC94D" filter="url(#ds-neon-gold)">★ 7/24</tspan></text>
+
+  <!-- 关卡按钮 4 列网格：240×96，x = 440/704/968/1232，行 y = 390 / 506 -->
+  <!-- 行1（已通关） -->
+  <g>
+    <rect x="440" y="390" width="240" height="96" fill="url(#ds-panel)" stroke="#3A4A63" stroke-width="2"/>
+    <path d="M440 391 H680" stroke="#35E0FF" stroke-opacity="0.35" stroke-width="2"/>
+    <text x="560" y="424" font-size="26" fill="#E8F0FA" font-weight="600" text-anchor="middle">关卡 1</text>
+    <text x="560" y="456" font-size="26" fill="#FFC94D" text-anchor="middle" filter="url(#ds-neon-gold)">★★★</text>
+    <text x="560" y="480" font-size="22" fill="#7A8CA6" text-anchor="middle">难度 Ⅰ</text>
+
+    <rect x="704" y="390" width="240" height="96" fill="url(#ds-panel)" stroke="#3A4A63" stroke-width="2"/>
+    <path d="M704 391 H944" stroke="#35E0FF" stroke-opacity="0.35" stroke-width="2"/>
+    <text x="824" y="424" font-size="26" fill="#E8F0FA" font-weight="600" text-anchor="middle">关卡 2</text>
+    <text x="824" y="456" font-size="26" fill="#FFC94D" text-anchor="middle">★★<tspan fill="#3F4E63">☆</tspan></text>
+    <text x="824" y="480" font-size="22" fill="#7A8CA6" text-anchor="middle">难度 Ⅰ</text>
+
+    <rect x="968" y="390" width="240" height="96" fill="url(#ds-panel)" stroke="#3A4A63" stroke-width="2"/>
+    <path d="M968 391 H1208" stroke="#35E0FF" stroke-opacity="0.35" stroke-width="2"/>
+    <text x="1088" y="424" font-size="26" fill="#E8F0FA" font-weight="600" text-anchor="middle">关卡 3</text>
+    <text x="1088" y="456" font-size="26" fill="#FFC94D" text-anchor="middle">★<tspan fill="#3F4E63">☆☆</tspan></text>
+    <text x="1088" y="480" font-size="22" fill="#7A8CA6" text-anchor="middle">难度 Ⅰ</text>
+
+    <rect x="1232" y="390" width="240" height="96" fill="url(#ds-panel)" stroke="#3A4A63" stroke-width="2"/>
+    <path d="M1232 391 H1472" stroke="#35E0FF" stroke-opacity="0.35" stroke-width="2"/>
+    <text x="1352" y="424" font-size="26" fill="#E8F0FA" font-weight="600" text-anchor="middle">关卡 4</text>
+    <text x="1352" y="456" font-size="26" fill="#3F4E63" text-anchor="middle">☆☆☆</text>
+    <text x="1352" y="480" font-size="22" fill="#7A8CA6" text-anchor="middle">难度 Ⅱ</text>
+  </g>
+  <!-- 行2（已解锁未通关） -->
+  <g>
+    <rect x="440" y="506" width="240" height="96" fill="url(#ds-panel)" stroke="#3A4A63" stroke-width="2"/>
+    <path d="M440 507 H680" stroke="#35E0FF" stroke-opacity="0.35" stroke-width="2"/>
+    <text x="560" y="540" font-size="26" fill="#E8F0FA" font-weight="600" text-anchor="middle">关卡 5</text>
+    <text x="560" y="572" font-size="26" fill="#3F4E63" text-anchor="middle">☆☆☆</text>
+    <text x="560" y="596" font-size="22" fill="#7A8CA6" text-anchor="middle">难度 Ⅱ</text>
+
+    <rect x="704" y="506" width="240" height="96" fill="url(#ds-panel)" stroke="#3A4A63" stroke-width="2"/>
+    <path d="M704 507 H944" stroke="#35E0FF" stroke-opacity="0.35" stroke-width="2"/>
+    <text x="824" y="540" font-size="26" fill="#E8F0FA" font-weight="600" text-anchor="middle">关卡 6</text>
+    <text x="824" y="572" font-size="26" fill="#3F4E63" text-anchor="middle">☆☆☆</text>
+    <text x="824" y="596" font-size="22" fill="#7A8CA6" text-anchor="middle">难度 Ⅱ</text>
+
+    <rect x="968" y="506" width="240" height="96" fill="url(#ds-panel)" stroke="#3A4A63" stroke-width="2"/>
+    <path d="M968 507 H1208" stroke="#35E0FF" stroke-opacity="0.35" stroke-width="2"/>
+    <text x="1088" y="540" font-size="26" fill="#E8F0FA" font-weight="600" text-anchor="middle">关卡 7</text>
+    <text x="1088" y="572" font-size="26" fill="#3F4E63" text-anchor="middle">☆☆☆</text>
+    <text x="1088" y="596" font-size="22" fill="#7A8CA6" text-anchor="middle">难度 Ⅲ</text>
+
+    <rect x="1232" y="506" width="240" height="96" fill="url(#ds-panel)" stroke="#3A4A63" stroke-width="2"/>
+    <path d="M1232 507 H1472" stroke="#35E0FF" stroke-opacity="0.35" stroke-width="2"/>
+    <text x="1352" y="540" font-size="26" fill="#E8F0FA" font-weight="600" text-anchor="middle">关卡 8</text>
+    <text x="1352" y="572" font-size="26" fill="#3F4E63" text-anchor="middle">☆☆☆</text>
+    <text x="1352" y="596" font-size="22" fill="#7A8CA6" text-anchor="middle">难度 Ⅲ</text>
+  </g>
+
+  <!-- CloseBtn pos(0,-270) 320×72 → 中心(960,810) -->
+  <polygon points="812,774 1108,774 1120,786 1120,834 1108,846 812,846 800,834 800,786" fill="#123845" stroke="#35E0FF" stroke-width="2.5" filter="url(#ds-neon)"/>
+  <text x="960" y="821" font-size="30" fill="#DFFAFF" font-weight="600" text-anchor="middle">返 回</text>
+
+  <!-- ===== 标注层（图纸引出线，交付实现时可删） ===== -->
+  <g id="annotations" font-family="Consolas,monospace">
+    <text x="420" y="252" font-size="20" fill="#9FB3C8" fill-opacity="0.8">Panel 1120×640 居中 · Bg 遮罩点击不关闭</text>
+    <text x="420" y="640" font-size="20" fill="#9FB3C8" fill-opacity="0.8">关卡按钮：模板运行时按 tbsceneinfo 克隆，240×96，4 列，GapX 24 / GapY 20</text>
+    <line x1="680" y1="630" x2="680" y2="610" stroke="#9FB3C8" stroke-opacity="0.5" stroke-width="1" stroke-dasharray="4 3"/>
+    <text x="1140" y="640" font-size="20" fill="#9FB3C8" fill-opacity="0.8">三行文案：关卡名 / 历史星级 / 难度（Ⅰ/Ⅱ/Ⅲ）</text>
+    <text x="1140" y="816" font-size="20" fill="#9FB3C8" fill-opacity="0.8">CloseBtn 320×72（弹窗按钮统一规格）</text>
+    <line x1="1136" y1="812" x2="1124" y2="810" stroke="#9FB3C8" stroke-opacity="0.5" stroke-width="1" stroke-dasharray="4 3"/>
+    <text x="420" y="740" font-size="20" fill="#9FB3C8" fill-opacity="0.8">有局内快照时，点关卡按钮直接续玩（SaveManager 回合边界快照）</text>
+    <text x="44" y="1040" font-size="16" fill="#9FB3C8" fill-opacity="0.6">深色科幻正式版 · SelectView.prefab + SelectView.cs · 关卡数据 tbsceneinfo（8 关 · initialGold 100→2400 / initialHp 20→12）</text>
+  </g>
+</svg>

@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 07b_TowerInfoView_SellConfirm.svg — 升级/出售面板（出售两段确认态）【正式版·深色科幻】
+     母版: 07_TowerInfoView_Normal.svg；差异：出售按钮 → "确认出售？"（红色警示），3 秒超时自动还原 -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" width="1920" height="1080">
+  <defs>
+    <linearGradient id="ds-panel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2A3444"/><stop offset="0.5" stop-color="#1B2330"/><stop offset="1" stop-color="#222C3B"/>
+    </linearGradient>
+    <radialGradient id="ds-vig" cx="0.5" cy="0.5" r="0.75">
+      <stop offset="0.62" stop-color="#0B0E14" stop-opacity="0"/><stop offset="1" stop-color="#0B0E14" stop-opacity="0.66"/>
+    </radialGradient>
+    <filter id="ds-neon" x="-60%" y="-60%" width="220%" height="220%">
+      <feDropShadow dx="0" dy="0" stdDeviation="3" flood-color="#35E0FF" flood-opacity="0.85"/>
+    </filter>
+    <filter id="ds-neon-gold" x="-60%" y="-60%" width="220%" height="220%">
+      <feDropShadow dx="0" dy="0" stdDeviation="2.5" flood-color="#FFC94D" flood-opacity="0.75"/>
+    </filter>
+    <filter id="ds-neon-red" x="-60%" y="-60%" width="220%" height="220%">
+      <feDropShadow dx="0" dy="0" stdDeviation="3" flood-color="#FF4D5E" flood-opacity="0.85"/>
+    </filter>
+    <pattern id="ds-stars" width="220" height="220" patternUnits="userSpaceOnUse">
+      <circle cx="30" cy="40" r="1.2" fill="#E8F0FA" fill-opacity="0.4"/>
+      <circle cx="130" cy="22" r="0.8" fill="#E8F0FA" fill-opacity="0.28"/>
+      <circle cx="186" cy="104" r="1.4" fill="#35E0FF" fill-opacity="0.3"/>
+      <circle cx="74" cy="150" r="0.9" fill="#E8F0FA" fill-opacity="0.22"/>
+    </pattern>
+  </defs>
+
+  <rect width="1920" height="1080" fill="#10141D"/>
+  <rect width="1920" height="1080" fill="url(#ds-stars)"/>
+  <g opacity="0.6">
+    <rect x="240" y="140" width="1440" height="800" fill="#131A26"/>
+    <path d="M240 300H1680M240 460H1680M240 620H1680M240 780H1680" stroke="#1C2532" stroke-width="2"/>
+    <rect x="240" y="140" width="1440" height="800" fill="none" stroke="#233246" stroke-width="2"/>
+    <path d="M320 540 H1600" stroke="#35E0FF" stroke-opacity="0.25" stroke-width="20"/>
+    <circle cx="560" cy="420" r="240" fill="#35E0FF" fill-opacity="0.04"/>
+    <circle cx="560" cy="420" r="240" fill="none" stroke="#35E0FF" stroke-opacity="0.6" stroke-width="2.5"/>
+    <circle cx="560" cy="420" r="160" fill="none" stroke="#35E0FF" stroke-opacity="0.18" stroke-width="1.5" stroke-dasharray="4 8"/>
+    <path d="M560 420 L560 180 A240 240 0 0 1 680 212 Z" fill="#35E0FF" fill-opacity="0.10"/>
+    <circle cx="560" cy="420" r="30" fill="#2E4A66" stroke="#5E7396" stroke-width="3"/>
+    <path d="M532 420 a28 28 0 0 1 56 0" fill="none" stroke="#8C6239" stroke-width="5"/>
+    <g transform="rotate(48 560 420)"><rect x="554" y="392" width="12" height="52" rx="4" fill="#9FB3C8" stroke="#3A4A63" stroke-width="1.5"/><rect x="528" y="414" width="64" height="12" rx="4" fill="#9FB3C8" stroke="#3A4A63" stroke-width="1.5"/></g>
+    <circle cx="560" cy="420" r="42" fill="none" stroke="#FFC94D" stroke-width="2.5" filter="url(#ds-neon-gold)"/>
+  </g>
+  <rect width="1920" height="1080" fill="#000000" fill-opacity="0.35"/>
+  <rect width="1920" height="1080" fill="url(#ds-vig)"/>
+
+  <polygon points="680,326 696,310 1224,310 1240,326 1240,754 1224,770 696,770 680,754" fill="url(#ds-panel)" stroke="#3A4A63" stroke-width="2"/>
+  <polygon points="684,328 698,314 1222,314 1236,328 1236,752 1222,766 698,766 684,752" fill="none" stroke="#35E0FF" stroke-opacity="0.22" stroke-width="1"/>
+  <path d="M696 311 H1224" stroke="#35E0FF" stroke-opacity="0.4" stroke-width="2"/>
+
+  <g>
+    <circle cx="798" cy="364" r="15" fill="#2E4A66" stroke="#5E7396" stroke-width="2"/>
+    <path d="M784 364 a13 13 0 0 1 26 0" fill="none" stroke="#8C6239" stroke-width="3"/>
+    <g transform="rotate(45 798 363)"><rect x="795" y="350" width="6" height="26" rx="2" fill="#9FB3C8"/><rect x="782" y="360" width="26" height="6" rx="2" fill="#9FB3C8"/></g>
+  </g>
+  <text x="984" y="372" font-size="34" fill="#E8F0FA" font-weight="600" text-anchor="middle">NormalTower  <tspan fill="#35E0FF">Lv.1</tspan></text>
+  <text x="960" y="444" font-size="28" fill="#9FB3C8" text-anchor="middle">攻击 <tspan fill="#E8F0FA">12</tspan>　射程 <tspan fill="#E8F0FA">3 格</tspan>　攻速 <tspan fill="#E8F0FA">0.40s</tspan>　DPS <tspan fill="#E8F0FA">30.0</tspan></text>
+
+  <polygon points="812,524 1108,524 1120,536 1120,584 1108,596 812,596 800,584 800,536" fill="#123845" stroke="#35E0FF" stroke-width="2.5" filter="url(#ds-neon)"/>
+  <text x="960" y="571" font-size="30" fill="#DFFAFF" font-weight="600" text-anchor="middle">升级 (<tspan fill="#FFC94D">40</tspan>)</text>
+  <!-- SellBtn 确认态："确认出售？"红色警示 -->
+  <polygon points="812,614 1108,614 1120,626 1120,674 1108,686 812,686 800,674 800,626" fill="#3A1A22" stroke="#FF4D5E" stroke-width="2.5" filter="url(#ds-neon-red)"/>
+  <text x="960" y="661" font-size="30" fill="#FFD9DD" font-weight="600" text-anchor="middle">确认出售？</text>
+  <polygon points="812,704 1108,704 1120,716 1120,764 1108,776 812,776 800,764 800,716" fill="url(#ds-panel)" stroke="#3A4A63" stroke-width="2"/>
+  <text x="960" y="751" font-size="30" fill="#C9D6E8" text-anchor="middle">关 闭</text>
+
+  <!-- ===== 标注层（图纸引出线，交付实现时可删） ===== -->
+  <g id="annotations" font-family="Consolas,monospace">
+    <text x="1140" y="640" font-size="20" fill="#9FB3C8" fill-opacity="0.8">第一次点出售 → 按钮变"确认出售？"（红）</text>
+    <line x1="1136" y1="644" x2="1122" y2="648" stroke="#9FB3C8" stroke-opacity="0.5" stroke-width="1" stroke-dasharray="4 3"/>
+    <text x="1140" y="672" font-size="20" fill="#9FB3C8" fill-opacity="0.8">3 秒内再点 = 确认成交（+18 金币，塔回收）</text>
+    <text x="1140" y="704" font-size="20" fill="#9FB3C8" fill-opacity="0.8">超时/点别处 = 自动还原"出售 (+18)"</text>
+    <text x="656" y="810" font-size="20" fill="#9FB3C8" fill-opacity="0.8">倒计时用 unscaledDeltaTime：面板不受 Time.timeScale 影响（暂停中也可操作且计时正常）</text>
+    <text x="44" y="1040" font-size="16" fill="#9FB3C8" fill-opacity="0.6">深色科幻正式版 · 07b 出售确认变体 · 危险动作=红描边 + 霓虹警示，两段式防误触</text>
+  </g>
+</svg>

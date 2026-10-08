@@ -1,0 +1,207 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 09_WorldLayer_Combat.svg — 战斗世界层（非 UGUI）【正式版·深色科幻】
+     几何与 BoardView/PathArrowView/BaseTower/BaseEnemy 实测语义一致（勿改坐标）；视觉为深色科幻重设计
+     塔形依据 Assets/_UIAssets/Tower 真实美术（深蓝四联炮/枪灰火焰箱/八边基座蓝水晶）；
+     格子四态语义与 CellType 一致 · cellSize=1（本图 1 格=80px 仅为示意比例） -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" width="1920" height="1080">
+  <defs>
+    <linearGradient id="ds-crystal" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#CFF6FF"/><stop offset="1" stop-color="#35E0FF"/>
+    </linearGradient>
+    <radialGradient id="ds-fire" cx="0.5" cy="0.35" r="0.8">
+      <stop offset="0" stop-color="#FFC94D"/><stop offset="1" stop-color="#FF7A29"/>
+    </radialGradient>
+    <radialGradient id="ds-vig" cx="0.5" cy="0.5" r="0.75">
+      <stop offset="0.62" stop-color="#0B0E14" stop-opacity="0"/><stop offset="1" stop-color="#0B0E14" stop-opacity="0.66"/>
+    </radialGradient>
+    <filter id="ds-neon" x="-60%" y="-60%" width="220%" height="220%">
+      <feDropShadow dx="0" dy="0" stdDeviation="3" flood-color="#35E0FF" flood-opacity="0.85"/>
+    </filter>
+    <filter id="ds-neon-gold" x="-60%" y="-60%" width="220%" height="220%">
+      <feDropShadow dx="0" dy="0" stdDeviation="2.5" flood-color="#FFC94D" flood-opacity="0.75"/>
+    </filter>
+    <filter id="ds-neon-red" x="-60%" y="-60%" width="220%" height="220%">
+      <feDropShadow dx="0" dy="0" stdDeviation="3" flood-color="#FF4D5E" flood-opacity="0.85"/>
+    </filter>
+    <filter id="ds-bloom" x="-80%" y="-80%" width="260%" height="260%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="4" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <pattern id="ds-stars" width="220" height="220" patternUnits="userSpaceOnUse">
+      <circle cx="30" cy="40" r="1.2" fill="#E8F0FA" fill-opacity="0.4"/>
+      <circle cx="130" cy="22" r="0.8" fill="#E8F0FA" fill-opacity="0.28"/>
+      <circle cx="186" cy="104" r="1.4" fill="#35E0FF" fill-opacity="0.3"/>
+      <circle cx="74" cy="150" r="0.9" fill="#E8F0FA" fill-opacity="0.22"/>
+    </pattern>
+    <pattern id="ds-hazard" width="16" height="16" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <rect width="7" height="16" fill="#FF4D5E" fill-opacity="0.12"/>
+    </pattern>
+  </defs>
+
+  <!-- ===== 深空战场底板 ===== -->
+  <rect width="1920" height="1080" fill="#10141D"/>
+  <rect width="1920" height="1080" fill="url(#ds-stars)"/>
+
+  <!-- 棋盘 18x10，cell 80px，原点(240,140) -->
+  <rect x="240" y="140" width="1440" height="800" fill="#131A26"/>
+  <path d="M240 140H1680M240 220H1680M240 300H1680M240 380H1680M240 460H1680M240 540H1680M240 620H1680M240 700H1680M240 780H1680M240 860H1680M240 940H1680" stroke="#1C2532" stroke-width="1.5"/>
+  <path d="M240 140V940M320 140V940M400 140V940M480 140V940M560 140V940M640 140V940M720 140V940M800 140V940M880 140V940M960 140V940M1040 140V940M1120 140V940M1200 140V940M1280 140V940M1360 140V940M1440 140V940M1520 140V940M1600 140V940M1680 140V940" stroke="#1C2532" stroke-width="1.5"/>
+  <rect x="240" y="140" width="1440" height="800" fill="none" stroke="#233246" stroke-width="2"/>
+  <path d="M240 184 V140 H284 M1636 140 H1680 V184 M1680 896 V940 H1636 M284 940 H240 V896" fill="none" stroke="#35E0FF" stroke-opacity="0.55" stroke-width="3"/>
+
+  <!-- 障碍格 Cell_Blocked（暗色禁区 + 红色警示斜纹） -->
+  <g fill="#161E2C" stroke="#FF4D5E" stroke-opacity="0.45" stroke-width="2">
+    <rect x="720" y="140" width="80" height="80"/><rect x="720" y="220" width="80" height="80"/><rect x="720" y="300" width="80" height="80"/><rect x="720" y="380" width="80" height="80"/>
+    <rect x="1120" y="620" width="80" height="80"/><rect x="1120" y="700" width="80" height="80"/><rect x="1120" y="780" width="80" height="80"/><rect x="1120" y="860" width="80" height="80"/>
+  </g>
+  <g fill="url(#ds-hazard)">
+    <rect x="720" y="140" width="80" height="80"/><rect x="720" y="220" width="80" height="80"/><rect x="720" y="300" width="80" height="80"/><rect x="720" y="380" width="80" height="80"/>
+    <rect x="1120" y="620" width="80" height="80"/><rect x="1120" y="700" width="80" height="80"/><rect x="1120" y="780" width="80" height="80"/><rect x="1120" y="860" width="80" height="80"/>
+  </g>
+
+  <!-- S 出生传送门（青） / E 核心（红） -->
+  <g>
+    <circle cx="280" cy="540" r="34" fill="none" stroke="#35E0FF" stroke-width="3" filter="url(#ds-neon)"/>
+    <circle cx="280" cy="540" r="24" fill="#35E0FF" fill-opacity="0.12"/>
+    <path d="M280 522 a18 18 0 0 1 18 18" fill="none" stroke="#35E0FF" stroke-opacity="0.6" stroke-width="2.5"/>
+    <path d="M280 558 a18 18 0 0 1 -18 -18" fill="none" stroke="#35E0FF" stroke-opacity="0.6" stroke-width="2.5"/>
+    <text x="280" y="549" font-size="26" fill="#DFFAFF" text-anchor="middle" font-weight="700">S</text>
+  </g>
+  <g>
+    <circle cx="1640" cy="540" r="34" fill="none" stroke="#FF4D5E" stroke-width="3" filter="url(#ds-neon-red)"/>
+    <circle cx="1640" cy="540" r="16" fill="#FF4D5E" fill-opacity="0.3" filter="url(#ds-bloom)"/>
+    <text x="1640" y="549" font-size="26" fill="#FFB9C0" text-anchor="middle" font-weight="700">E</text>
+  </g>
+
+  <!-- 路径（A* 绕行障碍）+ Path_Arrow 青色发光链 -->
+  <path d="M320 540 H680 V460 H1160 V540 H1600" fill="none" stroke="#35E0FF" stroke-opacity="0.14" stroke-width="26"/>
+  <path d="M320 540 H680 V460 H1160 V540 H1600" fill="none" stroke="#35E0FF" stroke-opacity="0.5" stroke-width="3" stroke-dasharray="18 14"/>
+  <g fill="#35E0FF" opacity="0.75">
+    <path d="M480 528 l24 12 -24 12 z"/><path d="M600 528 l24 12 -24 12 z"/>
+    <path d="M668 496 l12 -28 12 28 z"/>
+    <path d="M800 448 l24 12 -24 12 z"/><path d="M960 448 l24 12 -24 12 z"/>
+    <path d="M1148 496 l12 -28 12 28 z"/>
+    <path d="M1280 528 l24 12 -24 12 z"/><path d="M1440 528 l24 12 -24 12 z"/>
+  </g>
+
+  <!-- 塔 1：NormalTower（真实塔形：深蓝座 + 木质圈 + 四联炮 X 排布）+ 雷达式射程圈（选中态） -->
+  <g>
+    <circle cx="560" cy="420" r="240" fill="#35E0FF" fill-opacity="0.04"/>
+    <circle cx="560" cy="420" r="240" fill="none" stroke="#35E0FF" stroke-opacity="0.6" stroke-width="2.5"/>
+    <circle cx="560" cy="420" r="160" fill="none" stroke="#35E0FF" stroke-opacity="0.18" stroke-width="1.5" stroke-dasharray="4 8"/>
+    <path d="M560 420 L560 180 A240 240 0 0 1 680 212 Z" fill="#35E0FF" fill-opacity="0.10"/>
+    <path d="M560 420 L680 212" stroke="#35E0FF" stroke-opacity="0.45" stroke-width="2"/>
+    <g stroke="#35E0FF" stroke-opacity="0.4" stroke-width="2">
+      <path d="M788 420 H812"/><path d="M560 168 V192"/><path d="M308 420 H332"/><path d="M560 648 V672"/>
+      <path d="M721 242 L738 259"/><path d="M382 242 L399 259"/><path d="M382 598 L399 581"/><path d="M721 598 L738 581"/>
+    </g>
+  </g>
+  <g>
+    <circle cx="560" cy="420" r="30" fill="#2E4A66" stroke="#5E7396" stroke-width="3"/>
+    <path d="M532 420 a28 28 0 0 1 56 0" fill="none" stroke="#8C6239" stroke-width="5"/>
+    <g transform="rotate(48 560 420)"><rect x="554" y="392" width="12" height="52" rx="4" fill="#9FB3C8" stroke="#3A4A63" stroke-width="1.5"/><rect x="528" y="414" width="64" height="12" rx="4" fill="#9FB3C8" stroke="#3A4A63" stroke-width="1.5"/></g>
+    <circle cx="560" cy="420" r="8" fill="#C9D6E8"/>
+  </g>
+
+  <!-- 塔 2：PowerTower（真实塔形：枪灰箱体 + 火焰喷射口） -->
+  <g>
+    <polygon points="932,312 988,312 996,340 988,368 932,368 924,340" fill="#1C2532" stroke="#5E7396" stroke-width="3"/>
+    <g transform="rotate(-30 960 340)">
+      <rect x="950" y="336" width="20" height="46" rx="4" fill="#5A6B7E" stroke="#3A4A63" stroke-width="2"/>
+      <rect x="942" y="342" width="8" height="34" rx="3" fill="#46566A"/>
+      <rect x="970" y="342" width="8" height="34" rx="3" fill="#46566A"/>
+      <circle cx="960" cy="336" r="13" fill="url(#ds-fire)" filter="url(#ds-bloom)"/>
+    </g>
+  </g>
+
+  <!-- 塔 3：RetardTower（真实塔形：八边基座 + 蓝水晶 bloom）+ 减速光环 -->
+  <circle cx="1280" cy="700" r="180" fill="#35E0FF" fill-opacity="0.05"/>
+  <circle cx="1280" cy="700" r="180" fill="none" stroke="#35E0FF" stroke-opacity="0.4" stroke-width="2" stroke-dasharray="6 10"/>
+  <g fill="#35E0FF" fill-opacity="0.5">
+    <path d="M1280 516 l6 10 -6 10 -6 -10 z"/><path d="M1456 700 l-10 6 -10 -6 10 -6 z"/><path d="M1280 884 l-6 -10 6 -10 6 10 z"/><path d="M1104 700 l10 -6 10 6 -10 6 z"/>
+  </g>
+  <g>
+    <polygon points="1240,676 1320,676 1336,700 1320,724 1240,724 1224,700" fill="#1C2532" stroke="#5E7396" stroke-width="3"/>
+    <path d="M1280 648 l16 26 -16 26 -16 -26 z" fill="url(#ds-crystal)" filter="url(#ds-bloom)"/>
+    <circle cx="1280" cy="674" r="4" fill="#FFFFFF"/>
+  </g>
+
+  <!-- 怪 1：骨骼式分件（钢骨 + 红瞳）+ 霓虹血条 -->
+  <g>
+    <rect x="682" y="486" width="12" height="26" rx="5" fill="#525C6E" stroke="#3A4456" stroke-width="1.5"/>
+    <rect x="706" y="486" width="12" height="26" rx="5" fill="#525C6E" stroke="#3A4456" stroke-width="1.5"/>
+    <rect x="672" y="452" width="10" height="24" rx="5" fill="#525C6E" stroke="#3A4456" stroke-width="1.5" transform="rotate(20 677 464)"/>
+    <rect x="718" y="452" width="10" height="24" rx="5" fill="#525C6E" stroke="#3A4456" stroke-width="1.5" transform="rotate(-20 723 464)"/>
+    <ellipse cx="700" cy="470" rx="22" ry="26" fill="#6B7285" stroke="#3A4456" stroke-width="2"/>
+    <path d="M700 448 V492" stroke="#3A4456" stroke-width="2"/>
+    <circle cx="700" cy="434" r="14" fill="#8792A6" stroke="#3A4456" stroke-width="2"/>
+    <circle cx="695" cy="432" r="2.5" fill="#FF4D5E" filter="url(#ds-neon-red)"/>
+    <circle cx="705" cy="432" r="2.5" fill="#FF4D5E" filter="url(#ds-neon-red)"/>
+    <rect x="668" y="406" width="64" height="8" rx="3" fill="#0B0E14" stroke="#3A4A63" stroke-width="1"/>
+    <rect x="668" y="406" width="41" height="8" rx="3" fill="#3DFFA8"/>
+    <rect x="668" y="406" width="41" height="3" rx="1.5" fill="#B9FFE0" fill-opacity="0.5"/>
+  </g>
+
+  <!-- 怪 2：赤甲重装大体型 + 低血红条 -->
+  <g>
+    <rect x="968" y="436" width="18" height="14" rx="5" fill="#7C3448"/>
+    <rect x="1034" y="436" width="18" height="14" rx="5" fill="#7C3448"/>
+    <rect x="984" y="486" width="14" height="30" rx="6" fill="#4A2E3A" stroke="#3A2430" stroke-width="1.5"/>
+    <rect x="1022" y="486" width="14" height="30" rx="6" fill="#4A2E3A" stroke="#3A2430" stroke-width="1.5"/>
+    <ellipse cx="1010" cy="460" rx="30" ry="34" fill="#5E3A4A" stroke="#3A2430" stroke-width="2"/>
+    <path d="M986 446 h48 M986 474 h48" stroke="#7C3448" stroke-width="4"/>
+    <circle cx="1010" cy="416" r="17" fill="#6E4456" stroke="#3A2430" stroke-width="2"/>
+    <circle cx="1004" cy="414" r="3" fill="#FF4D5E" filter="url(#ds-neon-red)"/>
+    <circle cx="1016" cy="414" r="3" fill="#FF4D5E" filter="url(#ds-neon-red)"/>
+    <rect x="970" y="400" width="80" height="9" rx="3" fill="#0B0E14" stroke="#3A4A63" stroke-width="1"/>
+    <rect x="970" y="400" width="18" height="9" rx="3" fill="#FF4D5E"/>
+  </g>
+
+  <!-- 怪 3：飞行怪（虚空蝠：紫膜翼 + 红瞳，下方投影） -->
+  <ellipse cx="1330" cy="566" rx="18" ry="6" fill="#000000" opacity="0.35"/>
+  <g>
+    <path d="M1316 496 l-26 -14 6 22 z" fill="#5E5070" stroke="#3A3148" stroke-width="1.5"/>
+    <path d="M1344 496 l26 -14 -6 22 z" fill="#5E5070" stroke="#3A3148" stroke-width="1.5"/>
+    <path d="M1316 496 l-20 -8 4 12 z" fill="#7C5CFF" fill-opacity="0.35"/>
+    <path d="M1344 496 l20 -8 -4 12 z" fill="#7C5CFF" fill-opacity="0.35"/>
+    <ellipse cx="1330" cy="500" rx="14" ry="12" fill="#4E4258" stroke="#3A3148" stroke-width="2"/>
+    <circle cx="1325" cy="497" r="2" fill="#FF4D5E" filter="url(#ds-neon-red)"/>
+    <circle cx="1335" cy="497" r="2" fill="#FF4D5E" filter="url(#ds-neon-red)"/>
+    <rect x="1302" y="476" width="56" height="7" rx="3" fill="#0B0E14" stroke="#3A4A63" stroke-width="1"/>
+    <rect x="1302" y="476" width="50" height="7" rx="3" fill="#3DFFA8"/>
+  </g>
+
+  <!-- 弹道光点：Normal 追踪弹（金） + Power 火焰弹 -->
+  <path d="M622 432 L656 446" stroke="#FFC94D" stroke-opacity="0.45" stroke-width="5" stroke-linecap="round"/>
+  <circle cx="660" cy="448" r="6" fill="#FFF7E0" stroke="#FFC94D" stroke-width="1.5" filter="url(#ds-neon-gold)"/>
+  <path d="M968 368 L984 394" stroke="#FF7A29" stroke-opacity="0.5" stroke-width="7" stroke-linecap="round"/>
+  <circle cx="988" cy="404" r="9" fill="url(#ds-fire)" filter="url(#ds-bloom)"/>
+
+  <!-- 伤害飘字：金=普通伤害 / 红=致命，0.7s 上浮淡出 -->
+  <text x="712" y="392" font-size="40" font-weight="700" fill="#FFC94D" font-family="Arial, sans-serif" filter="url(#ds-neon-gold)">-32</text>
+  <text x="1036" y="376" font-size="44" font-weight="700" fill="#FF4D5E" font-family="Arial, sans-serif" filter="url(#ds-neon-red)">-80!</text>
+
+  <!-- 暗角 -->
+  <rect width="1920" height="1080" fill="url(#ds-vig)"/>
+
+  <!-- ===== 标注层（图纸引出线，交付实现时可删） ===== -->
+  <g id="annotations" font-family="Consolas,monospace">
+    <text x="252" y="128" font-size="20" fill="#9FB3C8" fill-opacity="0.8">S 出生点（青色传送门） / E 终点（红色核心）</text>
+    <text x="726" y="128" font-size="20" fill="#9FB3C8" fill-opacity="0.8">Cell_Blocked 障碍格（不可建不可走）</text>
+    <line x1="760" y1="134" x2="760" y2="150" stroke="#9FB3C8" stroke-opacity="0.5" stroke-width="1" stroke-dasharray="4 3"/>
+    <text x="320" y="326" font-size="20" fill="#9FB3C8" fill-opacity="0.8">选中塔：雷达射程圈（3 格） · 炮管朝目标旋转</text>
+    <line x1="596" y1="332" x2="566" y2="394" stroke="#9FB3C8" stroke-opacity="0.5" stroke-width="1" stroke-dasharray="4 3"/>
+    <text x="460" y="508" font-size="20" fill="#9FB3C8" fill-opacity="0.8">弹道光点：Bullet_Normal 追踪弹</text>
+    <line x1="656" y1="492" x2="662" y2="456" stroke="#9FB3C8" stroke-opacity="0.5" stroke-width="1" stroke-dasharray="4 3"/>
+    <text x="316" y="596" font-size="20" fill="#9FB3C8" fill-opacity="0.8">Path_Arrow：A* 实时路径 · 建塔即重算改道（堵路核心机制）</text>
+    <line x1="330" y1="586" x2="330" y2="556" stroke="#9FB3C8" stroke-opacity="0.5" stroke-width="1" stroke-dasharray="4 3"/>
+    <text x="252" y="700" font-size="20" fill="#9FB3C8" fill-opacity="0.8">怪物：8 部件骨骼式 SpriteRenderer + Animator（Ready/Walk/Attack/Death）</text>
+    <line x1="660" y1="688" x2="700" y2="502" stroke="#9FB3C8" stroke-opacity="0.5" stroke-width="1" stroke-dasharray="4 3"/>
+    <text x="252" y="760" font-size="20" fill="#9FB3C8" fill-opacity="0.8">飘字：金=普通 / 红=致命 · 0.7s 上浮淡出 · 池化 24</text>
+    <text x="1180" y="640" font-size="20" fill="#9FB3C8" fill-opacity="0.8">减速塔光环 SlowAuraView（effectValue=减速比例）</text>
+    <line x1="1268" y1="646" x2="1276" y2="662" stroke="#9FB3C8" stroke-opacity="0.5" stroke-width="1" stroke-dasharray="4 3"/>
+    <text x="1390" y="466" font-size="20" fill="#9FB3C8" fill-opacity="0.8">飞行怪：直线 S→E · 不受堵路约束</text>
+    <line x1="1392" y1="470" x2="1362" y2="492" stroke="#9FB3C8" stroke-opacity="0.5" stroke-width="1" stroke-dasharray="4 3"/>
+    <text x="252" y="1000" font-size="16" fill="#9FB3C8" fill-opacity="0.6">深色科幻正式版 · 世界层=非 UGUI（BoardView/PathArrowView/BaseTower/BaseEnemy/FloatingTextManager） · cellSize=1（1 格=80px 示意比例）</text>
+  </g>
+</svg>

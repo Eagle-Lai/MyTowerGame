@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 03_PauseView.svg — 暂停界面【正式版·深色科幻】
+     几何与 PauseView.prefab 实测一致（勿改坐标）；视觉为深色科幻重设计
+     数据源: Assets/Prefabs/UI/PauseView.prefab + PauseView.cs
+     暂停 = Time.timeScale=0 + 自绘半透明遮罩；OnDisable 无条件恢复 timeScale；按钮走 unscaled 语义 -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" width="1920" height="1080">
+  <defs>
+    <linearGradient id="ds-panel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2A3444"/><stop offset="0.5" stop-color="#1B2330"/><stop offset="1" stop-color="#222C3B"/>
+    </linearGradient>
+    <radialGradient id="ds-vig" cx="0.5" cy="0.5" r="0.75">
+      <stop offset="0.62" stop-color="#0B0E14" stop-opacity="0"/><stop offset="1" stop-color="#0B0E14" stop-opacity="0.66"/>
+    </radialGradient>
+    <filter id="ds-neon" x="-60%" y="-60%" width="220%" height="220%">
+      <feDropShadow dx="0" dy="0" stdDeviation="3" flood-color="#35E0FF" flood-opacity="0.85"/>
+    </filter>
+    <filter id="ds-neon-red" x="-60%" y="-60%" width="220%" height="220%">
+      <feDropShadow dx="0" dy="0" stdDeviation="3" flood-color="#FF4D5E" flood-opacity="0.85"/>
+    </filter>
+    <pattern id="ds-stars" width="220" height="220" patternUnits="userSpaceOnUse">
+      <circle cx="30" cy="40" r="1.2" fill="#E8F0FA" fill-opacity="0.4"/>
+      <circle cx="130" cy="22" r="0.8" fill="#E8F0FA" fill-opacity="0.28"/>
+      <circle cx="186" cy="104" r="1.4" fill="#35E0FF" fill-opacity="0.3"/>
+      <circle cx="74" cy="150" r="0.9" fill="#E8F0FA" fill-opacity="0.22"/>
+    </pattern>
+  </defs>
+
+  <!-- 背景：战斗画面定格（timeScale=0，画面静止） -->
+  <rect width="1920" height="1080" fill="#10141D"/>
+  <rect width="1920" height="1080" fill="url(#ds-stars)"/>
+  <g opacity="0.5">
+    <rect x="240" y="140" width="1440" height="800" fill="#131A26"/>
+    <path d="M240 300H1680M240 460H1680M240 620H1680M240 780H1680" stroke="#1C2532" stroke-width="2"/>
+    <rect x="240" y="140" width="1440" height="800" fill="none" stroke="#233246" stroke-width="2"/>
+    <path d="M320 540 H1600" stroke="#35E0FF" stroke-opacity="0.25" stroke-width="20"/>
+    <circle cx="640" cy="420" r="30" fill="#2E4A66" stroke="#5E7396" stroke-width="3"/>
+    <ellipse cx="900" cy="540" rx="22" ry="26" fill="#5E3A4A" stroke="#3A2430" stroke-width="2"/>
+    <rect x="868" y="500" width="64" height="8" rx="3" fill="#0B0E14" stroke="#3A4A63" stroke-width="1"/>
+    <rect x="868" y="500" width="41" height="8" rx="3" fill="#3DFFA8"/>
+  </g>
+  <rect width="1920" height="1080" fill="#000000" fill-opacity="0.55"/>
+  <rect width="1920" height="1080" fill="url(#ds-vig)"/>
+
+  <!-- Panel 560×520 → x680..1240, y280..800 -->
+  <polygon points="680,296 696,280 1224,280 1240,296 1240,784 1224,800 696,800 680,784" fill="url(#ds-panel)" stroke="#3A4A63" stroke-width="2"/>
+  <polygon points="684,298 698,284 1222,284 1236,298 1236,782 1222,796 698,796 684,782" fill="none" stroke="#35E0FF" stroke-opacity="0.22" stroke-width="1"/>
+  <path d="M696 281 H1224" stroke="#35E0FF" stroke-opacity="0.4" stroke-width="2"/>
+
+  <!-- Title pos(0,-36)（顶中锚）500×56 -->
+  <g stroke="#35E0FF" stroke-opacity="0.8" stroke-width="4" stroke-linecap="round">
+    <path d="M866 320 V350"/><path d="M882 320 V350"/>
+  </g>
+  <text x="960" y="348" font-size="40" fill="#E8F0FA" font-weight="700" text-anchor="middle">暂停</text>
+
+  <!-- 按钮 320×72，中心锚：Resume(0,60)→y480 / Restart(0,-30)→y570 / Settings(0,-120)→y660 / Quit(0,-210)→y750 -->
+  <polygon points="812,444 1108,444 1120,456 1120,504 1108,516 812,516 800,504 800,456" fill="#123845" stroke="#35E0FF" stroke-width="2.5" filter="url(#ds-neon)"/>
+  <text x="960" y="491" font-size="30" fill="#DFFAFF" font-weight="600" text-anchor="middle">继 续</text>
+  <polygon points="812,534 1108,534 1120,546 1120,594 1108,606 812,606 800,594 800,546" fill="url(#ds-panel)" stroke="#3A4A63" stroke-width="2"/>
+  <text x="960" y="581" font-size="30" fill="#C9D6E8" text-anchor="middle">重新开始本关</text>
+  <polygon points="812,624 1108,624 1120,636 1120,684 1108,696 812,696 800,684 800,636" fill="url(#ds-panel)" stroke="#3A4A63" stroke-width="2"/>
+  <text x="960" y="671" font-size="30" fill="#C9D6E8" text-anchor="middle">设 置</text>
+  <polygon points="812,714 1108,714 1120,726 1120,774 1108,786 812,786 800,774 800,726" fill="url(#ds-panel)" stroke="#3A4A63" stroke-width="2"/>
+  <text x="960" y="761" font-size="30" fill="#C9D6E8" text-anchor="middle">返回关卡选择</text>
+
+  <!-- ===== 标注层（图纸引出线，交付实现时可删） ===== -->
+  <g id="annotations" font-family="Consolas,monospace">
+    <text x="656" y="262" font-size="20" fill="#9FB3C8" fill-opacity="0.8">Panel 560×520 居中 · 遮罩 0.55（无 Button，点遮罩不关闭）· 战斗画面定格 timeScale=0</text>
+    <text x="1140" y="480" font-size="20" fill="#9FB3C8" fill-opacity="0.8">按钮统一 320×72，纵向间距 90</text>
+    <line x1="1136" y1="476" x2="1124" y2="478" stroke="#9FB3C8" stroke-opacity="0.5" stroke-width="1" stroke-dasharray="4 3"/>
+    <text x="656" y="840" font-size="20" fill="#9FB3C8" fill-opacity="0.8">重开/返回前必须先恢复 timeScale=1（否则新一局在 timeScale=0 下启动）；空格键 = 暂停/继续</text>
+    <text x="656" y="870" font-size="20" fill="#9FB3C8" fill-opacity="0.8">事件：ResumeRequest / RestartLevelRequest / OpenSettingsRequest / QuitToSelectRequest</text>
+    <text x="44" y="1040" font-size="16" fill="#9FB3C8" fill-opacity="0.6">深色科幻正式版 · PauseView.prefab + PauseView.cs · 主按钮=继续（青），其余次级</text>
+  </g>
+</svg>

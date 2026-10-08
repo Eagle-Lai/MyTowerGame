@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 05b_LevelClearView_Lose.svg — 结算界面（失败形态）【正式版·深色科幻·红主题】
+     母版: 05_LevelClearView_Win.svg；差异（LevelClearView.cs）：
+     Title"防御失败"、Stars ☆☆☆、StarDetail 仅"历史最高"、NextBtn 整体隐藏、Retry"重新挑战"（升为主按钮·红） -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" width="1920" height="1080">
+  <defs>
+    <linearGradient id="ds-panel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2A3444"/><stop offset="0.5" stop-color="#1B2330"/><stop offset="1" stop-color="#222C3B"/>
+    </linearGradient>
+    <radialGradient id="ds-vig" cx="0.5" cy="0.5" r="0.75">
+      <stop offset="0.62" stop-color="#0B0E14" stop-opacity="0"/><stop offset="1" stop-color="#0B0E14" stop-opacity="0.66"/>
+    </radialGradient>
+    <filter id="ds-neon-red" x="-60%" y="-60%" width="220%" height="220%">
+      <feDropShadow dx="0" dy="0" stdDeviation="3" flood-color="#FF4D5E" flood-opacity="0.85"/>
+    </filter>
+    <pattern id="ds-stars" width="220" height="220" patternUnits="userSpaceOnUse">
+      <circle cx="30" cy="40" r="1.2" fill="#E8F0FA" fill-opacity="0.4"/>
+      <circle cx="130" cy="22" r="0.8" fill="#E8F0FA" fill-opacity="0.28"/>
+      <circle cx="186" cy="104" r="1.4" fill="#35E0FF" fill-opacity="0.3"/>
+      <circle cx="74" cy="150" r="0.9" fill="#E8F0FA" fill-opacity="0.22"/>
+    </pattern>
+  </defs>
+
+  <rect width="1920" height="1080" fill="#10141D"/>
+  <rect width="1920" height="1080" fill="url(#ds-stars)"/>
+  <g opacity="0.4">
+    <rect x="240" y="140" width="1440" height="800" fill="#131A26"/>
+    <path d="M240 300H1680M240 460H1680M240 620H1680M240 780H1680" stroke="#1C2532" stroke-width="2"/>
+    <rect x="240" y="140" width="1440" height="800" fill="none" stroke="#233246" stroke-width="2"/>
+    <path d="M320 540 H1600" stroke="#35E0FF" stroke-opacity="0.25" stroke-width="20"/>
+    <ellipse cx="1420" cy="540" rx="22" ry="26" fill="#5E3A4A" stroke="#3A2430" stroke-width="2"/>
+    <ellipse cx="1500" cy="540" rx="22" ry="26" fill="#5E3A4A" stroke="#3A2430" stroke-width="2"/>
+  </g>
+  <rect width="1920" height="1080" fill="#000000" fill-opacity="0.5"/>
+  <rect width="1920" height="1080" fill="url(#ds-vig)"/>
+
+  <!-- Panel 640×680 → x640..1280, y200..880（红主题切角面板） -->
+  <polygon points="640,216 656,200 1224,200 1240,216 1240,864 1224,880 656,880 640,864" fill="url(#ds-panel)" stroke="#8C3E4A" stroke-width="2"/>
+  <polygon points="644,218 658,204 1222,204 1236,218 1236,862 1222,876 658,876 644,862" fill="none" stroke="#FF4D5E" stroke-opacity="0.22" stroke-width="1"/>
+  <path d="M656 201 H1224" stroke="#FF4D5E" stroke-opacity="0.5" stroke-width="2"/>
+
+  <text x="960" y="268" font-size="40" fill="#FF4D5E" font-weight="700" text-anchor="middle" filter="url(#ds-neon-red)">防御失败</text>
+  <text x="960" y="342" font-size="32" fill="#E8F0FA" text-anchor="middle">第 1 关</text>
+  <!-- Stars 固定 ☆☆☆ -->
+  <text x="960" y="448" font-size="76" fill="#3F4E63" text-anchor="middle">☆☆☆</text>
+  <text x="960" y="510" font-size="30" fill="#9FB3C8" text-anchor="middle">历史最高 <tspan fill="#FFC94D">★★★</tspan></text>
+  <text x="960" y="616" font-size="30" fill="#9FB3C8" text-anchor="middle">剩余生命 <tspan fill="#FF4D5E">0/20</tspan>　　击杀 <tspan fill="#E8F0FA">118</tspan>　　漏怪 <tspan fill="#FF4D5E">20/20</tspan></text>
+
+  <!-- NextBtn 隐藏（此置虚线框标注其位置，实际 SetActive(false)） -->
+  <rect x="750" y="640" width="420" height="72" fill="none" stroke="#9FB3C8" stroke-opacity="0.4" stroke-width="2" stroke-dasharray="8 6"/>
+  <text x="960" y="685" font-size="28" fill="#9FB3C8" fill-opacity="0.35" text-anchor="middle">（下一关按钮隐藏）</text>
+  <!-- RetryBtn：文案"重新挑战"（升为主按钮·红） -->
+  <polygon points="812,720 1108,720 1120,732 1120,780 1108,792 812,792 800,780 800,732" fill="#3A1A22" stroke="#FF4D5E" stroke-width="2.5" filter="url(#ds-neon-red)"/>
+  <text x="960" y="767" font-size="30" fill="#FFD9DD" font-weight="600" text-anchor="middle">重新挑战</text>
+  <polygon points="812,794 1108,794 1120,806 1120,854 1108,866 812,866 800,854 800,806" fill="url(#ds-panel)" stroke="#3A4A63" stroke-width="2"/>
+  <text x="960" y="841" font-size="30" fill="#C9D6E8" text-anchor="middle">返回关卡选择</text>
+
+  <!-- ===== 标注层（图纸引出线，交付实现时可删） ===== -->
+  <g id="annotations" font-family="Consolas,monospace">
+    <text x="656" y="192" font-size="20" fill="#9FB3C8" fill-opacity="0.8">失败 = 生命≤0 立即结算，不写星级、不解锁下一关</text>
+    <text x="1090" y="392" font-size="20" fill="#9FB3C8" fill-opacity="0.8">Stars 固定 ☆☆☆</text>
+    <text x="1190" y="700" font-size="20" fill="#9FB3C8" fill-opacity="0.8">NextBtn SetActive(false)</text>
+    <line x1="1186" y1="696" x2="1172" y2="680" stroke="#9FB3C8" stroke-opacity="0.5" stroke-width="1" stroke-dasharray="4 3"/>
+    <text x="656" y="910" font-size="20" fill="#9FB3C8" fill-opacity="0.8">与胜利形态差异共 4 处：标题 / 星行 / StarDetail 文案 / NextBtn 隐藏 + Retry 文案（主题色金→红）</text>
+    <text x="44" y="1040" font-size="16" fill="#9FB3C8" fill-opacity="0.6">深色科幻正式版 · 05b 失败变体 · Retry 升为主按钮（红）引导再次挑战</text>
+  </g>
+</svg>

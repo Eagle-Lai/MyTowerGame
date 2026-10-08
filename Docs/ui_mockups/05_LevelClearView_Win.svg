@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 05_LevelClearView_Win.svg — 结算界面（胜利形态）【正式版·深色科幻·金主题】
+     几何与 LevelClearView.prefab 实测一致（勿改坐标）；视觉为深色科幻重设计
+     数据源: Assets/Prefabs/UI/LevelClearView.prefab + LevelClearView.cs
+     Panel 640×680 居中；星级由 SaveManager.EvaluateStars：满血3星 / ≥50% 2星 / 其余1星 -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" width="1920" height="1080">
+  <defs>
+    <linearGradient id="ds-panel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2A3444"/><stop offset="0.5" stop-color="#1B2330"/><stop offset="1" stop-color="#222C3B"/>
+    </linearGradient>
+    <radialGradient id="ds-vig" cx="0.5" cy="0.5" r="0.75">
+      <stop offset="0.62" stop-color="#0B0E14" stop-opacity="0"/><stop offset="1" stop-color="#0B0E14" stop-opacity="0.66"/>
+    </radialGradient>
+    <filter id="ds-neon" x="-60%" y="-60%" width="220%" height="220%">
+      <feDropShadow dx="0" dy="0" stdDeviation="3" flood-color="#35E0FF" flood-opacity="0.85"/>
+    </filter>
+    <filter id="ds-neon-gold" x="-60%" y="-60%" width="220%" height="220%">
+      <feDropShadow dx="0" dy="0" stdDeviation="3" flood-color="#FFC94D" flood-opacity="0.8"/>
+    </filter>
+    <pattern id="ds-stars" width="220" height="220" patternUnits="userSpaceOnUse">
+      <circle cx="30" cy="40" r="1.2" fill="#E8F0FA" fill-opacity="0.4"/>
+      <circle cx="130" cy="22" r="0.8" fill="#E8F0FA" fill-opacity="0.28"/>
+      <circle cx="186" cy="104" r="1.4" fill="#35E0FF" fill-opacity="0.3"/>
+      <circle cx="74" cy="150" r="0.9" fill="#E8F0FA" fill-opacity="0.22"/>
+    </pattern>
+  </defs>
+
+  <!-- 背景：战斗终局画面（暗） + 遮罩（Bg 带 Button 只吞点击不关闭） -->
+  <rect width="1920" height="1080" fill="#10141D"/>
+  <rect width="1920" height="1080" fill="url(#ds-stars)"/>
+  <g opacity="0.4">
+    <rect x="240" y="140" width="1440" height="800" fill="#131A26"/>
+    <path d="M240 300H1680M240 460H1680M240 620H1680M240 780H1680" stroke="#1C2532" stroke-width="2"/>
+    <rect x="240" y="140" width="1440" height="800" fill="none" stroke="#233246" stroke-width="2"/>
+    <path d="M320 540 H1600" stroke="#35E0FF" stroke-opacity="0.25" stroke-width="20"/>
+    <circle cx="640" cy="420" r="30" fill="#2E4A66" stroke="#5E7396" stroke-width="3"/>
+    <polygon points="1092,632 1148,632 1160,660 1148,688 1092,688 1080,660" fill="#1C2532" stroke="#5E7396" stroke-width="3"/>
+  </g>
+  <rect width="1920" height="1080" fill="#000000" fill-opacity="0.5"/>
+  <rect width="1920" height="1080" fill="url(#ds-vig)"/>
+
+  <!-- Panel 640×680 → x640..1280, y200..880（金主题切角面板） -->
+  <polygon points="640,216 656,200 1224,200 1240,216 1240,864 1224,880 656,880 640,864" fill="url(#ds-panel)" stroke="#B96E1B" stroke-width="2"/>
+  <polygon points="644,218 658,204 1222,204 1236,218 1236,862 1222,876 658,876 644,862" fill="none" stroke="#FFC94D" stroke-opacity="0.25" stroke-width="1"/>
+  <path d="M656 201 H1224" stroke="#FFC94D" stroke-opacity="0.5" stroke-width="2"/>
+
+  <!-- Title pos(0,-36)（顶中锚） -->
+  <text x="960" y="268" font-size="40" fill="#FFC94D" font-weight="700" text-anchor="middle" filter="url(#ds-neon-gold)">通关完成！</text>
+  <!-- LevelName pos(0,210) → y=330 -->
+  <text x="960" y="342" font-size="32" fill="#E8F0FA" text-anchor="middle">第 1 关</text>
+  <!-- Stars pos(0,118) → y=422，76 号大星行 -->
+  <text x="922" y="448" font-size="76" fill="#FFC94D" text-anchor="middle" filter="url(#ds-neon-gold)">★★</text>
+  <text x="1036" y="448" font-size="76" fill="#3F4E63" text-anchor="middle">☆</text>
+  <!-- StarDetail pos(0,42) → y=498 -->
+  <text x="960" y="510" font-size="30" fill="#9FB3C8" text-anchor="middle">本次 <tspan fill="#FFC94D">★★</tspan><tspan fill="#3F4E63">☆</tspan>　　历史最高 <tspan fill="#FFC94D">★★★</tspan></text>
+  <!-- RecordTip pos(0,-6) → y=546（newRecord 时显示） -->
+  <text x="960" y="556" font-size="30" fill="#FFC94D" fill-opacity="0.35" text-anchor="middle">★ 新纪录！刷新了本关最高星级</text>
+  <!-- Stats pos(0,-66) → y=606 -->
+  <text x="960" y="616" font-size="30" fill="#9FB3C8" text-anchor="middle">剩余生命 <tspan fill="#E8F0FA">18/20</tspan>　　击杀 <tspan fill="#E8F0FA">132</tspan>　　漏怪 <tspan fill="#E8F0FA">2/20</tspan></text>
+
+  <!-- NextBtn pos(0,-136) → y=676，420×72（主按钮·青） -->
+  <polygon points="762,640 1158,640 1170,652 1170,700 1158,712 762,712 750,700 750,652" fill="#123845" stroke="#35E0FF" stroke-width="2.5" filter="url(#ds-neon)"/>
+  <text x="960" y="687" font-size="30" fill="#DFFAFF" font-weight="600" text-anchor="middle">下一关：关卡 2</text>
+  <!-- RetryBtn pos(0,-216) → y=756，320×72（次级按钮） -->
+  <polygon points="812,720 1108,720 1120,732 1120,780 1108,792 812,792 800,780 800,732" fill="url(#ds-panel)" stroke="#3A4A63" stroke-width="2"/>
+  <text x="960" y="767" font-size="30" fill="#C9D6E8" text-anchor="middle">重玩本关</text>
+  <!-- SelectBtn pos(0,-290) → y=830 -->
+  <polygon points="812,794 1108,794 1120,806 1120,854 1108,866 812,866 800,854 800,806" fill="url(#ds-panel)" stroke="#3A4A63" stroke-width="2"/>
+  <text x="960" y="841" font-size="30" fill="#C9D6E8" text-anchor="middle">返回关卡选择</text>
+
+  <!-- ===== 标注层（图纸引出线，交付实现时可删） ===== -->
+  <g id="annotations" font-family="Consolas,monospace">
+    <text x="656" y="192" font-size="20" fill="#9FB3C8" fill-opacity="0.8">Panel 640×680 居中 · 遮罩 0.55（点击不关闭）· 胜利=金主题</text>
+    <text x="1090" y="392" font-size="20" fill="#9FB3C8" fill-opacity="0.8">Stars 76 号大星行（本次评价）</text>
+    <text x="1140" y="566" font-size="20" fill="#9FB3C8" fill-opacity="0.8">RecordTip 仅"新纪录"时显示（本例未触发，淡显示意）</text>
+    <text x="1190" y="676" font-size="20" fill="#9FB3C8" fill-opacity="0.8">NextBtn 420×72（特例加宽）</text>
+    <line x1="1186" y1="672" x2="1172" y2="674" stroke="#9FB3C8" stroke-opacity="0.5" stroke-width="1" stroke-dasharray="4 3"/>
+    <text x="656" y="910" font-size="20" fill="#9FB3C8" fill-opacity="0.8">胜负共用同一弹窗路径：GameOverEvent → OnGameOver 统一打开；星级先读后写（RecordClear 只升不降）</text>
+    <text x="44" y="1040" font-size="16" fill="#9FB3C8" fill-opacity="0.6">深色科幻正式版 · LevelClearView.prefab + LevelClearView.cs · 星级=SaveManager.EvaluateStars（满血3★ / ≥50% 2★ / 其余1★）</text>
+  </g>
+</svg>

@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 14_TowerCodex.svg — 防御塔图鉴（新增图）【正式版·深色科幻】
+     五塔竖卡：塔形大图 220×220 + 定位 + Lv.1 数值（tbtowerinfo L1 行）
+     Normal/Power/Retard 塔形依据 Assets/_UIAssets/Tower 真实美术；
+     Pierce/Laser 为新形态设计稿（当前工程复用 Normal 贴图，紫色系区分） -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" width="1920" height="1080">
+  <defs>
+    <linearGradient id="ds-panel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2A3444"/><stop offset="0.5" stop-color="#1B2330"/><stop offset="1" stop-color="#222C3B"/>
+    </linearGradient>
+    <linearGradient id="ds-gold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFC94D"/><stop offset="1" stop-color="#E8912B"/>
+    </linearGradient>
+    <linearGradient id="ds-crystal" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#CFF6FF"/><stop offset="1" stop-color="#35E0FF"/>
+    </linearGradient>
+    <radialGradient id="ds-fire" cx="0.5" cy="0.35" r="0.8">
+      <stop offset="0" stop-color="#FFC94D"/><stop offset="1" stop-color="#FF7A29"/>
+    </radialGradient>
+    <radialGradient id="ds-vig" cx="0.5" cy="0.5" r="0.75">
+      <stop offset="0.62" stop-color="#0B0E14" stop-opacity="0"/><stop offset="1" stop-color="#0B0E14" stop-opacity="0.66"/>
+    </radialGradient>
+    <filter id="ds-bloom" x="-80%" y="-80%" width="260%" height="260%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="4" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <pattern id="ds-stars" width="220" height="220" patternUnits="userSpaceOnUse">
+      <circle cx="30" cy="40" r="1.2" fill="#E8F0FA" fill-opacity="0.4"/>
+      <circle cx="130" cy="22" r="0.8" fill="#E8F0FA" fill-opacity="0.28"/>
+      <circle cx="186" cy="104" r="1.4" fill="#35E0FF" fill-opacity="0.3"/>
+      <circle cx="74" cy="150" r="0.9" fill="#E8F0FA" fill-opacity="0.22"/>
+    </pattern>
+  </defs>
+
+  <!-- 深空底板 -->
+  <rect width="1920" height="1080" fill="#10141D"/>
+  <rect width="1920" height="1080" fill="url(#ds-stars)"/>
+
+  <!-- 标题 -->
+  <path d="M760 106 H830" stroke="#35E0FF" stroke-opacity="0.5" stroke-width="2"/>
+  <polygon points="846,96 856,106 846,116 836,106" fill="#35E0FF" fill-opacity="0.7"/>
+  <polygon points="1074,96 1084,106 1074,116 1064,106" fill="#35E0FF" fill-opacity="0.7"/>
+  <path d="M1090 106 H1160" stroke="#35E0FF" stroke-opacity="0.5" stroke-width="2"/>
+  <text x="960" y="120" font-size="44" fill="#E8F0FA" font-weight="700" text-anchor="middle">防御塔图鉴</text>
+  <text x="960" y="160" font-size="20" fill="#9FB3C8" text-anchor="middle">Lv.1 基础数值 · 塔形依据 Assets/_UIAssets/Tower 真实美术 · Pierce/Laser 为新形态设计稿</text>
+
+  <!-- ===== 卡 1：Normal 速射炮台（cx=280） ===== -->
+  <g>
+    <polygon points="130,216 146,200 414,200 430,216 430,884 414,900 146,900 130,884" fill="url(#ds-panel)" stroke="#3A4A63" stroke-width="2"/>
+    <path d="M164 201 H396" stroke="#35E0FF" stroke-opacity="0.6" stroke-width="3"/>
+    <text x="280" y="262" font-size="32" fill="#E8F0FA" font-weight="600" text-anchor="middle">Normal 速射炮台</text>
+    <polygon points="236,286 324,286 332,294 332,310 324,318 236,318 228,310 228,294" fill="#131A26" stroke="#35E0FF" stroke-opacity="0.6" stroke-width="1.5"/>
+    <text x="280" y="309" font-size="20" fill="#35E0FF" text-anchor="middle">均衡输出</text>
+    <polygon points="272,214 340,214 348,222 348,244 340,252 272,252 264,244 264,222" fill="#123845" stroke="#35E0FF" stroke-opacity="0.5" stroke-width="1.5"/>
+    <text x="306" y="240" font-size="18" fill="#35E0FF" text-anchor="middle">Lv.1</text>
+    <!-- 塔形大图：深蓝四联炮 -->
+    <circle cx="280" cy="430" r="56" fill="#2E4A66" stroke="#5E7396" stroke-width="4"/>
+    <path d="M228 430 a52 52 0 0 1 104 0" fill="none" stroke="#8C6239" stroke-width="8"/>
+    <g transform="rotate(45 280 430)">
+      <rect x="272" y="356" width="16" height="88" rx="5" fill="#9FB3C8" stroke="#3A4A63" stroke-width="2"/>
+      <rect x="236" y="422" width="88" height="16" rx="5" fill="#9FB3C8" stroke="#3A4A63" stroke-width="2"/>
+    </g>
+    <circle cx="280" cy="430" r="13" fill="#C9D6E8"/>
+    <path d="M170 556 H390" stroke="#3A4A63" stroke-width="2"/>
+    <text x="176" y="600" font-size="22" fill="#9FB3C8">造价</text>
+    <polygon points="246,582 256,582 262,592 256,602 246,602 240,592" fill="url(#ds-gold)" stroke="#B96E1B" stroke-width="1.5"/>
+    <text x="272" y="601" font-size="26" fill="#FFC94D" font-weight="600">25</text>
+    <text x="176" y="644" font-size="22" fill="#9FB3C8">输出</text>
+    <text x="272" y="645" font-size="24" fill="#E8F0FA">DPS 30.0</text>
+    <text x="176" y="686" font-size="22" fill="#9FB3C8">特性</text>
+    <text x="272" y="687" font-size="22" fill="#C9D6E8">单体速射</text>
+  </g>
+
+  <!-- ===== 卡 2：Power 重炮台（cx=620） ===== -->
+  <g>
+    <polygon points="470,216 486,200 754,200 770,216 770,884 754,900 486,900 470,884" fill="url(#ds-panel)" stroke="#3A4A63" stroke-width="2"/>
+    <path d="M504 201 H736" stroke="#FF7A29" stroke-opacity="0.6" stroke-width="3"/>
+    <text x="620" y="262" font-size="32" fill="#E8F0FA" font-weight="600" text-anchor="middle">Power 重炮台</text>
+    <polygon points="576,286 664,286 672,294 672,310 664,318 576,318 568,310 568,294" fill="#131A26" stroke="#FF7A29" stroke-opacity="0.6" stroke-width="1.5"/>
+    <text x="620" y="309" font-size="20" fill="#FF9A5C" text-anchor="middle">范围爆发</text>
+    <polygon points="612,214 680,214 688,222 688,244 680,252 612,252 604,244 604,222" fill="#123845" stroke="#FF7A29" stroke-opacity="0.5" stroke-width="1.5"/>
+    <text x="646" y="240" font-size="18" fill="#FF9A5C" text-anchor="middle">Lv.1</text>
+    <!-- 塔形大图：枪灰箱体 + 火焰喷射口 -->
+    <polygon points="572,378 668,378 684,430 668,482 572,482 556,430" fill="#1C2532" stroke="#5E7396" stroke-width="4"/>
+    <g transform="rotate(-30 620 430)">
+      <rect x="606" y="392" width="28" height="70" rx="6" fill="#5A6B7E" stroke="#3A4A63" stroke-width="2"/>
+      <rect x="594" y="400" width="12" height="50" rx="4" fill="#46566A"/>
+      <rect x="634" y="400" width="12" height="50" rx="4" fill="#46566A"/>
+      <circle cx="620" cy="392" r="20" fill="url(#ds-fire)" filter="url(#ds-bloom)"/>
+    </g>
+    <path d="M510 556 H730" stroke="#3A4A63" stroke-width="2"/>
+    <text x="516" y="600" font-size="22" fill="#9FB3C8">造价</text>
+    <polygon points="586,582 596,582 602,592 596,602 586,602 580,592" fill="url(#ds-gold)" stroke="#B96E1B" stroke-width="1.5"/>
+    <text x="612" y="601" font-size="26" fill="#FFC94D" font-weight="600">45</text>
+    <text x="516" y="644" font-size="22" fill="#9FB3C8">输出</text>
+    <text x="612" y="645" font-size="24" fill="#E8F0FA">DPS 33.0</text>
+    <text x="516" y="686" font-size="22" fill="#9FB3C8">特性</text>
+    <text x="612" y="687" font-size="22" fill="#FF9A5C">AOE 半径 1.5 格</text>
+  </g>
+
+  <!-- ===== 卡 3：Retard 冰晶塔（cx=960） ===== -->
+  <g>
+    <polygon points="810,216 826,200 1094,200 1110,216 1110,884 1094,900 826,900 810,884" fill="url(#ds-panel)" stroke="#3A4A63" stroke-width="2"/>
+    <path d="M844 201 H1076" stroke="#7DE8FF" stroke-opacity="0.6" stroke-width="3"/>
+    <text x="960" y="262" font-size="32" fill="#E8F0FA" font-weight="600" text-anchor="middle">Retard 冰晶塔</text>
+    <polygon points="916,286 1004,286 1012,294 1012,310 1004,318 916,318 908,310 908,294" fill="#131A26" stroke="#7DE8FF" stroke-opacity="0.6" stroke-width="1.5"/>
+    <text x="960" y="309" font-size="20" fill="#7DE8FF" text-anchor="middle">控场减速</text>
+    <polygon points="952,214 1020,214 1028,222 1028,244 1020,252 952,252 944,244 944,222" fill="#123845" stroke="#7DE8FF" stroke-opacity="0.5" stroke-width="1.5"/>
+    <text x="986" y="240" font-size="18" fill="#7DE8FF" text-anchor="middle">Lv.1</text>
+    <!-- 塔形大图：八边基座 + 蓝水晶 -->
+    <circle cx="960" cy="430" r="72" fill="#35E0FF" fill-opacity="0.05"/>
+    <circle cx="960" cy="430" r="72" fill="none" stroke="#35E0FF" stroke-opacity="0.4" stroke-width="2" stroke-dasharray="6 10"/>
+    <polygon points="906,398 1014,398 1032,430 1014,462 906,462 888,430" fill="#1C2532" stroke="#5E7396" stroke-width="4"/>
+    <path d="M960 358 l26 42 -26 42 -26 -42 z" fill="url(#ds-crystal)" filter="url(#ds-bloom)"/>
+    <circle cx="960" cy="398" r="6" fill="#FFFFFF"/>
+    <path d="M850 556 H1070" stroke="#3A4A63" stroke-width="2"/>
+    <text x="856" y="600" font-size="22" fill="#9FB3C8">造价</text>
+    <polygon points="926,582 936,582 942,592 936,602 926,602 920,592" fill="url(#ds-gold)" stroke="#B96E1B" stroke-width="1.5"/>
+    <text x="952" y="601" font-size="26" fill="#FFC94D" font-weight="600">30</text>
+    <text x="856" y="644" font-size="22" fill="#9FB3C8">控制</text>
+    <text x="952" y="645" font-size="24" fill="#7DE8FF">减速 30%</text>
+    <text x="856" y="686" font-size="22" fill="#9FB3C8">特性</text>
+    <text x="952" y="687" font-size="22" fill="#C9D6E8">光环控场</text>
+  </g>
+
+  <!-- ===== 卡 4：Pierce 穿甲塔（cx=1300·新形态设计稿） ===== -->
+  <g>
+    <polygon points="1150,216 1166,200 1434,200 1450,216 1450,884 1434,900 1166,900 1150,884" fill="url(#ds-panel)" stroke="#3A4A63" stroke-width="2"/>
+    <path d="M1184 201 H1416" stroke="#7C5CFF" stroke-opacity="0.6" stroke-width="3"/>
+    <text x="1300" y="262" font-size="32" fill="#E8F0FA" font-weight="600" text-anchor="middle">Pierce 穿甲塔</text>
+    <polygon points="1256,286 1344,286 1352,294 1352,310 1344,318 1256,318 1248,310 1248,294" fill="#131A26" stroke="#7C5CFF" stroke-opacity="0.6" stroke-width="1.5"/>
+    <text x="1300" y="309" font-size="20" fill="#B9A6FF" text-anchor="middle">直线穿透</text>
+    <polygon points="1292,214 1360,214 1368,222 1368,244 1360,252 1292,252 1284,244 1284,222" fill="#123845" stroke="#7C5CFF" stroke-opacity="0.5" stroke-width="1.5"/>
+    <text x="1326" y="240" font-size="18" fill="#B9A6FF" text-anchor="middle">Lv.1</text>
+    <!-- 塔形大图：紫晶钻头炮（新形态） -->
+    <circle cx="1300" cy="430" r="54" fill="#232045" stroke="#7C5CFF" stroke-opacity="0.8" stroke-width="4"/>
+    <circle cx="1300" cy="430" r="30" fill="#2E2A5E" stroke="#7C5CFF" stroke-opacity="0.6" stroke-width="2"/>
+    <g transform="rotate(38 1300 430)">
+      <rect x="1288" y="350" width="24" height="76" rx="4" fill="#4A4478" stroke="#7C5CFF" stroke-opacity="0.7" stroke-width="2"/>
+      <path d="M1288 350 h24 l-12 -24 z" fill="#9F8CFF"/>
+      <path d="M1288 366 h24 M1288 382 h24" stroke="#2E2A5E" stroke-width="3"/>
+      <rect x="1276" y="414" width="48" height="12" rx="4" fill="#4A4478" stroke="#7C5CFF" stroke-opacity="0.5" stroke-width="1.5"/>
+    </g>
+    <path d="M1224 396 h-26 M1228 430 h-34 M1224 464 h-26" stroke="#7C5CFF" stroke-opacity="0.4" stroke-width="3" stroke-linecap="round"/>
+    <path d="M1190 556 H1410" stroke="#3A4A63" stroke-width="2"/>
+    <text x="1196" y="600" font-size="22" fill="#9FB3C8">造价</text>
+    <polygon points="1266,582 1276,582 1282,592 1276,602 1266,602 1260,592" fill="url(#ds-gold)" stroke="#B96E1B" stroke-width="1.5"/>
+    <text x="1292" y="601" font-size="26" fill="#FFC94D" font-weight="600">35</text>
+    <text x="1196" y="644" font-size="22" fill="#9FB3C8">穿透</text>
+    <text x="1292" y="645" font-size="24" fill="#B9A6FF">4 目标</text>
+    <text x="1196" y="686" font-size="22" fill="#9FB3C8">特性</text>
+    <text x="1292" y="687" font-size="22" fill="#C9D6E8">直线弹道</text>
+    <text x="1300" y="856" font-size="16" fill="#B9A6FF" fill-opacity="0.75" text-anchor="middle">新形态设计稿</text>
+    <text x="1300" y="880" font-size="16" fill="#B9A6FF" fill-opacity="0.75" text-anchor="middle">（现复用 Normal 贴图）</text>
+  </g>
+
+  <!-- ===== 卡 5：Laser 聚能塔（cx=1640·新形态设计稿） ===== -->
+  <g>
+    <polygon points="1490,216 1506,200 1774,200 1790,216 1790,884 1774,900 1506,900 1490,884" fill="url(#ds-panel)" stroke="#3A4A63" stroke-width="2"/>
+    <path d="M1524 201 H1756" stroke="#B18CFF" stroke-opacity="0.6" stroke-width="3"/>
+    <text x="1640" y="262" font-size="32" fill="#E8F0FA" font-weight="600" text-anchor="middle">Laser 聚能塔</text>
+    <polygon points="1596,286 1684,286 1692,294 1692,310 1684,318 1596,318 1588,310 1588,294" fill="#131A26" stroke="#B18CFF" stroke-opacity="0.6" stroke-width="1.5"/>
+    <text x="1640" y="309" font-size="20" fill="#D0BFFF" text-anchor="middle">高能单体</text>
+    <polygon points="1632,214 1700,214 1708,222 1708,244 1700,252 1632,252 1624,244 1624,222" fill="#123845" stroke="#B18CFF" stroke-opacity="0.5" stroke-width="1.5"/>
+    <text x="1666" y="240" font-size="18" fill="#D0BFFF" text-anchor="middle">Lv.1</text>
+    <!-- 塔形大图：紫晶透镜聚能器（新形态） -->
+    <circle cx="1640" cy="430" r="54" fill="#232045" stroke="#B18CFF" stroke-opacity="0.8" stroke-width="4"/>
+    <circle cx="1640" cy="430" r="40" fill="none" stroke="#B18CFF" stroke-opacity="0.3" stroke-width="2" stroke-dasharray="4 8"/>
+    <circle cx="1640" cy="430" r="26" fill="#171530" stroke="#B18CFF" stroke-opacity="0.6" stroke-width="2"/>
+    <circle cx="1640" cy="430" r="14" fill="none" stroke="#B18CFF" stroke-opacity="0.8" stroke-width="2"/>
+    <circle cx="1640" cy="430" r="6" fill="#E8DBFF" filter="url(#ds-bloom)"/>
+    <path d="M1604 396 l-18 -18 M1676 396 l18 -18 M1604 464 l-18 18 M1676 464 l18 18" stroke="#B18CFF" stroke-opacity="0.5" stroke-width="4" stroke-linecap="round"/>
+    <path d="M1530 556 H1750" stroke="#3A4A63" stroke-width="2"/>
+    <text x="1536" y="600" font-size="22" fill="#9FB3C8">造价</text>
+    <polygon points="1606,582 1616,582 1622,592 1616,602 1606,602 1600,592" fill="url(#ds-gold)" stroke="#B96E1B" stroke-width="1.5"/>
+    <text x="1632" y="601" font-size="26" fill="#FFC94D" font-weight="600">50</text>
+    <text x="1536" y="644" font-size="22" fill="#9FB3C8">输出</text>
+    <text x="1632" y="645" font-size="24" fill="#E8F0FA">DPS 37.5</text>
+    <text x="1536" y="686" font-size="22" fill="#9FB3C8">特性</text>
+    <text x="1632" y="687" font-size="22" fill="#C9D6E8">高能锁定</text>
+    <text x="1640" y="856" font-size="16" fill="#B9A6FF" fill-opacity="0.75" text-anchor="middle">新形态设计稿</text>
+    <text x="1640" y="880" font-size="16" fill="#B9A6FF" fill-opacity="0.75" text-anchor="middle">（现复用 Normal 贴图）</text>
+  </g>
+
+  <!-- 暗角 -->
+  <rect width="1920" height="1080" fill="url(#ds-vig)"/>
+
+  <!-- ===== 标注层（图纸引出线，交付实现时可删） ===== -->
+  <g id="annotations" font-family="Consolas,monospace">
+    <text x="130" y="952" font-size="20" fill="#9FB3C8" fill-opacity="0.8">升级三段成长（Lv.1→Lv.3，tbtowerinfo 每塔 3 行） · 出售返还=累计投入×70% · 建造/升级/出售交互见 02 / 07 / 07b</text>
+    <text x="44" y="1040" font-size="16" fill="#9FB3C8" fill-opacity="0.6">深色科幻正式版 · 数值=tbtowerinfo Lv.1 行 · 类型色：青=速射 / 橙=重炮 / 冰=控场 / 紫=新形态（Pierce / Laser）</text>
+  </g>
+</svg>

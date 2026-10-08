@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 02b_HudView_BuildMode.svg — 战斗 HUD 建造模式【正式版·深色科幻】
+     母版: 02_HudView_Normal.svg（几何一致）；差异：Normal 塔选中青光、其余置灰、
+     可建=绿色发光格 / 不可建=红色发光格、雷达射程圈、跟随塔影+十字准星、禁堵路警示浮字 -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" width="1920" height="1080">
+  <defs>
+    <linearGradient id="ds-panel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2A3444"/><stop offset="0.5" stop-color="#1B2330"/><stop offset="1" stop-color="#222C3B"/>
+    </linearGradient>
+    <linearGradient id="ds-gold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFC94D"/><stop offset="1" stop-color="#E8912B"/>
+    </linearGradient>
+    <radialGradient id="ds-vig" cx="0.5" cy="0.5" r="0.75">
+      <stop offset="0.62" stop-color="#0B0E14" stop-opacity="0"/><stop offset="1" stop-color="#0B0E14" stop-opacity="0.66"/>
+    </radialGradient>
+    <filter id="ds-neon" x="-60%" y="-60%" width="220%" height="220%">
+      <feDropShadow dx="0" dy="0" stdDeviation="3" flood-color="#35E0FF" flood-opacity="0.85"/>
+    </filter>
+    <filter id="ds-neon-gold" x="-60%" y="-60%" width="220%" height="220%">
+      <feDropShadow dx="0" dy="0" stdDeviation="2.5" flood-color="#FFC94D" flood-opacity="0.75"/>
+    </filter>
+    <filter id="ds-neon-green" x="-60%" y="-60%" width="220%" height="220%">
+      <feDropShadow dx="0" dy="0" stdDeviation="4" flood-color="#3DFFA8" flood-opacity="0.8"/>
+    </filter>
+    <filter id="ds-neon-red" x="-60%" y="-60%" width="220%" height="220%">
+      <feDropShadow dx="0" dy="0" stdDeviation="4" flood-color="#FF4D5E" flood-opacity="0.8"/>
+    </filter>
+    <pattern id="ds-grid" width="80" height="80" patternUnits="userSpaceOnUse">
+      <path d="M80 0H0V80" fill="none" stroke="#1C2532" stroke-width="1"/>
+    </pattern>
+    <pattern id="ds-stars" width="220" height="220" patternUnits="userSpaceOnUse">
+      <circle cx="30" cy="40" r="1.2" fill="#E8F0FA" fill-opacity="0.4"/>
+      <circle cx="130" cy="22" r="0.8" fill="#E8F0FA" fill-opacity="0.28"/>
+      <circle cx="186" cy="104" r="1.4" fill="#35E0FF" fill-opacity="0.3"/>
+      <circle cx="74" cy="150" r="0.9" fill="#E8F0FA" fill-opacity="0.22"/>
+    </pattern>
+  </defs>
+
+  <!-- ===== 世界层 ===== -->
+  <rect width="1920" height="1080" fill="#10141D"/>
+  <rect width="1920" height="1080" fill="url(#ds-stars)"/>
+  <rect x="240" y="140" width="1440" height="800" fill="#131A26"/>
+  <rect x="240" y="140" width="1440" height="800" fill="url(#ds-grid)" opacity="0.9"/>
+  <rect x="240" y="140" width="1440" height="800" fill="none" stroke="#233246" stroke-width="2"/>
+  <circle cx="280" cy="540" r="30" fill="none" stroke="#35E0FF" stroke-width="3" filter="url(#ds-neon)"/>
+  <text x="280" y="549" font-size="24" fill="#35E0FF" text-anchor="middle" font-weight="600">S</text>
+  <circle cx="1640" cy="540" r="30" fill="none" stroke="#FF4D5E" stroke-width="3"/>
+  <text x="1640" y="549" font-size="24" fill="#FF8A94" text-anchor="middle" font-weight="600">E</text>
+  <path d="M320 540 H1600" fill="none" stroke="#35E0FF" stroke-opacity="0.22" stroke-width="22"/>
+  <path d="M320 540 H1600" fill="none" stroke="#35E0FF" stroke-opacity="0.5" stroke-width="3" stroke-dasharray="18 14"/>
+  <g fill="#35E0FF" opacity="0.8">
+    <path d="M560 528 l24 12 -24 12 z"/><path d="M900 528 l24 12 -24 12 z"/><path d="M1240 528 l24 12 -24 12 z"/><path d="M1520 528 l24 12 -24 12 z"/>
+  </g>
+  <!-- 已建塔 -->
+  <g>
+    <circle cx="640" cy="400" r="28" fill="#2E4A66" stroke="#5E7396" stroke-width="3"/>
+    <path d="M612 400 a28 28 0 0 1 56 0" fill="none" stroke="#8C6239" stroke-width="5"/>
+    <g transform="rotate(45 640 400)"><rect x="634" y="374" width="12" height="52" rx="4" fill="#9FB3C8" stroke="#3A4A63" stroke-width="1.5"/><rect x="608" y="394" width="64" height="12" rx="4" fill="#9FB3C8" stroke="#3A4A63" stroke-width="1.5"/></g>
+    <circle cx="640" cy="400" r="8" fill="#C9D6E8"/>
+  </g>
+
+  <!-- 可建格：绿色发光 -->
+  <rect x="800" y="380" width="80" height="80" fill="#3DFFA8" fill-opacity="0.14" stroke="#3DFFA8" stroke-width="2.5" filter="url(#ds-neon-green)"/>
+  <!-- 不可建格（堵路）：红色发光 + 斜纹 -->
+  <rect x="960" y="460" width="80" height="80" fill="#FF4D5E" fill-opacity="0.14" stroke="#FF4D5E" stroke-width="2.5" filter="url(#ds-neon-red)"/>
+  <path d="M960 460 l80 80 M970 456 l84 84 M956 470 l80 80" stroke="#FF4D5E" stroke-opacity="0.45" stroke-width="2"/>
+
+  <!-- 雷达射程圈（radius 3 格 = 240px） -->
+  <circle cx="840" cy="420" r="240" fill="#3DFFA8" fill-opacity="0.05" stroke="#3DFFA8" stroke-opacity="0.75" stroke-width="2.5" stroke-dasharray="14 10"/>
+  <circle cx="840" cy="420" r="160" fill="none" stroke="#3DFFA8" stroke-opacity="0.25" stroke-width="1" stroke-dasharray="6 10"/>
+  <path d="M840 420 L840 180 A240 240 0 0 1 1006 234 Z" fill="#3DFFA8" fill-opacity="0.08"/>
+
+  <!-- 跟随塔影（半透明 Normal 塔）+ 十字准星 -->
+  <g opacity="0.7">
+    <circle cx="840" cy="420" r="26" fill="#2E4A66" stroke="#5E7396" stroke-width="3"/>
+    <path d="M814 420 a26 26 0 0 1 52 0" fill="none" stroke="#8C6239" stroke-width="5"/>
+    <g transform="rotate(45 840 417)"><rect x="834" y="391" width="11" height="50" rx="4" fill="#9FB3C8" stroke="#3A4A63" stroke-width="1.5"/><rect x="809" y="411" width="50" height="11" rx="4" fill="#9FB3C8" stroke="#3A4A63" stroke-width="1.5"/></g>
+    <circle cx="840" cy="417" r="8" fill="#C9D6E8"/>
+  </g>
+  <g stroke="#3DFFA8" stroke-width="2" opacity="0.9">
+    <path d="M840 336 v-24 M840 504 v24 M756 420 h-24 M924 420 h24"/>
+    <circle cx="840" cy="420" r="46" fill="none" stroke-dasharray="8 8" opacity="0.6"/>
+  </g>
+
+  <!-- 禁堵路警示浮字 -->
+  <g filter="url(#ds-neon-red)">
+    <polygon points="700,318 1220,318 1232,330 1232,360 1220,372 700,372 688,360 688,330" fill="#2A1218" stroke="#FF4D5E" stroke-width="2"/>
+  </g>
+  <text x="960" y="352" font-size="28" fill="#FF8A94" text-anchor="middle" font-weight="600">该位置会堵死怪物路径，无法建造</text>
+
+  <rect width="1920" height="1080" fill="url(#ds-vig)"/>
+
+  <!-- ===== HUD：建造模式 ===== -->
+  <g>
+    <polygon points="52,28 288,28 296,36 296,72 288,80 52,80 44,72 44,36" fill="url(#ds-panel)" stroke="#3A4A63" stroke-width="2"/>
+    <g filter="url(#ds-neon-gold)">
+      <polygon points="76,40 88,40 94,50 88,60 76,60 70,50" fill="url(#ds-gold)" stroke="#B96E1B" stroke-width="1.5"/>
+      <rect x="79" y="44" width="6" height="12" rx="3" fill="#FFF7E0"/>
+    </g>
+    <text x="106" y="66" font-size="32" fill="#E8F0FA" font-weight="600">1250</text>
+  </g>
+  <g>
+    <polygon points="52,92 288,92 296,100 296,136 288,144 52,144 44,136 44,100" fill="url(#ds-panel)" stroke="#3A4A63" stroke-width="2"/>
+    <path d="M70 100 h16 v14 c0 8 -8 13 -8 13 s-8 -5 -8 -13 z" fill="#1C2532" stroke="#3A4A63" stroke-width="2"/>
+    <circle cx="78" cy="115" r="4.5" fill="#FF8A8A" filter="url(#ds-bloom)"/>
+    <text x="106" y="130" font-size="32" fill="#E8F0FA" font-weight="600">18<tspan fill="#9FB3C8" font-size="24">/20</tspan></text>
+  </g>
+  <g>
+    <polygon points="816,30 1104,30 1112,38 1112,78 1104,86 816,86 808,78 808,38" fill="url(#ds-panel)" stroke="#3A4A63" stroke-width="2"/>
+    <g stroke="#35E0FF" stroke-width="4" stroke-linecap="round" fill="none">
+      <path d="M836 46 l12 12 -12 12"/><path d="M854 46 l12 12 -12 12" opacity="0.55"/><path d="M872 46 l12 12 -12 12" opacity="0.28"/>
+    </g>
+    <text x="968" y="69" font-size="38" fill="#E8F0FA" text-anchor="middle" font-weight="600">回合 2/5</text>
+  </g>
+
+  <!-- 5 塔按钮：Normal 选中（青光+金色角标），其余禁用 -->
+  <g filter="url(#ds-neon)">
+    <rect x="348" y="903" width="128" height="128" rx="12" fill="#16303F" stroke="#35E0FF" stroke-width="3"/>
+  </g>
+  <path d="M348 935 v-20 a12 12 0 0 1 12 -12 h20" fill="none" stroke="#FFC94D" stroke-width="4"/>
+  <circle cx="412" cy="961" r="26" fill="#2E4A66" stroke="#5E7396" stroke-width="3"/>
+  <path d="M386 961 a26 26 0 0 1 52 0" fill="none" stroke="#8C6239" stroke-width="5"/>
+  <g transform="rotate(45 412 958)"><rect x="406" y="930" width="11" height="52" rx="4" fill="#9FB3C8" stroke="#3A4A63" stroke-width="1.5"/><rect x="380" y="952" width="52" height="11" rx="4" fill="#9FB3C8" stroke="#3A4A63" stroke-width="1.5"/></g>
+  <circle cx="412" cy="958" r="8" fill="#C9D6E8"/>
+  <g opacity="0.45">
+    <rect x="622" y="903" width="128" height="128" rx="12" fill="url(#ds-panel)" stroke="#3A4A63" stroke-width="2"/>
+    <rect x="656" y="932" width="60" height="46" rx="6" fill="#2A3138" stroke="#5E7396" stroke-width="3"/>
+    <polygon points="668,978 696,978 690,994 674,994" fill="#5E4638"/>
+    <rect x="896" y="903" width="128" height="128" rx="12" fill="url(#ds-panel)" stroke="#3A4A63" stroke-width="2"/>
+    <polygon points="934,960 986,960 976,984 944,984" fill="#1C2532" stroke="#5E7396" stroke-width="3"/>
+    <path d="M960 916 l14 24 -14 24 -14 -24 z" fill="#3E6E7E"/>
+    <rect x="1170" y="903" width="128" height="128" rx="12" fill="url(#ds-panel)" stroke="#3A4A63" stroke-width="2"/>
+    <circle cx="1234" cy="972" r="24" fill="#2E4A66" stroke="#5E7396" stroke-width="3"/>
+    <rect x="1228" y="922" width="12" height="42" rx="4" fill="#9FB3C8" stroke="#3A4A63" stroke-width="1.5"/>
+    <path d="M1222 922 l12 -18 12 18 z" fill="#9FB3C8"/>
+    <rect x="1444" y="903" width="128" height="128" rx="12" fill="url(#ds-panel)" stroke="#3A4A63" stroke-width="2"/>
+    <polygon points="1482,990 1534,990 1524,946 1492,946" fill="#2A3138" stroke="#5E7396" stroke-width="3"/>
+    <circle cx="1508" cy="934" r="15" fill="none" stroke="#55627A" stroke-width="3"/>
+    <circle cx="1508" cy="934" r="3" fill="#9FB3C8"/>
+  </g>
+
+  <!-- StartButton 禁用 -->
+  <polygon points="1002,984 1188,984 1210,1006 1210,1034 1188,1056 1002,1056 990,1034 990,1006" fill="#16202E" stroke="#55627A" stroke-width="2"/>
+  <text x="1100" y="1031" font-size="32" fill="#55627A" text-anchor="middle" font-weight="600">进行中</text>
+
+  <!-- ===== 标注层 ===== -->
+  <g id="annotations" font-family="Consolas,monospace">
+    <text x="500" y="330" font-size="20" fill="#FF8A94" fill-opacity="0.85">红格=堵路回滚（A* 校验失败不扣费）· TipsView 联动</text>
+    <line x1="1002" y1="470" x2="1002" y2="452" stroke="#9FB3C8" stroke-opacity="0.5" stroke-width="1" stroke-dasharray="4 3"/>
+    <text x="340" y="196" font-size="20" fill="#9FB3C8" fill-opacity="0.85">绿格=可建 · 雷达射程圈 radius 3 格 · 十字准星=落点 · 塔影半透明</text>
+    <line x1="760" y1="420" x2="700" y2="420" stroke="#9FB3C8" stroke-opacity="0.5" stroke-width="1" stroke-dasharray="4 3"/>
+    <text x="44" y="892" font-size="20" fill="#9FB3C8" fill-opacity="0.85">选中塔按钮：青光描边+金色角标；其余置灰；右键/再点按钮取消建造</text>
+    <text x="44" y="936" font-size="16" fill="#9FB3C8" fill-opacity="0.6">校验链：空地? → 金币? → A* 堵路校验（临时设墙→S→E 可达）→ 扣费建塔+全怪改道</text>
+  </g>
+</svg>

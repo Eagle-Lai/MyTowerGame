@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 06_TipsView.svg — 浮动提示（TipsView，挂 TipsPanel 顶层）【正式版·深色科幻】
+     数据源: Assets/Prefabs/UI/TipsView.prefab + TipsView.cs（2026-10-08 实测）
+     TipText: anchor(0.5,0.3) 1100×60，38 号居中；队列最多 3 条，每条 1.2s，淡入淡出各 0.15s -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" width="1920" height="1080">
+  <defs>
+    <linearGradient id="ds-panel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2A3444"/><stop offset="0.5" stop-color="#1B2330"/><stop offset="1" stop-color="#222C3B"/>
+    </linearGradient>
+    <linearGradient id="ds-gold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFC94D"/><stop offset="1" stop-color="#E8912B"/>
+    </linearGradient>
+    <radialGradient id="ds-vig" cx="0.5" cy="0.5" r="0.75">
+      <stop offset="0.62" stop-color="#0B0E14" stop-opacity="0"/><stop offset="1" stop-color="#0B0E14" stop-opacity="0.66"/>
+    </radialGradient>
+    <filter id="ds-neon" x="-60%" y="-60%" width="220%" height="220%">
+      <feDropShadow dx="0" dy="0" stdDeviation="3" flood-color="#35E0FF" flood-opacity="0.85"/>
+    </filter>
+    <filter id="ds-neon-gold" x="-60%" y="-60%" width="220%" height="220%">
+      <feDropShadow dx="0" dy="0" stdDeviation="2.5" flood-color="#FFC94D" flood-opacity="0.75"/>
+    </filter>
+    <pattern id="ds-stars" width="220" height="220" patternUnits="userSpaceOnUse">
+      <circle cx="30" cy="40" r="1.2" fill="#E8F0FA" fill-opacity="0.4"/>
+      <circle cx="130" cy="22" r="0.8" fill="#E8F0FA" fill-opacity="0.28"/>
+      <circle cx="186" cy="104" r="1.4" fill="#35E0FF" fill-opacity="0.3"/>
+      <circle cx="74" cy="150" r="0.9" fill="#E8F0FA" fill-opacity="0.22"/>
+    </pattern>
+  </defs>
+
+  <!-- 背景：简化战斗场景 + HUD -->
+  <rect width="1920" height="1080" fill="#10141D"/>
+  <rect width="1920" height="1080" fill="url(#ds-stars)"/>
+  <g opacity="0.55">
+    <rect x="240" y="140" width="1440" height="800" fill="#131A26"/>
+    <path d="M240 300H1680M240 460H1680M240 620H1680M240 780H1680" stroke="#1C2532" stroke-width="2"/>
+    <rect x="240" y="140" width="1440" height="800" fill="none" stroke="#233246" stroke-width="2"/>
+    <path d="M320 540 H1600" stroke="#35E0FF" stroke-opacity="0.25" stroke-width="20"/>
+    <circle cx="640" cy="420" r="30" fill="#2E4A66" stroke="#5E7396" stroke-width="3"/>
+  </g>
+  <g opacity="0.55">
+    <polygon points="52,28 288,28 296,36 296,72 288,80 52,80 44,72 44,36" fill="url(#ds-panel)" stroke="#3A4A63" stroke-width="2"/>
+    <polygon points="76,40 88,40 94,50 88,60 76,60 70,50" fill="url(#ds-gold)" stroke="#B96E1B" stroke-width="1.5" filter="url(#ds-neon-gold)"/>
+    <text x="106" y="66" font-size="32" fill="#E8F0FA" font-weight="600">3</text>
+    <polygon points="52,92 288,92 296,100 296,136 288,144 52,144 44,136 44,100" fill="url(#ds-panel)" stroke="#3A4A63" stroke-width="2"/>
+    <path d="M70 100 h16 v14 c0 8 -8 13 -8 13 s-8 -5 -8 -13 z" fill="#1C2532" stroke="#3A4A63" stroke-width="2"/>
+    <circle cx="78" cy="115" r="4.5" fill="#FF8A8A"/>
+    <text x="106" y="130" font-size="32" fill="#E8F0FA" font-weight="600">18<tspan fill="#9FB3C8" font-size="24">/20</tspan></text>
+    <polygon points="816,30 1104,30 1112,38 1112,78 1104,86 816,86 808,78 808,38" fill="url(#ds-panel)" stroke="#3A4A63" stroke-width="2"/>
+    <text x="960" y="69" font-size="34" fill="#E8F0FA" text-anchor="middle" font-weight="600">回合 2/5</text>
+  </g>
+  <rect width="1920" height="1080" fill="url(#ds-vig)"/>
+
+  <!-- Tips 队列（anchor(0.5,0.3) → y≈756 起逐条上排，本图并列展示 3 条排队态） -->
+  <!-- 第 1 条（正在显示，不透明·青色描边） -->
+  <polygon points="420,690 1500,690 1510,700 1510,740 1500,750 420,750 410,740 410,700" fill="#131A26" fill-opacity="0.85" stroke="#35E0FF" stroke-opacity="0.7" stroke-width="2" filter="url(#ds-neon)"/>
+  <text x="960" y="731" font-size="38" fill="#DFFAFF" text-anchor="middle">金币不足，无法建造</text>
+  <!-- 第 2 条（排队中，半淡） -->
+  <polygon points="420,762 1500,762 1510,772 1510,812 1500,822 420,822 410,812 410,772" fill="#131A26" fill-opacity="0.55" stroke="#3A4A63" stroke-width="2"/>
+  <text x="960" y="803" font-size="38" fill="#DFFAFF" fill-opacity="0.6" text-anchor="middle">该位置会堵死怪物路径，无法建造</text>
+  <!-- 第 3 条（排队中，更淡） -->
+  <polygon points="420,834 1500,834 1510,844 1510,884 1500,894 420,894 410,884 410,844" fill="#131A26" fill-opacity="0.35" stroke="#3A4A63" stroke-opacity="0.5" stroke-width="2"/>
+  <text x="960" y="875" font-size="38" fill="#DFFAFF" fill-opacity="0.35" text-anchor="middle">下一回合 (3)</text>
+
+  <!-- ===== 标注层（图纸引出线，交付实现时可删） ===== -->
+  <g id="annotations" font-family="Consolas,monospace">
+    <text x="420" y="676" font-size="20" fill="#9FB3C8" fill-opacity="0.8">TipText：anchor(0.5,0.3)，1100×60，38 号居中（实际同时只显示队首，本图展开示意队列）</text>
+    <line x1="960" y1="682" x2="960" y2="688" stroke="#9FB3C8" stroke-opacity="0.5" stroke-width="1" stroke-dasharray="4 3"/>
+    <text x="420" y="930" font-size="20" fill="#9FB3C8" fill-opacity="0.8">规则：队列最多 3 条，超出丢最旧；每条保持 1.2s，淡入/淡出各 0.15s；CanvasGroup blocksRaycasts=false（不挡操作）</text>
+    <text x="420" y="960" font-size="20" fill="#9FB3C8" fill-opacity="0.8">典型消息：金币不足 / 禁堵路 / 回合倒计时"下一回合 (n)" / "存档已重置" / "先通关上一关才能解锁"</text>
+    <text x="44" y="1040" font-size="16" fill="#9FB3C8" fill-opacity="0.6">深色科幻正式版 · TipsView.prefab + TipsView.cs · 队首=青描边高亮，排队条目按透明度衰减</text>
+  </g>
+</svg>

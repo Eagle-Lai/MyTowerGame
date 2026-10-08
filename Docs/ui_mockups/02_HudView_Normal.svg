@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 02_HudView_Normal.svg — 战斗 HUD 正常态【正式版·深色科幻】
+     几何与 prefab 实测一致（勿改坐标）；视觉为深色科幻重设计，塔形依据 Assets/_UIAssets/Tower 真实美术
+     数据源: HudView.prefab / UIPrefabBuilder.cs；坐标换算 x=960+X, y=540−Y -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" width="1920" height="1080">
+  <defs>
+    <linearGradient id="ds-panel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2A3444"/><stop offset="0.5" stop-color="#1B2330"/><stop offset="1" stop-color="#222C3B"/>
+    </linearGradient>
+    <linearGradient id="ds-gold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFC94D"/><stop offset="1" stop-color="#E8912B"/>
+    </linearGradient>
+    <linearGradient id="ds-crystal" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#CFF6FF"/><stop offset="1" stop-color="#35E0FF"/>
+    </linearGradient>
+    <radialGradient id="ds-fire" cx="0.5" cy="0.35" r="0.8">
+      <stop offset="0" stop-color="#FFC94D"/><stop offset="1" stop-color="#FF7A29"/>
+    </radialGradient>
+    <radialGradient id="ds-vig" cx="0.5" cy="0.5" r="0.75">
+      <stop offset="0.62" stop-color="#0B0E14" stop-opacity="0"/><stop offset="1" stop-color="#0B0E14" stop-opacity="0.66"/>
+    </radialGradient>
+    <filter id="ds-neon" x="-60%" y="-60%" width="220%" height="220%">
+      <feDropShadow dx="0" dy="0" stdDeviation="3" flood-color="#35E0FF" flood-opacity="0.85"/>
+    </filter>
+    <filter id="ds-neon-gold" x="-60%" y="-60%" width="220%" height="220%">
+      <feDropShadow dx="0" dy="0" stdDeviation="2.5" flood-color="#FFC94D" flood-opacity="0.75"/>
+    </filter>
+    <filter id="ds-bloom" x="-80%" y="-80%" width="260%" height="260%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="4" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <pattern id="ds-grid" width="80" height="80" patternUnits="userSpaceOnUse">
+      <path d="M80 0H0V80" fill="none" stroke="#1C2532" stroke-width="1"/>
+    </pattern>
+    <pattern id="ds-stars" width="220" height="220" patternUnits="userSpaceOnUse">
+      <circle cx="30" cy="40" r="1.2" fill="#E8F0FA" fill-opacity="0.4"/>
+      <circle cx="130" cy="22" r="0.8" fill="#E8F0FA" fill-opacity="0.28"/>
+      <circle cx="186" cy="104" r="1.4" fill="#35E0FF" fill-opacity="0.3"/>
+      <circle cx="74" cy="150" r="0.9" fill="#E8F0FA" fill-opacity="0.22"/>
+    </pattern>
+  </defs>
+
+  <!-- ===== 世界层示意（暗色战场） ===== -->
+  <rect width="1920" height="1080" fill="#10141D"/>
+  <rect width="1920" height="1080" fill="url(#ds-stars)"/>
+  <rect x="240" y="140" width="1440" height="800" fill="#131A26"/>
+  <rect x="240" y="140" width="1440" height="800" fill="url(#ds-grid)" opacity="0.9"/>
+  <rect x="240" y="140" width="1440" height="800" fill="none" stroke="#233246" stroke-width="2"/>
+  <!-- S 传送门 / E 核心 -->
+  <circle cx="280" cy="540" r="30" fill="none" stroke="#35E0FF" stroke-width="3" filter="url(#ds-neon)"/>
+  <circle cx="280" cy="540" r="16" fill="#35E0FF" fill-opacity="0.25"/>
+  <text x="280" y="549" font-size="24" fill="#35E0FF" text-anchor="middle" font-weight="600">S</text>
+  <circle cx="1640" cy="540" r="30" fill="none" stroke="#FF4D5E" stroke-width="3"/>
+  <circle cx="1640" cy="540" r="14" fill="#FF4D5E" fill-opacity="0.3" filter="url(#ds-bloom)"/>
+  <text x="1640" y="549" font-size="24" fill="#FF8A94" text-anchor="middle" font-weight="600">E</text>
+  <!-- A* 路径：青色发光链 -->
+  <path d="M320 540 H1600" fill="none" stroke="#35E0FF" stroke-opacity="0.22" stroke-width="22"/>
+  <path d="M320 540 H1600" fill="none" stroke="#35E0FF" stroke-opacity="0.55" stroke-width="3" stroke-dasharray="18 14"/>
+  <g fill="#35E0FF" opacity="0.8">
+    <path d="M560 528 l24 12 -24 12 z"/><path d="M900 528 l24 12 -24 12 z"/><path d="M1240 528 l24 12 -24 12 z"/><path d="M1520 528 l24 12 -24 12 z"/>
+  </g>
+  <!-- 两座塔（真实塔形上色） -->
+  <g>
+    <circle cx="640" cy="400" r="28" fill="#2E4A66" stroke="#5E7396" stroke-width="3"/>
+    <path d="M612 400 a28 28 0 0 1 56 0" fill="none" stroke="#8C6239" stroke-width="5"/>
+    <g transform="rotate(45 640 400)"><rect x="634" y="374" width="12" height="52" rx="4" fill="#9FB3C8" stroke="#3A4A63" stroke-width="1.5"/><rect x="608" y="394" width="64" height="12" rx="4" fill="#9FB3C8" stroke="#3A4A63" stroke-width="1.5"/></g>
+    <circle cx="640" cy="400" r="8" fill="#C9D6E8"/>
+  </g>
+  <g>
+    <polygon points="1260,730 1320,730 1332,760 1248,760" fill="#1C2532" stroke="#5E7396" stroke-width="3"/>
+    <path d="M1272 716 l16 -26 16 26 z" fill="url(#ds-crystal)" filter="url(#ds-bloom)"/>
+  </g>
+
+  <!-- 暗角 -->
+  <rect width="1920" height="1080" fill="url(#ds-vig)"/>
+
+  <!-- ===== HUD ===== -->
+  <!-- 金币芯片：GoldText(40,-30,520×52) 可视化为金属角切芯片 -->
+  <g>
+    <polygon points="52,28 288,28 296,36 296,72 288,80 52,80 44,72 44,36" fill="url(#ds-panel)" stroke="#3A4A63" stroke-width="2"/>
+    <g filter="url(#ds-neon-gold)">
+      <polygon points="76,40 88,40 94,50 88,60 76,60 70,50" fill="url(#ds-gold)" stroke="#B96E1B" stroke-width="1.5"/>
+      <rect x="79" y="44" width="6" height="12" rx="3" fill="#FFF7E0"/>
+    </g>
+    <text x="106" y="66" font-size="32" fill="#E8F0FA" font-weight="600">1250</text>
+  </g>
+  <!-- 生命芯片：HpText(40,-84) -->
+  <g>
+    <polygon points="52,92 288,92 296,100 296,136 288,144 52,144 44,136 44,100" fill="url(#ds-panel)" stroke="#3A4A63" stroke-width="2"/>
+    <path d="M70 100 h16 v14 c0 8 -8 13 -8 13 s-8 -5 -8 -13 z" fill="#1C2532" stroke="#3A4A63" stroke-width="2"/>
+    <circle cx="78" cy="115" r="4.5" fill="#FF8A8A" filter="url(#ds-bloom)"/>
+    <text x="106" y="130" font-size="32" fill="#E8F0FA" font-weight="600">18<tspan fill="#9FB3C8" font-size="24">/20</tspan></text>
+  </g>
+  <!-- 回合芯片：RoundText(0,-30,700×56) -->
+  <g>
+    <polygon points="816,30 1104,30 1112,38 1112,78 1104,86 816,86 808,78 808,38" fill="url(#ds-panel)" stroke="#3A4A63" stroke-width="2"/>
+    <polygon points="816,30 1104,30 1112,38 1112,78 1104,86 816,86 808,78 808,38" fill="none" stroke="#35E0FF" stroke-opacity="0.35" stroke-width="1"/>
+    <g stroke="#35E0FF" stroke-width="4" stroke-linecap="round" fill="none">
+      <path d="M836 46 l12 12 -12 12"/><path d="M854 46 l12 12 -12 12" opacity="0.55"/><path d="M872 46 l12 12 -12 12" opacity="0.28"/>
+    </g>
+    <text x="968" y="69" font-size="38" fill="#E8F0FA" text-anchor="middle" font-weight="600">回合 2/5</text>
+  </g>
+
+  <!-- 5 塔按钮：128×128，中心 y=967，x=412/686/960/1234/1508 -->
+  <!-- Normal 四联炮 -->
+  <g>
+    <rect x="348" y="903" width="128" height="128" rx="12" fill="url(#ds-panel)" stroke="#3A4A63" stroke-width="2"/>
+    <rect x="352" y="907" width="120" height="120" rx="10" fill="none" stroke="#35E0FF" stroke-opacity="0.25" stroke-width="1"/>
+    <circle cx="412" cy="961" r="26" fill="#2E4A66" stroke="#5E7396" stroke-width="3"/>
+    <path d="M386 961 a26 26 0 0 1 52 0" fill="none" stroke="#8C6239" stroke-width="5"/>
+    <g transform="rotate(45 412 958)"><rect x="406" y="930" width="11" height="52" rx="4" fill="#9FB3C8" stroke="#3A4A63" stroke-width="1.5"/><rect x="380" y="952" width="52" height="11" rx="4" fill="#9FB3C8" stroke="#3A4A63" stroke-width="1.5"/></g>
+    <circle cx="412" cy="958" r="8" fill="#C9D6E8"/>
+    <polygon points="386,1040 438,1040 444,1048 444,1062 438,1068 386,1068 380,1062 380,1048" fill="#131A26" stroke="#3A4A63" stroke-width="1.5"/>
+    <polygon points="399,1046 411,1046 416,1054 411,1062 399,1062 394,1054" fill="url(#ds-gold)"/>
+    <text x="424" y="1061" font-size="20" fill="#FFC94D" font-weight="600">25</text>
+  </g>
+  <!-- Power 火焰发射器 -->
+  <g>
+    <rect x="622" y="903" width="128" height="128" rx="12" fill="url(#ds-panel)" stroke="#3A4A63" stroke-width="2"/>
+    <rect x="626" y="907" width="120" height="120" rx="10" fill="none" stroke="#35E0FF" stroke-opacity="0.25" stroke-width="1"/>
+    <rect x="656" y="932" width="60" height="46" rx="6" fill="#2A3138" stroke="#5E7396" stroke-width="3"/>
+    <rect x="668" y="920" width="10" height="14" fill="#55627A"/><rect x="694" y="920" width="10" height="14" fill="#55627A"/>
+    <polygon points="668,978 696,978 690,994 674,994" fill="url(#ds-fire)" filter="url(#ds-bloom)"/>
+    <path d="M664 946 h44 M664 954 h44 M664 962 h44" stroke="#55627A" stroke-width="2"/>
+    <polygon points="660,1040 712,1040 718,1048 718,1062 712,1068 660,1068 654,1062 654,1048" fill="#131A26" stroke="#3A4A63" stroke-width="1.5"/>
+    <polygon points="673,1046 685,1046 690,1054 685,1062 673,1062 668,1054" fill="url(#ds-gold)"/>
+    <text x="698" y="1061" font-size="20" fill="#FFC94D" font-weight="600">45</text>
+  </g>
+  <!-- Retard 水晶塔 -->
+  <g>
+    <rect x="896" y="903" width="128" height="128" rx="12" fill="url(#ds-panel)" stroke="#3A4A63" stroke-width="2"/>
+    <rect x="900" y="907" width="120" height="120" rx="10" fill="none" stroke="#35E0FF" stroke-opacity="0.25" stroke-width="1"/>
+    <ellipse cx="960" cy="972" rx="30" ry="10" fill="#35E0FF" fill-opacity="0.18"/>
+    <polygon points="934,960 986,960 976,984 944,984" fill="#1C2532" stroke="#5E7396" stroke-width="3"/>
+    <path d="M960 916 l14 24 -14 24 -14 -24 z" fill="url(#ds-crystal)" filter="url(#ds-bloom)"/>
+    <path d="M960 916 l0 48 M946 940 l28 0" stroke="#FFFFFF" stroke-opacity="0.5" stroke-width="1.5"/>
+    <polygon points="934,1040 986,1040 992,1048 992,1062 986,1068 934,1068 928,1062 928,1048" fill="#131A26" stroke="#3A4A63" stroke-width="1.5"/>
+    <polygon points="947,1046 959,1046 964,1054 959,1062 947,1062 942,1054" fill="url(#ds-gold)"/>
+    <text x="972" y="1061" font-size="20" fill="#FFC94D" font-weight="600">30</text>
+  </g>
+  <!-- Pierce 钻头穿透（新形态示意，现复用 Normal 贴图） -->
+  <g>
+    <rect x="1170" y="903" width="128" height="128" rx="12" fill="url(#ds-panel)" stroke="#3A4A63" stroke-width="2"/>
+    <rect x="1174" y="907" width="120" height="120" rx="10" fill="none" stroke="#7C5CFF" stroke-opacity="0.3" stroke-width="1" stroke-dasharray="6 5"/>
+    <circle cx="1234" cy="972" r="24" fill="#2E4A66" stroke="#5E7396" stroke-width="3"/>
+    <rect x="1228" y="922" width="12" height="42" rx="4" fill="#9FB3C8" stroke="#3A4A63" stroke-width="1.5"/>
+    <path d="M1222 922 l12 -18 12 18 z" fill="#9FB3C8" stroke="#7C5CFF" stroke-width="2"/>
+    <path d="M1224 916 h20 M1226 908 h16" stroke="#7C5CFF" stroke-width="2"/>
+    <circle cx="1234" cy="972" r="7" fill="#C9D6E8"/>
+    <polygon points="1208,1040 1260,1040 1266,1048 1266,1062 1260,1068 1208,1068 1202,1062 1202,1048" fill="#131A26" stroke="#3A4A63" stroke-width="1.5"/>
+    <polygon points="1221,1046 1233,1046 1238,1054 1233,1062 1221,1062 1216,1054" fill="url(#ds-gold)"/>
+    <text x="1246" y="1061" font-size="20" fill="#FFC94D" font-weight="600">35</text>
+  </g>
+  <!-- Laser 透镜聚焦塔（新形态示意，现复用 Normal 贴图） -->
+  <g>
+    <rect x="1444" y="903" width="128" height="128" rx="12" fill="url(#ds-panel)" stroke="#3A4A63" stroke-width="2"/>
+    <rect x="1448" y="907" width="120" height="120" rx="10" fill="none" stroke="#7C5CFF" stroke-opacity="0.3" stroke-width="1" stroke-dasharray="6 5"/>
+    <polygon points="1482,990 1534,990 1524,946 1492,946" fill="#2A3138" stroke="#5E7396" stroke-width="3"/>
+    <circle cx="1508" cy="934" r="15" fill="none" stroke="#7C5CFF" stroke-width="3" filter="url(#ds-neon)"/>
+    <circle cx="1508" cy="934" r="8" fill="none" stroke="#7C5CFF" stroke-opacity="0.7" stroke-width="2"/>
+    <circle cx="1508" cy="934" r="3" fill="#FFFFFF" filter="url(#ds-bloom)"/>
+    <path d="M1496 946 l-10 -12 M1520 946 l10 -12" stroke="#7C5CFF" stroke-opacity="0.6" stroke-width="2"/>
+    <polygon points="1482,1040 1534,1040 1540,1048 1540,1062 1534,1068 1482,1068 1476,1062 1476,1048" fill="#131A26" stroke="#3A4A63" stroke-width="1.5"/>
+    <polygon points="1495,1046 1507,1046 1512,1054 1507,1062 1495,1062 1490,1054" fill="url(#ds-gold)"/>
+    <text x="1520" y="1061" font-size="20" fill="#FFC94D" font-weight="600">50</text>
+  </g>
+
+  <!-- StartButton (140,60,220×72) 主按钮 -->
+  <g filter="url(#ds-neon)">
+    <polygon points="1002,984 1188,984 1210,1006 1210,1034 1188,1056 1002,1056 990,1034 990,1006" fill="#123845" stroke="#35E0FF" stroke-width="2.5"/>
+  </g>
+  <text x="1100" y="1031" font-size="32" fill="#DFFAFF" text-anchor="middle" font-weight="600">开 始</text>
+
+  <!-- ===== 标注层（图纸引出线，交付实现时可删） ===== -->
+  <g id="annotations" font-family="Consolas,monospace">
+    <text x="44" y="176" font-size="20" fill="#9FB3C8" fill-opacity="0.8">GoldText (40,-30) 520x52 · HpText (40,-84) · RoundText (0,-30) 700x56</text>
+    <line x1="300" y1="60" x2="360" y2="46" stroke="#9FB3C8" stroke-opacity="0.5" stroke-width="1" stroke-dasharray="4 3"/>
+    <text x="1240" y="1010" font-size="20" fill="#9FB3C8" fill-opacity="0.8">StartButton (140,60) 220x72</text>
+    <line x1="1232" y1="1016" x2="1214" y2="1018" stroke="#9FB3C8" stroke-opacity="0.5" stroke-width="1" stroke-dasharray="4 3"/>
+    <text x="44" y="892" font-size="20" fill="#9FB3C8" fill-opacity="0.8">5 塔按钮 128x128 · 中心间距 274 · y=-427 · 价格签=可选 PriceText 子节点 · 缺型隐藏/买不起置灰</text>
+    <text x="44" y="936" font-size="16" fill="#9FB3C8" fill-opacity="0.6">深色科幻正式版 · 塔形依据 Assets/_UIAssets/Tower 真实美术 · Pierce/Laser 为新形态设计稿（当前复用 Normal 贴图）</text>
+  </g>
+</svg>

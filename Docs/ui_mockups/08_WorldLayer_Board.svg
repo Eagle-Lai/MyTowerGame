@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 08_WorldLayer_Board.svg — 战斗世界层：棋盘与路径（备战态）【正式版·深色科幻】
+     数据源: Board.cs/BoardView.cs/PathArrowView.cs + tblevelmap（2026-10-08 实测）
+     棋盘数据来自 LevelMap 配置表（空地/障碍/S/E 四态），BoardView 逐格 SpriteRenderer 摆放
+     视觉为深色科幻重设计：青色传送门 S / 红色核心 E / 霓虹路径链 / 红纹禁区 -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" width="1920" height="1080">
+  <defs>
+    <radialGradient id="ds-vig" cx="0.5" cy="0.5" r="0.75">
+      <stop offset="0.62" stop-color="#0B0E14" stop-opacity="0"/><stop offset="1" stop-color="#0B0E14" stop-opacity="0.66"/>
+    </radialGradient>
+    <filter id="ds-neon" x="-60%" y="-60%" width="220%" height="220%">
+      <feDropShadow dx="0" dy="0" stdDeviation="3" flood-color="#35E0FF" flood-opacity="0.85"/>
+    </filter>
+    <filter id="ds-neon-red" x="-60%" y="-60%" width="220%" height="220%">
+      <feDropShadow dx="0" dy="0" stdDeviation="3" flood-color="#FF4D5E" flood-opacity="0.85"/>
+    </filter>
+    <filter id="ds-bloom" x="-80%" y="-80%" width="260%" height="260%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="4" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <pattern id="ds-stars" width="220" height="220" patternUnits="userSpaceOnUse">
+      <circle cx="30" cy="40" r="1.2" fill="#E8F0FA" fill-opacity="0.4"/>
+      <circle cx="130" cy="22" r="0.8" fill="#E8F0FA" fill-opacity="0.28"/>
+      <circle cx="186" cy="104" r="1.4" fill="#35E0FF" fill-opacity="0.3"/>
+      <circle cx="74" cy="150" r="0.9" fill="#E8F0FA" fill-opacity="0.22"/>
+    </pattern>
+    <pattern id="ds-hazard" width="16" height="16" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <rect width="7" height="16" fill="#FF4D5E" fill-opacity="0.12"/>
+    </pattern>
+  </defs>
+
+  <!-- 深空底板 -->
+  <rect width="1920" height="1080" fill="#10141D"/>
+  <rect width="1920" height="1080" fill="url(#ds-stars)"/>
+
+  <!-- 棋盘 18×10（关卡 2 布局：双障碍夹中段窄口），cell 80px，原点(240,140) -->
+  <rect x="240" y="140" width="1440" height="800" fill="#131A26"/>
+  <path d="M240 140H1680M240 220H1680M240 300H1680M240 380H1680M240 460H1680M240 540H1680M240 620H1680M240 700H1680M240 780H1680M240 860H1680M240 940H1680" stroke="#1C2532" stroke-width="1.5"/>
+  <path d="M240 140V940M320 140V940M400 140V940M480 140V940M560 140V940M640 140V940M720 140V940M800 140V940M880 140V940M960 140V940M1040 140V940M1120 140V940M1200 140V940M1280 140V940M1360 140V940M1440 140V940M1520 140V940M1600 140V940M1680 140V940" stroke="#1C2532" stroke-width="1.5"/>
+  <rect x="240" y="140" width="1440" height="800" fill="none" stroke="#233246" stroke-width="2"/>
+  <path d="M240 184 V140 H284 M1636 140 H1680 V184 M1680 896 V940 H1636 M284 940 H240 V896" fill="none" stroke="#35E0FF" stroke-opacity="0.55" stroke-width="3"/>
+
+  <!-- 障碍（关卡 2：上下两堵竖墙，夹出中段通道）暗色禁区 + 红色警示斜纹 -->
+  <g fill="#161E2C" stroke="#FF4D5E" stroke-opacity="0.45" stroke-width="2">
+    <rect x="720" y="140" width="80" height="80"/><rect x="720" y="220" width="80" height="80"/>
+    <rect x="720" y="300" width="80" height="80"/><rect x="720" y="380" width="80" height="80"/>
+    <rect x="1120" y="620" width="80" height="80"/><rect x="1120" y="700" width="80" height="80"/>
+    <rect x="1120" y="780" width="80" height="80"/><rect x="1120" y="860" width="80" height="80"/>
+  </g>
+  <g fill="url(#ds-hazard)">
+    <rect x="720" y="140" width="80" height="80"/><rect x="720" y="220" width="80" height="80"/>
+    <rect x="720" y="300" width="80" height="80"/><rect x="720" y="380" width="80" height="80"/>
+    <rect x="1120" y="620" width="80" height="80"/><rect x="1120" y="700" width="80" height="80"/>
+    <rect x="1120" y="780" width="80" height="80"/><rect x="1120" y="860" width="80" height="80"/>
+  </g>
+
+  <!-- S 出生传送门（青） / E 核心（红） -->
+  <g>
+    <circle cx="280" cy="540" r="34" fill="none" stroke="#35E0FF" stroke-width="3" filter="url(#ds-neon)"/>
+    <circle cx="280" cy="540" r="24" fill="#35E0FF" fill-opacity="0.12"/>
+    <path d="M280 522 a18 18 0 0 1 18 18" fill="none" stroke="#35E0FF" stroke-opacity="0.6" stroke-width="2.5"/>
+    <path d="M280 558 a18 18 0 0 1 -18 -18" fill="none" stroke="#35E0FF" stroke-opacity="0.6" stroke-width="2.5"/>
+    <text x="280" y="549" font-size="26" fill="#DFFAFF" text-anchor="middle" font-weight="700">S</text>
+  </g>
+  <g>
+    <circle cx="1640" cy="540" r="34" fill="none" stroke="#FF4D5E" stroke-width="3" filter="url(#ds-neon-red)"/>
+    <circle cx="1640" cy="540" r="16" fill="#FF4D5E" fill-opacity="0.3" filter="url(#ds-bloom)"/>
+    <text x="1640" y="549" font-size="26" fill="#FFB9C0" text-anchor="middle" font-weight="700">E</text>
+  </g>
+
+  <!-- A* 路径 + 箭头（绕行两堵墙）霓虹链 -->
+  <path d="M320 540 H680 V460 H1160 V540 H1600" fill="none" stroke="#35E0FF" stroke-opacity="0.14" stroke-width="26"/>
+  <path d="M320 540 H680 V460 H1160 V540 H1600" fill="none" stroke="#35E0FF" stroke-opacity="0.5" stroke-width="3" stroke-dasharray="18 14"/>
+  <g fill="#35E0FF" opacity="0.75">
+    <path d="M440 528 l24 12 -24 12 z"/><path d="M580 528 l24 12 -24 12 z"/>
+    <path d="M820 448 l24 12 -24 12 z"/><path d="M980 448 l24 12 -24 12 z"/>
+    <path d="M1240 528 l24 12 -24 12 z"/><path d="M1400 528 l24 12 -24 12 z"/>
+  </g>
+
+  <!-- 可建空格示例高亮（备战态提示语义，非实际常驻表现） -->
+  <rect x="560" y="380" width="80" height="80" fill="#3DFFA8" fill-opacity="0.10"/>
+  <rect x="560" y="380" width="80" height="80" fill="none" stroke="#3DFFA8" stroke-opacity="0.6" stroke-width="2" stroke-dasharray="6 6"/>
+  <path d="M600 410 V430 M590 420 H610" stroke="#3DFFA8" stroke-opacity="0.8" stroke-width="2.5"/>
+
+  <!-- 暗角 -->
+  <rect width="1920" height="1080" fill="url(#ds-vig)"/>
+
+  <!-- 四态图例 -->
+  <g font-family="Consolas,monospace" font-size="20" fill="#9FB3C8" fill-opacity="0.85">
+    <rect x="240" y="980" width="28" height="28" fill="#131A26" stroke="#233246" stroke-width="2"/>
+    <text x="278" y="1002">Cell_Ground 空地（可建可走）</text>
+    <rect x="620" y="980" width="28" height="28" fill="#161E2C" stroke="#FF4D5E" stroke-opacity="0.45" stroke-width="2"/>
+    <rect x="620" y="980" width="28" height="28" fill="url(#ds-hazard)"/>
+    <text x="658" y="1002">Cell_Blocked 障碍（不可建不可走）</text>
+    <circle cx="1074" cy="994" r="14" fill="none" stroke="#35E0FF" stroke-width="2.5" filter="url(#ds-neon)"/>
+    <circle cx="1074" cy="994" r="7" fill="#35E0FF" fill-opacity="0.25"/>
+    <text x="1098" y="1002">Cell_Spawn 出生点（不可建）</text>
+    <circle cx="1434" cy="994" r="14" fill="none" stroke="#FF4D5E" stroke-width="2.5" filter="url(#ds-neon-red)"/>
+    <circle cx="1434" cy="994" r="6" fill="#FF4D5E" fill-opacity="0.3" filter="url(#ds-bloom)"/>
+    <text x="1458" y="1002">Cell_End 终点（不可建）</text>
+  </g>
+
+  <!-- ===== 标注层（图纸引出线，交付实现时可删） ===== -->
+  <g id="annotations" font-family="Consolas,monospace">
+    <text x="252" y="128" font-size="20" fill="#9FB3C8" fill-opacity="0.8">S：怪物出生格；E：终点格（漏怪判定）</text>
+    <text x="726" y="128" font-size="20" fill="#9FB3C8" fill-opacity="0.8">关卡 2 地图：双障碍夹出中段窄口（tblevelmap id=2）</text>
+    <text x="330" y="600" font-size="20" fill="#9FB3C8" fill-opacity="0.8">Path_Arrow：A* 最短路径逐格渲染；建塔后整链重算</text>
+    <line x1="480" y1="590" x2="500" y2="556" stroke="#9FB3C8" stroke-opacity="0.5" stroke-width="1" stroke-dasharray="4 3"/>
+    <text x="560" y="360" font-size="20" fill="#9FB3C8" fill-opacity="0.8">空地可自由建塔塑造路径（禁完全堵死）</text>
+    <line x1="600" y1="366" x2="600" y2="378" stroke="#9FB3C8" stroke-opacity="0.5" stroke-width="1" stroke-dasharray="4 3"/>
+    <text x="252" y="962" font-size="16" fill="#9FB3C8" fill-opacity="0.6">cellSize=1（tbglobal）；本图 1 格=80px 仅为示意比例；BoardView 逐格 SpriteRenderer 摆放，排序由 SortingGroup 控制</text>
+    <text x="44" y="1040" font-size="16" fill="#9FB3C8" fill-opacity="0.6">深色科幻正式版 · 与 09 战斗态共用同一棋盘渲染（08=备战无塔无怪 / 09=战斗含塔怪弹道飘字）</text>
+  </g>
+</svg>
