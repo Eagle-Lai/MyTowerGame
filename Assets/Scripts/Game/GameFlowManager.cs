@@ -105,6 +105,8 @@ namespace FTProject
             EventDispatcher.AddEventListener(EventName.QuitToSelectRequestEvent, OnQuitToSelectRequest);
             EventDispatcher.AddEventListener(EventName.OpenSettingsRequestEvent, OnOpenSettingsRequest);
             EventDispatcher.AddEventListener(EventName.CloseSettingsRequestEvent, OnCloseSettingsRequest);
+            // P2b：倍速请求（HudView 发，这里校验后再写 GameClock）
+            EventDispatcher.AddEventListener<float>(EventName.GameSpeedChangeRequestEvent, OnGameSpeedChangeRequest);
         }
 
         private void OnDisable()
@@ -123,6 +125,7 @@ namespace FTProject
             EventDispatcher.RemoveEventListener(EventName.QuitToSelectRequestEvent, OnQuitToSelectRequest);
             EventDispatcher.RemoveEventListener(EventName.OpenSettingsRequestEvent, OnOpenSettingsRequest);
             EventDispatcher.RemoveEventListener(EventName.CloseSettingsRequestEvent, OnCloseSettingsRequest);
+            EventDispatcher.RemoveEventListener<float>(EventName.GameSpeedChangeRequestEvent, OnGameSpeedChangeRequest);
         }
 
         private void OnDestroy()
@@ -152,7 +155,7 @@ namespace FTProject
                 return;
             }
 
-            SelectView sv = UIManager.Instance.Open<SelectView>(SelectView.LogicalName, UILayout.NormalPanel);
+            SelectView sv = OpenSelect();
             if (sv == null)
             {
                 // 【降级】SelectView.prefab 还没生成时不能把玩家卡在黑屏 ——
@@ -169,6 +172,8 @@ namespace FTProject
         public void InitLevel(int levelId)
         {
             State = GameFlowState.Loading;
+            // 进 Loading 就把倍速复位 ×1（P2b 硬性约束③）：新一局应当从最慢档开始
+            ResetGameSpeed();
 
             Level = Configs.GetLevel(levelId);
             Map = Configs.GetLevelMapOfLevel(levelId);
@@ -187,8 +192,14 @@ namespace FTProject
                 Debug.LogError(string.Format("[Flow] 棋盘配置 id={0} 校验未通过：{1}", Map.Id, err));
             }
 
-            float cellSize = Configs.Global.CellSize;
+            // 关卡配置确认可用后才切战斗 BGM。
+            // 【为什么放在校验之后】配置不完整会在上面提前 return，那时不该把音乐换成战斗曲。
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.PlayBgm(AudioName.BgmBattle);
+            }
 
+            float cellSize = Configs.Global.CellSize;
             // 棋盘左上角原点：让棋盘几何中心正好落在世界原点
             Vector2 origin = new Vector2(-Map.Cols * cellSize * 0.5f, Map.Rows * cellSize * 0.5f);
             Vector2 center = BoardGeometry.BoardCenter(Map.Rows, Map.Cols, cellSize, origin);
@@ -389,20 +400,69 @@ namespace FTProject
         }
 
         /// <summary>
+        /// 倍速请求（来自 HudView 的 ×1/×2/×3 按钮）。
+        /// 【为什么要在这里二次校验，而不是信任 UI】
+        ///   UI 只负责"循环切档"，它看不到游戏状态。若只有 UI 把关，
+        ///   暂停遮罩或结算界面下只要点到按钮就会改速度（遮罩挡不住键盘/程序化调用）。
+        ///   这里四道校验：档位合法 / 未暂停 / 局中状态 / 确有变化。
+        /// </summary>
+        private void OnGameSpeedChangeRequest(float requested)
+        {
+            if (!GameClock.IsValidTier(requested))
+            {
+                return;
+            }
+            // 暂停期间（timeScale=0）不改档：恢复时要按暂停前的原档位立即生效
+            if (Time.timeScale <= 0f)
+            {
+                return;
+            }
+            // 只有"局中"允许改档：Loading / None / GameOver 一律忽略
+            if (State != GameFlowState.Preparing &&
+                State != GameFlowState.RoundRunning &&
+                State != GameFlowState.RoundComplete)
+            {
+                return;
+            }
+            if (Mathf.Approximately(GameClock.Speed, requested))
+            {
+                return;
+            }
+
+            GameClock.Speed = requested;
+            EventDispatcher.TriggerEvent<float>(EventName.GameSpeedChangedEvent, GameClock.Speed);
+        }
+
+        /// <summary>
+        /// 把倍速复位为 ×1（GameOver / 重开 / 回选关 / 进 Loading 时调用）。
+        /// 【为什么要派事件】HudView 的按钮文案靠 GameSpeedChangedEvent 同步；
+        ///   只改 GameClock 而不派事件，下一局的按钮会停在上一局的档位文案上。
+        /// </summary>
+        private void ResetGameSpeed()
+        {
+            if (Mathf.Approximately(GameClock.Speed, 1f))
+            {
+                return;   // 本来就是 ×1，不必派多余事件
+            }
+            GameClock.Reset();
+            EventDispatcher.TriggerEvent<float>(EventName.GameSpeedChangedEvent, GameClock.Speed);
+        }
+
+        /// <summary>
         /// 用 LateUpdate 而不是 Update：CombatSystem 在本帧的 Update 里已经刷新过
         /// AliveEnemyCount，这里读到的是最新值，回合结束判定不会慢一帧。
         /// </summary>
         private void LateUpdate()
         {
             // 自动回合倒计时（不受 State 限制，见 TickAutoNextRound 的说明）
-            TickAutoNextRound(Time.deltaTime);
+            TickAutoNextRound(GameClock.DeltaTime);
 
             if (State != GameFlowState.RoundRunning)
             {
                 return;
             }
 
-            _wave.Tick(Time.deltaTime);
+            _wave.Tick(GameClock.DeltaTime);
 
             int alive = CombatSystem.Instance != null ? CombatSystem.Instance.AliveEnemyCount : 0;
             _wave.CheckGroupCleared(alive);
@@ -532,6 +592,8 @@ namespace FTProject
         {
             _wave.Stop();
             State = GameFlowState.GameOver;
+            // 结算即离场：倍速复位 ×1，结算界面下按钮也不再可用（HudView 会置灰）
+            ResetGameSpeed();
             Debug.Log(string.Format("[Flow] 本局结束：{0}\n{1}",
                 victory ? "胜利" : "失败", PlayerDataManager.Instance.DumpDebugInfo()));
             Tips(victory ? "恭喜通关！" : "防御失败……");
@@ -822,12 +884,24 @@ namespace FTProject
         {
             TeardownLevel();
             State = GameFlowState.None;
+            // 回选关 = 离场：倍速复位 ×1（重开/下一关走 StartLevel→InitLevel，那里也会复位）
+            ResetGameSpeed();
             OpenSelect();
         }
 
-        public void OpenSelect()
+        /// <summary>
+        /// 打开关卡选择界面，并切到选关 BGM。
+        /// 【为什么返回 SelectView】调用方（OnConfigLoaded）要判断"是否打开成功"来决定降级路径；
+        /// 顺带把"切选关 BGM"收进这一处，避免多个入口各写一遍。
+        /// </summary>
+        public SelectView OpenSelect()
         {
-            UIManager.Instance.Open<SelectView>(SelectView.LogicalName, UILayout.NormalPanel);
+            SelectView sv = UIManager.Instance.Open<SelectView>(SelectView.LogicalName, UILayout.NormalPanel);
+            if (sv != null && AudioManager.Instance != null)
+            {
+                AudioManager.Instance.PlayBgm(AudioName.BgmSelect);
+            }
+            return sv;
         }
 
         private void OnSelectLevelRequest(int levelId)
@@ -959,6 +1033,12 @@ namespace FTProject
 
         private void Update()
         {
+            // P2b：每帧刷新 GameClock 的本帧缓存值（Time.deltaTime × Speed）。
+            // 【放首行的原因】它必须在任何消费点之前跑过一次，本帧全工程才会取到同一个 dt。
+            //   GameClock.DeltaTime 本身是惰性按帧缓存的（谁先取谁算），这里只是显式提前算好，
+            //   因此即便本 Update 的执行顺序排在 CombatSystem 之后也不影响正确性。
+            GameClock.Tick();
+
             // ---- M3：暂停热键 ----
             // 【为什么是 P 而不是 ESC】ESC 已被 TowerPlacement 用作"取消放置 / 取消选中"，
             // 两个系统同帧抢同一个键，必然出现"按一下既取消选中又暂停"。

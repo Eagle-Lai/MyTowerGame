@@ -224,7 +224,7 @@ namespace FTProject
             {
                 return;
             }
-            float dt = Time.deltaTime;
+            float dt = GameClock.DeltaTime;
             for (int i = 0; i < _texts.Length; i++)
             {
                 if (_life[i] <= 0f)

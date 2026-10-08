@@ -34,6 +34,10 @@ namespace FTProject
         private Button _startButton;
         private TMP_Text _startLabel;
 
+        // ---- 倍速按钮（P2b）----
+        private Button _speedButton;
+        private TMP_Text _speedLabel;
+
         /// <summary>
         /// 塔按钮：节点名 → (按钮, 塔型, 价格文本)。
         /// 用数组而不是一堆字段，是为了让"进入/退出放置态时统一置灰"这类操作用循环即可。
@@ -91,6 +95,7 @@ namespace FTProject
             EventDispatcher.RemoveEventListener(EventName.CancelBuildRequestEvent, OnExitPlacement);
             EventDispatcher.RemoveEventListener<BaseTower>(EventName.BuildTowerSuccess, OnBuildSuccess);
             EventDispatcher.RemoveEventListener(EventName.PlayerStateInitEvent, RefreshAll);
+            EventDispatcher.RemoveEventListener<float>(EventName.GameSpeedChangedEvent, OnSpeedChanged);
         }
 
         // ------------------------------------------------------------------
@@ -113,6 +118,17 @@ namespace FTProject
             {
                 _startLabel.text = "开始";
             }
+
+            // 倍速按钮（P2b）：点击循环 ×1→×2→×3→×1
+            _speedButton = FindButton("SpeedButton");
+            _speedLabel = FindChildText("SpeedButton/Label");
+            if (_speedButton != null)
+            {
+                _speedButton.onClick.AddListener(OnClickSpeed);
+            }
+            // 【为什么要在这里初始化文案】HUD 是进关时才创建的，而 GameSpeedChangedEvent
+            //   只在"档位真的变了"时才派发。若只靠事件，按钮会一直显示 prefab 里的占位文字。
+            SetSpeedLabel(GameClock.Speed);
 
             // 塔按钮（五类）
             _towerButtons = new Button[TowerNodeNames.Length];
@@ -146,6 +162,7 @@ namespace FTProject
             EventDispatcher.AddEventListener(EventName.CancelBuildRequestEvent, OnExitPlacement);
             EventDispatcher.AddEventListener<BaseTower>(EventName.BuildTowerSuccess, OnBuildSuccess);
             EventDispatcher.AddEventListener(EventName.PlayerStateInitEvent, RefreshAll);
+            EventDispatcher.AddEventListener<float>(EventName.GameSpeedChangedEvent, OnSpeedChanged);
         }
 
         private TMP_Text FindText(string path)
@@ -208,6 +225,37 @@ namespace FTProject
             // 统一发同一个请求事件，由它决定是进入还是退出（单一状态源，避免两边状态不一致）。
             _towerType = type;
             EventDispatcher.TriggerEvent<int, int>(EventName.BuildTowerRequestEvent, _towerType, _towerLevel);
+        }
+
+        // ------------------------------------------------------------------
+        // 倍速（P2b）
+        // ------------------------------------------------------------------
+
+        /// <summary>
+        /// 点倍速按钮：按档位表循环切下一档。
+        /// 【为什么这里只"发请求"而不直接改 GameClock】
+        ///   HUD 不持有任何游戏逻辑（见类注释）。改档要校验"是否暂停/是否局中"，
+        ///   那是 GameFlowManager 的职责 —— 直接在 UI 里写 GameClock 会绕过校验。
+        /// </summary>
+        private void OnClickSpeed()
+        {
+            EventDispatcher.TriggerEvent<float>(
+                EventName.GameSpeedChangeRequestEvent, GameClock.NextTier(GameClock.Speed));
+        }
+
+        private void OnSpeedChanged(float speed)
+        {
+            SetSpeedLabel(speed);
+        }
+
+        /// <summary>同步倍速按钮文案：「×1 / ×2 / ×3」（非整数档位如 ×2.5 也支持）。</summary>
+        private void SetSpeedLabel(float speed)
+        {
+            if (_speedLabel != null)
+            {
+                // 用 InvariantCulture：某些区域设置的小数点是逗号，会显示成「×2,5」
+                _speedLabel.text = "×" + speed.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture);
+            }
         }
 
         // ------------------------------------------------------------------
@@ -333,6 +381,11 @@ namespace FTProject
             if (_startLabel != null)
             {
                 _startLabel.text = victory ? "已通关" : "已失败";
+            }
+            // 结算后倍速按钮不可用（策划案 §7.3：倍速档位在 GameOver 时复位且不再可切）
+            if (_speedButton != null)
+            {
+                _speedButton.interactable = false;
             }
         }
 

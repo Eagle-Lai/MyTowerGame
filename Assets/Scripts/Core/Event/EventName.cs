@@ -161,5 +161,20 @@ namespace FTProject
 
         /// <summary>弹出提示，参数：string</summary>
         public const string ShowTipEvent = "ShowTipEvent";
+
+        // ------------------------------------------------------------------
+        // 倍速（P2b）
+        // ------------------------------------------------------------------
+
+        /// <summary>
+        /// 请求切换倍速，参数：float 目标倍率（1 / 2 / 3，允许 2.5 这类降档值）。
+        /// 【为什么是 float 而不是 int】策划案 §7.3 硬性约束⑤要求"降档扩展只需改 Speed 值"：
+        /// 若这里收窄成 int，把 ×3 降成 ×2.5 就必须改事件签名与全部订阅方。
+        /// 由 HudView 发请求、GameFlowManager 校验后写入 GameClock。
+        /// </summary>
+        public const string GameSpeedChangeRequestEvent = "GameSpeedChangeRequestEvent";
+
+        /// <summary>倍速已变更，参数：float 新的倍率（订阅方：HudView 同步按钮文案、BaseEnemy 同步 Animator）。</summary>
+        public const string GameSpeedChangedEvent = "GameSpeedChangedEvent";
     }
 }

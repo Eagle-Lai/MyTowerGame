@@ -14,7 +14,9 @@ import sys
 
 sys.stdout.reconfigure(encoding="utf-8")
 
-ROOT = "D:/FreedomTower_1"
+# 【为什么按 __file__ 推导】见 apply_m2_audio_table.py 的同类说明：
+# 硬编码绝对路径在换机器时会静默扫错目录。三级 dirname 回到工程根。
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 AUDIO_DIR = os.path.join(ROOT, "Assets/Audio")
 OUT_FILE = os.path.join(ROOT, "Assets/Scripts/Data/AudioCatalog.cs")
 EXTS = (".wav", ".ogg", ".mp3", ".aiff", ".aif")

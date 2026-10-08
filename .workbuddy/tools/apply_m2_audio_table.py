@@ -20,7 +20,10 @@ import openpyxl
 
 sys.stdout.reconfigure(encoding="utf-8")
 
-ROOT = "D:/FreedomTower_1"
+# 【为什么按 __file__ 推导】本脚本位于 <工程根>/.workbuddy/tools/ 下，
+# 硬编码 "D:/FreedomTower_1" 会在换机器 / 换盘符时静默扫到错误目录（历史上踩过：
+# 四个静态检查脚本曾因路径写错而"扫 0 文件却一律 PASS"）。三级 dirname 回到工程根。
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 DATAS = os.path.join(ROOT, "Luban/Config/Datas")
 BACKUP_ROOT = os.path.join(ROOT, ".workbuddy/backup")
 
@@ -54,6 +57,9 @@ AUDIO_ROWS = [
     (14, "通关", "sfx_victory", 0.9, 1.0, 0, 0, "全部回合完成"),
     (15, "失败", "sfx_defeat", 0.9, 0.85, 0, 0, "生命归零"),
     (16, "按钮点击", "sfx_ui_click", 0.4, 1.0, 0, 0, "通用 UI 点击"),
+    # —— BGM（M4-W7 追加）：循环播放，AudioManager 用独立通道处理，见 PlayBgm。——
+    (17, "选关BGM", "bgm_select", 0.5, 1.0, 1, 0, "选关界面循环"),
+    (18, "战斗BGM", "bgm_battle", 0.4, 1.0, 1, 0, "战斗循环"),
 ]
 
 

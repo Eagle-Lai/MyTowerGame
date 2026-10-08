@@ -41,7 +41,6 @@ TARGETS = [os.path.join(_PERSIST, f)
 #   所以每次改完代码要顺手把新文件加进来。
 _CHANGED = [
     'Assets/Scripts/Core/Manager/SaveManager.cs',
-    'Assets/PopMain.cs',
     # —— 关卡结算弹窗（修"通关无弹窗"）——
     'Assets/Scripts/UI/LevelClearView.cs',
     'Assets/Scripts/UI/LevelClearInfo.cs',
@@ -57,6 +56,25 @@ _CHANGED = [
     'Assets/Editor/YooAsset/FTBundlePackRule.cs',
     'Assets/Editor/YooAsset/FTYooAssetDefine.cs',
     'Assets/Editor/YooAsset/FTYooAssetSetupWizard.cs',
+    # —— M4-W7：音频（BGM 通道 + 全局点击音）——
+    'Assets/Scripts/Core/Manager/AudioManager.cs',
+    'Assets/Scripts/Core/Manager/AudioFadeDriver.cs',
+    'Assets/Scripts/Core/UI/UiClickSfx.cs',
+    'Assets/Scripts/Core/UI/UIManager.cs',
+    'Assets/Scripts/Data/AudioName.cs',
+    'Assets/Editor/PlaceholderBgmGenerator.cs',
+    # —— M4-W7：UI 深色科幻换皮 ——
+    'Assets/Editor/UISkinArtGenerator.cs',
+    'Assets/Editor/EditorUtil.cs',
+    'Assets/Editor/PlaceholderArtGenerator.cs',
+    # —— P2b：倍速（GameClock 唯一速度源）——
+    'Assets/Scripts/Core/GameClock.cs',
+    'Assets/Scripts/Core/Event/EventName.cs',
+    'Assets/Scripts/UI/HudView.cs',
+    'Assets/Scripts/Enemy/BaseEnemy.cs',
+    'Assets/Scripts/Core/Combat/CombatSystem.cs',
+    'Assets/Scripts/Bullet/LaserBeamView.cs',
+    'Assets/Scripts/UI/FloatingTextManager.cs',
 ]
 for _rel in _CHANGED:
     TARGETS.append(os.path.join(PROJ, *_rel.split('/')))

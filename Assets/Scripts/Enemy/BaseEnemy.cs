@@ -219,6 +219,8 @@ namespace FTProject
             {
                 LoadAnimatorController(Config.AnimController);
             }
+            // P2b：动画机速度必须每次"从池里取出"时重设 —— 上一只可能是别的倍速档
+            SyncAnimSpeed();
             if (_hpBarRoot == null)
             {
                 _hpBarRoot = transform.Find("HpBar");
@@ -302,6 +304,13 @@ namespace FTProject
             transform.localScale = _spawnScale;
             NextDamageTextTime = 0f;
 
+            // P2b：动画机速度还原 1，防止"×3 时死亡回收、×1 时复用"带着旧档位出场。
+            // CacheRefs 在下次取出时还会再设一次，这里是双保险（池化残留一律按"必须清零"处理）。
+            if (_anim != null)
+            {
+                _anim.speed = 1f;
+            }
+
             GameObjSetActive(false);
         }
 
@@ -319,6 +328,13 @@ namespace FTProject
 
         public void Tick(float dt)
         {
+            // P2b：动画机速度跟随倍速。
+            // 【为什么放在每帧比对，而不是只订阅 GameSpeedChangedEvent】
+            //   敌人是**池化**的：订阅/退订必须严格配对，漏一次就会在回收后仍被事件引用；
+            //   而且从池里复用出来的实例，收不到"它出生之前"已经派发过的换档事件。
+            //   每帧比对一次（只在不相等时才写）永远正确，代价只是一次浮点比较。
+            SyncAnimSpeed();
+
             // 死亡动画播完 → 真正回收
             if (_pendingRecycle)
             {
@@ -759,6 +775,20 @@ namespace FTProject
                 return;
             }
             _anim.SetInteger(ANIM_STATE, (int)state);
+        }
+
+        /// <summary>
+        /// P2b：让 Animator 的播放速度跟随 <see cref="GameClock.Speed"/>。
+        /// 【暂停为什么不在这里处理】暂停靠 `Time.timeScale = 0`，Animator 默认 Normal
+        ///   更新模式下会自己冻结，不需要也不能在这里把 speed 设成 0
+        ///   （否则恢复时要额外记得改回来，反而多一个状态）。
+        /// </summary>
+        private void SyncAnimSpeed()
+        {
+            if (_anim != null && !Mathf.Approximately(_anim.speed, GameClock.Speed))
+            {
+                _anim.speed = GameClock.Speed;
+            }
         }
 
         public void SetAnimSpeed(float speedScale)

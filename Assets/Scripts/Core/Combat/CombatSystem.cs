@@ -243,7 +243,7 @@ namespace FTProject
 
         private void OnUpdate()
         {
-            float dt = Time.deltaTime;
+            float dt = GameClock.DeltaTime;
 
             // ① 怪物移动 → 同步空间哈希
             TickEnemies(dt);
