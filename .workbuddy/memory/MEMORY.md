@@ -11,9 +11,12 @@
   卡点在 `git credential-helper-selector store` 调用了 **`git config --system -e`** —— 它想把选择写进
   `C:/Program Files/WorkBuddy/.../etc/gitconfig`，于是**开了交互式编辑器**永久等待。
   **判据**：`git ls-remote` 正常、`git push` 却零输出卡住不动（后台能挂 6 分钟以上）。
-  解法二选一：① 绕行（无副作用）：`GIT_CONFIG_SYSTEM=/dev/null git push origin main`；
-  ② 根治：先删陈旧锁 `rm -f .../PortableGit/etc/gitconfig.lock`，再
-  `git config --system credential.helperselector.selected manager`（已做）。
+  **解法（唯一确认有效）**：`GIT_CONFIG_SYSTEM=/dev/null git push origin main`
+  —— 忽略系统配置，只留用户级 GCM；代理 `http.https://github.com.proxy` 在用户级故不受影响。
+  ⚠️ **已验证无效的"根治"**：往系统配置写 `credential.helperselector.selected=manager` 后仍照样挂
+  （该值现已写入系统 gitconfig，但 helper-selector 不管配置是否已存在都会去开编辑器）→ 别再试这条路。
+  要彻底解决只能从系统 gitconfig 删掉 `[credential] helper = helper-selector`（目录可写，
+  但会改 WorkBuddy 自带 PortableGit 的行为，需谨慎）。
   ⚠️ 注意凭据**不缺**——`git credential fill` 秒回 `username=Eagle-Lai`，别往"没令牌"方向查。⚠️ 本地 `.git` 因历史改写积压约 2.18GB **孤儿对象**，但 `main` 可达内容仅 ~137MB；**估推送量必须按可达对象算，别看 `git count-objects` 的 `size-pack`**。
 - **配置表** Luban：`Luban/Config/Datas/*.xlsx` → `Assets/Gen/*.cs` + `Assets/ConfigJson/*.json`。改表必须重导（`Luban/gen_code_json.bat`；或直调 `Luban.ClientServer.exe`，需 `DOTNET_ROLL_FORWARD=LatestMajor`）。**新表先在 `__tables__.xlsx` 登记**。
 - **资源寻址** `ResTable.cs` 是唯一寻址源（逻辑名 → bundle / assetName / editorPath），**新资源必须登记**。盲区：`check_code.py` 只扫 `ResTable.Get("字面量")`，不扫 `Configs.ConfigKeys` 数组 —— 给 ConfigKeys 加表须**手工**同步 ResTable。
