@@ -1,9 +1,9 @@
-# 《坚守阵地》美术与效果图补全策划案（v1.0）
+# 《自由人塔防》美术与效果图补全策划案（v1.0）
 
 > 项目：单机 2D 塔防手游（对标 Fieldrunners 核心机制）　|　平台：Android
 > 工程：本工程（Unity 2022.3.62f3c1，Built-in RP）
 > 主场景：`Assets/Scenes/Main.unity`（单场景 + 常驻根节点架构）
-> 配套文档：`Docs/GameDesign_坚守阵地_v3.md`（策划案）、`Docs/ProgramDesign_坚守阵地_v3.md`（程序案）
+> 配套文档：`Docs/GameDesign_自由人塔防_v3.md`（策划案）、`Docs/ProgramDesign_自由人塔防_v3.md`（程序案）
 > 效果图：`Docs/ui_mockups/`（14 张，本策划案新增 8 张）
 > **本策划案定位：可直接交付 AI 执行的全流程实施蓝图。每一节都给出节点树 / 坐标 / 配色 / 字号 / 验收标准，无需二次追问。**
 
@@ -167,8 +167,8 @@ SplashView                     [RectTransform, 铺满, +SplashView.cs]
 │  └─ Starfield                [RawImage, 铺满, 星点纹理, α=0.35]
 ├─ Vignette                    [Image, 铺满, 径向暗角, 中心透明→边缘#0B0E14 0.66]
 ├─ Logo                        [Image, 居中, 480×480, y=+60]
-├─ Title                       [TMP, 居中, 900×120, y=-160, 96号, Cyan, Bold]
-│                             内容："坚守阵地"
+├─ Title                       [TMP, 居中, 900×120, y=-160, 96号, Cyan, Bold]  ← 实宽 480
+│                             内容："自由人塔防"
 ├─ Subtitle                    [TMP, 居中, 900×48, y=-260, 28号, TextSecondary]
 │                             内容："FREEDOM TOWER"
 ├─ Version                     [TMP, 右下, anchor(1,0), offset(-40,40), 320×36, 22号, TextTertiary]
@@ -344,9 +344,9 @@ MainMenuView                   [RectTransform, 铺满, +MainMenuView.cs]
 │  ├─ Line_H                   [Image, 1920×2, 居中, α=0.15, Cyan]
 │  └─ Ring                     [Image, 700×700, 右侧 x=+520, α=0.08, Cyan, 圆环图]
 ├─ Logo                        [Image, 居中, 380×380, y=+270]
-├─ Title                       [TMP, 居中, 1000×130, y=-70(=470基线), 88号, Cyan, Bold, 发光]
-│                             内容："坚守阵地"
-├─ Subtitle                    [TMP, 居中, 1000×44, y=-16(=524基线), 26号, TextSecondary]
+├─ Title                       [TMP, 居中, 1000×130, y=-52(=488基线), 88号, Cyan, Bold, 发光]  ← 实宽 440，墨迹 y_svg 413..497
+│                             内容："自由人塔防"
+├─ Subtitle                    [TMP, 居中, 1000×44, y=0(=540基线), 26号, TextSecondary]  ← 墨迹 y_svg 516..543
 │                             内容："FREEDOM TOWER · 单机塔防"
 ├─ BtnGroup                    [RectTransform, 居中, 560×446, y=-80]  ← 组区 y 560..1006
 │  ├─ StartBtn                 [Button, 480×92, y_top=560,  "开始游戏", Primary]
@@ -363,6 +363,8 @@ MainMenuView                   [RectTransform, 铺满, +MainMenuView.cs]
 ```
 
 > ⚠️ **v2 版式修正**：v1 版把按钮组中心放在 y=-140（组底 y_svg=1072），第 4 颗按钮距画布底仅 8px 且被底部标注带压住；现已整体上移，**组区固定 y_svg 560..1006**，底部留 74px 安全边距。修改版式时必须保证 `QuitBtn` 底边 ≤ 1006。
+>
+> ⚠️ **v3 改名 + 间距修正**：游戏名由 4 字改为 5 字（自由人塔防），88 号标题实宽由 352 → **440**。旧基线 470 下标题墨迹底达 y_svg 497，与 26 号副标题（墨迹顶 516）仅剩 19px，且标题的「人」字撇捺会压到副标题 —— 故**标题基线 470 → 488、副标题 524 → 540**，间隙回到 19px（墨迹底 497 ↔ 墨迹顶 516）。改任一基线后必须重跑 `check_svg_layout.py`。
 
 **行为**：
 - `StartBtn` → 关闭主菜单，进入 `SelectView`

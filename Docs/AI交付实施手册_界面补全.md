@@ -1,6 +1,6 @@
 # AI 交付实施手册 · 界面补全
 
-> 本手册是 `Docs/ArtDesign_坚守阵地_补全策划案_v1.md` 的**执行配套**。
+> 本手册是 `Docs/ArtDesign_自由人塔防_补全策划案_v1.md` 的**执行配套**。
 > 策划案回答"做成什么样"，本手册回答"**怎么一步步做出来、怎么验证**"。
 > **目标读者：接手本工程执行的 AI / 开发者。照着做即可，不需要额外追问。**
 
@@ -376,7 +376,7 @@ public IEnumerator CheckAndUpdateCo(
 
 | 文件 | 说明 | 状态 |
 |---|---|---|
-| `Docs/ArtDesign_坚守阵地_补全策划案_v1.md` | 美术与效果图策划案（主文档） | ✅ 已产出 |
+| `Docs/ArtDesign_自由人塔防_补全策划案_v1.md` | 美术与效果图策划案（主文档） | ✅ 已产出 |
 | `Docs/AI交付实施手册_界面补全.md` | 本手册 | ✅ 已产出 |
 | `Docs/ui_mockups/15_SplashView.svg` | 开屏页效果图 | ✅ 已产出 |
 | `Docs/ui_mockups/16_LoadingView.svg` | 加载进度效果图 | ✅ 已产出 |
@@ -409,4 +409,4 @@ public IEnumerator CheckAndUpdateCo(
 
 ---
 
-*手册版本：v1.0　|　编制日期：2026-10-09　|　配套：`Docs/ArtDesign_坚守阵地_补全策划案_v1.md`*
+*手册版本：v1.0　|　编制日期：2026-10-09　|　配套：`Docs/ArtDesign_自由人塔防_补全策划案_v1.md`*
