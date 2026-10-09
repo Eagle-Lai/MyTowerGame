@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 20_MonsterCodexView.svg — 怪物图鉴【正式版·深色科幻】
+     几何与 prefab 实测一致（勿改坐标）；数据源: ArtDesign_坚守阵地_补全策划案_v1.md §B3
+     坐标换算 x=960+X, y=540−Y
+     ★ 布局重排版（v2）：网格改 2 行，竖向 zones 严格分离，不再与按钮重叠
+        Zone 划分（画布 y_svg）：标题 40..120｜筛选 150..226｜网格 250..810｜分页 830..870｜返回 890..974 -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" width="1920" height="1080">
+  <defs>
+    <linearGradient id="ds-panel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2A3444"/><stop offset="0.5" stop-color="#1B2330"/><stop offset="1" stop-color="#222C3B"/>
+    </linearGradient>
+    <radialGradient id="ds-vig" cx="0.5" cy="0.5" r="0.75">
+      <stop offset="0.62" stop-color="#0B0E14" stop-opacity="0"/><stop offset="1" stop-color="#0B0E14" stop-opacity="0.66"/>
+    </radialGradient>
+    <filter id="ds-neon" x="-60%" y="-60%" width="220%" height="220%">
+      <feDropShadow dx="0" dy="0" stdDeviation="3" flood-color="#35E0FF" flood-opacity="0.85"/>
+    </filter>
+  </defs>
+
+  <!--整页底 + Panel -->
+  <rect width="1920" height="1080" fill="#080B12"/>
+  <rect x="0" y="0" width="1920" height="1080" fill="#1E2939"/>
+  <rect x="0" y="0" width="1920" height="4" fill="#35E0FF"/>
+  <rect x="8" y="8" width="1904" height="1064" fill="none" stroke="#3A4A63" stroke-width="2"/>
+
+  <!--Zone A: 标题 40..120 -->
+  <text x="960" y="88" font-size="64" fill="#E8F0FA" font-weight="700" text-anchor="middle"
+        font-family="Source Han Serif SC,serif">怪物图鉴</text>
+  <line x1="820" y1="110" x2="1100" y2="110" stroke="#35E0FF" stroke-width="3"/>
+
+  <!--Zone B: 筛选栏 150..226（画布 y=-160 → 中心 700） -->
+  <g>
+    <polygon points="616,152 776,152 788,164 788,216 776,228 616,228 604,216 604,164" fill="#123845" stroke="#35E0FF" stroke-width="2.5"/>
+    <text x="696" y="202" font-size="30" fill="#DFFAFF" text-anchor="middle" font-family="Source Han Serif SC,serif">全部</text>
+
+    <polygon points="800,152 960,152 972,164 972,216 960,228 800,228 788,216 788,164" fill="url(#ds-panel)" stroke="#3A4A63" stroke-width="2"/>
+    <text x="880" y="202" font-size="30" fill="#E8F0FA" text-anchor="middle" font-family="Source Han Serif SC,serif">地面</text>
+
+    <polygon points="984,152 1144,152 1156,164 1156,216 1144,228 984,228 972,216 972,164" fill="url(#ds-panel)" stroke="#3A4A63" stroke-width="2"/>
+    <text x="1064" y="202" font-size="30" fill="#E8F0FA" text-anchor="middle" font-family="Source Han Serif SC,serif">飞行</text>
+
+    <polygon points="1168,152 1328,152 1340,164 1340,216 1328,228 1168,228 1156,216 1156,164" fill="url(#ds-panel)" stroke="#3A4A63" stroke-width="2"/>
+    <text x="1248" y="202" font-size="30" fill="#E8F0FA" text-anchor="middle" font-family="Source Han Serif SC,serif">重甲</text>
+
+    <text x="1400" y="200" font-size="26" fill="#9FB3C8" font-family="Consolas,monospace">共 63 种</text>
+  </g>
+
+  <!-- Zone C: 网格 266..794（画布 y=+10 中心 530）
+       6 列 × 2 行 · cellSize 236×252 · column spacing 260 · row spacing 276
+       卡片 x = 204 / 464 / 724 / 984 / 1244 / 1504（宽 236）→ 卡片右界 1740
+       Grid 底衬 = 卡片包围盒外扩 12：x 192..1752，y 266..818
+       底衬不覆盖箭头（箭头整体在底衬之外侧） -->
+  <rect x="192" y="266" width="1560" height="552" rx="10" fill="#131A26" stroke="#233246" stroke-width="2" stroke-opacity="0.5"/>
+
+  <g font-family="Consolas,monospace">
+    <!-- Row 1: y_svg 278..530 -->
+    <g>
+      <rect x="204" y="278" width="236" height="252" rx="8" fill="#252F40" stroke="#3A4A63" stroke-width="2"/>
+      <text x="322" y="382" font-size="58" fill="#5E7396" text-anchor="middle" font-family="sans-serif">鼠</text>
+      <text x="322" y="444" font-size="28" fill="#E8F0FA" text-anchor="middle" font-family="Source Han Serif SC,serif">老鼠</text>
+      <text x="322" y="476" font-size="22" fill="#35E0FF" text-anchor="middle" font-family="Source Han Serif SC,serif">地面</text>
+      <text x="322" y="508" font-size="22" fill="#9FB3C8" text-anchor="middle" font-family="Consolas,monospace">HP 40  速 1.8</text>
+    </g>
+    <g>
+      <rect x="464" y="278" width="236" height="252" rx="8" fill="#252F40" stroke="#3A4A63" stroke-width="2"/>
+      <text x="582" y="382" font-size="58" fill="#5E7396" text-anchor="middle" font-family="sans-serif">蝠</text>
+      <text x="582" y="444" font-size="28" fill="#E8F0FA" text-anchor="middle" font-family="Source Han Serif SC,serif">蝙蝠</text>
+      <text x="582" y="476" font-size="22" fill="#7C5CFF" text-anchor="middle" font-family="Source Han Serif SC,serif">飞行</text>
+      <text x="582" y="508" font-size="22" fill="#9FB3C8" text-anchor="middle" font-family="Consolas,monospace">HP 30  速 2.4</text>
+    </g>
+    <g>
+      <rect x="724" y="278" width="236" height="252" rx="8" fill="#252F40" stroke="#3A4A63" stroke-width="2"/>
+      <text x="842" y="382" font-size="58" fill="#5E7396" text-anchor="middle" font-family="sans-serif">猪</text>
+      <text x="842" y="444" font-size="28" fill="#E8F0FA" text-anchor="middle" font-family="Source Han Serif SC,serif">野猪</text>
+      <text x="842" y="476" font-size="22" fill="#FF7A29" text-anchor="middle" font-family="Source Han Serif SC,serif">重甲</text>
+      <text x="842" y="508" font-size="22" fill="#9FB3C8" text-anchor="middle" font-family="Consolas,monospace">HP 220  速 0.9</text>
+    </g>
+    <g>
+      <rect x="984" y="278" width="236" height="252" rx="8" fill="#252F40" stroke="#3A4A63" stroke-width="2"/>
+      <text x="1102" y="382" font-size="58" fill="#5E7396" text-anchor="middle" font-family="sans-serif">狼</text>
+      <text x="1102" y="444" font-size="28" fill="#E8F0FA" text-anchor="middle" font-family="Source Han Serif SC,serif">灰狼</text>
+      <text x="1102" y="476" font-size="22" fill="#35E0FF" text-anchor="middle" font-family="Source Han Serif SC,serif">地面</text>
+      <text x="1102" y="508" font-size="22" fill="#9FB3C8" text-anchor="middle" font-family="Consolas,monospace">HP 95  速 1.6</text>
+    </g>
+    <g>
+      <rect x="1244" y="278" width="236" height="252" rx="8" fill="#252F40" stroke="#3A4A63" stroke-width="2"/>
+      <text x="1362" y="382" font-size="58" fill="#5E7396" text-anchor="middle" font-family="sans-serif">熊</text>
+      <text x="1362" y="444" font-size="28" fill="#E8F0FA" text-anchor="middle" font-family="Source Han Serif SC,serif">黑熊</text>
+      <text x="1362" y="476" font-size="22" fill="#FF7A29" text-anchor="middle" font-family="Source Han Serif SC,serif">重甲</text>
+      <text x="1362" y="508" font-size="22" fill="#9FB3C8" text-anchor="middle" font-family="Consolas,monospace">HP 340  速 0.8</text>
+    </g>
+    <g>
+      <rect x="1504" y="278" width="236" height="252" rx="8" fill="#252F40" stroke="#3A4A63" stroke-width="2"/>
+      <text x="1622" y="382" font-size="58" fill="#5E7396" text-anchor="middle" font-family="sans-serif">蛛</text>
+      <text x="1622" y="444" font-size="28" fill="#E8F0FA" text-anchor="middle" font-family="Source Han Serif SC,serif">巨蛛</text>
+      <text x="1622" y="476" font-size="22" fill="#35E0FF" text-anchor="middle" font-family="Source Han Serif SC,serif">地面</text>
+      <text x="1622" y="508" font-size="22" fill="#9FB3C8" text-anchor="middle" font-family="Consolas,monospace">HP 120  速 1.4</text>
+    </g>
+
+    <!-- Row 2: y_svg 554..806 -->
+    <g>
+      <rect x="204" y="554" width="236" height="252" rx="8" fill="#252F40" stroke="#3A4A63" stroke-width="2"/>
+      <text x="322" y="658" font-size="58" fill="#5E7396" text-anchor="middle" font-family="sans-serif">牛</text>
+      <text x="322" y="720" font-size="28" fill="#E8F0FA" text-anchor="middle" font-family="Source Han Serif SC,serif">蛮牛</text>
+      <text x="322" y="752" font-size="22" fill="#FF7A29" text-anchor="middle" font-family="Source Han Serif SC,serif">重甲</text>
+      <text x="322" y="784" font-size="22" fill="#9FB3C8" text-anchor="middle" font-family="Consolas,monospace">HP 280  速 0.9</text>
+    </g>
+    <g>
+      <rect x="464" y="554" width="236" height="252" rx="8" fill="#252F40" stroke="#3A4A63" stroke-width="2"/>
+      <text x="582" y="658" font-size="58" fill="#5E7396" text-anchor="middle" font-family="sans-serif">羊</text>
+      <text x="582" y="720" font-size="28" fill="#E8F0FA" text-anchor="middle" font-family="Source Han Serif SC,serif">岩羊</text>
+      <text x="582" y="752" font-size="22" fill="#35E0FF" text-anchor="middle" font-family="Source Han Serif SC,serif">地面</text>
+      <text x="582" y="784" font-size="22" fill="#9FB3C8" text-anchor="middle" font-family="Consolas,monospace">HP 160  速 1.1</text>
+    </g>
+    <g>
+      <rect x="724" y="554" width="236" height="252" rx="8" fill="#252F40" stroke="#3A4A63" stroke-width="2"/>
+      <text x="842" y="658" font-size="58" fill="#5E7396" text-anchor="middle" font-family="sans-serif">鸡</text>
+      <text x="842" y="720" font-size="28" fill="#E8F0FA" text-anchor="middle" font-family="Source Han Serif SC,serif">斗鸡</text>
+      <text x="842" y="752" font-size="22" fill="#35E0FF" text-anchor="middle" font-family="Source Han Serif SC,serif">地面</text>
+      <text x="842" y="784" font-size="22" fill="#9FB3C8" text-anchor="middle" font-family="Consolas,monospace">HP 70  速 2.0</text>
+    </g>
+    <g>
+      <rect x="984" y="554" width="236" height="252" rx="8" fill="#252F40" stroke="#3A4A63" stroke-width="2"/>
+      <text x="1102" y="658" font-size="58" fill="#5E7396" text-anchor="middle" font-family="sans-serif">兔</text>
+      <text x="1102" y="720" font-size="28" fill="#E8F0FA" text-anchor="middle" font-family="Source Han Serif SC,serif">暗兔</text>
+      <text x="1102" y="752" font-size="22" fill="#35E0FF" text-anchor="middle" font-family="Source Han Serif SC,serif">地面</text>
+      <text x="1102" y="784" font-size="22" fill="#9FB3C8" text-anchor="middle" font-family="Consolas,monospace">HP 55  速 2.2</text>
+    </g>
+    <g>
+      <rect x="1244" y="554" width="236" height="252" rx="8" fill="#252F40" stroke="#3A4A63" stroke-width="2"/>
+      <text x="1362" y="658" font-size="58" fill="#5E7396" text-anchor="middle" font-family="sans-serif">虎</text>
+      <text x="1362" y="720" font-size="28" fill="#E8F0FA" text-anchor="middle" font-family="Source Han Serif SC,serif">剑齿虎</text>
+      <text x="1362" y="752" font-size="22" fill="#FF7A29" text-anchor="middle" font-family="Source Han Serif SC,serif">重甲</text>
+      <text x="1362" y="784" font-size="22" fill="#9FB3C8" text-anchor="middle" font-family="Consolas,monospace">HP 400  速 1.3</text>
+    </g>
+    <g>
+      <rect x="1504" y="554" width="236" height="252" rx="8" fill="#252F40" stroke="#3A4A63" stroke-width="2"/>
+      <text x="1622" y="658" font-size="58" fill="#5E7396" text-anchor="middle" font-family="sans-serif">象</text>
+      <text x="1622" y="720" font-size="28" fill="#E8F0FA" text-anchor="middle" font-family="Source Han Serif SC,serif">战象</text>
+      <text x="1622" y="752" font-size="22" fill="#FF7A29" text-anchor="middle" font-family="Source Han Serif SC,serif">重甲</text>
+      <text x="1622" y="784" font-size="22" fill="#9FB3C8" text-anchor="middle" font-family="Consolas,monospace">HP 520  速 0.6</text>
+    </g>
+  </g>
+
+  <!-- Zone D: 左右翻页箭头（与网格同一垂直中心 530；整体位于底衬 192..1752 之外侧） -->
+  <g>
+    <polygon points="50,450 118,450 148,530 118,610 50,610 20,530 20,450" fill="url(#ds-panel)" stroke="#3A4A63" stroke-width="2"/>
+    <text x="84" y="552" font-size="68" fill="#35E0FF" text-anchor="middle" font-family="Consolas,monospace">&lt;</text>
+    <polygon points="1802,450 1870,450 1900,530 1870,610 1802,610 1772,530 1772,450" fill="url(#ds-panel)" stroke="#3A4A63" stroke-width="2"/>
+    <text x="1836" y="552" font-size="68" fill="#35E0FF" text-anchor="middle" font-family="Consolas,monospace">&gt;</text>
+  </g>
+
+  <!--Zone E: 分页 830..870 -->
+  <text x="960" y="858" font-size="28" fill="#9FB3C8" text-anchor="middle" font-family="Consolas,monospace">1 / 4</text>
+
+  <!--Zone F: 返回按钮 890..974 -->
+  <g>
+    <polygon points="802,890 1118,890 1130,902 1130,962 1118,974 802,974 790,962 790,902" fill="url(#ds-panel)" stroke="#3A4A63" stroke-width="2"/>
+    <text x="960" y="948" font-size="32" fill="#E8F0FA" text-anchor="middle" font-family="Source Han Serif SC,serif">返回</text>
+  </g>
+
+  <rect width="1920" height="1080" fill="url(#ds-vig)"/>
+
+  <!--标注层 -->
+  <g font-family="Consolas,monospace">
+    <text x="44" y="1006" font-size="18" fill="#9FB3C8" fill-opacity="0.8">MonsterCodexView · 整页 · 网格 6×2（每页 12）· cellSize 236×252 · 列距 260 · 行距 276 · 卡片区 204..1740</text>
+    <text x="44" y="1032" font-size="18" fill="#9FB3C8" fill-opacity="0.6">★ v3 重排：竖向 zones 严格分离 标题40-120｜筛选150-228｜网格266-818｜分页858｜返回890-974；箭头 20..148 / 1772..1900 完全在底衬之外</text>
+    <text x="44" y="1058" font-size="18" fill="#9FB3C8" fill-opacity="0.7">数据来自 EnemyConfig（Desc/Speed/Hp/Armor/IsFlying）· 标签色 地面#35E0FF 飞行#7C5CFF 重甲#FF7A29</text>
+  </g>
+</svg>

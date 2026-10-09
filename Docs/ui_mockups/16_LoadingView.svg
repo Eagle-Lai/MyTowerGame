@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 16_LoadingView.svg — 资源加载进度【正式版·深色科幻】
+     几何与 prefab 实测一致（勿改坐标）；数据源: ArtDesign_坚守阵地_补全策划案_v1.md §A2
+     坐标换算 x=960+X, y=540−Y -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" width="1920" height="1080">
+  <defs>
+    <linearGradient id="ds-panel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2A3444"/><stop offset="0.5" stop-color="#1B2330"/><stop offset="1" stop-color="#222C3B"/>
+    </linearGradient>
+    <radialGradient id="ds-vig" cx="0.5" cy="0.5" r="0.75">
+      <stop offset="0.62" stop-color="#0B0E14" stop-opacity="0"/><stop offset="1" stop-color="#0B0E14" stop-opacity="0.66"/>
+    </radialGradient>
+    <filter id="ds-neon" x="-60%" y="-60%" width="220%" height="220%">
+      <feDropShadow dx="0" dy="0" stdDeviation="4" flood-color="#35E0FF" flood-opacity="0.9"/>
+    </filter>
+    <filter id="ds-bloom" x="-80%" y="-80%" width="260%" height="260%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="5" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <pattern id="ds-stars" width="220" height="220" patternUnits="userSpaceOnUse">
+      <circle cx="30" cy="40" r="1.2" fill="#E8F0FA" fill-opacity="0.4"/>
+      <circle cx="130" cy="22" r="0.8" fill="#E8F0FA" fill-opacity="0.28"/>
+      <circle cx="186" cy="104" r="1.4" fill="#35E0FF" fill-opacity="0.3"/>
+      <circle cx="74" cy="150" r="0.9" fill="#E8F0FA" fill-opacity="0.22"/>
+    </pattern>
+  </defs>
+
+  <rect width="1920" height="1080" fill="#080B12"/>
+  <rect width="1920" height="1080" fill="url(#ds-stars)" opacity="0.25"/>
+
+  <!-- Logo 240x240 y=+160 → 中心 (960,380) -->
+  <g filter="url(#ds-bloom)">
+    <polygon points="960,300 1020,348 1020,452 960,500 900,452 900,348" fill="#1C2532" stroke="#35E0FF" stroke-width="3"/>
+    <path d="M960 330 l30 18 0 34 -30 18 -30 -18 0 -34 z" fill="#35E0FF" fill-opacity="0.8"/>
+  </g>
+
+  <!-- StatusText y=-40 → 580 -->
+  <text x="960" y="580" font-size="32" fill="#E8F0FA" text-anchor="middle"
+        font-family="Source Han Serif SC,serif">正在加载配置表…</text>
+
+  <!-- ProgressBar 900x24 y=-140 → 中心 (960,680), x 510..1410 -->
+  <g>
+    <rect x="510" y="668" width="900" height="24" rx="6" fill="#131A26" stroke="#3A4A63" stroke-width="2"/>
+    <!-- Fill 60% -->
+    <g filter="url(#ds-bloom)">
+      <rect x="510" y="668" width="540" height="24" rx="6" fill="#35E0FF" fill-opacity="0.85"/>
+    </g>
+    <rect x="510" y="668" width="540" height="24" rx="6" fill="none" stroke="#35E0FF" stroke-width="2"/>
+    <!-- 发光尾 -->
+    <rect x="1030" y="672" width="20" height="16" rx="4" fill="#CFF6FF" fill-opacity="0.9"/>
+    <!-- 刻度 -->
+    <g stroke="#5E7396" stroke-width="1" stroke-opacity="0.5">
+      <line x1="735" y1="694" x2="735" y2="704"/><line x1="960" y1="694" x2="960" y2="704"/><line x1="1185" y1="694" x2="1185" y2="704"/>
+    </g>
+  </g>
+
+  <!-- PercentText y=-190 → 730, 34号 Gold Bold -->
+  <text x="960" y="742" font-size="34" fill="#FFC94D" font-weight="700" text-anchor="middle"
+        font-family="Consolas,monospace">60%</text>
+
+  <!-- TipText y=-300 → 840, 26号 钢 -->
+  <text x="960" y="852" font-size="26" fill="#9FB3C8" text-anchor="middle"
+        font-family="Source Han Serif SC,serif">可以在任意空地建塔，路径会实时重算</text>
+
+  <!-- 角落品牌 -->
+  <text x="1560" y="1042" font-size="22" fill="#5E7396" text-anchor="start"
+        font-family="Consolas,monospace">v1.0.0</text>
+
+  <rect width="1920" height="1080" fill="url(#ds-vig)"/>
+
+  <!--标注层 -->
+  <g font-family="Consolas,monospace">
+    <text x="44" y="176" font-size="20" fill="#9FB3C8" fill-opacity="0.8">LoadingView · 整页 · 进度映射 0%→ResLoader.Init · 30%→资源就绪 · 90%→配置完成 · 100%→切场景</text>
+    <text x="44" y="206" font-size="20" fill="#9FB3C8" fill-opacity="0.6">ProgressBar(900×24,y=-140) · Fill 用 DOTween 0.3s EaseOut 补间，数字不跳变</text>
+    <line x1="1410" y1="680" x2="1500" y2="664" stroke="#9FB3C8" stroke-opacity="0.5" stroke-width="1" stroke-dasharray="4 3"/>
+    <text x="1514" y="668" font-size="20" fill="#9FB3C8" fill-opacity="0.8">Track: #131A26 + stroke #3A4A63</text>
+    <text x="44" y="906" font-size="20" fill="#9FB3C8" fill-opacity="0.8">TipText 提示池随机取 1 条（7 条已在策划案 §A2 定义）· 加载失败时 StatusText 变 #FF4D5E 显示原因，不得静默卡住</text>
+  </g>
+</svg>

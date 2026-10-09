@@ -1,7 +1,7 @@
 # FreeTower · Unity 编辑器操作指南
 
-> 适用工程：`D:\FreedomTower_1`（注意带 `_1`）　|　主场景：`Assets/Scenes/main.unity`
-> 配置表目录：`D:\FreedomTower_1\Luban`
+> 适用工程：本工程　|　主场景：`Assets/Scenes/main.unity`
+> 配置表目录：`Luban/`
 > 目标：**M0~M3 全部可跑通并验收**
 > 本指南按「照着点就能跑起来」组织。每一步都写了：**在哪点 → 设什么 → 应该看到什么 → 出问题怎么办**。
 
@@ -65,10 +65,10 @@
 
 ### 操作
 
-在文件资源管理器中进入：
+在文件资源管理器中进入工程根目录下的：
 
 ```
-D:\FreedomTower\Luban\
+Luban\
 ```
 
 **双击 `gen_code_json.bat`**（不要用“以管理员身份运行”，也不需要先 cd 到某目录 —— 脚本已用 `%~dp0` 以自身路径为基准）。
@@ -109,7 +109,7 @@ D:\FreedomTower\Luban\
 
 ### 操作
 
-1. 打开 Unity 工程 `D:\FreedomTower`（Unity 2022.3 LTS）。
+1. 打开本 Unity 工程（Unity 2022.3 LTS）。
 2. 等首次编译完成。**Console 没有红色 Error 才继续**。
 3. 菜单栏 → **`Tools ▸ 塔防 ▸ 一键补齐 M0 资源（安全：只补缺失）`**。
 4. 弹窗列出将要执行的 8 个步骤，点 **「开始执行」**。
@@ -546,7 +546,7 @@ Console 首行变为：
 ## 9. 目录与关键文件地图
 
 ```
-D:\FreedomTower_1\                       （注意实际工程根目录带 _1）
+<工程根>\
 ├── Luban\                              ★ 配置表工具链与源表（唯一配置来源）
 │   ├── Config\Datas\*.xlsx               策划编辑的源表（9 张数据表 + 3 张定义表）
 │   ├── Config\Defines\__root__.xml       Luban 表定义根

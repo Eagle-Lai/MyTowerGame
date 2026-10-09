@@ -1,7 +1,7 @@
 # 《坚守阵地》策划案（v3.0）
 
 > 项目：单机 2D 塔防手游（对标 Fieldrunners 核心机制）　|　平台：Android  
-> 工程：`G:\MyTowerGame`（Unity 2022.3.62f3c1）　|　主场景：`Assets/Scenes/Main.unity`  
+> 工程：本工程（Unity 2022.3.62f3c1）　|　主场景：`Assets/Scenes/Main.unity`  
 > 配套文档：`Docs/ProgramDesign_坚守阵地_v3.md`（程序案）  
 > 版本说明：本文档以 **2026-10-08 工程实测**为基线重新编制，取代 `TowerDefense_Design_and_Implementation.md`（v2.1，保留为历史档案）。数值体系为**重新设计版**，与现配置的差异在各表「差异对照」列标出，落地步骤见程序案 §6。
 

@@ -1,7 +1,7 @@
 # 《坚守阵地》程序案（v3.0）
 
 > 配套文档：`Docs/GameDesign_坚守阵地_v3.md`（策划案，数值与规则的唯一来源）
-> 工程：`G:\MyTowerGame`　Unity 2022.3.62f3c1　|　目标平台：Android（minSdk 22 / IL2CPP / arm64-v8a + armeabi-v7a）
+> 工程：本工程　Unity 2022.3.62f3c1　|　目标平台：Android（minSdk 22 / IL2CPP / arm64-v8a + armeabi-v7a）
 > 基线：2026-10-08 工程实测（89 运行时脚本 / 21 编辑器工具 / 23 Luban 生成文件，namespace 分别为 `FTProject` / `FTProject.EditorTools` / `cfg`）
 > 读者：按本文档分步执行的 AI 或开发。每阶段含**执行步骤 + 验收标准**，严格按 P1→P5 顺序执行，P6 依赖外部资源不阻塞。
 
@@ -39,7 +39,7 @@ UICanvas                 UIManager 三层
 ## 2. 目录结构（实测终态）
 
 ```
-G:\MyTowerGame\
+<工程根>\
 ├── Assets/
 │   ├── Scenes/Main.unity            唯一主场景
 │   ├── Scripts/                     运行时 89 个 .cs（见 §3）
@@ -283,7 +283,7 @@ G:\MyTowerGame\
 **操作步骤（命令级）**
 1. 【Unity】Player Settings：锁 `Landscape Left`；`productName=坚守阵地`；version 1.0.0 / Bundle Version Code 1；复核 IL2CPP + arm64-v8a/armeabi-v7a、minSdk 22、包名 `com.<company>.shouzhuzhendi`；
 2. 【Unity，**人执行**】创建发布 keystore：`keytool -genkey -v -keystore release.keystore -alias szjd -keyalg RSA -keysize 2048 -validity 10000`；keystore 与别名密码由人保管，**不入库**（.gitignore 加 `*.keystore`）；
-3. 【Unity】Build：Build Settings▸Android▸Build（关 Development Build）；或命令行 `Unity.exe -batchmode -projectPath G:\MyTowerGame -executeMethod BuildPipeline.BuildPlayer ...`（需先写 Editor 构建方法，可复用 `ProjectSettingsConfigurator` 模式新增）；
+3. 【Unity】Build：Build Settings▸Android▸Build（关 Development Build）；或命令行 `Unity.exe -batchmode -projectPath <工程根> -executeMethod BuildPipeline.BuildPlayer ...`（需先写 Editor 构建方法，可复用 `ProjectSettingsConfigurator` 模式新增）；
 4. 真机 `adb install -r app-release.apk`，完整打完关卡 1，覆盖：暂停/倍速/升级/出售/失败重打/杀进程重进（局内快照继续）；
 5. 高负载验证：后期关卡（200 怪+50 塔），F3 PerfProbe 记录 p50/p95/p99。
 

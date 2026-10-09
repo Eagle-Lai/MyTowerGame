@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 19_TowerCodexView.svg — 防御塔图鉴【正式版·深色科幻】
+     几何与 prefab 实测一致（勿改坐标）；数据源: ArtDesign_坚守阵地_补全策划案_v1.md §B2
+     坐标换算 x=960+X, y=540−Y
+     塔形依据 Assets/_UIAssets/Tower 真实美术；Pierce/Laser 紫系标识（当前工程复用 Normal 贴图） -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" width="1920" height="1080">
+  <defs>
+    <linearGradient id="ds-panel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2A3444"/><stop offset="0.5" stop-color="#1B2330"/><stop offset="1" stop-color="#222C3B"/>
+    </linearGradient>
+    <linearGradient id="ds-gold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFC94D"/><stop offset="1" stop-color="#E8912B"/>
+    </linearGradient>
+    <linearGradient id="ds-crystal" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#CFF6FF"/><stop offset="1" stop-color="#35E0FF"/>
+    </linearGradient>
+    <radialGradient id="ds-fire" cx="0.5" cy="0.35" r="0.8">
+      <stop offset="0" stop-color="#FFC94D"/><stop offset="1" stop-color="#FF7A29"/>
+    </radialGradient>
+    <radialGradient id="ds-vig" cx="0.5" cy="0.5" r="0.75">
+      <stop offset="0.62" stop-color="#0B0E14" stop-opacity="0"/><stop offset="1" stop-color="#0B0E14" stop-opacity="0.66"/>
+    </radialGradient>
+    <filter id="ds-neon" x="-60%" y="-60%" width="220%" height="220%">
+      <feDropShadow dx="0" dy="0" stdDeviation="3" flood-color="#35E0FF" flood-opacity="0.85"/>
+    </filter>
+    <filter id="ds-neon-purple" x="-60%" y="-60%" width="220%" height="220%">
+      <feDropShadow dx="0" dy="0" stdDeviation="3" flood-color="#7C5CFF" flood-opacity="0.85"/>
+    </filter>
+    <filter id="ds-bloom" x="-80%" y="-80%" width="260%" height="260%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="4" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!--整页底 + Panel -->
+  <rect width="1920" height="1080" fill="#080B12"/>
+  <rect x="0" y="0" width="1920" height="1080" fill="#1E2939"/>
+  <rect x="0" y="0" width="1920" height="4" fill="#35E0FF"/>
+  <!-- 内描边 -->
+  <rect x="8" y="8" width="1904" height="1064" fill="none" stroke="#3A4A63" stroke-width="2"/>
+
+  <!-- Title y=-64 → 76 -->
+  <text x="960" y="90" font-size="64" fill="#E8F0FA" font-weight="700" text-anchor="middle"
+        font-family="Source Han Serif SC,serif">防御塔图鉴</text>
+  <!-- 标题下划线 -->
+  <line x1="820" y1="112" x2="1100" y2="112" stroke="#35E0FF" stroke-width="3"/>
+
+  <!--List 可视区 1300x640 中心 (960,550) → x 310..1610, y_svg 230..870 -->
+  <!-- 可视区外框（示意，实机由 RectMask2D 裁切） -->
+  <rect x="310" y="230" width="1300" height="640" fill="#131A26" stroke="#233246" stroke-width="2" stroke-opacity="0.5"/>
+
+  <!-- 卡片 1: Normal 中心 x=620 (偏移 -340) -->
+  <g>
+    <rect x="390" y="230" width="460" height="640" rx="10" fill="#1E2939" stroke="#3A4A63" stroke-width="2"/>
+    <rect x="390" y="230" width="460" height="4" rx="2" fill="#35E0FF"/>
+    <circle cx="620" cy="400" r="26" fill="#2E4A66" stroke="#5E7396" stroke-width="3"/>
+    <path d="M594 400 a26 26 0 0 1 52 0" fill="none" stroke="#8C6239" stroke-width="5"/>
+    <g transform="rotate(45 620 397)"><rect x="614" y="369" width="11" height="52" rx="4" fill="#9FB3C8" stroke="#3A4A63" stroke-width="1.5"/><rect x="588" y="391" width="52" height="11" rx="4" fill="#9FB3C8" stroke="#3A4A63" stroke-width="1.5"/></g>
+    <circle cx="620" cy="397" r="8" fill="#C9D6E8"/>
+    <text x="620" y="530" font-size="40" fill="#35E0FF" font-weight="700" text-anchor="middle" font-family="Source Han Serif SC,serif">速射塔</text>
+    <text x="620" y="572" font-size="26" fill="#9FB3C8" text-anchor="middle" font-family="Source Han Serif SC,serif">单体速射，性价比基准</text>
+    <line x1="440" y1="600" x2="800" y2="600" stroke="#3A4A63" stroke-width="1" stroke-opacity="0.3"/>
+    <text x="440" y="648" font-size="26" fill="#E8F0FA" font-family="Consolas,monospace">伤害　　12</text>
+    <text x="440" y="688" font-size="26" fill="#E8F0FA" font-family="Consolas,monospace">射程　　3.0 格</text>
+    <text x="440" y="728" font-size="26" fill="#E8F0FA" font-family="Consolas,monospace">攻速　　0.4 秒</text>
+    <text x="440" y="768" font-size="26" fill="#FFC94D" font-family="Consolas,monospace">造价　　25 金币</text>
+    <text x="620" y="836" font-size="24" fill="#9FB3C8" text-anchor="middle" font-family="Source Han Serif SC,serif">均衡无短板，开局首选</text>
+  </g>
+
+  <!-- 卡片 2: Power 中心 x=1150 (偏移 +190) -->
+  <g>
+    <rect x="920" y="230" width="460" height="640" rx="10" fill="#1E2939" stroke="#3A4A63" stroke-width="2"/>
+    <rect x="920" y="230" width="460" height="4" rx="2" fill="#FF7A29" transform="translate(-10,0)"/>
+    <rect x="1086" y="338" width="60" height="46" rx="6" fill="#2A3138" stroke="#5E7396" stroke-width="3"/>
+    <rect x="1098" y="326" width="10" height="14" fill="#55627A"/><rect x="1124" y="326" width="10" height="14" fill="#55627A"/>
+    <polygon points="1098,384 1126,384 1120,400 1104,400" fill="url(#ds-fire)" filter="url(#ds-bloom)"/>
+    <path d="M1094 352 h44 M1094 360 h44 M1094 368 h44" stroke="#55627A" stroke-width="2"/>
+    <text x="1150" y="530" font-size="40" fill="#FF7A29" font-weight="700" text-anchor="middle" font-family="Source Han Serif SC,serif">火焰塔</text>
+    <text x="1150" y="572" font-size="26" fill="#9FB3C8" text-anchor="middle" font-family="Source Han Serif SC,serif">范围爆炸，清群核心</text>
+    <line x1="970" y1="600" x2="1330" y2="600" stroke="#3A4A63" stroke-width="1" stroke-opacity="0.3"/>
+    <text x="970" y="648" font-size="26" fill="#E8F0FA" font-family="Consolas,monospace">伤害　　30</text>
+    <text x="970" y="688" font-size="26" fill="#E8F0FA" font-family="Consolas,monospace">射程　　3.0 格</text>
+    <text x="970" y="728" font-size="26" fill="#E8F0FA" font-family="Consolas,monospace">攻速　　0.9 秒</text>
+    <text x="970" y="768" font-size="26" fill="#FFC94D" font-family="Consolas,monospace">造价　　45 金币</text>
+    <text x="1150" y="836" font-size="24" fill="#9FB3C8" text-anchor="middle" font-family="Source Han Serif SC,serif">落点 1.2 格内全伤</text>
+  </g>
+
+  <!-- 卡片 3: Retard （邻卡露出示意，右侧被裁） -->
+  <g>
+    <rect x="1450" y="230" width="460" height="640" rx="10" fill="#1E2939" stroke="#3A4A63" stroke-width="2"/>
+    <rect x="1450" y="230" width="460" height="4" rx="2" fill="#7DE8FF"/>
+    <ellipse cx="1680" cy="410" rx="30" ry="10" fill="#35E0FF" fill-opacity="0.18"/>
+    <polygon points="1654,398 1706,398 1696,422 1664,422" fill="#1C2532" stroke="#5E7396" stroke-width="3"/>
+    <path d="M1680 354 l14 24 -14 24 -14 -24 z" fill="url(#ds-crystal)" filter="url(#ds-bloom)"/>
+    <path d="M1680 354 l0 48 M1666 378 l28 0" stroke="#FFFFFF" stroke-opacity="0.5" stroke-width="1.5"/>
+    <text x="1680" y="530" font-size="40" fill="#7DE8FF" font-weight="700" text-anchor="middle" font-family="Source Han Serif SC,serif">水晶塔</text>
+    <text x="1680" y="572" font-size="26" fill="#9FB3C8" text-anchor="middle" font-family="Source Han Serif SC,serif">减速光环，增益全队</text>
+    <text x="1500" y="648" font-size="26" fill="#E8F0FA" font-family="Consolas,monospace">减速　　30%</text>
+    <text x="1500" y="688" font-size="26" fill="#E8F0FA" font-family="Consolas,monospace">半径　　4.0 格</text>
+    <text x="1500" y="768" font-size="26" fill="#FFC94D" font-family="Consolas,monospace">造价　　30 金币</text>
+  </g>
+
+  <!-- LeftBtn / RightBtn 132x160 中心 x=100 / 1820, y=550
+       ⚠ v2 修正：箭头必须落在"邻卡露出区之外"，即 x<200 或 x>1720
+         左卡(peek) 200..660 ｜ 中卡 730..1190 ｜ 右卡(peek) 1260..1720
+         故左箭头 34..166，右箭头 1754..1886 → 与任何卡片零重叠 -->
+  <g>
+    <polygon points="74,470 132,470 166,550 132,630 74,630 34,550 34,470" fill="url(#ds-panel)" stroke="#3A4A63" stroke-width="2"/>
+    <text x="100" y="572" font-size="64" fill="#35E0FF" text-anchor="middle" font-family="Consolas,monospace">&lt;</text>
+    <polygon points="1788,470 1846,470 1886,550 1846,630 1788,630 1754,550 1754,470" fill="url(#ds-panel)" stroke="#3A4A63" stroke-width="2"/>
+    <text x="1820" y="572" font-size="64" fill="#35E0FF" text-anchor="middle" font-family="Consolas,monospace">&gt;</text>
+  </g>
+
+  <!-- PageDot y=-330 → 870 -->
+  <text x="960" y="894" font-size="28" fill="#9FB3C8" text-anchor="middle" font-family="Consolas,monospace">1 / 5</text>
+
+  <!-- CloseBtn 340x84 y=-430 → 970 -->
+  <g>
+    <polygon points="802,928 1118,928 1130,940 1130,1000 1118,1012 802,1012 790,1000 790,940" fill="url(#ds-panel)" stroke="#3A4A63" stroke-width="2"/>
+    <text x="960" y="986" font-size="32" fill="#E8F0FA" text-anchor="middle" font-family="Source Han Serif SC,serif">返回</text>
+  </g>
+
+  <rect width="1920" height="1080" fill="url(#ds-vig)"/>
+
+  <!--标注层 -->
+  <g font-family="Consolas,monospace">
+    <text x="44" y="176" font-size="18" fill="#9FB3C8" fill-opacity="0.8">TowerCodexView · 整页 · 横向画廊（复用 SelectView 的 LoopListView2 几何）· 可视区 1300×640，视口 ≡ 卡片宽 460</text>
+    <text x="44" y="200" font-size="18" fill="#9FB3C8" fill-opacity="0.6">★ Viewport.pivot.x 必须预置 0（AdjustPivot 会强改）· InitListView 只调一次 · 首次居中延后第一帧 LateUpdate</text>
+    <line x1="1610" y1="652" x2="1700" y2="700" stroke="#9FB3C8" stroke-opacity="0.5" stroke-width="1" stroke-dasharray="4 3"/>
+    <text x="1440" y="716" font-size="18" fill="#9FB3C8" fill-opacity="0.8">邻卡露出 1720-1610 = 110px</text>
+    <text x="44" y="1054" font-size="18" fill="#9FB3C8" fill-opacity="0.7">数据源 tbtowerinfo L1 行 · Pierce/Laser 主题色 #7C5CFF · 视觉层缩放挂 Body 子节点，不缩条目根节点</text>
+  </g>
+</svg>

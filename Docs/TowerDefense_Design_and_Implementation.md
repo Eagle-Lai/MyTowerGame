@@ -2,8 +2,8 @@
 
 > 目标定位：实现一款**单机 2D** 版、核心机制对标《坚守阵地》（Fieldrunners）的塔防游戏。
 > 文档版本：**v2.1**（2D 重构版 · SpriteRenderer 路线修正）　|　编制日期：2026-09-26
-> 工程路径：`D:\FreedomTower`　|　主场景：`Assets/Scenes/main.unity`
-> 配置表目录：**`D:\FreedomTower\Luban`**（2026-09-26 已由 `Luaban` 重命名，提交 `8ab496b1d`）
+> 工程路径：本工程　|　主场景：`Assets/Scenes/main.unity`
+> 配置表目录：**`Luban/`**（2026-09-26 已由 `Luaban` 重命名，提交 `8ab496b1d`）
 >
 > **v2.1 修订要点**：实测发现怪物资源**已全部替换为 2D `SpriteRenderer` + `Animator` 实现**
 > （`_UIAssets/Monsters/**`：119 prefab / 122 Sprite / 120 anim / 30 Controller，原 120 个 3D prefab 已删除），
@@ -22,7 +22,7 @@
 |---|---|---|---|
 | **1** | 由 3D 重构为 2D，保留《坚守阵地》核心机制 | §2、§6.1、§6.7 | 定案 **世界空间 2D + `SpriteRenderer`**（玩法对象）+ **UGUI**（HUD）；移除全部 3D 专用 API |
 | **2** | 地图生成相关内容重写或舍弃 | §6.1.3、§3.3.6 | **废弃** `StreamingAssets/Map/Map*.txt` ASCII 文件方案，改为**配置表驱动棋盘布局** |
-| **3** | 说明配置表位于 `D:\FreedomTower\Luban` | **§3.1** | 完整标注目录树、工具链、导出命令与产物路径 |
+| **3** | 说明配置表位于 `Luban/` | **§3.1** | 完整标注目录树、工具链、导出命令与产物路径 |
 | **4** | 塔防数据尽量配置表驱动 | **§3.3、§3.4** | 新增 `TBBullet`/`TBLevelMap`/`TBGlobal` 表；经济、波次、怪物、塔全量进表 |
 | **5** | 仅 1 种塔 + 数量待定怪物；第一阶段只做单回合闭环 | §0.3、**§7** | **M0 范围收窄为「单回合闭环」**；表结构预留扩展位，缺失字段走默认值不阻塞 |
 | **6** | 玩法在 `Assets/Scenes/main.unity` 内实现 | **§6.1** | 明确该场景现状（仅 4 个对象）与需要补齐的层级结构 |
@@ -74,7 +74,7 @@
 | 相机 | **正交相机**（`orthographic: 1`, size = 5）→ 已是 2D 配置 |
 | Canvas | `RenderMode = ScreenSpaceCamera`，`UiScaleMode = ScaleWithScreenSize`，参考分辨率 **1920×1080** |
 | 代码规模 | `Assets/Scripts` 62 个脚本、约 5,789 行（命名空间 `FTProject`） |
-| 配置管线 | Luban，源表在 **`D:\FreedomTower\Luban`**（详见 §3.1） |
+| 配置管线 | Luban，源表在 **`Luban/`**（详见 §3.1） |
 | 现有 2D 美术 | `Assets/_UIAssets/Tower/Normal/`：`turret_base_128.png`、`turret_barrel_128.png`；`Assets/_UIAssets/Backgrounds/Paper.png` |
 | **现有怪物资源（已 2D 化）** | **`Assets/_UIAssets/Monsters/**`：119 个 prefab + 122 张 Sprite（PPU=100）+ 120 个 `.anim` + 30 个 `.controller`**；14 个族系 + `_Common`（含 `Animations/<族系>/` 与 `Sprites/`）。每怪含 **`Ready` / `Walk` / `Attack` / `Death`** 四态动画。<br>形态：`Transform` + **`SpriteRenderer`×8**（分部件骨骼式）+ `Animator` + `SortingGroup`(order 200) + `CapsuleCollider2D`。**原 120 个 3D prefab 已删除。** |
 | 现有塔预制体 | `Assets/Prefabs/Tower/Tower_Normal.prefab` — **3 个 `RectTransform` + 2 个 `Image`**（子节点 `barbette` 炮座、`Img_gun` 炮管），**尚未挂 `BaseTower` 脚本、无排序组** → 需转为 `SpriteRenderer` 以统一渲染路线（§2.3） |
@@ -326,14 +326,14 @@
 
 > **需求 3 + 需求 4 的落实章节。** 本章是本次重构的核心之一：项目内与塔防相关的**所有可变数值**都必须进配置表，代码中不允许出现硬编码的业务数值。
 
-### 3.1 配置表位置与工具链（`D:\FreedomTower\Luban`）
+### 3.1 配置表位置与工具链（`Luban/`）
 
 **所有配置表的源文件都在工程根目录下的 `Luban` 文件夹内**，不在 `Assets` 下（`Assets` 内只有生成产物）。
 
 #### 3.1.1 目录结构
 
 ```
-D:\FreedomTower\
+<工程根>\
 ├── Luban\                                  ★ 配置表根目录
 │   ├── gen_code_json.bat                    ★ 一键导出脚本（双击运行）
 │   ├── Config\
@@ -379,8 +379,8 @@ D:\FreedomTower\
 
 | 项 | 约定 |
 |---|---|
-| 源表位置 | **`D:\FreedomTower\Luban\Config\Datas\*.xlsx`**（唯一的编辑入口） |
-| 导出脚本 | `D:\FreedomTower\Luban\gen_code_json.bat`（工作目录必须是 `Luban\`） |
+| 源表位置 | **`Luban/Config/Datas/*.xlsx`**（唯一的编辑入口） |
+| 导出脚本 | `Luban/gen_code_json.bat`（工作目录必须是 `Luban\`） |
 | 生成代码 | `Assets/Gen/` — **全部为生成产物，禁止手改**（改表后重导会覆盖） |
 | 生成数据 | `Assets/ConfigJson/*.json` |
 | 表注册 | 新增表必须先在 `__tables__.xlsx` 里登记一行，否则不会被导出 |
@@ -411,7 +411,7 @@ pause
 等价的手工命令（便于 CI 或脚本化）：
 
 ```bash
-cd D:/FreedomTower/Luban
+cd Luban/            # 工作目录必须是 Luban/
 ./Tools/Luban.ClientServer/Luban.ClientServer.exe -j cfg \
   -d ../Luban/Config/Defines/__root__.xml \
   --input_data_dir ../Luban/Config/Datas \
@@ -1916,7 +1916,7 @@ public List<Point> GetAStarPath(Point start, Point target)
 **依赖**：无
 
 **步骤**
-1. **备份并改造 Excel 源表**（位置：`D:\FreedomTower\Luban\Config\Datas\`）：
+1. **备份并改造 Excel 源表**（位置：`Luban/Config/Datas/`）：
    - `TowerInfo.xlsx`：`type` 由 string 改 int；`path` 改名为 `resName`；新增 `upgradeTo`、`sellPrice`、`bulletId`、`targetMode`、`searchIntervalMs`、`rotateSpeed`
    - `EnemyData.xlsx`：新增 `resName`、`armor`、`reward`、`damageToPlayer`、`scale`、`bodyRadius`、`isFlying`、`animPrefix`、`desc`
    - 新增 `Bullet.xlsx` → `TBBullet`（字段见 §3.3.4），至少 1 行
@@ -1925,7 +1925,7 @@ public List<Point> GetAStarPath(Point start, Point target)
    - 新增 `Global.xlsx` → `TBGlobal`（单行，字段见 §3.3.7）
    - `EnemyList.xlsx` / `RoundData.xlsx`：M0 保持原结构即可（重命名为 TBWave/TBRound 可选，若改名须同步 `DataTables` 的 key）
    - **`__tables__.xlsx` 里为每张新表登记一行**（最容易漏，漏了就不会导出）
-2. 运行 `D:\FreedomTower\Luban\gen_code_json.bat`（工作目录必须在 `Luban\`）
+2. 运行 `Luban/gen_code_json.bat`（工作目录必须在 `Luban\`）
 3. 校验产物：
    - `Assets/Gen/` 出现 `TBBullet.cs`、`TBLevel.cs`、`TBLevelMap.cs`、`TBGlobal.cs` 等
    - `Assets/ConfigJson/` 出现对应 json，且**非空**
@@ -2582,7 +2582,7 @@ public static List<SpawnEntry> BuildTimeline(int roundId, TBRound tbRound, TBWav
 > **变更记录**
 > - **v2.0（2026-09-26）**：2D 重构版。按 8 项补充要求整体重写：
 >   ① 3D → 2D（UGUI + 正交相机方案定案）；② 废弃 ASCII 地图文件，改配置表驱动棋盘；
->   ③ 明确配置表位于 `D:\FreedomTower\Luban` 并完整标注工具链；
+>   ③ 明确配置表位于 `Luban/` 并完整标注工具链；
 >   ④ 新增 `TBBullet`/`TBLevel`/`TBLevelMap`/`TBGlobal` 表，经济/波次/怪物/塔全量配置化；
 >   ⑤ M0 范围收窄为单回合闭环，缺失字段走默认值不阻塞；
 >   ⑥ 明确在 `main.unity` 内实现并列出目标层级；
@@ -3003,7 +3003,7 @@ UGUI Text 的问题：① 官方已不再演进（TMP 是其继任）② 中文�
 | `Assets/Editor/M0SetupWizard.cs` | 向导加步骤 8.5（迁移）；自检 `CheckUiPrefab` 加"不得含 UGUI Text"校验 |
 | `Assets/Scripts/Core/Res/ResBundle.cs` | 新增 `Font` 包常量，加入 `Fixed` 与 `Persistent` |
 | `Assets/Scripts/Core/Res/ResTable.cs` | 登记字体资产与描边材质 |
-| `.workbuddy/tools/check_usings.py` | 加 `TMPro` 类型映射；修正过期 ROOT 路径（`FreedomTower`→`FreedomTower_1`） |
+| `.workbuddy/tools/check_usings.py` | 加 `TMPro` 类型映射；修正过期 ROOT 路径（改为从脚本自身位置推导） |
 
 ### Z.11.5 操作步骤（在 Unity 里执行）
 

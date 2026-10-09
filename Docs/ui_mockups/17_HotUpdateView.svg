@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 17_HotUpdateView.svg — 热更新下载【正式版·深色科幻】
+     几何与 prefab 实测一致（勿改坐标）；数据源: ArtDesign_坚守阵地_补全策划案_v1.md §A3
+     坐标换算 x=960+X, y=540−Y  ⚠️ 上线阻塞项：YooAsset 版本比对/下载器当前完全未实现 -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" width="1920" height="1080">
+  <defs>
+    <radialGradient id="ds-vig" cx="0.5" cy="0.5" r="0.75">
+      <stop offset="0.62" stop-color="#0B0E14" stop-opacity="0"/><stop offset="1" stop-color="#0B0E14" stop-opacity="0.66"/>
+    </radialGradient>
+    <filter id="ds-bloom" x="-80%" y="-80%" width="260%" height="260%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="5" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <pattern id="ds-stars" width="220" height="220" patternUnits="userSpaceOnUse">
+      <circle cx="30" cy="40" r="1.2" fill="#E8F0FA" fill-opacity="0.4"/>
+      <circle cx="130" cy="22" r="0.8" fill="#E8F0FA" fill-opacity="0.28"/>
+      <circle cx="186" cy="104" r="1.4" fill="#35E0FF" fill-opacity="0.3"/>
+      <circle cx="74" cy="150" r="0.9" fill="#E8F0FA" fill-opacity="0.22"/>
+    </pattern>
+  </defs>
+
+  <rect width="1920" height="1080" fill="#080B12"/>
+  <rect width="1920" height="1080" fill="url(#ds-stars)" opacity="0.25"/>
+
+  <!-- Title y=+220 → 320 -->
+  <text x="960" y="320" font-size="56" fill="#E8F0FA" font-weight="700" text-anchor="middle"
+        font-family="Source Han Serif SC,serif">资源更新</text>
+
+  <!-- PhaseText y=+100 → 440 -->
+  <text x="960" y="440" font-size="32" fill="#E8F0FA" text-anchor="middle"
+        font-family="Source Han Serif SC,serif">正在下载资源…</text>
+
+  <!-- ProgressBar 900x28 y=0 → 中心 (960,540) -->
+  <g>
+    <rect x="510" y="526" width="900" height="28" rx="7" fill="#131A26" stroke="#3A4A63" stroke-width="2"/>
+    <g filter="url(#ds-bloom)">
+      <rect x="510" y="526" width="612" height="28" rx="7" fill="#35E0FF" fill-opacity="0.85"/>
+    </g>
+    <rect x="510" y="526" width="612" height="28" rx="7" fill="none" stroke="#35E0FF" stroke-width="2"/>
+    <rect x="1098" y="530" width="22" height="20" rx="5" fill="#CFF6FF" fill-opacity="0.95"/>
+  </g>
+
+  <!-- PercentText y=-60 → 600, 40号 Cyan Bold -->
+  <text x="960" y="614" font-size="40" fill="#35E0FF" font-weight="700" text-anchor="middle"
+        font-family="Consolas,monospace">68%</text>
+
+  <!-- SizeText y=-120 → 660 -->
+  <text x="960" y="672" font-size="26" fill="#9FB3C8" text-anchor="middle"
+        font-family="Consolas,monospace">已下载 34.2 MB / 50.4 MB</text>
+
+  <!-- SpeedText y=-160 → 700 -->
+  <text x="960" y="712" font-size="24" fill="#9FB3C8" text-anchor="middle"
+        font-family="Consolas,monospace">速度 2.4 MB/s　剩余约 00:07</text>
+
+  <!-- DetailText y=-206 → 746 -->
+  <text x="960" y="758" font-size="22" fill="#5E7396" text-anchor="middle"
+        font-family="Consolas,monospace">文件 43/63　失败 0</text>
+
+  <!-- BtnGroup y=-300 → 840, 按钮 y_svg=840±40 -->
+  <g>
+    <!-- PauseBtn x=-160 → 800 -->
+    <polygon points="688,798 912,798 924,810 924,870 912,882 688,882 676,870 676,810" fill="#1E2939" stroke="#3A4A63" stroke-width="2"/>
+    <text x="800" y="850" font-size="32" fill="#E8F0FA" text-anchor="middle" font-family="Source Han Serif SC,serif">暂停</text>
+    <!-- RetryBtn x=+160 → 1120 （默认隐藏，此处示意） -->
+    <polygon points="1008,798 1232,798 1244,810 1244,870 1232,882 1008,882 996,870 996,810" fill="#1E2939" stroke="#3A4A63" stroke-width="2" stroke-dasharray="6 5" stroke-opacity="0.5"/>
+    <text x="1120" y="850" font-size="32" fill="#5E7396" text-anchor="middle" font-family="Source Han Serif SC,serif">重试</text>
+  </g>
+
+  <!-- FailText y=-390 → 930 （默认隐藏） -->
+  <text x="960" y="942" font-size="26" fill="#FF4D5E" text-anchor="middle" opacity="0.45"
+        font-family="Source Han Serif SC,serif">下载失败：网络异常，请检查网络后重试</text>
+
+  <rect width="1920" height="1080" fill="url(#ds-vig)"/>
+
+  <!--标注层 -->
+  <g font-family="Consolas,monospace">
+    <text x="44" y="176" font-size="20" fill="#9FB3C8" fill-opacity="0.8">HotUpdateView · 整页 · ⚠️ 上线阻塞：YooAsset 版本比对(UpdatePackageVersionAsync)与下载器(CreateResourceDownloader)未实现</text>
+    <text x="44" y="206" font-size="20" fill="#9FB3C8" fill-opacity="0.6">阶段: RequestVersion→CompareVersion→Downloading→Verifying→Done｜无更新则直达 Done</text>
+    <line x1="960" y1="554" x2="960" y2="600" stroke="#9FB3C8" stroke-opacity="0.4" stroke-width="1" stroke-dasharray="4 3"/>
+    <text x="44" y="1006" font-size="20" fill="#9FB3C8" fill-opacity="0.8">★ 三步初始化契约不可破坏: InitializePackageAsync → RequestPackageVersionAsync → LoadPackageManifestAsync(最后 SetActiveManifest)</text>
+    <text x="44" y="1036" font-size="20" fill="#9FB3C8" fill-opacity="0.6">版本比对须插在 RequestPackageVersionAsync 之后、LoadPackageManifestAsync 之前；否则报 Active package manifest not found.</text>
+    <text x="44" y="1062" font-size="20" fill="#9FB3C8" fill-opacity="0.6">暂停/恢复直接用 DownloaderOperation 自带能力（Pause/Resume），不必自建状态机；重试=重建 Downloader</text>
+  </g>
+</svg>

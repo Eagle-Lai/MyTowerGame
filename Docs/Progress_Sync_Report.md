@@ -1,6 +1,6 @@
 # FreeTower 进度同步报告
 
-> 扫描范围：`D:\FreedomTower_1`（当前工作目录，含子目录）
+> 扫描范围：本工程（工程根目录，含子目录）
 > 报告日期：2026-09-29（**2026-10-04 复核更新**，见文末「附：2026-10-04 复核与完整收尾计划」）
 > 依据：`Docs/TowerDefense_Design_and_Implementation.md`(v2.1 + 附录 Z)、`Docs/Unity_Editor_Operation_Guide.md`、
 > 源码与资源实测、`git log`、`.workbuddy/memory/` 工作日志、工作区未提交改动
@@ -29,7 +29,7 @@
 ## 二、目录结构与模块用途
 
 ```
-D:\FreedomTower_1\
+<工程根>\
 ├── Assets/                      ★ 工程主体
 │   ├── Scripts/                 运行时代码（54 个 .cs）
 │   │   ├── Core/
@@ -194,8 +194,8 @@ D:\FreedomTower_1\
 **7. 命名不一致（文档 §1.6 T6 已记录，未修）**
 - `TowerCofig`（应为 `TowerConfig`，代码里已是正确拼写，历史名残留在文档）
 - 表字段 `EenemyPosition`（SceneInfo）
-- 设计文档 §3.1 标题写「`D:\FreedomTower\Luban`」，而 v2.1 修订说明写「已由 `Luaban` 重命名」→ **历史文本仍有两处 `Luaban` 残留**，易误导
-- **实际工程根目录是 `D:\FreedomTower_1`**（带 `_1`），但文档全篇写 `D:\FreedomTower`（无 `_1`）→ 按文档里的绝对路径操作会**找不到目录**
+- 设计文档 §3.1 标题写「`Luban/`」，而 v2.1 修订说明写「已由 `Luaban` 重命名」→ **历史文本仍有两处 `Luaban` 残留**，易误导
+- **文档里存的工程绝对路径已过期**（指向一份不存在的旧目录，且带/不带后缀写法不一致）→ 按文档里的绝对路径操作会**找不到目录**；现已全部改为不写绝对路径
 
 **8. 记忆/日志断档**
 - `.workbuddy/memory/` 只有 **09-25、09-26** 两天，**9-27 / 9-28 的工作（多塔型、AB 改包名）没有任何日志记录** → 当前这轮改造缺少决策留痕，新人接手看不出"为什么把塔包名改成 tower"
@@ -219,7 +219,7 @@ D:\FreedomTower_1\
 5. 在 Unity 里完整触发一次编译（文档 §Z.6 已说明本机无法编译，类型推导层未被静态脚本覆盖）
 
 **收尾（P2）**
-6. 回填文档中的脚本数量、删掉 `Luaban`/`D:\FreedomTower` 的历史残留（改指 `_1` 或加一句"路径以实际工程为准"）
+6. 回填文档中的脚本数量、删掉 `Luaban` 与过期绝对路径的历史残留（改为不写盘符路径，统一用"本工程/工程根目录"表述）
 7. 重排附录 Z 的编号顺序
 8. 清理 `tips.apk/zip`、`ttttt/`；补一份 09-27/09-28 的工作日志
 
@@ -264,7 +264,7 @@ D:\FreedomTower_1\
 2. 在 Unity 中完整编译一次，跑 `Tools ▸ 塔防 ▸ 0. 自检`（20+ 项），确认 M3 离线生成的 3 个 UI prefab 在编辑器内表现正常
 3. 重打 Android AB（现网包过期），真 AB 链路（FORCE_AB）跑一遍冒烟
 4. 清理冗余物：`tips.apk` / `tips.zip` / `ttttt/` / 两个 `*_BurstDebugInformation_DoNotShip/`（从 git 移除并加 .gitignore）
-5. 文档回填：脚本数 54→73、编辑器 12→17、`D:\FreedomTower`→`D:\FreedomTower_1`、删 `Luaban` 残留、重排附录 Z 编号、补 09-27/28 决策留痕
+5. 文档回填：脚本数 54→73、编辑器 12→17、清理过期绝对路径（改为不写盘符路径）、删 `Luaban` 残留、重排附录 Z 编号、补 09-27/28 决策留痕
 
 **第二阶段 — 需要设备/构建环境**
 6. PC + Android 出包（Unity 构建 + Android 签名）

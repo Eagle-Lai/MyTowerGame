@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 18_MainMenuView.svg — 主菜单【正式版·深色科幻】
+     几何与 prefab 实测一致（勿改坐标）；数据源: ArtDesign_坚守阵地_补全策划案_v1.md §B1
+     坐标换算 x=960+X, y=540−Y -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" width="1920" height="1080">
+  <defs>
+    <linearGradient id="ds-panel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2A3444"/><stop offset="0.5" stop-color="#1B2330"/><stop offset="1" stop-color="#222C3B"/>
+    </linearGradient>
+    <linearGradient id="ds-gold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFC94D"/><stop offset="1" stop-color="#E8912B"/>
+    </linearGradient>
+    <radialGradient id="ds-vig" cx="0.5" cy="0.5" r="0.75">
+      <stop offset="0.62" stop-color="#0B0E14" stop-opacity="0"/><stop offset="1" stop-color="#0B0E14" stop-opacity="0.66"/>
+    </radialGradient>
+    <radialGradient id="ds-logo" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#35E0FF" stop-opacity="0.3"/>
+      <stop offset="1" stop-color="#35E0FF" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="ds-neon" x="-60%" y="-60%" width="220%" height="220%">
+      <feDropShadow dx="0" dy="0" stdDeviation="4" flood-color="#35E0FF" flood-opacity="0.9"/>
+    </filter>
+    <filter id="ds-bloom" x="-80%" y="-80%" width="260%" height="260%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="5" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <pattern id="ds-stars" width="220" height="220" patternUnits="userSpaceOnUse">
+      <circle cx="30" cy="40" r="1.2" fill="#E8F0FA" fill-opacity="0.4"/>
+      <circle cx="130" cy="22" r="0.8" fill="#E8F0FA" fill-opacity="0.28"/>
+      <circle cx="186" cy="104" r="1.4" fill="#35E0FF" fill-opacity="0.3"/>
+      <circle cx="74" cy="150" r="0.9" fill="#E8F0FA" fill-opacity="0.22"/>
+    </pattern>
+  </defs>
+
+  <rect width="1920" height="1080" fill="#080B12"/>
+  <rect width="1920" height="1080" fill="url(#ds-stars)" opacity="0.4"/>
+
+  <!--Deco 装饰层 -->
+  <line x1="0" y1="540" x2="1920" y2="540" stroke="#35E0FF" stroke-opacity="0.15" stroke-width="2"/>
+  <g opacity="0.08" stroke="#35E0FF" fill="none">
+    <circle cx="1480" cy="480" r="350" stroke-width="2"/>
+    <circle cx="1480" cy="480" r="280" stroke-width="1" stroke-dasharray="12 10"/>
+    <circle cx="1480" cy="480" r="210" stroke-width="1"/>
+  </g>
+
+  <!--Logo 光环 r=190 中心 (960,270) 占位 80..460 -->
+  <circle cx="960" cy="270" r="190" fill="url(#ds-logo)"/>
+  <g filter="url(#ds-bloom)">
+    <polygon points="960,172 1030,226 1030,298 960,352 890,298 890,226" fill="#1C2532" stroke="#35E0FF" stroke-width="4"/>
+    <polygon points="960,196 1008,231 1008,293 960,328 912,293 912,231" fill="none" stroke="#5E7396" stroke-width="2"/>
+    <path d="M960 216 l30 17 0 34 -30 17 -30 -17 0 -34 z" fill="#35E0FF" fill-opacity="0.85"/>
+    <path d="M960 216 l0 68 M930 233 l60 34 M990 233 l-60 34" stroke="#0B0E14" stroke-opacity="0.45" stroke-width="2"/>
+  </g>
+
+  <!-- Title 88号 Cyan Bold 基线 y=470（logo 底 460 之后） -->
+  <text x="960" y="470" font-size="88" fill="#35E0FF" font-weight="700" text-anchor="middle"
+        font-family="Source Han Serif SC,serif" filter="url(#ds-neon)">坚守阵地</text>
+
+  <!-- Subtitle 26号 基线 y=524 -->
+  <text x="960" y="524" font-size="26" fill="#9FB3C8" text-anchor="middle"
+        font-family="Consolas,monospace" letter-spacing="4">FREEDOM TOWER · 单机塔防</text>
+
+  <!--BtnGroup 4 按钮 480×92 · 节距 118 · 组区 y 560..1006 -->
+  <!-- 按钮 x 中心 960 → 720..1200 -->
+  <!-- StartBtn y 560..652 (Primary 青色实心) -->
+  <g filter="url(#ds-neon)">
+    <polygon points="732,560 1188,560 1200,572 1200,640 1188,652 732,652 720,640 720,572" fill="#123845" stroke="#35E0FF" stroke-width="3"/>
+  </g>
+  <text x="960" y="616" font-size="38" fill="#DFFAFF" text-anchor="middle" font-weight="700"
+        font-family="Source Han Serif SC,serif">开始游戏</text>
+
+  <!-- CodexBtn y 678..770 (Secondary 镂空) -->
+  <polygon points="732,678 1188,678 1200,690 1200,758 1188,770 732,770 720,758 720,690" fill="url(#ds-panel)" stroke="#3A4A63" stroke-width="2"/>
+  <text x="960" y="734" font-size="34" fill="#E8F0FA" text-anchor="middle"
+        font-family="Source Han Serif SC,serif">防御塔图鉴</text>
+
+  <!-- SettingBtn y 796..888 -->
+  <polygon points="732,796 1188,796 1200,808 1200,876 1188,888 732,888 720,876 720,808" fill="url(#ds-panel)" stroke="#3A4A63" stroke-width="2"/>
+  <text x="960" y="852" font-size="34" fill="#E8F0FA" text-anchor="middle"
+        font-family="Source Han Serif SC,serif">设置</text>
+
+  <!-- QuitBtn y 914..1006（距画布底 74px） -->
+  <polygon points="732,914 1188,914 1200,926 1200,994 1188,1006 732,1006 720,994 720,926" fill="url(#ds-panel)" stroke="#3A4A63" stroke-width="2"/>
+  <text x="960" y="970" font-size="34" fill="#E8F0FA" text-anchor="middle"
+        font-family="Source Han Serif SC,serif">退出游戏</text>
+
+  <!--PlayerStat 左上 416×112 → x 48..464, y 120..232 -->
+  <g>
+    <polygon points="64,120 448,120 464,136 464,216 448,232 64,232 48,216 48,136" fill="#1E2939" stroke="#3A4A63" stroke-width="2" fill-opacity="0.85"/>
+    <polygon points="96,150 128,150 140,166 128,182 96,182 84,166" fill="url(#ds-gold)"/>
+    <text x="160" y="178" font-size="30" fill="#FFC94D" font-weight="700" font-family="Consolas,monospace">12/24</text>
+    <text x="160" y="212" font-size="28" fill="#9FB3C8" font-family="Source Han Serif SC,serif">已通关 4/8</text>
+  </g>
+
+  <!-- Version 右下 -->
+  <text x="1872" y="1042" font-size="22" fill="#5E7396" text-anchor="end"
+        font-family="Consolas,monospace">v1.0.0</text>
+
+  <rect width="1920" height="1080" fill="url(#ds-vig)"/>
+
+  <!--标注层 -->
+  <g font-family="Consolas,monospace">
+    <text x="44" y="1042" font-size="20" fill="#9FB3C8" fill-opacity="0.8">MainMenuView · 整页 · 开机入口页（首发；后续启动由 Loader 结束自动进入）</text>
+    <text x="44" y="1068" font-size="20" fill="#9FB3C8" fill-opacity="0.6">BtnGroup 4 按钮 480×92 节距 118 · 组区 y 560..1006 · StartBtn 为 Primary 实心 · 退出须 ConfirmView 二次确认</text>
+    <line x1="1200" y1="606" x2="1330" y2="590" stroke="#9FB3C8" stroke-opacity="0.5" stroke-width="1" stroke-dasharray="4 3"/>
+    <text x="1344" y="594" font-size="20" fill="#9FB3C8" fill-opacity="0.8">Primary 实心 #123845 + 青描边 + 霓虹</text>
+  </g>
+</svg>

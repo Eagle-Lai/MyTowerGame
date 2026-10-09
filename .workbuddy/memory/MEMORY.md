@@ -1,11 +1,11 @@
 # FreedomTower 项目长期记忆
 
 > 只记"踩坑就返工"的不变量；细节见 `Docs/` 与 `YYYY-MM-DD.md`。⚠️ 有注入上限，超了会被截断 —— **新增前先想能不能删**。
-> ⚠️ `.workbuddy/memory/` 有**两份**（`D:\FreedomTower_1` 与 WorkBuddy worktree）；**git 跟踪与记忆注入用的是 `D:` 那份**，改完要同步另一边。
 
 ## 铁律
 
-- 工程根 **`D:\FreedomTower_1`**（Unity 驱动）；`C:\...\Worktrees\...` 只是 git worktree，写那里 Unity 看不到。
+- **当前工程根就是本工程根目录**（Unity 驱动）。⚠️ 历史文档/记忆里出现过的 `D:\FreedomTower`、`D:\FreedomTower_1` 均已失效，**不要再引用绝对路径**。
+- ⚠️ **写交付文档一律不写盘符路径**：用"本工程 / 工程根目录"等相对表述；配置文件/脚本内的路径从脚本自身位置推导（`.workbuddy/tools/*.py` 已全部如此）。
 - **Unity MCP 可用**（菜单/execute_code/read_console/screenshot）→ 编译与编辑器操作都走它，"建东西"的模块先实际跑一遍验证。
 - ⚠️ **跑生成类菜单前必须确认 `isCompiling==false && isPlaying==false`**，否则用旧程序集静默生成旧结果；编辑器会自己重进播放态。
 - ⚠️ `screenshot` 偶发丢 Overlay 层（重截即可）；单次调用延迟数秒~十几秒，抓不到 1.2s 瞬态。

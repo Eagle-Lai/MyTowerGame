@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 15_SplashView.svg — 开屏页【正式版·深色科幻】
+     几何与 prefab 实测一致（勿改坐标）；数据源: ArtDesign_坚守阵地_补全策划案_v1.md §A1
+     坐标换算 x=960+X, y=540−Y -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" width="1920" height="1080">
+  <defs>
+    <linearGradient id="ds-panel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2A3444"/><stop offset="0.5" stop-color="#1B2330"/><stop offset="1" stop-color="#222C3B"/>
+    </linearGradient>
+    <linearGradient id="ds-crystal" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#CFF6FF"/><stop offset="1" stop-color="#35E0FF"/>
+    </linearGradient>
+    <radialGradient id="ds-vig" cx="0.5" cy="0.5" r="0.75">
+      <stop offset="0.62" stop-color="#0B0E14" stop-opacity="0"/><stop offset="1" stop-color="#0B0E14" stop-opacity="0.66"/>
+    </radialGradient>
+    <radialGradient id="ds-logo" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#35E0FF" stop-opacity="0.35"/>
+      <stop offset="0.7" stop-color="#35E0FF" stop-opacity="0.08"/>
+      <stop offset="1" stop-color="#35E0FF" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="ds-neon" x="-60%" y="-60%" width="220%" height="220%">
+      <feDropShadow dx="0" dy="0" stdDeviation="4" flood-color="#35E0FF" flood-opacity="0.9"/>
+    </filter>
+    <filter id="ds-bloom" x="-80%" y="-80%" width="260%" height="260%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="5" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <pattern id="ds-stars" width="220" height="220" patternUnits="userSpaceOnUse">
+      <circle cx="30" cy="40" r="1.2" fill="#E8F0FA" fill-opacity="0.4"/>
+      <circle cx="130" cy="22" r="0.8" fill="#E8F0FA" fill-opacity="0.28"/>
+      <circle cx="186" cy="104" r="1.4" fill="#35E0FF" fill-opacity="0.3"/>
+      <circle cx="74" cy="150" r="0.9" fill="#E8F0FA" fill-opacity="0.22"/>
+    </pattern>
+  </defs>
+
+  <!--Bg #080B12 -->
+  <rect width="1920" height="1080" fill="#080B12"/>
+  <rect width="1920" height="1080" fill="url(#ds-stars)" opacity="0.35"/>
+
+  <!--Logo (居中 480x480, y=+60 → 中心 (960,480)) -->
+  <circle cx="960" cy="480" r="300" fill="url(#ds-logo)"/>
+  <g filter="url(#ds-bloom)">
+    <polygon points="960,320 1060,400 1060,560 960,640 860,560 860,400" fill="#1C2532" stroke="#35E0FF" stroke-width="4"/>
+    <polygon points="960,360 1024,412 1024,548 960,600 896,548 896,412" fill="none" stroke="#5E7396" stroke-width="2"/>
+    <path d="M960 400 l42 24 0 48 -42 24 -42 -24 0 -48 z" fill="url(#ds-crystal)"/>
+    <path d="M960 400 l0 96 M918 424 l84 48 M1002 424 l-84 48" stroke="#0B0E14" stroke-opacity="0.45" stroke-width="2"/>
+  </g>
+  <!-- 四角外扩环 -->
+  <g stroke="#35E0FF" stroke-opacity="0.5" stroke-width="2" fill="none">
+    <path d="M720 340 h-40 v-40"/><path d="M1200 340 h40 v-40"/>
+    <path d="M720 620 h-40 v40"/><path d="M1200 620 h40 v40"/>
+  </g>
+
+  <!-- Title 96号 Cyan Bold 中心 (960,700) -->
+  <text x="960" y="700" font-size="96" fill="#35E0FF" font-weight="700" text-anchor="middle"
+        font-family="Source Han Serif SC,serif" filter="url(#ds-neon)">坚守阵地</text>
+
+  <!-- Subtitle 28号 钢 中心 (960,800) -->
+  <text x="960" y="800" font-size="28" fill="#9FB3C8" text-anchor="middle"
+        font-family="Consolas,monospace" letter-spacing="6">FREEDOM TOWER</text>
+
+  <!-- LoadingDots y=-380 → y_svg=920 -->
+  <text x="960" y="920" font-size="26" fill="#9FB3C8" text-anchor="middle"
+        font-family="Source Han Serif SC,serif">正在启动…</text>
+
+  <!-- 进度指示三点 -->
+  <g fill="#35E0FF">
+    <circle cx="900" cy="960" r="6" opacity="0.9"/>
+    <circle cx="960" cy="960" r="6" opacity="0.5"/>
+    <circle cx="1020" cy="960" r="6" opacity="0.25"/>
+  </g>
+
+  <!-- Version 右下 anchor(1,0) offset(-40,40) → 中心约 (1860-160,1040-18) -->
+  <text x="1560" y="1042" font-size="22" fill="#5E7396" text-anchor="start"
+        font-family="Consolas,monospace">v1.0.0 (Build 20261009)</text>
+
+  <!--暗角 -->
+  <rect width="1920" height="1080" fill="url(#ds-vig)"/>
+
+  <!--标注层 -->
+  <g font-family="Consolas,monospace">
+    <text x="44" y="176" font-size="20" fill="#9FB3C8" fill-opacity="0.8">SplashView · 整页(stretchInset=0) · 常驻 1.5s 后自动进 LoadingView</text>
+    <text x="44" y="206" font-size="20" fill="#9FB3C8" fill-opacity="0.6">Logo(480×480,y=+60) · Title(96号,#35E0FF,Bold) · Version 从 Application.version 读</text>
+    <line x1="744" y1="700" x2="640" y2="716" stroke="#9FB3C8" stroke-opacity="0.5" stroke-width="1" stroke-dasharray="4 3"/>
+    <text x="44" y="736" font-size="20" fill="#9FB3C8" fill-opacity="0.8">动画: Bg α0→1(0.4s) · Logo scale0.85→1+α(0.6s,OutBack) · Title α(0.5s,+0.3s)</text>
+  </g>
+</svg>

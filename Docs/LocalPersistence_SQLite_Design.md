@@ -273,7 +273,7 @@ SQLite 属系统库且被静态链接，用 `__Internal`，无需分发。
 **顺手修掉的工具链问题**（否则上面的 PASS 不可信）：
 
 - `check_code.py` / `check_members.py` / `check_unity_api.py` / `check_events.py`
-  的 `ROOT` 都写成了 **`D:\FreedomTower\Assets`**（少了 `_1`）—— 该目录不存在，
+  的 `ROOT` 都写成了**过期的绝对路径**（指向一份并不存在的旧工程目录）——
   `os.walk` 扫 0 个文件，却一律打印 `PASS`。现已全部改为从脚本自身位置推导，
   并加了"扫到 0 个文件就 FAIL"的自检；
 - `check_unity_api.py` 按**简单类名**索引 Unity 类型，工程自己的 `Launcher`
