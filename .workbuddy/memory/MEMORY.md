@@ -6,14 +6,17 @@
 
 - **游戏名 = 《自由人塔防》**，英文名 **FREEDOM TOWER**（工程 `productName: freedomtower`、包名 `com.lzyfreedomtower.freedomtower`，**不填中文名**）。
   ⚠️ 文档/效果图里出现《坚守阵地》时，**先判断指谁**：指**原版 Fieldrunners** 的引用（"对标《坚守阵地》（Fieldrunners）"、代码注释"这是《坚守阵地》的核心机制"）**保留不动**；指本工程的才改。
-- **当前工程根就是本工程根目录**（Unity 驱动）。⚠️ 历史文档/记忆里出现过的 `D:\FreedomTower`、`D:\FreedomTower_1` 均已失效，**不要再引用绝对路径**。
+- **品牌标识 6 种写法各有归属，别乱统一**：中文名 `自由人塔防`（文档/效果图）｜`FREEDOM TOWER`（游戏内副标题）｜`freedomtower`（productName/包名/公司名）｜`FreeTower`（**YooAsset 包裹名 = AB 输出目录名，改了热更失效**）｜`FTProject`（命名空间，112 文件）｜`freetower_*`（**存档文件名**）。
+  ★ 正因存档文件名是英文名 → **中文改名不影响用户存档**（这一点每次都要先确认，否则会误判成"存档会丢"）。
+- ⚠️ **工程由 `com.unity.template.3d@5.0.4` 克隆** → 残留 3D 模板默认值（已修 `Template3D`/`Template_3D`/`SampleScene`）。遇到"看起来不对的默认值"先查这个根因。
+- ⚠️ **Unity 菜单是 `Tools/塔防/...`（~40 处 MenuItem）**："塔防"是**玩法类型**不是游戏名，**不要改**。
+- 当前工程根就是本工程根目录（Unity 驱动）。⚠️ 历史文档/记忆里出现过的 `D:\FreedomTower`、`D:\FreedomTower_1` 均已失效，**不要再引用绝对路径**。
 - ⚠️ **写交付文档一律不写盘符路径**：用"本工程 / 工程根目录"等相对表述；配置文件/脚本内的路径从脚本自身位置推导（`.workbuddy/tools/*.py` 已全部如此）。
 - **Unity MCP 可用**（菜单/execute_code/read_console/screenshot）→ 编译与编辑器操作都走它，"建东西"的模块先实际跑一遍验证。
 - ⚠️ **跑生成类菜单前必须确认 `isCompiling==false && isPlaying==false`**，否则用旧程序集静默生成旧结果；编辑器会自己重进播放态。
 - ⚠️ `screenshot` 偶发丢 Overlay 层（重截即可）；单次调用延迟数秒~十几秒，抓不到 1.2s 瞬态。
 - ⚠️ 改 `UIPrefabBuilder` 后比对 `ui_prefabs_preRebuild/*.prefab` 的 anchor/pivot/pos 查回归。
-- `git push` 挂死唯一解法 `GIT_CONFIG_SYSTEM=/dev/null git push origin main`（"写系统配置根治"已证伪）。远端只有 GitHub `Eagle-Lai/MyTowerGame.git`。
-  ⚠️ **但该 workaround 会禁用 system config 里的 credential helper** → `could not read Username`。**真正阻塞是 403**：本地存的是 `laizhangyin88-glitch` 的凭证，仓库属 `Eagle-Lai` → push 被拒。需先在凭据管理器换成有权限的账号。
+- `git push`：远端 GitHub `Eagle-Lai/MyTowerGame.git`。⚠️ **不要用 `GIT_CONFIG_SYSTEM=/dev/null`** —— 它禁用了 system config 里的 credential helper，直接导致 `could not read Username`。**直接 `git push origin main` 通常就能成**（读操作 `git ls-remote` 能过就说明凭证可用）；偶发失败重试一次即可。
 - Unity 2022.3.62f3c1，**Built-in RP**（霓虹只能烘进贴图）。
 
 ## 配置 / 资源

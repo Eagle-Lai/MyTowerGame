@@ -281,7 +281,7 @@ UICanvas                 UIManager 三层
 **前置条件**：P1–P4 完成；真机至少 2 台（中端 + 低端各一）。
 
 **操作步骤（命令级）**
-1. 【Unity】Player Settings：锁 `Landscape Left`；`productName=freedomtower`（英文名，勿填中文）；version 1.0.0 / Bundle Version Code 1；复核 IL2CPP + arm64-v8a/armeabi-v7a、minSdk 22、包名 `com.lzyfreedomtower.freedomtower`；
+1. 【Unity】Player Settings：锁 `Landscape Left`；`productName=freedomtower`（英文名，勿填中文）；version 1.0.0 / Bundle Version Code 1；复核 IL2CPP + arm64-v8a/armeabi-v7a、minSdk 22、包名 `com.lzyfreedomtower.freedomtower`（**Android 与 Standalone 两处都要设成这个值**，别留 Unity 默认的 `com.DefaultCompany.*`）；
 2. 【Unity，**人执行**】创建发布 keystore：`keytool -genkey -v -keystore release.keystore -alias ft -keyalg RSA -keysize 2048 -validity 10000`；keystore 与别名密码由人保管，**不入库**（.gitignore 加 `*.keystore`）；
 3. 【Unity】Build：Build Settings▸Android▸Build（关 Development Build）；或命令行 `Unity.exe -batchmode -projectPath <工程根> -executeMethod BuildPipeline.BuildPlayer ...`（需先写 Editor 构建方法，可复用 `ProjectSettingsConfigurator` 模式新增）；
 4. 真机 `adb install -r app-release.apk`，完整打完关卡 1，覆盖：暂停/倍速/升级/出售/失败重打/杀进程重进（局内快照继续）；

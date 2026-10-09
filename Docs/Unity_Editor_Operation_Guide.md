@@ -1,4 +1,4 @@
-# FreeTower · Unity 编辑器操作指南
+# 《自由人塔防》· Unity 编辑器操作指南
 
 > 适用工程：本工程　|　主场景：`Assets/Scenes/main.unity`
 > 配置表目录：`Luban/`
@@ -364,7 +364,8 @@ prefab 根节点自带 `scale = 0.5`。M0 的配置默认值是 `scale = 0.5`，
 
 **【存档与局内快照】**
 - [ ] N15. 打到第 3 回合，用暂停面板「返回关卡选择」，再进同一关 → **从第 3 回合继续**，金币/生命/已建的塔都还在
-- [ ] N16. 存档文件位于 `%USERPROFILE%\AppData\LocalLow\<公司名>\<产品名>\freetower_save.json`（Console 报错时会打印完整路径）
+- [ ] N16. 存档文件位于 `%USERPROFILE%\AppData\LocalLow\lzyfreedomtower\freedomtower\freetower_save.json`（Console 报错时会打印完整路径）
+      ⚠️ 路径取自 Player Settings 的 `companyName` / `productName`；**存档文件名本身是 `freetower_*`（英文名，与中文游戏名无关）**，所以改中文名不会让老存档失效。
 
 **【M4 表现】**
 - [ ] N17. 相机可用中键拖拽 / WASD 平移，且**拖不出棋盘边界**；按空格回正
