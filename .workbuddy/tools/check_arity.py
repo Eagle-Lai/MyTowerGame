@@ -71,6 +71,7 @@ _CHANGED = [
     'Assets/Scripts/Core/GameClock.cs',
     'Assets/Scripts/Core/Event/EventName.cs',
     'Assets/Scripts/UI/HudView.cs',
+    'Assets/Scripts/UI/SelectView.cs',
     'Assets/Scripts/Enemy/BaseEnemy.cs',
     'Assets/Scripts/Core/Combat/CombatSystem.cs',
     'Assets/Scripts/Bullet/LaserBeamView.cs',

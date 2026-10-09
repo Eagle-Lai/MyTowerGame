@@ -1,3 +1,4 @@
+using SuperScrollView;
 using TMPro;
 using UnityEditor;
 using UnityEngine;
@@ -44,6 +45,24 @@ namespace FTProject.EditorTools
     ///       ├── RetryBtn      → RestartLevelRequestEvent
     ///       └── SelectBtn     → QuitToSelectRequestEvent
     ///
+    /// SelectView 节点（关卡选择；**整页全屏** + 横向画廊）：
+    ///   SelectView
+    ///   ├── Bg（全屏底色；被 Panel 盖住，点不到）
+    ///   └── Panel（铺满屏幕，四边内缩 0）
+    ///       ├── Title / Summary
+    ///       ├── List            ScrollRect + LoopListView2（横向、条目吸附居中）
+    ///       │                  Image(轨道/拖动接收) + RectMask2D(**裁切在这一层**)
+    ///       │   └── Viewport    900 宽（比 List 的 1300 窄），只当"居中/吸附参照"，无 Graphic
+    ///       │       └── Content 运行时由 LoopListView2 往里放关卡卡片
+    ///       ├── LeftBtn " < "   居中的关卡往前挪一格
+    ///       ├── RightBtn " > "  往后挪一格
+    ///       └── CloseBtn
+    ///   ★ Viewport 刻意比 List 窄 —— 这是"首末条也能精确居中"与"看得见邻卡"能同时成立的
+    ///     关键，理由见 SelectItemW 的注释。
+    ///   ★ 箭头用 ASCII 的 < / > ：中文 SDF 字体不保证有 ◀▶ 的码位，缺字形只会渲染成空白且不报错。
+    ///   ★ 关卡卡片本身是**独立资产** SelectLevelItem.prefab（LoopListView2 按预制体引用池化克隆），
+    ///     它不在本文件的节点契约里，见 BuildSelectItemPrefab。
+    ///
     /// 【关于中文字体】全工程统一使用 **TextMeshPro（TMP）**，不再使用 UGUI Text。
     /// 字体取 TMP 默认字体资产（`Assets/Font/SiYuanSongTi SDF.asset`，源思源宋体，
     /// 已配置在 TMP Settings 的 m_defaultFontAsset）。TMP 的 SDF 字体资产包含中文字形，
@@ -68,6 +87,65 @@ namespace FTProject.EditorTools
         public const string PausePath = "Assets/Prefabs/UI/PauseView.prefab";
         public const string SettingPath = "Assets/Prefabs/UI/SettingView.prefab";
         public const string LevelClearPath = "Assets/Prefabs/UI/LevelClearView.prefab";
+
+        /// <summary>
+        /// 关卡选择界面的**条目预制体**（一张关卡卡片）。
+        ///
+        /// 【为什么单独成一个 prefab】LoopListView2 是"给一个 prefab 引用，自己池化克隆"的写法
+        ///   （见 LoopListView2.NewListViewItem：按 prefab 名字取池），
+        ///   所以条目必须是能独立被引用的资产，而不是藏在 SelectView.prefab 里的子节点
+        ///   （藏进去会让那份"模板"永远挂在 Content 下，滚起来多一个幽灵条目）。
+        /// 【要不要登记 ResTable】不需要：它是被 SelectView.prefab **直接引用**的，
+        ///   不是运行时按逻辑名加载的资源；YooAsset 收集整个目录树，引用依赖自然进同一个包。
+        /// </summary>
+        public const string SelectItemPath = "Assets/Prefabs/UI/SelectLevelItem.prefab";
+
+        /// <summary>关卡列表的可视区域宽度（= List 节点的宽度，也是真正裁切卡片的那一层）</summary>
+        private const float SelectListW = 1300f;
+        private const float SelectListH = 500f;
+
+        /// <summary>关卡列表在整页面板里的位置（页面中心为原点）</summary>
+        private static readonly Vector2 SelectListPos = new Vector2(0f, 10f);
+
+        /// <summary>
+        /// 关卡卡片尺寸与横向间距。
+        /// ★ 这三个数与 SelectView.cs 的对应常量必须一致 ——
+        ///   那边用它们估算"尚未实例化的条目"的位置，写岔会让初始化定位被 clamp 回 0。
+        ///
+        /// 【为什么"视口宽度"必须等于卡片宽度，而且必须比可视区窄 —— 两个硬约束】
+        ///   约束①（精确居中）：LoopListView2 的横向吸附把容器位置 clamp 在
+        ///     `[视口右缘 - 内容宽, 0]`，推出来的结论是
+        ///     **步长(卡片宽 + 间距) ≥ 视口宽**，否则首/末条永远到不了正中间
+        ///     （偏移量正好等于 步长缺口）。所以卡片宽 ≡ 视口宽、间距取正数即可满足。
+        ///   约束②（看得见邻卡）：邻卡能否露出来，取决于
+        ///     `步长 < 可视区宽 - 卡片内缩`。把视口 ≡ 可视区会得到"绝对看不见邻居"，
+        ///     于是这里刻意让 **视口比可视区窄**：视口只负责"居中/吸附的参照"，
+        ///     可视区（List 上的 RectMask2D）才负责裁切。两者中心对齐，因此
+        ///     "在视口里居中" == "在可视区里居中"。
+        ///   结论：视口 900 ≡ 卡片宽 900，可视区 1300 → 左右各留 200 的空槽，
+        ///         邻卡因此能露出约 144px；且首关/末关都**精确居中**。
+        /// </summary>
+        private const float SelectItemW = 900f;
+        private const float SelectItemH = 440f;
+        private const float SelectItemGap = 56f;
+
+        /// <summary>关卡卡片上文案的基础字号（三行会用富文本逐行再给号，见 SelectView）</summary>
+        private const int SelectItemFontSize = 56;
+
+        /// <summary>整页布局的字号：大标题 / 副标题 / 左右翻页箭头</summary>
+        private const int FullScreenTitleFontSize = 64;
+        private const int SelectSummaryFontSize = 40;
+        private const int SelectArrowFontSize = 110;
+
+        /// <summary>
+        /// 左右翻页按钮的尺寸与横向位置。
+        /// 【为什么放在 x = ±834】整页 1920 宽（±960）；箭头 132 宽 + 距屏幕边 60 → 中心 ±834，
+        ///   按钮占据 [768, 900]，而列表占据 [-650, 650]，中间留 118 的缝，互不遮挡。
+        /// </summary>
+        private const float SelectArrowW = 132f;
+        private const float SelectArrowH = 160f;
+        private const float SelectArrowX = 834f;
+
 
         private static readonly string[] SelectChildren = { "Bg", "Panel" };
         private static readonly string[] PauseChildren = { "Bg", "Panel" };
@@ -486,33 +564,64 @@ namespace FTProject.EditorTools
         // ------------------------------------------------------------------
 
         private static GameObject CreateDialogShell(string rootName, string title,
-            Vector2 panelSize, EditorUtil.Report report, out GameObject panel)
+            Vector2 panelSize, EditorUtil.Report report, out GameObject panel,
+            float stretchInset = -1f)
         {
             GameObject root = new GameObject(rootName, typeof(RectTransform));
             Stretch((RectTransform)root.transform);
+
+            // 【stretchInset ≥ 0 → 整页外壳】关卡选择是"整页 UI"而不是浮在战斗上的小弹窗：
+            //   Panel 四边各内缩 stretchInset 铺满屏幕（此时 panelSize 忽略），
+            //   Bg 只是一层兜底底色（会被 Panel 盖住，点了也点不到）。
+            bool fullScreen = stretchInset >= 0f;
 
             GameObject bg = new GameObject("Bg", typeof(RectTransform));
             bg.transform.SetParent(root.transform, false);
             Stretch((RectTransform)bg.transform);
             Image bgImg = bg.AddComponent<Image>();
-            bgImg.color = new Color(0f, 0f, 0f, 0.55f);
+            // 整页时底色更实：它不再只是"弹窗后面的压暗层"，而是整屏的底
+            bgImg.color = fullScreen
+                ? new Color(0.02f, 0.03f, 0.05f, 0.98f)
+                : new Color(0f, 0f, 0f, 0.55f);
             Button bgBtn = bg.AddComponent<Button>();
             bgBtn.targetGraphic = bgImg;
 
             panel = new GameObject("Panel", typeof(RectTransform));
             panel.transform.SetParent(root.transform, false);
             RectTransform prt = (RectTransform)panel.transform;
-            prt.anchorMin = new Vector2(0.5f, 0.5f);
-            prt.anchorMax = new Vector2(0.5f, 0.5f);
-            prt.pivot = new Vector2(0.5f, 0.5f);
-            prt.anchoredPosition = Vector2.zero;
-            prt.sizeDelta = panelSize;
             Image panelImg = panel.AddComponent<Image>();
             ApplySlicedSkin(panelImg, "UI_Panel_Cyan", new Color(0.12f, 0.16f, 0.24f, 0.96f));
 
+            Vector2 titlePos;
+            Vector2 titleSize;
+            int titleFont;
+            if (fullScreen)
+            {
+                prt.anchorMin = Vector2.zero;
+                prt.anchorMax = Vector2.one;
+                prt.pivot = new Vector2(0.5f, 0.5f);
+                prt.offsetMin = new Vector2(stretchInset, stretchInset);
+                prt.offsetMax = new Vector2(-stretchInset, -stretchInset);
+                // 整页的标题比弹窗大一号，也更靠上（1920×1080 下距顶 64，高 92）
+                titlePos = new Vector2(0f, -64f);
+                titleSize = new Vector2(1400f, 92f);
+                titleFont = FullScreenTitleFontSize;
+            }
+            else
+            {
+                prt.anchorMin = new Vector2(0.5f, 0.5f);
+                prt.anchorMax = new Vector2(0.5f, 0.5f);
+                prt.pivot = new Vector2(0.5f, 0.5f);
+                prt.anchoredPosition = Vector2.zero;
+                prt.sizeDelta = panelSize;
+                titlePos = new Vector2(0f, -36f);
+                titleSize = new Vector2(panelSize.x - 60f, 56f);
+                titleFont = BigFontSize;
+            }
+
             CreateText(panel.transform, "Title", title,
-                new Vector2(0.5f, 1f), new Vector2(0f, -36f), new Vector2(panelSize.x - 60f, 56f),
-                TextAnchor.MiddleCenter, BigFontSize);
+                new Vector2(0.5f, 1f), titlePos, titleSize,
+                TextAnchor.MiddleCenter, titleFont);
 
             return root;
         }
@@ -526,50 +635,105 @@ namespace FTProject.EditorTools
                 report.Error("SelectView.prefab 检测到生成器不识别的节点：" + extra + "　→ 已中止");
                 return;
             }
+
+            // 关卡卡片先建：下面的 LoopListView2 要引用这份 prefab 资产
+            GameObject itemPrefab = BuildSelectItemPrefab(report);
+            if (itemPrefab == null)
+            {
+                report.Error("关卡卡片生成失败，SelectView 未重建（避免产出「列表里没有条目」的空壳）");
+                return;
+            }
+
             AssetDatabase.DeleteAsset(SelectPath);
             EditorUtil.EnsureFolderOfFile(SelectPath);
 
             GameObject panel;
+            // 最后一个参数 0 = 整页外壳：Panel 铺满屏幕（关卡选择是全屏页，不是小弹窗）
             GameObject root = CreateDialogShell("SelectView", "选择关卡",
-                new Vector2(1120f, 640f), report, out panel);
+                Vector2.zero, report, out panel, 0f);
             root.AddComponent<SelectView>();
 
             CreateText(panel.transform, "Summary", "已通关 0/8　★ 0/24",
-                new Vector2(0.5f, 1f), new Vector2(0f, -92f), new Vector2(1000f, 44f),
-                TextAnchor.MiddleCenter, SmallFontSize);
+                new Vector2(0.5f, 1f), new Vector2(0f, -182f), new Vector2(1400f, 60f),
+                TextAnchor.MiddleCenter, SelectSummaryFontSize);
 
-            // 关卡按钮容器：模板按钮在里面，运行时被克隆成 N 份
             GameObject list = new GameObject("List", typeof(RectTransform));
             list.transform.SetParent(panel.transform, false);
             RectTransform lrt = (RectTransform)list.transform;
-            lrt.anchorMin = new Vector2(0.5f, 1f);
-            lrt.anchorMax = new Vector2(0.5f, 1f);
-            lrt.pivot = new Vector2(0.5f, 1f);
-            lrt.anchoredPosition = new Vector2(0f, -130f);
-            lrt.sizeDelta = new Vector2(1040f, 400f);
+            lrt.anchorMin = new Vector2(0.5f, 0.5f);
+            lrt.anchorMax = new Vector2(0.5f, 0.5f);
+            lrt.pivot = new Vector2(0.5f, 0.5f);
+            lrt.anchoredPosition = SelectListPos;
+            lrt.sizeDelta = new Vector2(SelectListW, SelectListH);
 
-            CreatePanelButton(list.transform, "LevelButtonTemplate", "关卡", Vector2.zero);
-            Transform tpl = list.transform.Find("LevelButtonTemplate");
-            if (tpl != null)
-            {
-                RectTransform trt = (RectTransform)tpl;
-                // 锚点改左上：与 SelectView.CreateLevelButton 的排布口径一致（手排网格，不用 LayoutGroup）
-                trt.anchorMin = new Vector2(0f, 1f);
-                trt.anchorMax = new Vector2(0f, 1f);
-                trt.pivot = new Vector2(0f, 1f);
-                trt.sizeDelta = new Vector2(240f, 96f);
-                trt.anchoredPosition = Vector2.zero;
-                TextMeshProUGUI tl = tpl.GetComponentInChildren<TextMeshProUGUI>(true);
-                if (tl != null)
-                {
-                    tl.alignment = TextAlignmentOptions.Center;
-                    tl.enableWordWrapping = true;
-                    tl.overflowMode = TextOverflowModes.Overflow;
-                }
-                tpl.gameObject.SetActive(false);
-            }
+            // ★★ 裁切放在 List（可视区）而不是 Viewport —— 这是"精确居中 + 邻卡可见"能同时成立的关键。
+            //   见 SelectItemW 的注释：Viewport 只当"居中/吸附的参照"，可以比可视区窄。
+            //   List 自己那张 Image 同时充当滚动轨道，并给拖动提供射线目标。
+            Image trackImg = list.AddComponent<Image>();
+            trackImg.color = new Color(0.04f, 0.06f, 0.10f, 0.6f);
+            trackImg.raycastTarget = true;
+            list.AddComponent<RectMask2D>();
 
-            CreatePanelButton(panel.transform, "CloseBtn", "返回", new Vector2(0f, -270f), 320f, true);
+            // LoopListView2 的硬性结构要求：ScrollRect 的 content / viewport 必须是它的子节点，
+            // 且 Content 下**不能挂 LayoutGroup**（节点名自由，下面两句赋值是强制的）。
+            //
+            // 【Viewport 比 List 窄、且不铺满】它就是"吸附参照系"：
+            //   它的中心与 List 中心重合 → 在它里面居中 == 在可视区里居中；
+            //   而它更窄，才让"步长 ≥ 视口宽"这条约束在不牺牲邻卡可见性的前提下成立。
+            GameObject viewport = new GameObject("Viewport", typeof(RectTransform));
+            viewport.transform.SetParent(list.transform, false);
+            RectTransform vrt = (RectTransform)viewport.transform;
+            // 【pivot 必须预置成"插件待会儿要强改成的那个值"：x = 0】
+            //   LoopListView2 在 InitListView 里会执行 AdjustPivot → 把 viewport 的 pivot.x 改 0。
+            //   RectTransform 的 offsetMin/offsetMax 是由 anchoredPosition + sizeDelta + pivot
+            //   反推出来的（offsetMin = anchoredPosition - sizeDelta*pivot），**pivot 一变矩形就平移**
+            //   （实测点了居中锚点时会整块左移 180，所有卡片跟着跑偏）。
+            //   所以这里先把 pivot.x 设成 0，再用 offsetMin/offsetMax 直接描述矩形：
+            //   这两个值本身就是"相对父矩形四边"的绝对量，与 pivot 无关，之后怎么改都不动。
+            vrt.pivot = new Vector2(0f, 0.5f);
+            vrt.anchorMin = new Vector2(0f, 0.5f);
+            vrt.anchorMax = new Vector2(1f, 0.5f);
+            vrt.offsetMin = new Vector2((SelectListW - SelectItemW) * 0.5f, -SelectListH * 0.5f);
+            vrt.offsetMax = new Vector2(-(SelectListW - SelectItemW) * 0.5f, SelectListH * 0.5f);
+            // 不挂 Graphic：看不见也点不到，纯粹是给 LoopListView2 用的参照矩形
+
+            GameObject content = new GameObject("Content", typeof(RectTransform));
+            content.transform.SetParent(viewport.transform, false);
+            RectTransform crt = (RectTransform)content.transform;
+            // 锚点/轴心取"左侧中点"：LoopListView2 只会改写 pivot.x / anchorMin.x(=0)，
+            //   y 保持 0.5 才能让条目纵向与视口中心对齐（吸附居中的前提）。
+            crt.anchorMin = new Vector2(0f, 0.5f);
+            crt.anchorMax = new Vector2(0f, 0.5f);
+            crt.pivot = new Vector2(0f, 0.5f);
+            crt.anchoredPosition = Vector2.zero;
+            crt.sizeDelta = Vector2.zero;
+
+            ScrollRect sr = list.AddComponent<ScrollRect>();
+            sr.viewport = vrt;
+            sr.content = crt;
+            sr.horizontal = true;
+            sr.vertical = false;
+            sr.movementType = ScrollRect.MovementType.Elastic;
+            sr.elasticity = 0.1f;
+            sr.inertia = true;
+            sr.decelerationRate = 0.135f;
+            sr.scrollSensitivity = 40f;
+            // 滚动条留空：若挂了滚动条且 horizontalScrollbarVisibility 是
+            //   AutoHideAndExpandViewport，LoopListView2 在 InitListView 里会**直接报错**。
+
+            LoopListView2 lv = list.AddComponent<LoopListView2>();
+            ConfigureLoopListView(lv, itemPrefab);
+
+            // 左右翻页箭头：各自把"居中的那一关"前后挪一格（不直接进关，见 SelectView）
+            // 【为什么用 ASCII 的 < >】中文 SDF 字体不保证有 ◀▶/‹› 这些码位，
+            //   缺字形时 TMP 只会渲染成空白且**不报错**（本工程踩过这个坑）。
+            //   "<" / ">" 是 ASCII 必含字形，放大到 72 号就是一副箭头。
+            CreatePanelButton(panel.transform, "LeftBtn", "<",
+                new Vector2(-SelectArrowX, SelectListPos.y), SelectArrowW, false, SelectArrowH, SelectArrowFontSize);
+            CreatePanelButton(panel.transform, "RightBtn", ">",
+                new Vector2(SelectArrowX, SelectListPos.y), SelectArrowW, false, SelectArrowH, SelectArrowFontSize);
+
+            CreatePanelButton(panel.transform, "CloseBtn", "返回", new Vector2(0f, -430f), 340f, true, 84f);
 
             GameObject saved = PrefabUtility.SaveAsPrefabAsset(root, SelectPath);
             Object.DestroyImmediate(root);
@@ -578,8 +742,123 @@ namespace FTProject.EditorTools
                 report.Error("保存失败：" + SelectPath);
                 return;
             }
-            report.Ok("SelectView.prefab（Bg / Panel( Title / Summary / List(LevelButtonTemplate) / CloseBtn )）");
+            report.Ok("SelectView.prefab（整页：Bg / Panel( Title / Summary / List(Viewport/Content) / LeftBtn / RightBtn / CloseBtn )）");
         }
+
+        /// <summary>
+        /// 关卡卡片（SelectLevelItem.prefab）：一张可点击的关卡按钮。
+        /// 生成器**完全拥有**这份资产，每次全量重建都覆盖。
+        ///
+        /// 结构：
+        ///   SelectLevelItem   RT 880×300（锚点/轴心 = 左侧中点）+ LoopListViewItem2
+        ///   └── Body          拉伸铺满；Image + Button + CanvasGroup
+        ///       └── Label     三行文案
+        /// </summary>
+        private static GameObject BuildSelectItemPrefab(EditorUtil.Report report)
+        {
+            AssetDatabase.DeleteAsset(SelectItemPath);   // 幂等：先删后建
+            EditorUtil.EnsureFolderOfFile(SelectItemPath);
+
+            GameObject go = new GameObject("SelectLevelItem", typeof(RectTransform));
+            RectTransform rt = (RectTransform)go.transform;
+            // 【横向列表的统一口径】锚点/轴心都取"左侧中点"：
+            //   LoopListView2 排布时只写 localPosition.x（宽度方向），
+            //   y 交给 StartPosOffset；轴心取 0.5 才能让卡片纵向与视口中心对齐。
+            //   （与官方 HorizontalGalleryDemo 的 ItemPrefab1 同一套锚点约定。）
+            rt.anchorMin = new Vector2(0f, 0.5f);
+            rt.anchorMax = new Vector2(0f, 0.5f);
+            rt.pivot = new Vector2(0f, 0.5f);
+            rt.anchoredPosition = Vector2.zero;
+            rt.sizeDelta = new Vector2(SelectItemW, SelectItemH);
+
+            // ★ LoopListView2 认条目靠这个组件（取 RectTransform / 记 padding / 缓存索引）
+            go.AddComponent<LoopListViewItem2>();
+
+            // 【为什么视觉全挂在 Body 子节点上】运行时要按"离视口中心多远"把非当前条目缩小 + 压暗。
+            //   直接缩条目根节点会**围绕左缘**缩（根节点轴心是 (0,0.5)，不能改，LoopListView2 的排布依赖它），
+            //   结果是"居中卡片左右两边的空隙一宽一窄"。放在拉伸铺满的 Body 上，
+            //   就是围绕卡片自身中心缩，左右对称。
+            GameObject body = new GameObject("Body", typeof(RectTransform));
+            body.transform.SetParent(go.transform, false);
+            RectTransform brt = (RectTransform)body.transform;
+            brt.anchorMin = Vector2.zero;
+            brt.anchorMax = Vector2.one;
+            brt.pivot = new Vector2(0.5f, 0.5f);
+            brt.anchoredPosition = Vector2.zero;
+            brt.sizeDelta = Vector2.zero;
+
+            Image img = body.AddComponent<Image>();
+            ApplySlicedSkin(img, "UI_Btn_Secondary", ButtonColor);
+
+            Button btn = body.AddComponent<Button>();
+            btn.targetGraphic = img;
+            ColorBlock cb = btn.colors;
+            cb.normalColor = Color.white;
+            cb.highlightedColor = new Color(1.15f, 1.15f, 1.15f, 1f);
+            cb.pressedColor = new Color(0.8f, 0.8f, 0.8f, 1f);
+            cb.disabledColor = new Color(0.5f, 0.5f, 0.5f, 0.6f);
+            btn.colors = cb;
+
+            // 运行时按远近改 alpha（SelectView.LateUpdate），预制体里先挂好，避免每帧 AddComponent
+            body.AddComponent<CanvasGroup>();
+
+            TextMeshProUGUI t = CreateText(body.transform, "Label", "关卡",
+                new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(SelectItemW, SelectItemH),
+                TextAnchor.MiddleCenter, SelectItemFontSize);
+            RectTransform trt = (RectTransform)t.transform;
+            // 拉伸铺满卡片并留内边距，三行文案居中；卡片够宽，这里可以放心打开自动换行
+            trt.anchorMin = Vector2.zero;
+            trt.anchorMax = Vector2.one;
+            trt.pivot = new Vector2(0.5f, 0.5f);
+            trt.anchoredPosition = Vector2.zero;
+            trt.sizeDelta = new Vector2(-120f, -80f);
+            t.enableWordWrapping = true;
+            t.overflowMode = TextOverflowModes.Overflow;
+
+            GameObject saved = PrefabUtility.SaveAsPrefabAsset(go, SelectItemPath);
+            Object.DestroyImmediate(go);
+            if (saved == null)
+            {
+                report.Error("保存失败：" + SelectItemPath);
+                return null;
+            }
+            report.Ok("SelectLevelItem.prefab（关卡卡片：LoopListViewItem2 + Body(Image/Button/CanvasGroup/Label)）");
+            return saved;
+        }
+
+        /// <summary>
+        /// 把 LoopListView2 的关键字段写进 prefab。
+        ///
+        /// 【为什么用 SerializedObject 而不是公开属性】这些字段在插件里是
+        ///   `[SerializeField] private`（mItemPrefabDataList / mViewPortSnapPivot / mItemSnapPivot
+        ///   都没有 setter），只有在编辑器里按序列化字段写才生效 —— 这正是插件自己在
+        ///   Inspector 上做的事，写进 prefab 后运行时零配置、SelectView 也不用碰这些字段。
+        /// </summary>
+        private static void ConfigureLoopListView(LoopListView2 lv, GameObject itemPrefab)
+        {
+            SerializedObject so = new SerializedObject(lv);
+
+            // 横向、从左到右
+            so.FindProperty("mArrangeType").intValue = (int)ListItemArrangeType.LeftToRight;
+            so.FindProperty("mSupportScrollBar").boolValue = true;
+
+            // ★ "单个条目居中"就是这个组合：开吸附 + 视口与条目都用 0.5 轴心
+            //   → 离视口中心最近的那一条会被吸到正中（官方 HorizontalGalleryDemo 同款配置）。
+            so.FindProperty("mItemSnapEnable").boolValue = true;
+            so.FindProperty("mViewPortSnapPivot").vector2Value = new Vector2(0.5f, 0.5f);
+            so.FindProperty("mItemSnapPivot").vector2Value = new Vector2(0.5f, 0.5f);
+
+            SerializedProperty arr = so.FindProperty("mItemPrefabDataList");
+            arr.arraySize = 1;
+            SerializedProperty e = arr.GetArrayElementAtIndex(0);
+            e.FindPropertyRelative("mItemPrefab").objectReferenceValue = itemPrefab;
+            e.FindPropertyRelative("mPadding").floatValue = SelectItemGap;
+            e.FindPropertyRelative("mInitCreateCount").intValue = 3;
+            e.FindPropertyRelative("mStartPosOffset").floatValue = 0f;
+
+            so.ApplyModifiedPropertiesWithoutUndo();
+        }
+
 
         private static void BuildPause(EditorUtil.Report report)
         {
@@ -722,10 +1001,17 @@ namespace FTProject.EditorTools
         /// 面板内按钮：居中锚点、固定尺寸，带 Label 子节点。
         /// <paramref name="width"/> 默认 320；结算界面要放"下一关：关卡名"这类较长文案，
         /// 会显式传更宽的值（TMP 此处关掉了自动换行，宽度不够会直接溢出到面板外）。
+        /// <paramref name="height"/> / <paramref name="fontSize"/> 默认是"标准按钮"口径（72 高 / 32 号），
+        /// 关卡选择的左右翻页箭头会传更高、更大的值（132×160、72 号）。
         /// </summary>
         private static void CreatePanelButton(Transform parent, string name, string label, Vector2 anchoredPos,
-            float width = 320f, bool primary = false)
+            float width = 320f, bool primary = false, float height = 72f, int fontSize = 0)
         {
+            if (fontSize <= 0)
+            {
+                fontSize = SmallFontSize;
+            }
+
             GameObject go = new GameObject(name, typeof(RectTransform));
             go.transform.SetParent(parent, false);
 
@@ -734,7 +1020,7 @@ namespace FTProject.EditorTools
             rt.anchorMax = new Vector2(0.5f, 0.5f);
             rt.pivot = new Vector2(0.5f, 0.5f);
             rt.anchoredPosition = anchoredPos;
-            rt.sizeDelta = new Vector2(width, 72f);
+            rt.sizeDelta = new Vector2(width, height);
 
             Image img = go.AddComponent<Image>();
             ApplySlicedSkin(img, primary ? "UI_Btn_Primary" : "UI_Btn_Secondary", ButtonColor);
@@ -749,8 +1035,8 @@ namespace FTProject.EditorTools
             btn.colors = cb;
 
             TextMeshProUGUI t = CreateText(go.transform, "Label", label,
-                new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(width, 72f),
-                TextAnchor.MiddleCenter, SmallFontSize);
+                new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(width, height),
+                TextAnchor.MiddleCenter, fontSize);
             RectTransform lrt = (RectTransform)t.transform;
             lrt.anchorMin = Vector2.zero;
             lrt.anchorMax = Vector2.one;

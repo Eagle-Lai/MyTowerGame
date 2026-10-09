@@ -34,6 +34,21 @@
 - ⚠️ `SpeedButton/StartButton` 在塔栏**两侧**（SideBtnX=786,SideBtnY=77）；效果图的"底中"会挡住第 3/4 颗塔按钮。
 - ⚠️ **节点名契约**：View 的 `Find("Panel/X")` 与生成器无映射层，写岔只静默打「缺少节点」→ 成对改 + `check_ui_contract.py`。
 
+## 列表 / SuperScrollView
+
+- `SelectView` = **整页全屏**横向画廊（Panel 铺满 1920×1080），条目资产 `Assets/Prefabs/UI/SelectLevelItem.prefab`（生成器产出，**不必登记 ResTable**，靠引用进包）。
+- 交互约定：**居中的那一关才算"选中"**，点居中卡→同帧进关；点非居中卡→先动画滑到正中再进关；左右箭头只挪不进关；未解锁只提示。
+- ⚠️ **横向吸附几何**：条目能居中程度 = (视口宽−条目宽)/2，且需 **步长 ≥ 视口宽** → 条目宽必须 ≡ 视口宽，否则首/末条永远偏心。
+- ⚠️ 要"邻卡可见"就得**视口比可视区窄**：`RectMask2D` 放 List（1300），Viewport 收窄 900 且与之同心。
+- ⚠️ **Viewport pivot.x 必须预置 0**（`AdjustPivot` 会强改），矩形一律用 `offsetMin/offsetMax` 描述；用居中点锚点会被平移。
+- ⚠️ **别用 `mOnSnapItemFinished` 判断"滑到位"**（它传的 `mCurSnapNearestItemIndex` 只在容器移动帧才重算，会提前触发）。
+  改为**每帧轮询目标条目到视口中心的距离**；判定阈值 4px（插件自己的 0.01 要 2 秒收尾），兜底 2.5s。
+- ⚠️ `InitListView` 只可调一次（界面复用 → `_listInited` 守）；条目池化复用 → `onClick` **只在 `IsInitHandlerCalled` 首次挂**，回调读 `UserIntData1/2`。
+- 视觉层（缩放/淡化）挂卡片的 `Body` 子节点，**不能缩条目根节点**（pivot 固定 (0,0.5)，缩它会偏心）。首次定位延后到第一帧 `LateUpdate`。
+- 箭头等新字形用 ASCII（`<` `>`）：中文 SDF 缺字形只渲染空白不报错；首次渲染会把字形烘进 `SiYuanSongTi SDF.asset`。
+
+
+
 ## 结算 / 生命周期
 
 - `LevelClearView` 胜败共用（`LevelClearInfo.victory`），在 `OnGameOver()` 打开（别监听 `LevelClearEvent`）。⚠️ **星级先读后写**（RecordClear 只升不降）。下一关=**大于本关的最小 id**。F2=强制获胜。
