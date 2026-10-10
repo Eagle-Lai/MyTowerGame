@@ -189,7 +189,7 @@ def main():
         return 1
 
     # Python 的 sqlite3 对 ?1 这种编号占位符支持依驱动而异，这里归一化成 ?
-    # （源码里就是按 1..6 顺序书写，语义等价）
+    # （源码里就是按 1..7 顺序书写，语义等价）
     ins_norm = re.sub(r'\?\d+', '?', ins[0]) if ins else ''
     sel_norm = sel[0] if sel else ''
     now = int(time.time())
@@ -199,23 +199,23 @@ def main():
         return str(v)
 
     rows = [
-        # level_id, stars, best_hp_left, clear_count
-        (1, 3, 20, 4),
-        (2, 2, 12, 2),
-        (3, 1, 5, 1),
+        # level_id, stars, best_hp_left, clear_count, best_time_ms
+        (1, 3, 20, 4, 95000),
+        (2, 2, 12, 2, 0),        # 0 = 尚无用时记录（老存档迁移后的状态）
+        (3, 1, 5, 1, 143000),
     ]
     try:
-        for lid, st, hp, cc in rows:
+        for lid, st, hp, cc, tm in rows:
             con.execute(ins_norm, (lid, protect_plain(st), protect_plain(hp),
-                                   protect_plain(cc), now, now))
+                                   protect_plain(cc), protect_plain(tm), now, now))
         con.commit()
-        ok('写入 3 关成绩（星级 3 / 2 / 1）')
+        ok('写入 3 关成绩（星级 3 / 2 / 1，含最佳用时）')
 
         # ---- 关键：关掉连接再重开 = 模拟"退出游戏后重新启动" ----
         con.close()
         con = open_db()
         got = con.execute(sel_norm).fetchall()
-        got = [(int(r[0]), int(r[1]), int(r[2]), int(r[3])) for r in got]
+        got = [(int(r[0]), int(r[1]), int(r[2]), int(r[3]), int(r[4])) for r in got]
         if got == rows:
             ok('重开数据库后读回一致：%s' % (got,))
         else:
@@ -225,30 +225,34 @@ def main():
 
     print()
     print('=' * 78)
-    print('[4] 只升不降：复刻 SaveManager.RecordClear 的合并规则')
+    print('[4] 只升不降 / 只降不升：复刻 SaveManager.RecordClear 的合并规则')
     # 源码：if (stars > p.stars) p.stars = Mathf.Clamp(stars, 0, 3);
+    #       if (timeMs > 0 && (p.bestTimeMs <= 0 || timeMs < p.bestTimeMs)) p.bestTimeMs = timeMs;
     #       先合并到内存，再把**合并后的值**整体写回 —— 所以库里永远是历史最好。
     try:
-        def record_clear(con, lid, stars, hp, memo):
-            old = memo.get(lid, (0, 0, 0))       # stars, bestHp, clearCount
+        def record_clear(con, lid, stars, hp, time_ms, memo):
+            old = memo.get(lid, (0, 0, 0, 0))     # stars, bestHp, clearCount, bestTime
             st = old[0]
             if stars > st:
                 st = max(0, min(3, stars))
             best = max(old[1], hp)
             cc = old[2] + 1
-            memo[lid] = (st, best, cc)
+            bt = old[3]
+            if time_ms > 0 and (bt <= 0 or time_ms < bt):
+                bt = time_ms
+            memo[lid] = (st, best, cc, bt)
             con.execute(ins_norm, (lid, protect_plain(st), protect_plain(best),
-                                   protect_plain(cc), now, now))
+                                   protect_plain(cc), protect_plain(bt), now, now))
             con.commit()
 
-        memo = {1: (3, 20, 4)}                   # 从上一节的状态继续
-        record_clear(con, 1, 1, 6, memo)          # 再打一次只得 1 星
-        record_clear(con, 1, 2, 9, memo)          # 再打一次 2 星
+        memo = {1: (3, 20, 4, 95000)}            # 从上一节的状态继续
+        record_clear(con, 1, 1, 6, 120000, memo)  # 再打一次只得 1 星、用时更慢
+        record_clear(con, 1, 2, 9, 80000, memo)   # 再打一次 2 星、用时更快
         con.close()
         con = open_db()
-        r = con.execute("SELECT stars, best_hp_left, clear_count FROM level_progress "
+        r = con.execute("SELECT stars, best_hp_left, clear_count, best_time_ms FROM level_progress "
                         "WHERE level_id = 1").fetchone()
-        st, best, cc = int(r[0]), int(r[1]), int(r[2])
+        st, best, cc, bt = int(r[0]), int(r[1]), int(r[2]), int(r[3])
         if st == 3:
             ok('反复通关不会掉星：3 → 1星 → 2星 后仍为 %d 星' % st)
         else:
@@ -261,6 +265,10 @@ def main():
             ok('历史最好剩余生命只取更高值：20（未被 9 覆盖）')
         else:
             bad('bestHpLeft 被覆盖：期望 20，实际 %d' % best)
+        if bt == 80000:
+            ok('最佳用时只取更快值：95000 → 120000（更慢，忽略）→ 80000')
+        else:
+            bad('bestTimeMs 合并错误：期望 80000，实际 %d' % bt)
     except sqlite3.Error as e:
         bad('合并规则验证失败：%s' % e)
 
@@ -272,7 +280,7 @@ def main():
         import base64
         blob = bytes([1]) + bytes(range(16)) + bytes(range(16)) + b'cipher-block-here'
         envelope = 'ft1:' + base64.b64encode(blob).decode('ascii')
-        con.execute(ins_norm, (9, envelope, envelope, envelope, now, now))
+        con.execute(ins_norm, (9, envelope, envelope, envelope, envelope, now, now))
         con.commit()
         con.close()
         con = open_db()

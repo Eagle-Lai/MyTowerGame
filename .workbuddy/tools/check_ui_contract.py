@@ -34,9 +34,14 @@ BUILDER = os.path.join(PROJ, 'Assets', 'Editor', 'UIPrefabBuilder.cs')
 UI_DIR = os.path.join(PROJ, 'Assets', 'Scripts', 'UI')
 
 # 只看这些视图（HudView 的塔按钮等已由 UIPrefabBuilder 自己的名单维护）
+# ⚠️ 新增界面必须同步加进这里，否则该界面的节点契约**完全不被校验**（静默放过）。
 VIEWS = [
     'HudView', 'TipsView', 'TowerInfoView', 'SelectView',
     'PauseView', 'SettingView', 'LevelClearView',
+    # UI 补全：启动链三界面（P1）+ 内容界面与弹窗（P2/P3）
+    'SplashView', 'LoadingView', 'HotUpdateView',
+    'MainMenuView', 'LevelDetailView', 'SellConfirmView', 'ConfirmView',
+    'TowerCodexView', 'TowerCodexItem',
 ]
 
 # 生成器里"容器变量名 -> 路径前缀"（CreateDialogShell 的产出）
@@ -96,7 +101,7 @@ def builder_nodes(section, has_shell):
             section):
         events.append((m.start(), 1, ('parent', m.group(1), m.group(2))))
     for m in re.finditer(
-            r'(CreatePanelButton|CreateText|CreateButton)\(\s*([A-Za-z_]\w*)\s*\.\s*transform\s*,\s*"([^"]+)"',
+            r'(CreatePanelButton|CreateText|CreateButton|CreateImageAt)\(\s*([A-Za-z_]\w*)\s*\.\s*transform\s*,\s*"([^"]+)"',
             section):
         events.append((m.start(), 2, ('create', m.group(1), m.group(2), m.group(3))))
     events.sort(key=lambda x: (x[0], x[1]))

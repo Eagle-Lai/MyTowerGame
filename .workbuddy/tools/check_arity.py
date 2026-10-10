@@ -76,6 +76,34 @@ _CHANGED = [
     'Assets/Scripts/Core/Combat/CombatSystem.cs',
     'Assets/Scripts/Bullet/LaserBeamView.cs',
     'Assets/Scripts/UI/FloatingTextManager.cs',
+    # —— UI 补全 P0/P1：启动链（资源进度契约 + 热更新 + 启动阶段机 + 三界面）——
+    'Assets/Scripts/Launcher.cs',
+    'Assets/Scripts/Core/Res/IResLoader.cs',
+    'Assets/Scripts/Core/Res/IHotUpdateLoader.cs',
+    'Assets/Scripts/Core/Res/EditorResLoader.cs',
+    'Assets/Scripts/Core/Res/BundleResLoader.cs',
+    'Assets/Scripts/Data/Configs.cs',
+    'Assets/Scripts/Data/SaveData.cs',
+    'Assets/Scripts/Data/Persistence/SaveSchema.cs',
+    'Assets/Scripts/Data/Persistence/SqliteSaveStorage.cs',
+    'Assets/Scripts/UI/SplashView.cs',
+    'Assets/Scripts/UI/LoadingView.cs',
+    'Assets/Scripts/UI/HotUpdateView.cs',
+    # —— UI 补全 P2/P3：主菜单 / 关卡详情 / 两个确认弹窗 ——
+    'Assets/Scripts/UI/MainMenuView.cs',
+    'Assets/Scripts/UI/LevelDetailView.cs',
+    'Assets/Scripts/UI/SellConfirmView.cs',
+    'Assets/Scripts/UI/ConfirmView.cs',
+    'Assets/Scripts/UI/TowerInfoView.cs',
+    'Assets/Scripts/UI/SettingView.cs',
+    'Assets/Scripts/Core/UI/UIManager.cs',
+    # —— UI 补全 B2：防御塔图鉴 ——
+    'Assets/Scripts/UI/TowerCodexView.cs',
+    'Assets/Scripts/UI/TowerCodexItem.cs',
+    # —— UI 补全 C3/C4：屏幕震动触发点 + 切关遮罩 ——
+    'Assets/Scripts/UI/LevelLoadingMask.cs',
+    'Assets/Scripts/Bullet/BaseBullet.cs',
+    'Assets/Scripts/Tower/BaseTower.cs',
 ]
 for _rel in _CHANGED:
     TARGETS.append(os.path.join(PROJ, *_rel.split('/')))

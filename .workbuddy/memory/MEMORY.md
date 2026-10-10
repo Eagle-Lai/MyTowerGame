@@ -12,6 +12,7 @@
 - ⚠️ **Unity 菜单是 `Tools/塔防/...`（~40 处 MenuItem）**："塔防"是**玩法类型**不是游戏名，**不要改**。
 - 当前工程根就是本工程根目录（Unity 驱动）。⚠️ 历史文档/记忆里出现过的 `D:\FreedomTower`、`D:\FreedomTower_1` 均已失效，**不要再引用绝对路径**。
 - ⚠️ **写交付文档一律不写盘符路径**：用"本工程 / 工程根目录"等相对表述；配置文件/脚本内的路径从脚本自身位置推导（`.workbuddy/tools/*.py` 已全部如此）。
+- ⚠️ **`git worktree` 副本**（WorkBuddy 建的 `workbuddy/main-*` 分支）会长期落后，且其工作区可能压着"看着像改动、实为 HEAD 过期"的**假改动** → 同步前必须**逐字节 diff**（实测那份 `MEMORY.md` 工作区版本比 main **更旧**，方向与直觉相反）。权威永远是本工程根的 `main`；对齐用 `stash push -u` + `merge --ff-only`，别硬丢。
 - **Unity MCP 可用**（菜单/execute_code/read_console/screenshot）→ 编译与编辑器操作都走它，"建东西"的模块先实际跑一遍验证。
 - ⚠️ **跑生成类菜单前必须确认 `isCompiling==false && isPlaying==false`**，否则用旧程序集静默生成旧结果；编辑器会自己重进播放态。
 - ⚠️ `screenshot` 偶发丢 Overlay 层（重截即可）；单次调用延迟数秒~十几秒，抓不到 1.2s 瞬态。
@@ -70,5 +71,6 @@
 ## 工具 / 命名
 
 - 地图编辑器唯一通路：棋盘→`levelmap_export.json`→LevelMap.xlsx→tblevelmap.json；⚠️ 只加棋盘不加 `SceneInfo.xlsx` 进不去。
+- **云端资料库**（WorkBuddy 个人空间）已镜像 `Docs/`：文件夹「自由人塔防 · 项目文档」＝ 在线文档 + 子夹「UI 效果图」(22 张 SVG) —— 再同步就往这里放，别新建目录。⚠️ **两条链路别混**：`.md` 走 `space.importer.create-doc`（大文档必须 `--stdin` 传 JSON，命令行传长文本会爆上限）；`.svg` 才走 `drive/upload_drive_file.py`（**网盘接口拒收 md**）。
 - 静态校验 9 个（`.workbuddy/tools/`）改动后全跑；⚠️ `check_arity` 的 `_CHANGED` 不许留已删文件；⚠️ shell 跑 Python 别用 `\s`/`\b`/`\w`。**沙箱内不能编译**。
 - `TowerType` Normal1/Aoe2/Slow3/Pierce4/Laser5；目录里 **Power**=Aoe、**Retard**=Slow。换塔美术要**四层同步** resName→ResTable→代码预载→prefab+meta；Pierce/Laser 占位 `Tower_Normal0`。
