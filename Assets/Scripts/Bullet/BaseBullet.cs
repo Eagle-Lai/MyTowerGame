@@ -277,6 +277,14 @@ namespace FTProject
         /// </summary>
         private void Explode(Vector2 center)
         {
+            // 屏幕震动（UI 补全 C3）：范围攻击爆炸是最"有分量"的打击反馈。
+            // 系数 0.3 —— 爆炸发生得很频繁，按漏怪的 1.0 会晃到没法玩。
+            if (CameraController.Instance != null && Configs.Global != null)
+            {
+                CameraController.Instance.Shake(
+                    Configs.Global.ShakeAmplitude * 0.3f, Configs.Global.ShakeDurationSec);
+            }
+
             CombatSystem cs = CombatSystem.Instance;
             if (cs != null && cs.Grid != null && _aoeRadius > 0f)
             {

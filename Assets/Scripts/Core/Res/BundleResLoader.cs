@@ -24,7 +24,7 @@ namespace FTProject
     /// 编辑器走 EditorResLoader（AssetDatabase 直读），
     /// 需要验证真 AB 链路时在 Scripting Define Symbols 加 FORCE_AB。
     /// </summary>
-    public class BundleResLoader : IResLoader
+    public class BundleResLoader : IResLoader, IHotUpdateLoader
     {
         // ---- 包运行时状态 ----
         private readonly Dictionary<string, AssetBundle> _loaded = new Dictionary<string, AssetBundle>(32);
@@ -52,18 +52,25 @@ namespace FTProject
 
         public void Init(Action onDone)
         {
+            Init(null, onDone);
+        }
+
+        public void Init(Action<float> onProgress, Action onDone)
+        {
             if (_ready)
             {
+                if (onProgress != null) onProgress(1f);
                 if (onDone != null)
                 {
                     onDone();
                 }
                 return;
             }
-            ResLoaderRunner.Start(InitCo(onDone));
+            if (onProgress != null) onProgress(0f);
+            ResLoaderRunner.Start(InitCo(onProgress, onDone));
         }
 
-        private IEnumerator InitCo(Action onDone)
+        private IEnumerator InitCo(Action<float> onProgress, Action onDone)
         {
             // ① 主清单包：包名与平台目录同名
             string manifestName = ResPathUtil.ManifestBundleName;
@@ -77,6 +84,7 @@ namespace FTProject
                     "  排查：①是否已执行「Tools ▸ 资源工具 ▸ 打包 AssetBundle」" +
                     "②平台子目录名是否与当前平台一致（当前应为 {1}）",
                     ResPathUtil.BundlePath(manifestName), ResPathUtil.PlatformFolder));
+                if (onProgress != null) onProgress(1f);
                 if (onDone != null)
                 {
                     onDone();
@@ -88,12 +96,16 @@ namespace FTProject
             if (_manifest == null)
             {
                 Fail("[Res] 主清单包内找不到 AssetBundleManifest 资产，包可能已损坏");
+                if (onProgress != null) onProgress(1f);
                 if (onDone != null)
                 {
                     onDone();
                 }
                 yield break;
             }
+
+            // 主清单就绪 = 走完一半（A2 进度条：0.5 之后是常驻包落地）
+            if (onProgress != null) onProgress(0.5f);
 
             // ② 常驻包（config / core_art）开机即加载
             for (int i = 0; i < ResBundle.Persistent.Length; i++)
@@ -111,6 +123,7 @@ namespace FTProject
                 "[Res] AssetBundle 模式初始化完成。平台={0}，已加载包 {1} 个，常驻包 {2} 个。",
                 ResPathUtil.PlatformFolder, _loaded.Count, ResBundle.Persistent.Length));
 
+            if (onProgress != null) onProgress(1f);
             if (onDone != null)
             {
                 onDone();
@@ -560,10 +573,15 @@ namespace FTProject
 
         public void Preload(string[] logicalNames, Action onDone)
         {
-            ResLoaderRunner.Start(PreloadCo(logicalNames, onDone));
+            Preload(logicalNames, null, onDone);
         }
 
-        private IEnumerator PreloadCo(string[] logicalNames, Action onDone)
+        public void Preload(string[] logicalNames, Action<float> onProgress, Action onDone)
+        {
+            ResLoaderRunner.Start(PreloadCo(logicalNames, onProgress, onDone));
+        }
+
+        private IEnumerator PreloadCo(string[] logicalNames, Action<float> onProgress, Action onDone)
         {
             if (logicalNames != null)
             {
@@ -585,6 +603,8 @@ namespace FTProject
                 {
                     AcquireBundle(b);
                 }
+                // 包加载阶段占前一半进度
+                if (onProgress != null) onProgress(0.5f);
                 while (_loading.Count > 0)
                 {
                     yield return null;
@@ -592,11 +612,13 @@ namespace FTProject
 
                 // 预热资产（避免首次访问卡顿）
                 int ok = 0;
-                foreach (string name in logicalNames)
+                for (int i = 0; i < logicalNames.Length; i++)
                 {
+                    string name = logicalNames[i];
                     ResAddress addr;
                     if (!ResTable.TryGet(name, out addr))
                     {
+                        if (onProgress != null) onProgress(0.5f + (i + 1) / (float)logicalNames.Length * 0.5f);
                         continue;
                     }
                     AssetBundle bundle = GetLoaded(addr.Bundle);
@@ -604,15 +626,53 @@ namespace FTProject
                     {
                         ok++;
                     }
+                    if (onProgress != null) onProgress(0.5f + (i + 1) / (float)logicalNames.Length * 0.5f);
                 }
                 Debug.Log(string.Format("[Res] 预加载完成：{0}/{1} 个资源就绪。", ok, logicalNames.Length));
             }
 
+            if (onProgress != null) onProgress(1f);
             if (onDone != null)
             {
                 onDone();
             }
         }
+
+        // ==================================================================
+        // 热更新（IHotUpdateLoader）
+        // ==================================================================
+        // 纯 AssetBundle 链路是"整包资源随游戏一起发"的模型，**没有远端版本比对与差异下载**。
+        // 如实判定为"无需更新"：不假装有一个假的下载进度（那会在真机上变成骗人的假进度条）。
+        // 需要热更新时请启用 USE_YOOASSET（见 YooAssetResLoader）。
+
+        public void StartCheckUpdate(
+            Action<string> onPhase,
+            Action<int, int> onProgress,
+            Action<long, long> onBytes,
+            Action<string> onError,
+            Action<bool> onDone)
+        {
+            Debug.Log("[Res] BundleResLoader 无热更新能力（整包资源），跳过资源更新检查。");
+            if (onPhase != null) onPhase("当前模式：无需更新资源");
+            ResLoaderRunner.NextFrame(() =>
+            {
+                if (onDone != null) onDone(false);
+            });
+        }
+
+        public void PauseDownload()
+        {
+            // 无下载可暂停
+        }
+
+        public void ResumeDownload()
+        {
+            // 无下载可继续
+        }
+
+        public bool IsDownloading { get { return false; } }
+
+        public bool IsPaused { get { return false; } }
 
         private void Fail(string message)
         {

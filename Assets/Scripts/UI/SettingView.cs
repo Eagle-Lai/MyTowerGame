@@ -77,6 +77,14 @@ namespace FTProject
 
         private void OnClickReset()
         {
+            // UI 补全 C2：重置存档是**不可撤销**的，必须先确认。
+            // 改造前这里点一下就真的清了（玩家点错就没了）。
+            ConfirmView.Show("重置存档", "将清空所有关卡进度与星级，此操作不可撤销。",
+                ConfirmType.Danger, DoReset, "确定重置", "取消");
+        }
+
+        private void DoReset()
+        {
             // 【易错点】重置存档会连带把音量也重置回默认 —— 这是"重置"应有的语义，
             // 但要在界面上说清楚，否则玩家会以为设置丢了。
             SaveManager.Instance.ResetAll();

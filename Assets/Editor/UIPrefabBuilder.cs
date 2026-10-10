@@ -88,6 +88,35 @@ namespace FTProject.EditorTools
         public const string SettingPath = "Assets/Prefabs/UI/SettingView.prefab";
         public const string LevelClearPath = "Assets/Prefabs/UI/LevelClearView.prefab";
 
+        // ---- UI 补全 P1：启动链三界面 ----
+        // ⚠️ **刻意放在 Resources/BootUI 而不是 Assets/Prefabs/UI**（别顺手挪回去）：
+        //   开屏页与加载页必须在 `ResLoader.Init` **之前**就能显示，而 YooAsset 在 Init 完成前
+        //   拒绝加载任何资源 → 走 ResTable/YooAsset 是"先有鸡还是先有蛋"，必然失败（已实测）。
+        //   Resources 不依赖资源系统初始化；且 `Assets/Resources` **不在**
+        //   BundleCollectorSetting 的收集目录里 → 不进任何 AB 包、也不参与热更
+        //   （引导期界面本来就不该被热更换掉，否则可能出现"更新完打不开新的引导界面"）。
+        public const string SplashPath = "Assets/Resources/BootUI/SplashView.prefab";
+        public const string LoadingPath = "Assets/Resources/BootUI/LoadingView.prefab";
+        public const string HotUpdatePath = "Assets/Resources/BootUI/HotUpdateView.prefab";
+
+        // ---- UI 补全 P2/P3：内容界面与弹窗 ----
+        public const string MainMenuPath = "Assets/Prefabs/UI/MainMenuView.prefab";
+        public const string LevelDetailPath = "Assets/Prefabs/UI/LevelDetailView.prefab";
+        public const string SellConfirmPath = "Assets/Prefabs/UI/SellConfirmView.prefab";
+        public const string ConfirmPath = "Assets/Prefabs/UI/ConfirmView.prefab";
+        public const string TowerCodexPath = "Assets/Prefabs/UI/TowerCodexView.prefab";
+
+        /// <summary>塔图鉴的卡片（独立 prefab，被 LoopListView2 池化克隆；**不登记 ResTable**，靠引用进包）。</summary>
+        public const string TowerCodexItemPath = "Assets/Prefabs/UI/TowerCodexItem.prefab";
+
+        /// <summary>塔图鉴卡片尺寸与间距。条目宽 **必须 ≡ 视口宽**（见 SelectItemW 的硬约束说明）。</summary>
+        private const float CodexListW = 1300f;
+        private const float CodexListH = 640f;
+        private const float CodexItemW = 460f;
+        private const float CodexItemH = 640f;
+        private const float CodexItemGap = 70f;
+        private const int CodexArrowFontSize = 64;
+
         /// <summary>
         /// 关卡选择界面的**条目预制体**（一张关卡卡片）。
         ///
@@ -152,6 +181,17 @@ namespace FTProject.EditorTools
         private static readonly string[] SettingChildren = { "Bg", "Panel" };
         private static readonly string[] LevelClearChildren = { "Bg", "Panel" };
 
+        // ---- UI 补全：三个启动链界面的直接子节点集合（安全护栏用）----
+        private static readonly string[] SplashChildren = { "Bg", "Panel" };
+        private static readonly string[] LoadingChildren = { "Bg", "Panel" };
+        private static readonly string[] HotUpdateChildren = { "Bg", "Panel" };
+
+        private static readonly string[] MainMenuChildren = { "Bg", "Panel" };
+        private static readonly string[] LevelDetailChildren = { "Bg", "Panel" };
+        private static readonly string[] SellConfirmChildren = { "Bg", "Panel" };
+        private static readonly string[] ConfirmChildren = { "Bg", "Panel" };
+        private static readonly string[] TowerCodexChildren = { "Bg", "Panel" };
+
         // TowerInfoView 由本生成器管理的直接子节点集合（用于重建前的安全护栏）
         private static readonly string[] TowerInfoChildren = { "Bg", "Panel" };
 
@@ -211,6 +251,19 @@ namespace FTProject.EditorTools
         private static readonly Color TextColor = new Color(1f, 1f, 1f, 1f);
         private static readonly Color ButtonColor = new Color(0.18f, 0.24f, 0.34f, 0.92f);
         private static readonly Color OutlineColor = new Color(0f, 0f, 0f, 0.85f);
+
+        // ---- UI 补全 §2 视觉令牌（唯一配色源，与 UISkinArtGenerator 对齐）----
+        // 【为什么在这里再写一份】生成器（Editor 程序集）不能引用运行时的 UI 常量文件，
+        // 而 UI 皮肤贴图里已烘进的色值就取自这套令牌 —— 两边必须一致，改要成对改。
+        private static readonly Color Cyan = new Color(0.208f, 0.878f, 1f, 1f);          // #35E0FF 主色
+        private static readonly Color Gold = new Color(1f, 0.788f, 0.302f, 1f);          // #FFC94D 金币/胜利
+        private static readonly Color DangerRed = new Color(1f, 0.302f, 0.369f, 1f);     // #FF4D5E 危险/失败
+        private static readonly Color Fire = new Color(1f, 0.478f, 0.161f, 1f);          // #FF7A29 警示
+        private static readonly Color Ice = new Color(0.490f, 0.910f, 1f, 1f);           // #7DE8FF 减速
+        private static readonly Color Purple = new Color(0.486f, 0.361f, 1f, 1f);        // #7C5CFF 穿透/激光
+        private static readonly Color TextPrimary = new Color(0.910f, 0.941f, 0.980f, 1f);   // #E8F0FA
+        private static readonly Color TextSecondary = new Color(0.624f, 0.702f, 0.784f, 1f); // #9FB3C8
+        private static readonly Color TextTertiary = new Color(0.369f, 0.451f, 0.588f, 1f);  // #5E7396
 
         // ------------------------------------------------------------------
         // 深色科幻皮肤（Assets/_UIAssets/UI/，由 UISkinArtGenerator 生成）
@@ -307,6 +360,18 @@ namespace FTProject.EditorTools
             BuildPause(report);
             BuildSetting(report);
             BuildLevelClear(report);
+
+            // ---- UI 补全 P1：启动链三界面 ----
+            BuildSplash(report);
+            BuildLoading(report);
+            BuildHotUpdate(report);
+
+            // ---- UI 补全 P2/P3：内容界面与弹窗 ----
+            BuildMainMenu(report);
+            BuildLevelDetail(report);
+            BuildSellConfirm(report);
+            BuildConfirm(report);
+            BuildTowerCodex(report);
         }
 
         /// <summary>
@@ -332,8 +397,28 @@ namespace FTProject.EditorTools
             EnsureOne(PausePath, "PauseView", report);
             EnsureOne(SettingPath, "SettingView", report);
             EnsureOne(LevelClearPath, "LevelClearView", report);
+
+            // ---- UI 补全 P1：启动链三界面 ----
+            EnsureOne(SplashPath, "SplashView", report);
+            EnsureOne(LoadingPath, "LoadingView", report);
+            EnsureOne(HotUpdatePath, "HotUpdateView", report);
+
+            // ---- UI 补全 P2/P3：内容界面与弹窗 ----
+            EnsureOne(MainMenuPath, "MainMenuView", report);
+            EnsureOne(LevelDetailPath, "LevelDetailView", report);
+            EnsureOne(SellConfirmPath, "SellConfirmView", report);
+            EnsureOne(ConfirmPath, "ConfirmView", report);
+            EnsureOne(TowerCodexPath, "TowerCodexView", report);
         }
 
+        /// <summary>
+        /// 按路径派发到对应的 Build*。
+        ///
+        /// 【为什么改成链式 if/else if 全枚举】原实现把 `SelectPath` 判断了两次、
+        /// `SettingPath` 没有任何分支（靠末尾 `else BuildSetting` 兜底）——
+        /// 于是给"新增界面"再挂一个 `else` 就会**静默生成 SettingView**（而不是报错）。
+        /// 现在最后一个是显式 `else` 兜底 + 报错，漏登记一定看得见。
+        /// </summary>
         private static void EnsureOne(string path, string name, EditorUtil.Report report)
         {
             if (AssetDatabase.LoadAssetAtPath<GameObject>(path) != null)
@@ -342,14 +427,23 @@ namespace FTProject.EditorTools
                 return;
             }
             report.Ok(string.Format("{0}.prefab 缺失 → 补齐", name));
+
             if (path == HudPath) BuildHud(report);
             else if (path == TipsPath) BuildTips(report);
             else if (path == TowerInfoPath) BuildTowerInfo(report);
             else if (path == SelectPath) BuildSelect(report);
             else if (path == PausePath) BuildPause(report);
-            else if (path == SelectPath) BuildSelect(report);
+            else if (path == SettingPath) BuildSetting(report);
             else if (path == LevelClearPath) BuildLevelClear(report);
-            else BuildSetting(report);
+            else if (path == SplashPath) BuildSplash(report);
+            else if (path == LoadingPath) BuildLoading(report);
+            else if (path == HotUpdatePath) BuildHotUpdate(report);
+            else if (path == MainMenuPath) BuildMainMenu(report);
+            else if (path == LevelDetailPath) BuildLevelDetail(report);
+            else if (path == SellConfirmPath) BuildSellConfirm(report);
+            else if (path == ConfirmPath) BuildConfirm(report);
+            else if (path == TowerCodexPath) BuildTowerCodex(report);
+            else report.Error("EnsureOne 没有为 " + path + " 登记生成方法（新增界面时忘了在 EnsureOne 里加分支）");
         }
 
         // ------------------------------------------------------------------
@@ -836,6 +930,12 @@ namespace FTProject.EditorTools
         /// </summary>
         private static void ConfigureLoopListView(LoopListView2 lv, GameObject itemPrefab)
         {
+            ConfigureLoopListView(lv, itemPrefab, SelectItemGap, 3);
+        }
+
+        /// <summary>带参版本：不同界面的条目宽度/间距/预创建数不同（关卡卡片 900+56，图鉴卡片 460+70）。</summary>
+        private static void ConfigureLoopListView(LoopListView2 lv, GameObject itemPrefab, float padding, int initCreateCount)
+        {
             SerializedObject so = new SerializedObject(lv);
 
             // 横向、从左到右
@@ -852,8 +952,8 @@ namespace FTProject.EditorTools
             arr.arraySize = 1;
             SerializedProperty e = arr.GetArrayElementAtIndex(0);
             e.FindPropertyRelative("mItemPrefab").objectReferenceValue = itemPrefab;
-            e.FindPropertyRelative("mPadding").floatValue = SelectItemGap;
-            e.FindPropertyRelative("mInitCreateCount").intValue = 3;
+            e.FindPropertyRelative("mPadding").floatValue = padding;
+            e.FindPropertyRelative("mInitCreateCount").intValue = initCreateCount;
             e.FindPropertyRelative("mStartPosOffset").floatValue = 0f;
 
             so.ApplyModifiedPropertiesWithoutUndo();
@@ -1043,6 +1143,812 @@ namespace FTProject.EditorTools
             lrt.pivot = new Vector2(0.5f, 0.5f);
             lrt.anchoredPosition = Vector2.zero;
             lrt.sizeDelta = Vector2.zero;
+        }
+
+        // ==================================================================
+        // UI 补全 P1：启动链三界面（Splash / Loading / HotUpdate）
+        // ==================================================================
+        // 【三者的共同点】都是**整页**（stretchInset = 0），都自带深色底。
+        // 【为什么标题不用 CreateDialogShell 的 Title】骨架给整页标题的规格是
+        //   "64 号、距顶 64"（那是给"选择关卡""防御塔图鉴"这类页面标题用的）；
+        //   而这三个界面要的是自己的主视觉（开屏 96 号品牌名 / 加载与热更新是"居中构图"）。
+        //   硬把标题挪过去会让骨架方法的语义变模糊，所以这里传空标题，
+        //   再各自建自己的文本节点 —— 骨架的 Title 仍然存在（空串，不可见），不破坏契约。
+
+        private static void BuildSplash(EditorUtil.Report report)
+        {
+            report.Head("生成开屏页 → " + SplashPath);
+            string extra;
+            if (!EditorUtil.IsSafeToRebuild(SplashPath, SplashChildren, out extra))
+            {
+                report.Error("SplashView.prefab 检测到生成器不识别的节点：" + extra + "　→ 已中止");
+                return;
+            }
+
+            AssetDatabase.DeleteAsset(SplashPath);
+            EditorUtil.EnsureFolderOfFile(SplashPath);
+
+            GameObject panel;
+            GameObject root = CreateDialogShell("SplashView", "", Vector2.zero, report, out panel, 0f);
+
+            // 自带 CanvasGroup：本界面要自己控制整屏淡入（UIManager.EnsureFadeIn 会因此跳过它）
+            root.AddComponent<CanvasGroup>();
+            root.AddComponent<SplashView>();
+
+            // Logo：工程里没有专门的品牌图，用已有塔图标占位（换正式 logo 时只改这一处 sprite 名）
+            GameObject logo = new GameObject("Logo", typeof(RectTransform));
+            logo.transform.SetParent(panel.transform, false);
+            RectTransform lrt = (RectTransform)logo.transform;
+            lrt.anchorMin = new Vector2(0.5f, 0.5f);
+            lrt.anchorMax = new Vector2(0.5f, 0.5f);
+            lrt.pivot = new Vector2(0.5f, 0.5f);
+            lrt.anchoredPosition = new Vector2(0f, 60f);
+            lrt.sizeDelta = new Vector2(480f, 480f);
+            Image logoImg = logo.AddComponent<Image>();
+            Sprite logoSprite = LoadUiSprite("UI_TowerIcon_Normal");
+            if (logoSprite != null)
+            {
+                logoImg.sprite = logoSprite;
+                logoImg.type = Image.Type.Simple;
+                logoImg.preserveAspect = true;
+                logoImg.color = new Color(1f, 1f, 1f, 0.92f);
+            }
+            else
+            {
+                logoImg.color = new Color(0.208f, 0.878f, 1f, 0.12f);
+            }
+            logoImg.raycastTarget = false;
+
+            TextMeshProUGUI gameTitle = CreateText(panel.transform, "GameTitle", "自由人塔防",
+                new Vector2(0.5f, 0.5f), new Vector2(0f, -160f), new Vector2(900f, 120f),
+                TextAnchor.MiddleCenter, 96);
+            gameTitle.color = Cyan;
+
+            TextMeshProUGUI sub = CreateText(panel.transform, "Subtitle", "FREEDOM TOWER",
+                new Vector2(0.5f, 0.5f), new Vector2(0f, -260f), new Vector2(900f, 48f),
+                TextAnchor.MiddleCenter, 28);
+            sub.color = TextSecondary;
+
+            // 版本号右下角；anchor(1,0)+pivot(1,0) → anchoredPosition 是"距右下角"的偏移
+            TextMeshProUGUI ver = CreateText(panel.transform, "Version", string.Empty,
+                new Vector2(1f, 0f), new Vector2(-40f, 40f), new Vector2(320f, 36f),
+                TextAnchor.MiddleRight, 22);
+            ver.color = TextTertiary;
+
+            TextMeshProUGUI dots = CreateText(panel.transform, "LoadingDots", "正在启动...",
+                new Vector2(0.5f, 0.5f), new Vector2(0f, -380f), new Vector2(400f, 40f),
+                TextAnchor.MiddleCenter, 26);
+            dots.color = TextSecondary;
+
+            EditorUtility.SetDirty(root);
+            PrefabUtility.SaveAsPrefabAsset(root, SplashPath);
+            Object.DestroyImmediate(root);
+            report.Ok("SplashView.prefab（Logo / GameTitle / Subtitle / Version / LoadingDots）");
+        }
+
+        private static void BuildLoading(EditorUtil.Report report)
+        {
+            report.Head("生成加载进度界面 → " + LoadingPath);
+            string extra;
+            if (!EditorUtil.IsSafeToRebuild(LoadingPath, LoadingChildren, out extra))
+            {
+                report.Error("LoadingView.prefab 检测到生成器不识别的节点：" + extra + "　→ 已中止");
+                return;
+            }
+
+            AssetDatabase.DeleteAsset(LoadingPath);
+            EditorUtil.EnsureFolderOfFile(LoadingPath);
+
+            GameObject panel;
+            GameObject root = CreateDialogShell("LoadingView", "", Vector2.zero, report, out panel, 0f);
+            root.AddComponent<LoadingView>();
+
+            GameObject logo = new GameObject("Logo", typeof(RectTransform));
+            logo.transform.SetParent(panel.transform, false);
+            RectTransform lrt = (RectTransform)logo.transform;
+            lrt.anchorMin = new Vector2(0.5f, 0.5f);
+            lrt.anchorMax = new Vector2(0.5f, 0.5f);
+            lrt.pivot = new Vector2(0.5f, 0.5f);
+            lrt.anchoredPosition = new Vector2(0f, 160f);
+            lrt.sizeDelta = new Vector2(240f, 240f);
+            Image logoImg = logo.AddComponent<Image>();
+            Sprite logoSprite = LoadUiSprite("UI_TowerIcon_Normal");
+            if (logoSprite != null)
+            {
+                logoImg.sprite = logoSprite;
+                logoImg.type = Image.Type.Simple;
+                logoImg.preserveAspect = true;
+                logoImg.color = new Color(1f, 1f, 1f, 0.9f);
+            }
+            else
+            {
+                logoImg.color = new Color(0.208f, 0.878f, 1f, 0.12f);
+            }
+            logoImg.raycastTarget = false;
+
+            TextMeshProUGUI status = CreateText(panel.transform, "StatusText", "正在初始化资源系统...",
+                new Vector2(0.5f, 0.5f), new Vector2(0f, -40f), new Vector2(1200f, 56f),
+                TextAnchor.MiddleCenter, 32);
+            status.color = TextPrimary;
+
+            // ---- 进度条（900×24，y = -140）----
+            // 结构固定为 Track(铺满) / Fill(左锚点、宽度随进度) / Glow(同 Fill，半透明)
+            GameObject bar = new GameObject("ProgressBar", typeof(RectTransform));
+            bar.transform.SetParent(panel.transform, false);
+            RectTransform brt = (RectTransform)bar.transform;
+            brt.anchorMin = new Vector2(0.5f, 0.5f);
+            brt.anchorMax = new Vector2(0.5f, 0.5f);
+            brt.pivot = new Vector2(0.5f, 0.5f);
+            brt.anchoredPosition = new Vector2(0f, -140f);
+            brt.sizeDelta = new Vector2(LoadingView.FillMaxWidth, 24f);
+
+            GameObject track = new GameObject("Track", typeof(RectTransform));
+            track.transform.SetParent(bar.transform, false);
+            Stretch((RectTransform)track.transform);
+            Image trackImg = track.AddComponent<Image>();
+            ApplySlicedSkin(trackImg, "UI_Chip_Neutral", new Color(0.075f, 0.102f, 0.149f, 1f));
+            trackImg.raycastTarget = false;
+
+            GameObject fill = new GameObject("Fill", typeof(RectTransform));
+            fill.transform.SetParent(bar.transform, false);
+            RectTransform frt = (RectTransform)fill.transform;
+            frt.anchorMin = new Vector2(0f, 0.5f);
+            frt.anchorMax = new Vector2(0f, 0.5f);
+            frt.pivot = new Vector2(0f, 0.5f);
+            frt.anchoredPosition = Vector2.zero;
+            frt.sizeDelta = new Vector2(0f, 24f);
+            Image fillImg = fill.AddComponent<Image>();
+            ApplySlicedSkin(fillImg, "UI_Btn_Primary", Cyan);
+            fillImg.raycastTarget = false;
+
+            GameObject glow = new GameObject("Glow", typeof(RectTransform));
+            glow.transform.SetParent(bar.transform, false);
+            RectTransform grt = (RectTransform)glow.transform;
+            grt.anchorMin = new Vector2(0f, 0.5f);
+            grt.anchorMax = new Vector2(0f, 0.5f);
+            grt.pivot = new Vector2(0f, 0.5f);
+            grt.anchoredPosition = Vector2.zero;
+            grt.sizeDelta = new Vector2(0f, 24f);
+            Image glowImg = glow.AddComponent<Image>();
+            ApplySlicedSkin(glowImg, "UI_Btn_Primary", Cyan);
+            glowImg.raycastTarget = false;
+            Color glowColor = glowImg.color;
+            glowColor.a = 0.4f;
+            glowImg.color = glowColor;
+
+            TextMeshProUGUI percent = CreateText(panel.transform, "PercentText", "0%",
+                new Vector2(0.5f, 0.5f), new Vector2(0f, -190f), new Vector2(400f, 48f),
+                TextAnchor.MiddleCenter, 34);
+            percent.color = Gold;
+
+            TextMeshProUGUI tip = CreateText(panel.transform, "TipText",
+                "可以在任意空地建塔，路径会实时重算",
+                new Vector2(0.5f, 0.5f), new Vector2(0f, -300f), new Vector2(1400f, 44f),
+                TextAnchor.MiddleCenter, 26);
+            tip.color = TextSecondary;
+
+            EditorUtility.SetDirty(root);
+            PrefabUtility.SaveAsPrefabAsset(root, LoadingPath);
+            Object.DestroyImmediate(root);
+            report.Ok("LoadingView.prefab（Logo / StatusText / ProgressBar(Track|Fill|Glow) / PercentText / TipText）");
+        }
+
+        private static void BuildHotUpdate(EditorUtil.Report report)
+        {
+            report.Head("生成热更新界面 → " + HotUpdatePath);
+            string extra;
+            if (!EditorUtil.IsSafeToRebuild(HotUpdatePath, HotUpdateChildren, out extra))
+            {
+                report.Error("HotUpdateView.prefab 检测到生成器不识别的节点：" + extra + "　→ 已中止");
+                return;
+            }
+
+            AssetDatabase.DeleteAsset(HotUpdatePath);
+            EditorUtil.EnsureFolderOfFile(HotUpdatePath);
+
+            GameObject panel;
+            GameObject root = CreateDialogShell("HotUpdateView", "", Vector2.zero, report, out panel, 0f);
+            root.AddComponent<HotUpdateView>();
+
+            TextMeshProUGUI title = CreateText(panel.transform, "HotTitle", "资源更新",
+                new Vector2(0.5f, 0.5f), new Vector2(0f, 220f), new Vector2(900f, 80f),
+                TextAnchor.MiddleCenter, 56);
+            title.color = TextPrimary;
+
+            TextMeshProUGUI phase = CreateText(panel.transform, "PhaseText", "正在检查更新...",
+                new Vector2(0.5f, 0.5f), new Vector2(0f, 100f), new Vector2(1200f, 56f),
+                TextAnchor.MiddleCenter, 32);
+            phase.color = TextPrimary;
+
+            GameObject bar = new GameObject("ProgressBar", typeof(RectTransform));
+            bar.transform.SetParent(panel.transform, false);
+            RectTransform brt = (RectTransform)bar.transform;
+            brt.anchorMin = new Vector2(0.5f, 0.5f);
+            brt.anchorMax = new Vector2(0.5f, 0.5f);
+            brt.pivot = new Vector2(0.5f, 0.5f);
+            brt.anchoredPosition = Vector2.zero;
+            brt.sizeDelta = new Vector2(HotUpdateView.FillMaxWidth, 28f);
+
+            GameObject track = new GameObject("Track", typeof(RectTransform));
+            track.transform.SetParent(bar.transform, false);
+            Stretch((RectTransform)track.transform);
+            Image trackImg = track.AddComponent<Image>();
+            ApplySlicedSkin(trackImg, "UI_Chip_Neutral", new Color(0.075f, 0.102f, 0.149f, 1f));
+            trackImg.raycastTarget = false;
+
+            GameObject fill = new GameObject("Fill", typeof(RectTransform));
+            fill.transform.SetParent(bar.transform, false);
+            RectTransform frt = (RectTransform)fill.transform;
+            frt.anchorMin = new Vector2(0f, 0.5f);
+            frt.anchorMax = new Vector2(0f, 0.5f);
+            frt.pivot = new Vector2(0f, 0.5f);
+            frt.anchoredPosition = Vector2.zero;
+            frt.sizeDelta = new Vector2(0f, 28f);
+            Image fillImg = fill.AddComponent<Image>();
+            ApplySlicedSkin(fillImg, "UI_Btn_Primary", Cyan);
+            fillImg.raycastTarget = false;
+
+            GameObject glow = new GameObject("Glow", typeof(RectTransform));
+            glow.transform.SetParent(bar.transform, false);
+            RectTransform grt = (RectTransform)glow.transform;
+            grt.anchorMin = new Vector2(0f, 0.5f);
+            grt.anchorMax = new Vector2(0f, 0.5f);
+            grt.pivot = new Vector2(0f, 0.5f);
+            grt.anchoredPosition = Vector2.zero;
+            grt.sizeDelta = new Vector2(0f, 28f);
+            Image glowImg = glow.AddComponent<Image>();
+            ApplySlicedSkin(glowImg, "UI_Btn_Primary", Cyan);
+            glowImg.raycastTarget = false;
+            Color glowColor = glowImg.color;
+            glowColor.a = 0.4f;
+            glowImg.color = glowColor;
+
+            TextMeshProUGUI percent = CreateText(panel.transform, "PercentText", "0%",
+                new Vector2(0.5f, 0.5f), new Vector2(0f, -60f), new Vector2(400f, 56f),
+                TextAnchor.MiddleCenter, 40);
+            percent.color = Cyan;
+
+            TextMeshProUGUI sizeText = CreateText(panel.transform, "SizeText", "已下载 0.0 MB / 0.0 MB",
+                new Vector2(0.5f, 0.5f), new Vector2(0f, -120f), new Vector2(1200f, 40f),
+                TextAnchor.MiddleCenter, 26);
+            sizeText.color = TextSecondary;
+
+            TextMeshProUGUI speedText = CreateText(panel.transform, "SpeedText", "速度 0.0 MB/s　剩余约 --:--",
+                new Vector2(0.5f, 0.5f), new Vector2(0f, -160f), new Vector2(1200f, 40f),
+                TextAnchor.MiddleCenter, 24);
+            speedText.color = TextSecondary;
+
+            TextMeshProUGUI detailText = CreateText(panel.transform, "DetailText", "文件 0/0　失败 0",
+                new Vector2(0.5f, 0.5f), new Vector2(0f, -206f), new Vector2(1200f, 40f),
+                TextAnchor.MiddleCenter, 22);
+            detailText.color = TextTertiary;
+
+            GameObject btnGroup = new GameObject("BtnGroup", typeof(RectTransform));
+            btnGroup.transform.SetParent(panel.transform, false);
+            RectTransform bgrt = (RectTransform)btnGroup.transform;
+            bgrt.anchorMin = new Vector2(0.5f, 0.5f);
+            bgrt.anchorMax = new Vector2(0.5f, 0.5f);
+            bgrt.pivot = new Vector2(0.5f, 0.5f);
+            bgrt.anchoredPosition = new Vector2(0f, -300f);
+            bgrt.sizeDelta = new Vector2(900f, 88f);
+
+            // 左槽：暂停 / 继续 互斥（同一位置，靠 SetActive 切换）
+            CreatePanelButton(btnGroup.transform, "PauseBtn", "暂停", new Vector2(-160f, 0f), 240f, false, 80f, 32);
+            CreatePanelButton(btnGroup.transform, "ResumeBtn", "继续", new Vector2(-160f, 0f), 240f, false, 80f, 32);
+            // 右槽：重试
+            CreatePanelButton(btnGroup.transform, "RetryBtn", "重试", new Vector2(160f, 0f), 240f, false, 80f, 32);
+
+            TextMeshProUGUI failText = CreateText(panel.transform, "FailText", string.Empty,
+                new Vector2(0.5f, 0.5f), new Vector2(0f, -390f), new Vector2(1400f, 60f),
+                TextAnchor.MiddleCenter, 26);
+            failText.color = DangerRed;
+
+            // 默认态：显示"暂停"，隐藏"继续""重试"与失败文案（与 HotUpdateView.Awake 的初值一致）
+            SetNodeActive(panel.transform, "BtnGroup/ResumeBtn", false);
+            SetNodeActive(panel.transform, "BtnGroup/RetryBtn", false);
+            SetNodeActive(panel.transform, "FailText", false);
+
+            EditorUtility.SetDirty(root);
+            PrefabUtility.SaveAsPrefabAsset(root, HotUpdatePath);
+            Object.DestroyImmediate(root);
+            report.Ok("HotUpdateView.prefab（HotTitle / PhaseText / ProgressBar(Track|Fill|Glow) / PercentText / SizeText / SpeedText / DetailText / BtnGroup(Pause|Resume|Retry) / FailText）");
+        }
+
+        /// <summary>
+        /// 建一个纯 Image 节点（图标 / 色条 / 面板底衬）。
+        ///
+        /// 【为什么抽成 helper】顶部色条、Logo、图标、统计底衬这类节点在各界面重复出现，
+        /// 每次都写 8 行 new GameObject + RectTransform + Image + ApplySlicedSkin 既啰嗦又容易写岔锚点。
+        /// ⚠️ `check_ui_contract.py` **认识**这个 helper（与 CreateText/CreatePanelButton 同列）——
+        ///   新增类似的"建节点 helper"时必须同步把它加进那个脚本的正则，否则
+        ///   View 里引用这些节点会被误报为"生成器不产出"。
+        /// </summary>
+        private static Image CreateImageAt(Transform parent, string name, Vector2 anchor, Vector2 anchoredPos,
+            Vector2 size, string spriteName, Color fallback, bool sliced = true)
+        {
+            GameObject go = new GameObject(name, typeof(RectTransform));
+            go.transform.SetParent(parent, false);
+            RectTransform rt = (RectTransform)go.transform;
+            rt.anchorMin = anchor;
+            rt.anchorMax = anchor;
+            rt.pivot = anchor;
+            rt.anchoredPosition = anchoredPos;
+            rt.sizeDelta = size;
+
+            Image img = go.AddComponent<Image>();
+            if (!string.IsNullOrEmpty(spriteName))
+            {
+                ApplySlicedSkin(img, spriteName, fallback);
+                if (!sliced)
+                {
+                    Sprite s = LoadUiSprite(spriteName);
+                    if (s != null)
+                    {
+                        img.sprite = s;
+                        img.type = Image.Type.Simple;
+                        img.preserveAspect = true;
+                        img.color = Color.white;
+                    }
+                }
+            }
+            else
+            {
+                img.color = fallback;
+                img.raycastTarget = false;
+            }
+            return img;
+        }
+
+        // ==================================================================
+        // UI 补全 P2/P3：主菜单 / 关卡详情 / 出售确认 / 通用确认
+        // ==================================================================
+
+        /// <summary>
+        /// 坐标口径提醒：本工程 `CreateText` 的锚点即 pivot，`CreateImageAt` 同理。
+        /// 传 (0.5,0.5) 时 anchoredPos 是**元素中心**相对画布中心的偏移；
+        /// 传 (0,1) / (1,0) 时 anchoredPos 是**元素左上/右下角**相对该角的偏移。
+        ///
+        /// ★ 阅读效果图时的正确换算（踩过坑，别写反）：
+        ///   1) 先 `Y_baseline = 540 − y_svg`（画布 1920×1080，y_svg 向下为正）；
+        ///   2) 再 `Y_boxCenter = Y_baseline + 0.35 × fontSize`。
+        ///   —— 因为 `CreateText` 是**盒子中心**定位，而 SVG 里的 y 是**文字基线**；
+        ///   墨迹在基线**上方**，所以盒子中心要比基线**再高** 0.35 倍字号。
+        ///   ⚠️ 写成 `− 0.35×字号` 会让整块文字下移约 0.7 倍字号 ——
+        ///   实测表现为"标题和副标题叠在一起"（主菜单 88 号字下移了约 62px）。
+        /// </summary>
+
+        private static void BuildMainMenu(EditorUtil.Report report)
+        {
+            report.Head("生成主菜单 → " + MainMenuPath);
+            string extra;
+            if (!EditorUtil.IsSafeToRebuild(MainMenuPath, MainMenuChildren, out extra))
+            {
+                report.Error("MainMenuView.prefab 检测到生成器不识别的节点：" + extra + "　→ 已中止");
+                return;
+            }
+
+            AssetDatabase.DeleteAsset(MainMenuPath);
+            EditorUtil.EnsureFolderOfFile(MainMenuPath);
+
+            GameObject panel;
+            GameObject root = CreateDialogShell("MainMenuView", "", Vector2.zero, report, out panel, 0f);
+            root.AddComponent<MainMenuView>();
+
+            CreateImageAt(panel.transform, "Logo", new Vector2(0.5f, 0.5f), new Vector2(0f, 270f),
+                new Vector2(380f, 380f), "UI_TowerIcon_Normal", new Color(0.208f, 0.878f, 1f, 0.12f), false);
+
+            // 标题基线 y_svg 488 → Y=+52；88 号字的盒中心 ≈ +52−31 = +21
+            TextMeshProUGUI title = CreateText(panel.transform, "GameTitle", "自由人塔防",
+                new Vector2(0.5f, 0.5f), new Vector2(0f, 83f), new Vector2(1000f, 130f),
+                TextAnchor.MiddleCenter, 88);
+            title.color = Cyan;
+
+            // 副标题基线 y_svg 540 → Y=0；26 号 → 盒中心 ≈ −9
+            TextMeshProUGUI sub = CreateText(panel.transform, "Subtitle", "FREEDOM TOWER · 单机塔防",
+                new Vector2(0.5f, 0.5f), new Vector2(0f, 9f), new Vector2(1000f, 44f),
+                TextAnchor.MiddleCenter, 26);
+            sub.color = TextSecondary;
+
+            // 玩家总览（左上）：底衬先建，文字后建 → 文字压在底衬上
+            CreateImageAt(panel.transform, "StatBg", new Vector2(0f, 1f), new Vector2(48f, -120f),
+                new Vector2(416f, 112f), "UI_Panel_Cyan", new Color(0.12f, 0.16f, 0.24f, 0.85f));
+
+            TextMeshProUGUI star = CreateText(panel.transform, "StarText", "0/0",
+                new Vector2(0f, 1f), new Vector2(72f, -146f), new Vector2(368f, 40f),
+                TextAnchor.MiddleLeft, 30);
+            star.color = Gold;
+
+            TextMeshProUGUI clear = CreateText(panel.transform, "ClearText", "已通关 0/0",
+                new Vector2(0f, 1f), new Vector2(72f, -196f), new Vector2(368f, 40f),
+                TextAnchor.MiddleLeft, 28);
+            clear.color = TextSecondary;
+
+            // 四颗入口按钮：中心 Y 依次 −66 / −184 / −302 / −420（对应 y_svg 606/724/842/960）
+            CreatePanelButton(panel.transform, "StartBtn", "开始游戏", new Vector2(0f, -66f), 480f, true, 92f, 34);
+            CreatePanelButton(panel.transform, "CodexBtn", "防御塔图鉴", new Vector2(0f, -184f), 480f, false, 92f, 32);
+            CreatePanelButton(panel.transform, "SettingBtn", "设置", new Vector2(0f, -302f), 480f, false, 92f, 32);
+            CreatePanelButton(panel.transform, "QuitBtn", "退出游戏", new Vector2(0f, -420f), 480f, false, 92f, 32);
+
+            TextMeshProUGUI ver = CreateText(panel.transform, "Version", string.Empty,
+                new Vector2(1f, 0f), new Vector2(-48f, 38f), new Vector2(240f, 32f),
+                TextAnchor.MiddleRight, 22);
+            ver.color = TextTertiary;
+
+            EditorUtility.SetDirty(root);
+            PrefabUtility.SaveAsPrefabAsset(root, MainMenuPath);
+            Object.DestroyImmediate(root);
+            report.Ok("MainMenuView.prefab（Logo / GameTitle / Subtitle / StatBg+StarText+ClearText / Start+Codex+Setting+Quit / Version）");
+        }
+
+        private static void BuildLevelDetail(EditorUtil.Report report)
+        {
+            report.Head("生成本关关卡详情 → " + LevelDetailPath);
+            string extra;
+            if (!EditorUtil.IsSafeToRebuild(LevelDetailPath, LevelDetailChildren, out extra))
+            {
+                report.Error("LevelDetailView.prefab 检测到生成器不识别的节点：" + extra + "　→ 已中止");
+                return;
+            }
+
+            AssetDatabase.DeleteAsset(LevelDetailPath);
+            EditorUtil.EnsureFolderOfFile(LevelDetailPath);
+
+            // 弹窗 1000×900（效果图 21：y_svg 90..990）
+            GameObject panel;
+            GameObject root = CreateDialogShell("LevelDetailView", "", new Vector2(1000f, 900f), report, out panel, -1f);
+            root.AddComponent<LevelDetailView>();
+
+            // 顶部色条 24px（效果图实测；§2.5 的"4px"是卡片细分隔线，两者不是一回事）
+            CreateImageAt(panel.transform, "TopBar", new Vector2(0.5f, 1f), Vector2.zero,
+                new Vector2(1000f, 24f), "UI_Chip_Gold", Gold);
+
+            // 标题基线 y_svg 146 → 面板中心 y_svg 540 → Y=+394；48 号 → 盒中心 ≈ +377
+            TextMeshProUGUI title = CreateText(panel.transform, "DetailTitle", "关卡",
+                new Vector2(0.5f, 0.5f), new Vector2(0f, 411f), new Vector2(940f, 64f),
+                TextAnchor.MiddleCenter, 48);
+            title.color = TextPrimary;
+
+            // 关卡名基线 y_svg 196 → Y=+344；30 号 → 盒中心 ≈ +334
+            TextMeshProUGUI name = CreateText(panel.transform, "LevelName", string.Empty,
+                new Vector2(0.5f, 0.5f), new Vector2(0f, 355f), new Vector2(940f, 48f),
+                TextAnchor.MiddleCenter, 30);
+            name.color = TextSecondary;
+
+            // 星级行：y_svg 218..285 → 中心 251 → Y=+289；三颗星 x = −100 / 0 / +100
+            CreateImageAt(panel.transform, "Star1", new Vector2(0.5f, 0.5f), new Vector2(-100f, 289f),
+                new Vector2(62f, 62f), "UI_Star_On", new Color(1f, 0.788f, 0.302f, 1f), false);
+            CreateImageAt(panel.transform, "Star2", new Vector2(0.5f, 0.5f), new Vector2(0f, 289f),
+                new Vector2(62f, 62f), "UI_Star_On", new Color(1f, 0.788f, 0.302f, 1f), false);
+            CreateImageAt(panel.transform, "Star3", new Vector2(0.5f, 0.5f), new Vector2(100f, 289f),
+                new Vector2(62f, 62f), "UI_Star_On", new Color(1f, 0.788f, 0.302f, 1f), false);
+
+            TextMeshProUGUI best = CreateText(panel.transform, "BestStarText", string.Empty,
+                new Vector2(0.5f, 0.5f), new Vector2(0f, 238f), new Vector2(600f, 36f),
+                TextAnchor.MiddleCenter, 24);
+            best.color = TextSecondary;
+
+            // 信息格：2 列 × 3 行（回合数 / 波次 / 初始金币 / 初始生命 / 难度 / 最佳用时）
+            // y_svg 322..496 → 中心 409 → Y=+131；单元 430×50、列距 450、行距 62
+            // ⚠️ 刻意**逐个写开**而不是用循环：`check_ui_contract.py` 靠"字面量节点名"比对
+            //   View 的 Find 路径，写成 `infoNames[i]` 会让这 6 个节点全部漏检。
+            CreateText(panel.transform, "Info1", string.Empty,
+                new Vector2(0.5f, 0.5f), new Vector2(-225f, 131f), new Vector2(430f, 50f),
+                TextAnchor.MiddleCenter, 28);
+            CreateText(panel.transform, "Info2", string.Empty,
+                new Vector2(0.5f, 0.5f), new Vector2(225f, 131f), new Vector2(430f, 50f),
+                TextAnchor.MiddleCenter, 28);
+            CreateText(panel.transform, "Info3", string.Empty,
+                new Vector2(0.5f, 0.5f), new Vector2(-225f, 69f), new Vector2(430f, 50f),
+                TextAnchor.MiddleCenter, 28);
+            CreateText(panel.transform, "Info4", string.Empty,
+                new Vector2(0.5f, 0.5f), new Vector2(225f, 69f), new Vector2(430f, 50f),
+                TextAnchor.MiddleCenter, 28);
+            CreateText(panel.transform, "Info5", string.Empty,
+                new Vector2(0.5f, 0.5f), new Vector2(-225f, 7f), new Vector2(430f, 50f),
+                TextAnchor.MiddleCenter, 28);
+            CreateText(panel.transform, "Info6", string.Empty,
+                new Vector2(0.5f, 0.5f), new Vector2(225f, 7f), new Vector2(430f, 50f),
+                TextAnchor.MiddleCenter, 28);
+
+            // 本关怪物预览
+            TextMeshProUGUI enemyLabel = CreateText(panel.transform, "EnemyLabel", "本关出现怪物",
+                new Vector2(0.5f, 0.5f), new Vector2(0f, -16f), new Vector2(880f, 32f),
+                TextAnchor.MiddleCenter, 24);
+            enemyLabel.color = TextSecondary;
+
+            TextMeshProUGUI enemyRow = CreateText(panel.transform, "EnemyIcons", string.Empty,
+                new Vector2(0.5f, 0.5f), new Vector2(0f, -60f), new Vector2(880f, 64f),
+                TextAnchor.MiddleCenter, 24);
+            enemyRow.color = TextPrimary;
+
+            CreatePanelButton(panel.transform, "PlayBtn", "开始挑战", new Vector2(0f, -194f), 560f, true, 88f, 34);
+            CreatePanelButton(panel.transform, "ReplayBtn", "从头重打", new Vector2(-160f, -288f), 300f, false, 76f, 30);
+            CreatePanelButton(panel.transform, "CloseBtn", "返回", new Vector2(160f, -288f), 300f, false, 76f, 30);
+
+            EditorUtility.SetDirty(root);
+            PrefabUtility.SaveAsPrefabAsset(root, LevelDetailPath);
+            Object.DestroyImmediate(root);
+            report.Ok("LevelDetailView.prefab（TopBar / DetailTitle / LevelName / Star1-3 / BestStarText / Info1-6 / EnemyLabel+EnemyIcons / Play+Replay+Close）");
+        }
+
+        private static void BuildSellConfirm(EditorUtil.Report report)
+        {
+            report.Head("生成出售确认 → " + SellConfirmPath);
+            string extra;
+            if (!EditorUtil.IsSafeToRebuild(SellConfirmPath, SellConfirmChildren, out extra))
+            {
+                report.Error("SellConfirmView.prefab 检测到生成器不识别的节点：" + extra + "　→ 已中止");
+                return;
+            }
+
+            AssetDatabase.DeleteAsset(SellConfirmPath);
+            EditorUtil.EnsureFolderOfFile(SellConfirmPath);
+
+            GameObject panel;
+            GameObject root = CreateDialogShell("SellConfirmView", "", new Vector2(800f, 620f), report, out panel, -1f);
+            root.AddComponent<SellConfirmView>();
+
+            CreateImageAt(panel.transform, "TopBar", new Vector2(0.5f, 1f), Vector2.zero,
+                new Vector2(800f, 24f), "UI_Chip_Gold", Fire);
+
+            TextMeshProUGUI title = CreateText(panel.transform, "SellTitle", "确认出售？",
+                new Vector2(0.5f, 0.5f), new Vector2(0f, 241f), new Vector2(740f, 56f),
+                TextAnchor.MiddleCenter, 48);
+            title.color = TextPrimary;
+
+            CreateImageAt(panel.transform, "TowerIcon", new Vector2(0.5f, 0.5f), new Vector2(0f, 158f),
+                new Vector2(100f, 100f), "UI_TowerIcon_Normal", new Color(0.18f, 0.29f, 0.4f, 1f), false);
+
+            TextMeshProUGUI name = CreateText(panel.transform, "TowerName", "塔",
+                new Vector2(0.5f, 0.5f), new Vector2(0f, 89f), new Vector2(740f, 44f),
+                TextAnchor.MiddleCenter, 32);
+            name.color = TextPrimary;
+
+            TextMeshProUGUI warn = CreateText(panel.transform, "WarnText", string.Empty,
+                new Vector2(0.5f, 0.5f), new Vector2(0f, -5f), new Vector2(700f, 72f),
+                TextAnchor.MiddleCenter, 27);
+            warn.color = Fire;
+            warn.enableWordWrapping = true;   // 两句警告文案要换行
+
+            TextMeshProUGUI refundLabel = CreateText(panel.transform, "RefundLabel", "退回金币",
+                new Vector2(0.5f, 0.5f), new Vector2(-100f, -80f), new Vector2(240f, 56f),
+                TextAnchor.MiddleCenter, 30);
+            refundLabel.color = TextSecondary;
+
+            TextMeshProUGUI refundValue = CreateText(panel.transform, "RefundValue", "0",
+                new Vector2(0.5f, 0.5f), new Vector2(80f, -78f), new Vector2(240f, 56f),
+                TextAnchor.MiddleCenter, 34);
+            refundValue.color = Gold;
+
+            // 两按钮**并排同 y**（效果图 v2 修正：v1 竖排会越出面板底）
+            CreatePanelButton(panel.transform, "ConfirmBtn", "确认出售", new Vector2(-260f, -210f), 240f, true, 88f, 32);
+            CreatePanelButton(panel.transform, "CancelBtn", "取消", new Vector2(260f, -210f), 240f, false, 88f, 32);
+
+            EditorUtility.SetDirty(root);
+            PrefabUtility.SaveAsPrefabAsset(root, SellConfirmPath);
+            Object.DestroyImmediate(root);
+            report.Ok("SellConfirmView.prefab（TopBar / SellTitle / TowerIcon / TowerName / WarnText / RefundLabel+RefundValue / Confirm+Cancel）");
+        }
+
+        private static void BuildConfirm(EditorUtil.Report report)
+        {
+            report.Head("生成通用确认弹窗 → " + ConfirmPath);
+            string extra;
+            if (!EditorUtil.IsSafeToRebuild(ConfirmPath, ConfirmChildren, out extra))
+            {
+                report.Error("ConfirmView.prefab 检测到生成器不识别的节点：" + extra + "　→ 已中止");
+                return;
+            }
+
+            AssetDatabase.DeleteAsset(ConfirmPath);
+            EditorUtil.EnsureFolderOfFile(ConfirmPath);
+
+            GameObject panel;
+            GameObject root = CreateDialogShell("ConfirmView", "", new Vector2(760f, 560f), report, out panel, -1f);
+            root.AddComponent<ConfirmView>();
+
+            CreateImageAt(panel.transform, "TopBar", new Vector2(0.5f, 1f), Vector2.zero,
+                new Vector2(760f, 24f), "UI_Chip_Gold", Cyan);
+
+            TextMeshProUGUI title = CreateText(panel.transform, "BodyTitle", "确认",
+                new Vector2(0.5f, 0.5f), new Vector2(0f, 201f), new Vector2(700f, 56f),
+                TextAnchor.MiddleCenter, 48);
+            title.color = TextPrimary;
+
+            TextMeshProUGUI body = CreateText(panel.transform, "BodyText", string.Empty,
+                new Vector2(0.5f, 0.5f), new Vector2(0f, 60f), new Vector2(660f, 120f),
+                TextAnchor.MiddleCenter, 28);
+            body.color = TextSecondary;
+            body.enableWordWrapping = true;   // 正文必须能换行，否则长文案会横着穿出面板
+
+            CreateImageAt(panel.transform, "DangerIcon", new Vector2(0.5f, 0.5f), new Vector2(0f, -16f),
+                new Vector2(96f, 96f), "UI_Panel_Red", DangerRed);
+
+            CreatePanelButton(panel.transform, "ConfirmBtn", "确定", new Vector2(-220f, -168f), 240f, true, 88f, 32);
+            CreatePanelButton(panel.transform, "CancelBtn", "取消", new Vector2(220f, -168f), 240f, false, 88f, 32);
+
+            EditorUtility.SetDirty(root);
+            PrefabUtility.SaveAsPrefabAsset(root, ConfirmPath);
+            Object.DestroyImmediate(root);
+            report.Ok("ConfirmView.prefab（TopBar / BodyTitle / BodyText / DangerIcon / Confirm+Cancel）");
+        }
+
+        // ==================================================================
+        // UI 补全 B2：防御塔图鉴（整页 + 横向画廊，与关卡选择同款几何）
+        // ==================================================================
+
+        private static void BuildTowerCodex(EditorUtil.Report report)
+        {
+            report.Head("生成防御塔图鉴 → " + TowerCodexPath);
+            string extra;
+            if (!EditorUtil.IsSafeToRebuild(TowerCodexPath, TowerCodexChildren, out extra))
+            {
+                report.Error("TowerCodexView.prefab 检测到生成器不识别的节点：" + extra + "　→ 已中止");
+                return;
+            }
+
+            // 卡片先建：下面的 LoopListView2 要引用这份 prefab 资产
+            GameObject itemPrefab = BuildTowerCodexItemPrefab(report);
+            if (itemPrefab == null)
+            {
+                report.Error("塔图鉴卡片生成失败，TowerCodexView 未重建（避免产出「列表里没有条目」的空壳）");
+                return;
+            }
+
+            AssetDatabase.DeleteAsset(TowerCodexPath);
+            EditorUtil.EnsureFolderOfFile(TowerCodexPath);
+
+            GameObject panel;
+            GameObject root = CreateDialogShell("TowerCodexView", "", Vector2.zero, report, out panel, 0f);
+            root.AddComponent<TowerCodexView>();
+
+            // 标题基线 y_svg 90（整页 64 号）→ 盒中心 ≈ 450 + 22 = +472
+            TextMeshProUGUI title = CreateText(panel.transform, "CodexTitle", "防御塔图鉴",
+                new Vector2(0.5f, 0.5f), new Vector2(0f, 472f), new Vector2(1400f, 92f),
+                TextAnchor.MiddleCenter, 64);
+            title.color = TextPrimary;
+
+            // ---- 列表（结构必须与 SelectView 完全同款，否则吸附居中会失效）----
+            GameObject list = new GameObject("List", typeof(RectTransform));
+            list.transform.SetParent(panel.transform, false);
+            RectTransform lrt = (RectTransform)list.transform;
+            lrt.anchorMin = new Vector2(0.5f, 0.5f);
+            lrt.anchorMax = new Vector2(0.5f, 0.5f);
+            lrt.pivot = new Vector2(0.5f, 0.5f);
+            lrt.anchoredPosition = new Vector2(0f, -10f);
+            lrt.sizeDelta = new Vector2(CodexListW, CodexListH);
+
+            Image trackImg = list.AddComponent<Image>();
+            trackImg.color = new Color(0.04f, 0.06f, 0.10f, 0.6f);
+            trackImg.raycastTarget = true;
+            list.AddComponent<RectMask2D>();
+
+            GameObject viewport = new GameObject("Viewport", typeof(RectTransform));
+            viewport.transform.SetParent(list.transform, false);
+            RectTransform vrt = (RectTransform)viewport.transform;
+            // ⚠️ pivot.x 必须预置 0（LoopListView2 的 AdjustPivot 会强改），矩形用 offsetMin/Max 描述
+            vrt.pivot = new Vector2(0f, 0.5f);
+            vrt.anchorMin = new Vector2(0f, 0.5f);
+            vrt.anchorMax = new Vector2(1f, 0.5f);
+            vrt.offsetMin = new Vector2((CodexListW - CodexItemW) * 0.5f, -CodexListH * 0.5f);
+            vrt.offsetMax = new Vector2(-(CodexListW - CodexItemW) * 0.5f, CodexListH * 0.5f);
+
+            GameObject content = new GameObject("Content", typeof(RectTransform));
+            content.transform.SetParent(viewport.transform, false);
+            RectTransform crt = (RectTransform)content.transform;
+            crt.anchorMin = new Vector2(0f, 0.5f);
+            crt.anchorMax = new Vector2(0f, 0.5f);
+            crt.pivot = new Vector2(0f, 0.5f);
+            crt.anchoredPosition = Vector2.zero;
+            crt.sizeDelta = new Vector2(CodexItemW, CodexListH);
+
+            ScrollRect sr = list.AddComponent<ScrollRect>();
+            sr.content = crt;
+            sr.viewport = vrt;
+            sr.horizontal = true;
+            sr.vertical = false;
+            sr.movementType = ScrollRect.MovementType.Elastic;
+            sr.elasticity = 0.1f;
+            sr.inertia = true;
+            sr.decelerationRate = 0.135f;
+            sr.scrollSensitivity = 40f;
+
+            LoopListView2 lv = list.AddComponent<LoopListView2>();
+            ConfigureLoopListView(lv, itemPrefab, CodexItemGap, 2);
+
+            // 左右箭头（ASCII < >，与选关界面同一理由：中文 SDF 不保证有 ◀▶ 码位）
+            CreatePanelButton(panel.transform, "LeftBtn", "<",
+                new Vector2(-860f, -10f), SelectArrowW, false, SelectArrowH, CodexArrowFontSize);
+            CreatePanelButton(panel.transform, "RightBtn", ">",
+                new Vector2(860f, -10f), SelectArrowW, false, SelectArrowH, CodexArrowFontSize);
+
+            CreateText(panel.transform, "PageText", "1 / 5",
+                new Vector2(0.5f, 0.5f), new Vector2(0f, -330f), new Vector2(600f, 44f),
+                TextAnchor.MiddleCenter, 28);
+
+            CreatePanelButton(panel.transform, "CloseBtn", "返回", new Vector2(0f, -430f), 340f, true, 84f, 32);
+
+            GameObject saved = PrefabUtility.SaveAsPrefabAsset(root, TowerCodexPath);
+            Object.DestroyImmediate(root);
+            if (saved == null)
+            {
+                report.Error("保存失败：" + TowerCodexPath);
+                return;
+            }
+            report.Ok("TowerCodexView.prefab（整页：Bg / Panel( CodexTitle / List(Viewport/Content) / LeftBtn / RightBtn / PageText / CloseBtn )）");
+        }
+
+        /// <summary>塔图鉴卡片（460×640）：图标 + 塔名 + 定位 + 四项数值 + 描述。</summary>
+        private static GameObject BuildTowerCodexItemPrefab(EditorUtil.Report report)
+        {
+            AssetDatabase.DeleteAsset(TowerCodexItemPath);   // 幂等：先删后建
+            EditorUtil.EnsureFolderOfFile(TowerCodexItemPath);
+
+            GameObject go = new GameObject("TowerCodexItem", typeof(RectTransform));
+            RectTransform rt = (RectTransform)go.transform;
+            // 横向列表统一口径：锚点/轴心 = 左侧中点（与 SelectLevelItem 同款）
+            rt.anchorMin = new Vector2(0f, 0.5f);
+            rt.anchorMax = new Vector2(0f, 0.5f);
+            rt.pivot = new Vector2(0f, 0.5f);
+            rt.anchoredPosition = Vector2.zero;
+            rt.sizeDelta = new Vector2(CodexItemW, CodexItemH);
+            go.AddComponent<LoopListViewItem2>();
+            go.AddComponent<TowerCodexItem>();
+
+            GameObject body = new GameObject("Body", typeof(RectTransform));
+            body.transform.SetParent(go.transform, false);
+            RectTransform brt = (RectTransform)body.transform;
+            brt.anchorMin = Vector2.zero;
+            brt.anchorMax = Vector2.one;
+            brt.pivot = new Vector2(0.5f, 0.5f);
+            brt.anchoredPosition = Vector2.zero;
+            brt.sizeDelta = Vector2.zero;
+            // 卡片淡化作用在 Body 上（见 TowerCodexView.UpdateItemVisuals），所以这里补一个 CanvasGroup
+            body.AddComponent<CanvasGroup>();
+            CreateImageAt(body.transform, "CardBg", new Vector2(0.5f, 0.5f), Vector2.zero,
+                new Vector2(CodexItemW, CodexItemH), "UI_Panel_Cyan", new Color(0.118f, 0.161f, 0.224f, 0.96f));
+            CreateImageAt(body.transform, "TopBar", new Vector2(0.5f, 1f), Vector2.zero,
+                new Vector2(CodexItemW, 4f), null, new Color(0.208f, 0.878f, 1f, 1f));
+            CreateImageAt(body.transform, "Icon", new Vector2(0.5f, 0.5f), new Vector2(0f, 180f),
+                new Vector2(240f, 240f), "UI_TowerIcon_Normal", new Color(0.18f, 0.29f, 0.4f, 1f), false);
+
+            CreateText(body.transform, "TypeName", "塔", new Vector2(0.5f, 0.5f), new Vector2(0f, 10f),
+                new Vector2(400f, 52f), TextAnchor.MiddleCenter, 40);
+            CreateText(body.transform, "Role", string.Empty, new Vector2(0.5f, 0.5f), new Vector2(0f, -40f),
+                new Vector2(400f, 40f), TextAnchor.MiddleCenter, 26);
+            CreateImageAt(body.transform, "Divider", new Vector2(0.5f, 0.5f), new Vector2(0f, -70f),
+                new Vector2(360f, 1f), null, new Color(0.227f, 0.290f, 0.388f, 0.3f));
+
+            CreateText(body.transform, "DpsRow", string.Empty, new Vector2(0.5f, 0.5f), new Vector2(0f, -105f),
+                new Vector2(380f, 36f), TextAnchor.MiddleCenter, 26);
+            CreateText(body.transform, "RangeRow", string.Empty, new Vector2(0.5f, 0.5f), new Vector2(0f, -143f),
+                new Vector2(380f, 36f), TextAnchor.MiddleCenter, 26);
+            CreateText(body.transform, "SpeedRow", string.Empty, new Vector2(0.5f, 0.5f), new Vector2(0f, -181f),
+                new Vector2(380f, 36f), TextAnchor.MiddleCenter, 26);
+            CreateText(body.transform, "PriceRow", string.Empty, new Vector2(0.5f, 0.5f), new Vector2(0f, -219f),
+                new Vector2(380f, 36f), TextAnchor.MiddleCenter, 26);
+            CreateText(body.transform, "DescText", string.Empty, new Vector2(0.5f, 0.5f), new Vector2(0f, -272f),
+                new Vector2(380f, 80f), TextAnchor.MiddleCenter, 24);
+
+            GameObject saved = PrefabUtility.SaveAsPrefabAsset(go, TowerCodexItemPath);
+            Object.DestroyImmediate(go);
+            if (saved == null)
+            {
+                report.Error("保存失败：" + TowerCodexItemPath);
+                return null;
+            }
+            report.Ok("TowerCodexItem.prefab（Body: CardBg / TopBar / Icon / TypeName / Role / Divider / Dps|Range|Speed|Price / DescText）");
+            return saved;
+        }
+
+        /// <summary>把生成出来的某个子节点置为初始隐藏（由 View 在运行期按状态切换）。</summary>
+        private static void SetNodeActive(Transform root, string path, bool active)
+        {
+            Transform t = root.Find(path);
+            if (t != null && t.gameObject.activeSelf != active)
+            {
+                t.gameObject.SetActive(active);
+            }
         }
 
         // ------------------------------------------------------------------

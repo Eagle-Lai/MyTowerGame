@@ -411,9 +411,26 @@ namespace FTProject
             }
         }
 
+        /// <summary>
+        /// 调试开关：勾上则恢复"点卡片直接进关"的旧行为（跳过详情弹窗）。
+        /// 调"进关本身"的问题时，中间多一层弹窗很碍事。
+        /// </summary>
+        [SerializeField] private bool skipDetail;
+
+        /// <summary>
+        /// 进入某一关。
+        /// 【UI 补全 B4 改了什么】原来这里直接进关；现在先开**关卡详情弹窗**，
+        /// 让玩家看清回合数/波次/初始资源/难度/历史最佳之后再决定 ——
+        /// 否则进关才发现不是自己想要的，只能退出来重选。
+        /// </summary>
         private void EnterLevel(int levelId)
         {
-            EventDispatcher.TriggerEvent<int>(EventName.SelectLevelRequestEvent, levelId);
+            if (skipDetail)
+            {
+                EventDispatcher.TriggerEvent<int>(EventName.SelectLevelRequestEvent, levelId);
+                return;
+            }
+            LevelDetailView.Show(levelId);
         }
 
         /// <summary>

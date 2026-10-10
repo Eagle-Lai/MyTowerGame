@@ -283,8 +283,39 @@ namespace FTProject
             return p != null ? p.stars : 0;
         }
 
+        /// <summary>
+        /// 历史**最快**通关用时（游戏内毫秒）。0 = 尚无记录（未通关 / 老存档）。
+        /// 【展示约定】调用方把 0 显示成 `--:--`，不要显示 `00:00` ——
+        /// "没有记录"和"0 秒通关"必须一眼分得开。
+        /// </summary>
+        public int GetBestTimeMs(int levelId)
+        {
+            EnsureLoaded();
+            LevelProgress p = _data.Find(levelId);
+            return p != null ? p.bestTimeMs : 0;
+        }
+
+        /// <summary>历史最好成绩（剩余生命），仅用于展示。0 = 无记录。</summary>
+        public int GetBestHpLeft(int levelId)
+        {
+            EnsureLoaded();
+            LevelProgress p = _data.Find(levelId);
+            return p != null ? p.bestHpLeft : 0;
+        }
+
         /// <summary>关卡通关结算：更新星级（只升不降）与累计次数，并立刻落库。</summary>
         public void RecordClear(int levelId, int stars, int hpLeft)
+        {
+            RecordClear(levelId, stars, hpLeft, 0);
+        }
+
+        /// <summary>
+        /// 关卡通关结算（带用时）。
+        /// 【合并语义】星级**只升不降**、剩余生命**只升不降**、用时**只降不升**（更快才算新纪录）——
+        /// 三者方向不同是刻意的：前两个"越大越好"，用时"越小越好"。
+        /// <paramref name="timeMs"/> &lt;= 0 表示本次没有计时（例如调试直接获胜），不会污染已有记录。
+        /// </summary>
+        public void RecordClear(int levelId, int stars, int hpLeft, int timeMs)
         {
             EnsureLoaded();
             LevelProgress p = _data.GetOrCreate(levelId);
@@ -296,6 +327,10 @@ namespace FTProject
             {
                 p.bestHpLeft = hpLeft;
             }
+            if (timeMs > 0 && (p.bestTimeMs <= 0 || timeMs < p.bestTimeMs))
+            {
+                p.bestTimeMs = timeMs;
+            }
             p.clearCount++;
             // 通关即视为本局结束，快照作废（否则下次进关会莫名其妙"接着上一局"）
             ClearSnapshot(false);
@@ -303,6 +338,17 @@ namespace FTProject
             PersistLevel(levelId);   // 只写这一关，而不是整表重写
             PersistSnapshot();
             if (_storage != null) _storage.Flush();
+        }
+
+        /// <summary>把毫秒格式化成 `m:ss` 或 `--:--`（无记录）。UI 与日志共用一处口径。</summary>
+        public static string FormatTime(int timeMs)
+        {
+            if (timeMs <= 0)
+            {
+                return "--:--";
+            }
+            int totalSec = timeMs / 1000;
+            return string.Format("{0}:{1:00}", totalSec / 60, totalSec % 60);
         }
 
         /// <summary>

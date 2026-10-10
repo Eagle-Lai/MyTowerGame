@@ -176,5 +176,58 @@ namespace FTProject
 
         /// <summary>倍速已变更，参数：float 新的倍率（订阅方：HudView 同步按钮文案、BaseEnemy 同步 Animator）。</summary>
         public const string GameSpeedChangedEvent = "GameSpeedChangedEvent";
+
+        // ------------------------------------------------------------------
+        // 启动链（UI 补全 A1/A2/A3）—— Splash → Loading → HotUpdate → 主菜单
+        // ------------------------------------------------------------------
+
+        /// <summary>开屏页动画播完（Launcher 据此切到 LoadingView）</summary>
+        public const string SplashFinishedEvent = "SplashFinishedEvent";
+
+        /// <summary>启动加载进度，参数：(string 阶段文案, float 0~1 进度)。
+        /// 【为什么带阶段文案】LoadingView 的 StatusText 要随阶段变（"正在初始化资源系统..." → "正在加载配置表..."），
+        /// 只给一个 0~1 数字无法表达"当前在做什么"，玩家会觉得进度条在空转。</summary>
+        public const string LoadingProgressEvent = "LoadingProgressEvent";
+
+        /// <summary>热更新阶段文案，参数：string（"正在检查更新..." / "正在下载资源..." / "已暂停" ...）。
+        /// 【为什么与进度分成两个事件】EventDispatcher 的泛型重载最多 4 个类型参数，
+        /// 而本界面需要"文案 + 文件数 + 字节数"共 5 项信息。
+        /// 拆成"文案"与"数值"两个事件，既绕开上限，也让语义更清楚（文案变化远比进度稀疏）。</summary>
+        public const string HotUpdatePhaseEvent = "HotUpdatePhaseEvent";
+
+        /// <summary>热更新进度，参数：(int 已下载文件数, int 总文件数, long 已下载字节, long 总字节)</summary>
+        public const string HotUpdateProgressEvent = "HotUpdateProgressEvent";
+
+        /// <summary>热更新失败，参数：string 失败原因（HotUpdateView 显示红字并给"重试"）</summary>
+        public const string HotUpdateFailedEvent = "HotUpdateFailedEvent";
+
+        /// <summary>热更新完成（无论是否真的更新过内容），Launcher 据此继续走配置表加载</summary>
+        public const string HotUpdateFinishedEvent = "HotUpdateFinishedEvent";
+
+        // ------------------------------------------------------------------
+        // 主菜单与图鉴（UI 补全 B1/B2/B3/B4）
+        // ------------------------------------------------------------------
+
+        /// <summary>请求打开主菜单</summary>
+        public const string OpenMainMenuRequestEvent = "OpenMainMenuRequestEvent";
+
+        /// <summary>主菜单点「开始游戏」请求进入选关</summary>
+        public const string StartGameRequestEvent = "StartGameRequestEvent";
+
+        /// <summary>请求打开图鉴，参数：bool（true=塔图鉴，false=怪物图鉴）</summary>
+        public const string OpenCodexRequestEvent = "OpenCodexRequestEvent";
+
+        /// <summary>请求打开关卡详情弹窗，参数：int 关卡 id</summary>
+        public const string OpenLevelDetailRequestEvent = "OpenLevelDetailRequestEvent";
+
+        // ------------------------------------------------------------------
+        // 出售二次确认（UI 补全 C1）
+        // ------------------------------------------------------------------
+
+        /// <summary>出售已在 SellConfirmView 里被确认，参数：BaseTower。
+        /// 【与 TowerSellRequestEvent 的区别】后者是"玩家点了出售按钮"（意图），
+        /// 本事件是"玩家在确认弹窗里点了确认"（决定）。GameFlowManager 只监听本事件真正执行出售，
+        /// 这样"取消"永远不可能误卖。</summary>
+        public const string TowerSellConfirmEvent = "TowerSellConfirmEvent";
     }
 }

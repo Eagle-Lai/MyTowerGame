@@ -122,6 +122,35 @@ namespace FTProject
             { "LevelClearView", new ResAddress(ResBundle.UiHud, "LevelClearView", "Assets/Prefabs/UI/LevelClearView.prefab") },
 
             // ------------------------------------------------------------------
+            // UI 补全（策划案 §3）：启动链 3 + 内容 3 + 弹窗 3
+            // ------------------------------------------------------------------
+            // 逻辑名一律与 prefab 名逐字相同（UIManager.Open 直接传这个字符串）。
+            // ⚠️ **SplashView / LoadingView / HotUpdateView 刻意不在这里登记**：
+            //   它们必须在 `ResLoader.Init` 之前就能显示，而 YooAsset 在 Init 完成前拒绝加载资源，
+            //   所以走的是 `Resources/BootUI/` 兜底路径（见 UIManager.Open 的说明）。
+            //   登记在此反而会误导——让人以为它们走 ui_hud 包。
+            // 卡片类资产（TowerCodexItem / MonsterCodexItem）同理**不登记**：
+            // 它们只被已登记的 View prefab 直接引用、由 LoopListView2 按 prefab 引用池化克隆，
+            // YooAsset 收集整目录树时依赖会自然进同包 —— 与 SelectLevelItem 同理。
+            { "MainMenuView",    new ResAddress(ResBundle.UiHud, "MainMenuView",    "Assets/Prefabs/UI/MainMenuView.prefab") },
+            { "TowerCodexView",  new ResAddress(ResBundle.UiHud, "TowerCodexView",  "Assets/Prefabs/UI/TowerCodexView.prefab") },
+            { "MonsterCodexView",new ResAddress(ResBundle.UiHud, "MonsterCodexView","Assets/Prefabs/UI/MonsterCodexView.prefab") },
+            { "LevelDetailView", new ResAddress(ResBundle.UiHud, "LevelDetailView", "Assets/Prefabs/UI/LevelDetailView.prefab") },
+            { "SellConfirmView", new ResAddress(ResBundle.UiHud, "SellConfirmView", "Assets/Prefabs/UI/SellConfirmView.prefab") },
+            { "ConfirmView",     new ResAddress(ResBundle.UiHud, "ConfirmView",     "Assets/Prefabs/UI/ConfirmView.prefab") },
+
+            // 塔图鉴图标（UI 补全 B2）
+            // 【为什么必须登记】图鉴卡片是**池化复用**的同一个模板，5 种塔共用一张卡，
+            // 图标只能运行时按塔型换 —— 而 UIPrefabBuilder 生成时烘 sprite 的写法
+            // （HudView 建造栏那种）只能表达"固定一张图"，救不了复用场景。
+            // 于是这里登记为运行时逻辑名，TowerCodexItem 用 ResLoader.Load<Sprite>() 取。
+            { "UI_TowerIcon_Normal", new ResAddress(ResBundle.UiHud, "UI_TowerIcon_Normal", "Assets/_UIAssets/UI/UI_TowerIcon_Normal.png") },
+            { "UI_TowerIcon_Power",  new ResAddress(ResBundle.UiHud, "UI_TowerIcon_Power",  "Assets/_UIAssets/UI/UI_TowerIcon_Power.png") },
+            { "UI_TowerIcon_Retard", new ResAddress(ResBundle.UiHud, "UI_TowerIcon_Retard", "Assets/_UIAssets/UI/UI_TowerIcon_Retard.png") },
+            { "UI_TowerIcon_Pierce", new ResAddress(ResBundle.UiHud, "UI_TowerIcon_Pierce", "Assets/_UIAssets/UI/UI_TowerIcon_Pierce.png") },
+            { "UI_TowerIcon_Laser",  new ResAddress(ResBundle.UiHud, "UI_TowerIcon_Laser",  "Assets/_UIAssets/UI/UI_TowerIcon_Laser.png") },
+
+            // ------------------------------------------------------------------
             // 字体（TextMeshPro）
             //
             // 【为什么必须登记】全工程 UI 文本统一用 TMP，其字体资产是 ui_hud 各 prefab 的

@@ -115,7 +115,28 @@ namespace FTProject
                 return null;
             }
 
-            GameObject go = ResLoader.Instance.Instantiate(logicalName, parent);
+            // 【引导期界面的兜底路径】开屏页 / 加载页必须在 ResLoader.Init **之前**就能显示 ——
+            //   而 YooAsset 在 Init 完成前拒绝加载任何资源（"尚未初始化完成，无法加载"）。
+            //   于是启动界面走 ResTable/YooAsset 是**先有鸡还是先有蛋**，必然失败。
+            //   这类"引导期界面"改放 `Assets/Resources/BootUI/` 下：
+            //     · Resources 不依赖任何资源系统初始化，Init 之前就能取到；
+            //     · `Assets/Resources` 不在 BundleCollectorSetting 的收集目录里
+            //       → 不会进任何 AB 包、也不会被热更替换（引导期界面本来就不该热更）。
+            //   资源系统一旦就绪，同一个 UIManager.Open 仍走正常链路（下面前半段）。
+            GameObject go = null;
+            ResAddress addr;
+            if (ResLoader.Instance.IsReady && ResTable.TryGet(logicalName, out addr))
+            {
+                go = ResLoader.Instance.Instantiate(logicalName, parent);
+            }
+            if (go == null)
+            {
+                go = InstantiateBootUi(logicalName, parent);
+                if (go != null)
+                {
+                    _bootOpened.Add(logicalName);
+                }
+            }
             if (go == null)
             {
                 Debug.LogError(string.Format("[UI] 界面「{0}」实例化失败", logicalName));
@@ -140,6 +161,35 @@ namespace FTProject
 
         /// <summary>界面淡入时长（秒，走 unscaled 时间 —— 暂停界面是在 timeScale=0 下打开的）</summary>
         private const float FadeInSec = 0.12f;
+
+        /// <summary>引导期界面的 Resources 相对目录（见 Open 里关于"先有鸡还是先有蛋"的说明）。</summary>
+        private const string BootUiDir = "BootUI/";
+
+        /// <summary>
+        /// 记录哪些已打开界面是"引导期从 Resources 加载"的。
+        /// 【为什么要单独记】这类实例不是 ResLoader 创建的，不能交给 ReleaseInstance
+        /// （它会去 ResTable 查地址 → 查不到就报错，而且 YooAsset 那边也没有对应句柄）。
+        /// 它们只由本类 Destroy。
+        /// </summary>
+        private readonly HashSet<string> _bootOpened = new HashSet<string>();
+
+        /// <summary>
+        /// 从 `Resources/BootUI/` 取引导期界面并实例化。取不到返回 null（由调用方报错）。
+        /// 只有 3 个界面走这里：SplashView / LoadingView / HotUpdateView。
+        /// </summary>
+        private static GameObject InstantiateBootUi(string logicalName, Transform parent)
+        {
+            GameObject prefab = Resources.Load<GameObject>(BootUiDir + logicalName);
+            if (prefab == null)
+            {
+                return null;
+            }
+            GameObject go = Object.Instantiate(prefab, parent, false);
+            go.name = logicalName;
+            Debug.Log(string.Format(
+                "[UI] 资源系统尚未就绪，界面「{0}」从 Resources/{1} 以引导期模式加载", logicalName, BootUiDir));
+            return go;
+        }
 
         /// <summary>
         /// 给新打开的界面补一个淡入（M4-3）。
@@ -207,7 +257,15 @@ namespace FTProject
                     // 而"切关"是在同一帧里 Close 旧的 + Open 新的（例如 HUD），
                     // 不先隐藏的话，同屏会短暂存在两份界面，且旧界面仍会响应事件。
                     go.SetActive(false);
-                    ResLoader.Instance.ReleaseInstance(logicalName, go);
+                    if (_bootOpened.Remove(logicalName))
+                    {
+                        // 引导期界面不是 ResLoader 创建的 → 直接 Destroy，不走 ReleaseInstance
+                        Object.Destroy(go);
+                    }
+                    else
+                    {
+                        ResLoader.Instance.ReleaseInstance(logicalName, go);
+                    }
                 }
             }
         }

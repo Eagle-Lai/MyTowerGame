@@ -122,7 +122,7 @@ namespace FTProject
             try
             {
                 List<DbRow> rows = _db.Query(
-                    "SELECT level_id, stars, best_hp_left, clear_count FROM level_progress ORDER BY level_id");
+                    "SELECT level_id, stars, best_hp_left, clear_count, best_time_ms FROM level_progress ORDER BY level_id");
                 for (int i = 0; i < rows.Count; i++)
                 {
                     DbRow r = rows[i];
@@ -131,6 +131,8 @@ namespace FTProject
                     p.stars = UnprotectInt(r.GetString("stars"), 0);
                     p.bestHpLeft = UnprotectInt(r.GetString("best_hp_left"), 0);
                     p.clearCount = UnprotectInt(r.GetString("clear_count"), 0);
+                    // 老库（v1）迁移后该列为 NULL → UnprotectInt 回落 0（= 无记录），不会报错
+                    p.bestTimeMs = UnprotectInt(r.GetString("best_time_ms"), 0);
                     // 星级非法（>3）说明密文被换过或历史脏数据 —— 夹紧而不是丢弃整条记录，
                     // 丢掉会让玩家平白少一关进度。
                     if (p.stars < 0) p.stars = 0;
@@ -159,12 +161,13 @@ namespace FTProject
                 long now = SaveSchema.Now();
                 _db.Execute(
                     "INSERT OR REPLACE INTO level_progress " +
-                    "(level_id, stars, best_hp_left, clear_count, last_play_at, updated_at) " +
-                    "VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+                    "(level_id, stars, best_hp_left, clear_count, best_time_ms, last_play_at, updated_at) " +
+                    "VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
                     progress.levelId,
                     ProtectInt(progress.stars),
                     ProtectInt(progress.bestHpLeft),
                     ProtectInt(progress.clearCount),
+                    ProtectInt(progress.bestTimeMs),
                     now,
                     now);
             }

@@ -23,7 +23,33 @@ namespace FTProject
     /// </summary>
     public class Launcher : MonoBehaviour
     {
+        /// <summary>
+        /// 启动阶段（UI 补全 §5.1）。顺序**不可颠倒**：
+        ///   ① Splash 品牌过场（纯定时，不阻塞任何加载）
+        ///   ② Loading 里做 ResLoader.Init（只有资源系统就绪后才有"版本"这个概念）
+        ///   ③ HotUpdate 版本比对 + 差异下载（必须在 Init **之后**）
+        ///   ④ 回到 Loading 加载配置表（必须在热更新**之后** —— 否则玩家会先看到旧配置构建的界面）
+        ///   ⑤ Ready：广播 ConfigLoadedEvent，GameFlowManager 开始进主菜单
+        /// </summary>
+        public enum BootPhase
+        {
+            Splash,
+            Loading,
+            HotUpdate,
+            Ready
+        }
+
+        /// <summary>当前启动阶段（只读，供日志与调试查看）</summary>
+        public BootPhase Phase { get; private set; }
+
         public static Launcher Instance { get; private set; }
+
+        /// <summary>LoadingView 的进度权重（A2 表）：资源系统占 [0, 0.3]，配置表占 [0.3, 0.9]，收尾 [0.9, 1]。</summary>
+        private const float LoadingResWeight = 0.3f;
+        private const float LoadingConfigEnd = 0.9f;
+
+        /// <summary>热更新完成后的停留时长（让"更新完成"至少被看见，而不是一闪而过）。</summary>
+        private const float HotUpdateDoneHoldSec = 0.5f;
 
         /// <summary>
         /// 管理器注册表。**顺序有意义**：
@@ -96,29 +122,215 @@ namespace FTProject
             BootResAndConfig();
         }
 
+        /// <summary>
+        /// 启动链（UI 补全 §5.1 重写）。
+        ///
+        /// 【旧实现的两个问题】
+        ///   ① 全程黑屏静默：ResLoader.Init → Configs.LoadAsync 是纯嵌套回调，没有任何界面；
+        ///   ② 没有热更新：发版后无法更新资源，只能整包重发。
+        ///
+        /// 【进度口径】LoadingView 只显示 [0,1] 的**总进度**，各阶段权重见常量：
+        ///   资源系统 → 0.30；配置表 → 0.90；收尾 → 1.00；热更新有自己的界面与进度条，不占本进度。
+        /// </summary>
         private void BootResAndConfig()
         {
-            // ① 资源加载器
-            ResLoader.Instance.Init(() =>
-            {
-                if (!ResLoader.Instance.IsReady)
-                {
-                    Debug.LogError("[Launcher] 资源加载器初始化失败，启动中止。");
-                    EventDispatcher.TriggerEvent<bool>(EventName.ConfigLoadedEvent, false);
-                    return;
-                }
+            Phase = BootPhase.Splash;
 
-                // ② 配置表
-                Configs.LoadAsync(ok =>
+            SplashView splash = UIManager.Instance.Open<SplashView>("SplashView", UILayout.NormalPanel);
+            if (splash == null)
+            {
+                // 【降级】SplashView.prefab 还没生成时不阻塞启动 —— 直接进资源初始化。
+                // 这条路径在"先写代码后跑生成器"的中间态下一定会走到，必须能跑通。
+                Debug.LogWarning("[Launcher] SplashView 打开失败（prefab 可能还没生成），跳过开屏页");
+                BeginLoadingRes();
+                return;
+            }
+
+            EventDispatcher.AddEventListener(EventName.SplashFinishedEvent, OnSplashFinished);
+        }
+
+        private void OnSplashFinished()
+        {
+            EventDispatcher.RemoveEventListener(EventName.SplashFinishedEvent, OnSplashFinished);
+            UIManager.Instance.Close("SplashView");
+            BeginLoadingRes();
+        }
+
+        /// <summary>阶段②：资源系统初始化（LoadingView 0 → 0.3）。</summary>
+        private void BeginLoadingRes()
+        {
+            Phase = BootPhase.Loading;
+            LoadingView loading = UIManager.Instance.Open<LoadingView>("LoadingView", UILayout.NormalPanel);
+            if (loading == null)
+            {
+                Debug.LogWarning("[Launcher] LoadingView 打开失败（prefab 可能还没生成），加载界面不可见");
+            }
+            PublishLoading("正在初始化资源系统...", 0f);
+
+            ResLoader.Instance.Init(
+                progress => PublishLoading("正在初始化资源系统...", progress * LoadingResWeight),
+                () =>
                 {
-                    // ③ 配置就绪后，CombatSystem 要按最终 cellSize 重建空间哈希
+                    if (!ResLoader.Instance.IsReady)
+                    {
+                        Debug.LogError("[Launcher] 资源加载器初始化失败，启动中止。");
+                        PublishLoadingFailed("资源系统初始化失败，请查看 Console");
+                        EventDispatcher.TriggerEvent<bool>(EventName.ConfigLoadedEvent, false);
+                        return;
+                    }
+
+                    PublishLoading("正在加载配置表...", LoadingResWeight);
+                    BeginHotUpdate();
+                });
+        }
+
+        /// <summary>统一发布加载进度（LoadingView 监听此事件，Launcher 不直接持有界面引用）。</summary>
+        private static void PublishLoading(string phase, float progress)
+        {
+            EventDispatcher.TriggerEvent<string, float>(EventName.LoadingProgressEvent, phase, progress);
+        }
+
+        /// <summary>发布"加载失败"（LoadingView 会把状态文字转红，并把原因显示出来）。</summary>
+        private static void PublishLoadingFailed(string reason)
+        {
+            EventDispatcher.TriggerEvent<string, float>(EventName.LoadingProgressEvent, reason, -1f);
+        }
+
+        /// <summary>阶段③：热更新（独立界面与进度条）。无需更新时立刻回到 Loading。</summary>
+        private void BeginHotUpdate()
+        {
+            IHotUpdateLoader hot = ResLoader.HotUpdate;
+            if (hot == null)
+            {
+                // 兜底：实现没接 IHotUpdateLoader 时视为"无需更新"
+                BeginLoadingConfig();
+                return;
+            }
+
+            Phase = BootPhase.HotUpdate;
+            HotUpdateView hu = UIManager.Instance.Open<HotUpdateView>("HotUpdateView", UILayout.NormalPanel);
+            if (hu == null)
+            {
+                // 【降级】没有热更新界面时不能把玩家卡在加载页：
+                // 照常跑热更新逻辑（日志可查），只是没有可视化。
+                Debug.LogWarning("[Launcher] HotUpdateView 打开失败（prefab 可能还没生成），热更新将无界面执行");
+            }
+
+            // 主加载界面让位给热更新界面（热更新有自己的进度条）
+            UIManager.Instance.Close("LoadingView");
+
+            hot.StartCheckUpdate(
+                PublishHotUpdatePhase,
+                (cur, total) => EventDispatcher.TriggerEvent<int, int, long, long>(
+                    EventName.HotUpdateProgressEvent, cur, total, 0L, 0L),
+                (bytes, totalBytes) => EventDispatcher.TriggerEvent<int, int, long, long>(
+                    EventName.HotUpdateProgressEvent, -1, -1, bytes, totalBytes),
+                OnHotUpdateError,
+                OnHotUpdateDone);
+        }
+
+        /// <summary>发布热更新阶段文案（与进度分开：EventDispatcher 最多 4 个泛型参数）。</summary>
+        private static void PublishHotUpdatePhase(string phase)
+        {
+            EventDispatcher.TriggerEvent<string>(EventName.HotUpdatePhaseEvent, phase);
+        }
+
+        private void OnHotUpdateError(string reason)
+        {
+            Debug.LogError("[Launcher] 热更新失败：" + reason);
+            EventDispatcher.TriggerEvent<string>(EventName.HotUpdateFailedEvent, reason);
+
+            // 【降级】没有热更新界面（prefab 还没生成）时没人接这个失败事件，
+            // 玩家会永远停在"检查更新"——先按"无更新"继续，让人能玩到旧版本。
+            if (!UIManager.Instance.IsOpen("HotUpdateView"))
+            {
+                Debug.LogWarning("[Launcher] 热更新界面不存在，按旧版本继续启动");
+                BeginLoadingConfig();
+            }
+        }
+
+        private void OnHotUpdateDone(bool updated)
+        {
+            EventDispatcher.TriggerEvent(EventName.HotUpdateFinishedEvent);
+            StartCoroutine(FinishHotUpdate());
+        }
+
+        private System.Collections.IEnumerator FinishHotUpdate()
+        {
+            // 让"更新完成"至少显示一小会儿，否则玩家只看到进度条一闪就换了界面
+            yield return new WaitForSecondsRealtime(HotUpdateDoneHoldSec);
+            BeginLoadingConfig();
+        }
+
+        /// <summary>
+        /// 「重试」入口（HotUpdateView 的 RetryBtn 调它）。
+        /// 重新跑一遍热更新，而不是重启整个启动链 —— 资源系统已经初始化过了，
+        /// 重跑 Init 反而会踩"重复初始化"的坑。
+        /// </summary>
+        public void RetryHotUpdate()
+        {
+            if (Phase != BootPhase.HotUpdate)
+            {
+                return;
+            }
+            BeginHotUpdate();
+        }
+
+        /// <summary>阶段④：配置表加载（LoadingView 0.3 → 0.9），随后收尾到 1.0。</summary>
+        private void BeginLoadingConfig()
+        {
+            Phase = BootPhase.Loading;
+            UIManager.Instance.Close("HotUpdateView");
+
+            LoadingView loading = UIManager.Instance.Open<LoadingView>("LoadingView", UILayout.NormalPanel);
+            if (loading == null)
+            {
+                Debug.LogWarning("[Launcher] LoadingView 打开失败（prefab 可能还没生成），配置加载将无界面执行");
+            }
+            PublishLoading("正在加载配置表...", LoadingResWeight);
+
+            Configs.LoadAsync(
+                (done, total) =>
+                {
+                    if (total <= 0)
+                    {
+                        return;
+                    }
+                    float ratio = done / (float)total;
+                    PublishLoading("正在加载配置表...",
+                        LoadingResWeight + (LoadingConfigEnd - LoadingResWeight) * ratio);
+                },
+                ok =>
+                {
+                    PublishLoading("正在准备关卡数据...", LoadingConfigEnd);
+
+                    // 配置就绪后，CombatSystem 要按最终 cellSize 重建空间哈希
                     if (ok && CombatSystem.Instance != null)
                     {
                         CombatSystem.Instance.RebuildGridFromConfig();
                     }
-                    EventDispatcher.TriggerEvent<bool>(EventName.ConfigLoadedEvent, ok);
+
+                    if (!ok)
+                    {
+                        PublishLoadingFailed("配置表加载失败，请查看 Console");
+                    }
+                    else
+                    {
+                        PublishLoading("准备完成", 1f);
+                    }
+
+                    Phase = BootPhase.Ready;
+                    StartCoroutine(FinishBoot(ok));
                 });
-            });
+        }
+
+        private System.Collections.IEnumerator FinishBoot(bool ok)
+        {
+            // 让"准备完成"至少显示一帧，否则 100% 会一闪而过
+            yield return new WaitForSecondsRealtime(0.25f);
+            UIManager.Instance.Close("LoadingView");
+            // GameFlowManager 收到后进主菜单（见 OnConfigLoaded）
+            EventDispatcher.TriggerEvent<bool>(EventName.ConfigLoadedEvent, ok);
         }
 
         private void Update()

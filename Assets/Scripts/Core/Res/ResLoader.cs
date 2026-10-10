@@ -36,6 +36,17 @@ namespace FTProject
             get { return _instance; }
         }
 
+        /// <summary>
+        /// 热更新能力入口（UI 补全 A3）。
+        /// 【为什么可能为 null】三套实现都实现了 <see cref="IHotUpdateLoader"/>，
+        /// 所以正常情况下不为 null；用 `as` + 判空是为了给"将来新增第四套实现却忘了实现本接口"
+        /// 留一条降级通路 —— 界面拿到 null 就当"无需更新"直接往下走，而不是空引用崩溃。
+        /// </summary>
+        public static IHotUpdateLoader HotUpdate
+        {
+            get { return _instance as IHotUpdateLoader; }
+        }
+
         /// <summary>当前使用的实现名（日志与 UI 自检用）</summary>
         public static string ImplName
         {

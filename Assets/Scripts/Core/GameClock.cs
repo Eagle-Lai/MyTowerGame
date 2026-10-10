@@ -41,6 +41,10 @@ namespace FTProject
         private static float _cachedDelta;
         private static int _cachedFrame = -1;
 
+        // 关卡计时（UI 补全 B4「最佳用时」的数据源）
+        private static float _levelElapsed;
+        private static bool _levelTimerRunning;
+
         /// <summary>
         /// 当前模拟速度倍率（默认 1）。
         /// 设 0 或负数会静默回落到 1 —— 0 会让整个世界无声冻结，是极难排查的状态，
@@ -64,9 +68,41 @@ namespace FTProject
                 {
                     _cachedFrame = Time.frameCount;
                     _cachedDelta = Time.deltaTime * _speed;
+
+                    // 关卡计时就挂在"每帧只算一次"的这个点上：
+                    //   - 用的是模拟步长（含倍速），所以记录的是**游戏内时间**而不是墙钟时间，
+                    //     跨倍速/跨设备性能可比，作为"最佳记录"才公平；
+                    //   - 暂停时 Time.timeScale=0 → deltaTime 为 0 → 计时自然冻结（挂机不会刷记录）；
+                    //   - 不额外开 Update，零调度开销，也不引入执行顺序依赖。
+                    if (_levelTimerRunning)
+                    {
+                        _levelElapsed += _cachedDelta;
+                    }
                 }
                 return _cachedDelta;
             }
+        }
+
+        /// <summary>
+        /// 本关已进行的**游戏内时间**（秒）。进关时归零，见 <see cref="ResetLevelTimer"/>。
+        /// 【语义】不是墙钟时间：×3 倍速下 1 秒墙钟 = 3 秒计时。
+        /// </summary>
+        public static float LevelElapsedSec
+        {
+            get { return _levelElapsed; }
+        }
+
+        /// <summary>开始/重开一关：归零并启动计时（GameFlowManager.InitLevel 调用）。</summary>
+        public static void ResetLevelTimer()
+        {
+            _levelElapsed = 0f;
+            _levelTimerRunning = true;
+        }
+
+        /// <summary>停止计时（结算/退出对局时调用；停止后 LevelElapsedSec 保留最后值供结算读取）。</summary>
+        public static void StopLevelTimer()
+        {
+            _levelTimerRunning = false;
         }
 
         /// <summary>显式刷新本帧缓存值（调用时机不敏感，见类注释）。</summary>

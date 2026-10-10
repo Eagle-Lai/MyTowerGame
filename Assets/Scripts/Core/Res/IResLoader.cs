@@ -23,6 +23,15 @@ namespace FTProject
         /// </summary>
         void Init(Action onDone);
 
+        /// <summary>
+        /// 带进度的初始化（UI 补全 A2：LoadingView 的进度条数据源）。
+        /// <paramref name="onProgress"/> 收 0~1 的**归一化**进度，实现方保证**单调不减**；
+        /// 允许实现方只在少数几个离散点回报（例如每个包裹一次），界面侧负责补间。
+        /// 【为什么不改旧签名】三套实现 + 既有调用方都在用 <see cref="Init(Action)"/>，
+        /// 改签名会一次性波及全部；加重载则旧路径零成本保留。
+        /// </summary>
+        void Init(Action<float> onProgress, Action onDone);
+
         /// <summary>同步加载单个资源（返回 null 表示加载失败，已打印错误）</summary>
         T Load<T>(string logicalName) where T : UnityEngine.Object;
 
@@ -70,6 +79,12 @@ namespace FTProject
         /// 与 ReleaseBundle 配对使用。
         /// </summary>
         void Preload(string[] logicalNames, Action onDone);
+
+        /// <summary>
+        /// 带进度的预加载（按"已处理逻辑名个数 / 总数"回报 0~1）。
+        /// 与 <see cref="Init(Action, Action)"/> 同理：只加重载，不动旧签名。
+        /// </summary>
+        void Preload(string[] logicalNames, Action<float> onProgress, Action onDone);
 
         /// <summary>诊断信息（打印当前已加载的包与引用计数）</summary>
         string DumpDebugInfo();

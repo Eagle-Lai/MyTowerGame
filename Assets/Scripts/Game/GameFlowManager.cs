@@ -96,6 +96,8 @@ namespace FTProject
             EventDispatcher.AddEventListener<BaseTower>(EventName.TowerSelectedEvent, OnTowerSelected);
             EventDispatcher.AddEventListener<BaseTower>(EventName.TowerUpgradeRequestEvent, OnTowerUpgradeRequest);
             EventDispatcher.AddEventListener<BaseTower>(EventName.TowerSellRequestEvent, OnTowerSellRequest);
+            // UI 补全 C1：出售必须经确认弹窗后才真正执行（只监听"确认"事件）
+            EventDispatcher.AddEventListener<BaseTower>(EventName.TowerSellConfirmEvent, OnTowerSellConfirm);
             // M3：关卡选择 / 暂停 / 设置
             EventDispatcher.AddEventListener<int>(EventName.SelectLevelRequestEvent, OnSelectLevelRequest);
             EventDispatcher.AddEventListener(EventName.CloseSelectRequestEvent, OnCloseSelectRequest);
@@ -107,6 +109,9 @@ namespace FTProject
             EventDispatcher.AddEventListener(EventName.CloseSettingsRequestEvent, OnCloseSettingsRequest);
             // P2b：倍速请求（HudView 发，这里校验后再写 GameClock）
             EventDispatcher.AddEventListener<float>(EventName.GameSpeedChangeRequestEvent, OnGameSpeedChangeRequest);
+            // UI 补全 B1：主菜单入口（"开始游戏"+"图鉴"）
+            EventDispatcher.AddEventListener(EventName.StartGameRequestEvent, OnStartGameRequest);
+            EventDispatcher.AddEventListener<bool>(EventName.OpenCodexRequestEvent, OnOpenCodexRequest);
         }
 
         private void OnDisable()
@@ -126,6 +131,9 @@ namespace FTProject
             EventDispatcher.RemoveEventListener(EventName.OpenSettingsRequestEvent, OnOpenSettingsRequest);
             EventDispatcher.RemoveEventListener(EventName.CloseSettingsRequestEvent, OnCloseSettingsRequest);
             EventDispatcher.RemoveEventListener<float>(EventName.GameSpeedChangeRequestEvent, OnGameSpeedChangeRequest);
+            EventDispatcher.RemoveEventListener<BaseTower>(EventName.TowerSellConfirmEvent, OnTowerSellConfirm);
+            EventDispatcher.RemoveEventListener(EventName.StartGameRequestEvent, OnStartGameRequest);
+            EventDispatcher.RemoveEventListener<bool>(EventName.OpenCodexRequestEvent, OnOpenCodexRequest);
         }
 
         private void OnDestroy()
@@ -155,6 +163,21 @@ namespace FTProject
                 return;
             }
 
+            // UI 补全 B1：先给玩家一个入口页，而不是直接把他丢在选关页上。
+            // 主菜单缺 prefab 时降级为原来的"直接进选关"，不让启动卡住。
+            MainMenuView menu = UIManager.Instance.Open<MainMenuView>("MainMenuView", UILayout.NormalPanel);
+            if (menu != null)
+            {
+                return;
+            }
+
+            Debug.LogWarning("[Flow] MainMenuView 打开失败（prefab 可能还没生成），降级为直接进选关");
+            OpenSelectOrFirstLevel();
+        }
+
+        /// <summary>打开选关界面；缺 prefab 时降级直接进第一关（原逻辑，抽出来复用）。</summary>
+        private void OpenSelectOrFirstLevel()
+        {
             SelectView sv = OpenSelect();
             if (sv == null)
             {
@@ -162,6 +185,36 @@ namespace FTProject
                 // 直接进第一关，玩法照常，只是没有选关界面。
                 Debug.LogWarning("[Flow] SelectView 打开失败（prefab 可能还没生成），降级为直接进入第一关");
                 InitLevel(Configs.GetFirstLevelId());
+            }
+        }
+
+        /// <summary>主菜单点「开始游戏」：关掉主菜单，进选关。</summary>
+        private void OnStartGameRequest()
+        {
+            UIManager.Instance.Close("MainMenuView");
+            OpenSelectOrFirstLevel();
+        }
+
+        /// <summary>
+        /// 主菜单点图鉴。参数 true = 塔图鉴，false = 怪物图鉴。
+        /// 【为什么先关主菜单】两个图鉴都是**整页**界面，整页界面叠在主菜单上会让
+        /// "返回"到底回到哪一层变得含糊；先关再开，"返回"永远回主菜单。
+        /// </summary>
+        private void OnOpenCodexRequest(bool isTower)
+        {
+            UIManager.Instance.Close("MainMenuView");
+            if (!isTower)
+            {
+                // 怪物图鉴（B3）尚未实现：明确提示，不静默失败
+                EventDispatcher.TriggerEvent<string>(EventName.ShowTipEvent, "怪物图鉴：界面生成中");
+                UIManager.Instance.Open<MainMenuView>("MainMenuView", UILayout.NormalPanel);
+                return;
+            }
+            TowerCodexView view = UIManager.Instance.Open<TowerCodexView>("TowerCodexView", UILayout.NormalPanel);
+            if (view == null)
+            {
+                Debug.LogWarning("[Flow] TowerCodexView 打开失败（prefab 可能还没生成），回主菜单");
+                UIManager.Instance.Open<MainMenuView>("MainMenuView", UILayout.NormalPanel);
             }
         }
 
@@ -191,6 +244,11 @@ namespace FTProject
                 // 只是告警：cells 行长度不足时 GetCell 会按空地兜底，不至于崩
                 Debug.LogError(string.Format("[Flow] 棋盘配置 id={0} 校验未通过：{1}", Map.Id, err));
             }
+
+            // 关卡计时起点（UI 补全 B4「最佳用时」）。
+            // 【为什么放在这里而不是方法最开头】上面的关卡/棋盘校验失败会提前 return，
+            // 那次不算"进了一关"；放在校验之后，计时只在真正开始建关时启动。
+            GameClock.ResetLevelTimer();
 
             // 关卡配置确认可用后才切战斗 BGM。
             // 【为什么放在校验之后】配置不完整会在上面提前 return，那时不该把音乐换成战斗曲。
@@ -515,7 +573,12 @@ namespace FTProject
                 //   先写再读就只能拿到合并后的最好成绩，界面便无法区分
                 //   "本次打了 2 星"与"历史上最好 3 星"，"新纪录"也就无从判断。
                 int previousBest = SaveManager.Instance.GetStars(Level.Id);
-                SaveManager.Instance.RecordClear(Level.Id, stars, pd.Hp);
+                // 用时记录（UI 补全 B4「最佳用时」）：从 GameClock 取本局**游戏内**用时。
+                // 【为什么先 StopLevelTimer 再取】停止后 LevelElapsedSec 保留最后值，
+                // 且避免结算期间（玩家停在弹窗上）还在悄悄累加。
+                GameClock.StopLevelTimer();
+                int clearTimeMs = Mathf.Max(0, Mathf.RoundToInt(GameClock.LevelElapsedSec * 1000f));
+                SaveManager.Instance.RecordClear(Level.Id, stars, pd.Hp, clearTimeMs);
 
                 // 成绩先攒着，由 OnGameOver 统一弹结算界面（胜负共用同一条路径）
                 _pendingResult = BuildClearInfo(true, stars, previousBest);
@@ -597,6 +660,14 @@ namespace FTProject
             Debug.Log(string.Format("[Flow] 本局结束：{0}\n{1}",
                 victory ? "胜利" : "失败", PlayerDataManager.Instance.DumpDebugInfo()));
             Tips(victory ? "恭喜通关！" : "防御失败……");
+
+            // 屏幕震动（UI 补全 C3）：只有"失败"才震，且给最大的系数 1.5 ——
+            // 生命归零是本局最重的一次负面事件；胜利时抖一下反而像出错。
+            if (!victory && CameraController.Instance != null && Configs.Global != null)
+            {
+                CameraController.Instance.Shake(
+                    Configs.Global.ShakeAmplitude * 1.5f, Configs.Global.ShakeDurationSec);
+            }
 
             ShowClearPopup(victory);
         }
@@ -813,6 +884,10 @@ namespace FTProject
             _autoNextTimer = 0f;
             Time.timeScale = 1f;
 
+            // 关卡计时停止（UI 补全 B4）。放在这里而不是各出口分别调：
+            // TeardownLevel 是唯一的拆卸入口，所有离开对局的路径都会经过它。
+            GameClock.StopLevelTimer();
+
             // ① 玩家操作态
             if (TowerPlacement.Instance != null)
             {
@@ -867,7 +942,25 @@ namespace FTProject
             UIManager.Instance.Close(SelectView.LogicalName);
             // 开新局 → 旧快照作废，否则下次进关会莫名其妙"接着上一局"
             SaveManager.Instance.ClearSnapshot(true);
-            InitLevel(levelId);
+            BeginLevelWithMask(levelId);
+        }
+
+        /// <summary>
+        /// 带遮罩的进关（UI 补全 C4）。
+        /// 【为什么必须"延迟一帧"】`InitLevel` 全程同步 —— 同帧里 Show 完立刻 Hide，
+        /// 遮罩一帧都不会被渲染，等于没做。这里先让遮罩拿到一帧，再干重活。
+        /// </summary>
+        private void BeginLevelWithMask(int levelId)
+        {
+            LevelLoadingMask.Show(string.Format("正在进入第 {0} 关...", levelId));
+            StartCoroutine(InitLevelDeferred(levelId));
+        }
+
+        private System.Collections.IEnumerator InitLevelDeferred(int levelId)
+        {
+            yield return null;          // 让遮罩先渲染一帧
+            InitLevel(levelId);         // 同步重建（棋盘/路径/实体/界面）
+            LevelLoadingMask.Hide();    // 就绪后淡出（unscaled 时间，约 0.18s）
         }
 
         public void RestartLevel()
@@ -1008,7 +1101,18 @@ namespace FTProject
 
         private void OnTowerSellRequest(BaseTower tower)
         {
-            // 二次确认由面板负责（美术补齐后加）；这里直接执行出售
+            // UI 补全 C1：这里**不再直接卖**，改为弹确认窗。
+            // 真正执行在 OnTowerSellConfirm（只由 SellConfirmView 的"确认出售"触发）。
+            SellConfirmView.Show(tower);
+        }
+
+        /// <summary>玩家在出售确认窗里点了"确认出售"——这才是真正执行出售的唯一入口。</summary>
+        private void OnTowerSellConfirm(BaseTower tower)
+        {
+            if (tower == null)
+            {
+                return;
+            }
             TowerManager.Instance.Sell(tower);
         }
 

@@ -456,6 +456,16 @@ namespace FTProject
         {
             _recoilTimer = RecoilDurationSec;   // M4-3：开火即后坐，回位在 TickRecoil 里推进
 
+            // 屏幕震动（UI 补全 C3）：满级塔开火给一点"重火力"的手感。
+            // 系数 0.15 —— 满级塔攻速不低，震感必须轻到"感觉得到但不烦人"。
+            // 【为什么放在 Fire 而不是命中点】Fire 只在"真的打到目标"时被调用
+            // （无目标绝不会进来，见下面的不变量），所以这里等价于"命中"。
+            if (Config.Level >= 2 && CameraController.Instance != null && Configs.Global != null)
+            {
+                CameraController.Instance.Shake(
+                    Configs.Global.ShakeAmplitude * 0.15f, Configs.Global.ShakeDurationSec);
+            }
+
             // ---- 激光：瞬发命中（hitscan），不生成弹体 ----
             // 【为什么不做成"速度极高的子弹"】那会引入高速穿透漏判
             // （BulletConfig.IsSpeedSafeAtFps 就是为这个坑准备的自检），

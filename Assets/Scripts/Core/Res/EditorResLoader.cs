@@ -14,7 +14,7 @@ namespace FTProject
     ///
     /// 【时序约定】LoadAsync 也延迟一帧回调，与 BundleResLoader 行为一致。
     /// </summary>
-    public class EditorResLoader : IResLoader
+    public class EditorResLoader : IResLoader, IHotUpdateLoader
     {
         private bool _ready;
 
@@ -25,9 +25,24 @@ namespace FTProject
 
         public void Init(Action onDone)
         {
+            Init(null, onDone);
+        }
+
+        public void Init(Action<float> onProgress, Action onDone)
+        {
+            // 编辑器直读模式没有任何"打包清单/依赖"要加载，初始化是**瞬时**的 ——
+            // 如实回报 0 → 1，而不是编造一段假进度（假进度在真机上会露出马脚）。
+            if (onProgress != null)
+            {
+                onProgress(0f);
+            }
             _ready = true;
             Debug.Log("[Res] 使用编辑器直读模式（EditorResLoader）。如需验证真 AB 链路，" +
                       "请在 Player Settings 的 Scripting Define Symbols 中加入 FORCE_AB。");
+            if (onProgress != null)
+            {
+                onProgress(1f);
+            }
             ResLoaderRunner.NextFrame(onDone);
         }
 
@@ -142,6 +157,11 @@ namespace FTProject
 
         public void Preload(string[] logicalNames, Action onDone)
         {
+            Preload(logicalNames, null, onDone);
+        }
+
+        public void Preload(string[] logicalNames, Action<float> onProgress, Action onDone)
+        {
             if (logicalNames != null)
             {
                 StringBuilder missing = new StringBuilder();
@@ -153,14 +173,26 @@ namespace FTProject
                     if (!addr.IsValid)
                     {
                         missing.Append("\n  · 未登记：" + name);
+                        if (onProgress != null)
+                        {
+                            onProgress((i + 1) / (float)logicalNames.Length);
+                        }
                         continue;
                     }
                     if (AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(addr.EditorPath) == null)
                     {
                         missing.Append("\n  · 文件不存在：" + name + "  →  " + addr.EditorPath);
+                        if (onProgress != null)
+                        {
+                            onProgress((i + 1) / (float)logicalNames.Length);
+                        }
                         continue;
                     }
                     okCount++;
+                    if (onProgress != null)
+                    {
+                        onProgress((i + 1) / (float)logicalNames.Length);
+                    }
                 }
 
                 if (missing.Length > 0)
@@ -174,6 +206,11 @@ namespace FTProject
                     Debug.Log(string.Format("[Res] 预加载自检通过，共 {0} 个资源全部就绪。", okCount));
                 }
             }
+            // 空清单/全部跳过时上面循环一次都没回报，这里兜底到 100%（幂等，不违反单调）
+            if (onProgress != null)
+            {
+                onProgress(1f);
+            }
             ResLoaderRunner.NextFrame(onDone);
         }
 
@@ -182,6 +219,44 @@ namespace FTProject
             return string.Format("[Res] EditorResLoader：共登记 {0} 条资源地址（编辑器直读，无 AB 加载）。",
                 CountKeys());
         }
+
+        // ------------------------------------------------------------------
+        // 热更新（IHotUpdateLoader）—— 编辑器直读没有远端概念
+        // ------------------------------------------------------------------
+
+        /// <summary>
+        /// 编辑器直读模式没有"远端版本/差异下载"，直接判定为"无需更新"。
+        /// 【为什么也要实现】不实现的话 UI 侧必须写 `#if USE_YOOASSET`，
+        /// 一旦漏写就是"编辑器能跑、打包编译不过"。
+        /// </summary>
+        public void StartCheckUpdate(
+            Action<string> onPhase,
+            Action<int, int> onProgress,
+            Action<long, long> onBytes,
+            Action<string> onError,
+            Action<bool> onDone)
+        {
+            Debug.Log("[Res] EditorResLoader 无热更新能力（编辑器直读），跳过资源更新检查。");
+            if (onPhase != null) onPhase("编辑器模式：无需更新资源");
+            ResLoaderRunner.NextFrame(() =>
+            {
+                if (onDone != null) onDone(false);
+            });
+        }
+
+        public void PauseDownload()
+        {
+            // 无下载可暂停
+        }
+
+        public void ResumeDownload()
+        {
+            // 无下载可继续
+        }
+
+        public bool IsDownloading { get { return false; } }
+
+        public bool IsPaused { get { return false; } }
 
         // ------------------------------------------------------------------
         // 工具

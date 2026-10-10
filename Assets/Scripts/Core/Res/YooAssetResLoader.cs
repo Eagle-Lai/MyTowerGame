@@ -26,7 +26,7 @@ namespace FTProject
     ///   本类把「逻辑名 → ResTable 地址 → YooAsset 定位地址」这一层翻译掉，
     ///   所以换用 YooAsset 不需要改任何业务代码与配置表。
     /// </summary>
-    public class YooAssetResLoader : IResLoader
+    public class YooAssetResLoader : IResLoader, IHotUpdateLoader
     {
         /// <summary>YooAsset 资源包裹名（对应 Bundle Collector 里创建的包裹）</summary>
         public const string PackageName = "FreeTower";
@@ -45,6 +45,15 @@ namespace FTProject
 
         private ResourcePackage _package;
         private bool _ready;
+
+        /// <summary>
+        /// 初始化期间的进度回调（UI 补全 A2）。协程里多个出口都要结束，
+        /// 用字段而不是层层传参：否则每个 `FinishInit` 调用点都得改签名，漏一个就"进度卡在 40%"。
+        /// </summary>
+        private Action<float> _initProgress;
+
+        /// <summary>热更新下载器的暂停/续传入口（UI 补全 A3）。null = 当前没有进行中的下载。</summary>
+        private ResourceDownloaderOperation _downloader;
 
         /// <summary>包裹初始化 / 版本请求 / 清单加载的等待上限（秒）。
         /// 超时明确报错，而不是让它静默挂死 —— 挂死的表现是"启动卡住且看不到原因"。</summary>
@@ -74,14 +83,23 @@ namespace FTProject
 
         public void Init(Action onDone)
         {
+            Init(null, onDone);
+        }
+
+        public void Init(Action<float> onProgress, Action onDone)
+        {
             if (_ready)
             {
+                if (onProgress != null) onProgress(1f);
                 if (onDone != null)
                 {
                     onDone();
                 }
                 return;
             }
+
+            _initProgress = onProgress;
+            if (onProgress != null) onProgress(0f);
 
             if (Application.isPlaying)
             {
@@ -96,6 +114,15 @@ namespace FTProject
             if (onDone != null)
             {
                 onDone();
+            }
+        }
+
+        /// <summary>初始化进度回报（三处阶段边界 + 收尾）。回调为空时零开销。</summary>
+        private void ReportInitProgress(float value)
+        {
+            if (_initProgress != null)
+            {
+                _initProgress(value);
             }
         }
 
@@ -158,6 +185,9 @@ namespace FTProject
                 yield break;
             }
 
+            // ① 包裹初始化完成 = 40%（A2 进度条）：后面还有"请求版本 / 加载清单"两段
+            ReportInitProgress(0.4f);
+
             // ------------------------------------------------------------------
             // ② 请求包裹版本。版本是"加载清单"的必需入参。
             // ------------------------------------------------------------------
@@ -183,6 +213,9 @@ namespace FTProject
             }
 
             string version = versionOp.PackageVersion;
+
+            // ② 版本就绪 = 70%
+            ReportInitProgress(0.7f);
 
             // ------------------------------------------------------------------
             // ③ 按版本加载清单 —— **这一步才会真正 SetActiveManifest**。
@@ -213,8 +246,12 @@ namespace FTProject
             FinishInit(onDone);
         }
 
-        private static void FinishInit(Action onDone)
+        private void FinishInit(Action onDone)
         {
+            // 无论成功还是失败都推到 100% —— 失败时 Launcher 会立刻中止并用错误文案覆盖进度条，
+            // 若进度条停在半路，"卡住"和"失败"在界面上分不出来。
+            ReportInitProgress(1f);
+            _initProgress = null;
             if (onDone != null)
             {
                 onDone();
@@ -933,10 +970,15 @@ namespace FTProject
 
         public void Preload(string[] logicalNames, Action onDone)
         {
-            ResLoaderRunner.Start(PreloadCo(logicalNames, onDone));
+            Preload(logicalNames, null, onDone);
         }
 
-        private IEnumerator PreloadCo(string[] logicalNames, Action onDone)
+        public void Preload(string[] logicalNames, Action<float> onProgress, Action onDone)
+        {
+            ResLoaderRunner.Start(PreloadCo(logicalNames, onProgress, onDone));
+        }
+
+        private IEnumerator PreloadCo(string[] logicalNames, Action<float> onProgress, Action onDone)
         {
             if (logicalNames != null && logicalNames.Length > 0)
             {
@@ -974,11 +1016,13 @@ namespace FTProject
                     if (result.Ok == false)
                     {
                         missing.Append("\n  · " + name);
+                        if (onProgress != null) onProgress((i + 1) / (float)logicalNames.Length);
                         continue;
                     }
                     if (result.FromCache)
                     {
                         okCount++;
+                        if (onProgress != null) onProgress((i + 1) / (float)logicalNames.Length);
                         continue;
                     }
 
@@ -987,6 +1031,7 @@ namespace FTProject
                     if (handle == null)
                     {
                         missing.Append("\n  · " + name + "  →  " + startError);
+                        if (onProgress != null) onProgress((i + 1) / (float)logicalNames.Length);
                         continue;
                     }
 
@@ -1002,11 +1047,13 @@ namespace FTProject
                         {
                             handle.Release();
                         }
+                        if (onProgress != null) onProgress((i + 1) / (float)logicalNames.Length);
                         continue;
                     }
 
                     _handles[name] = handle;
                     okCount++;
+                    if (onProgress != null) onProgress((i + 1) / (float)logicalNames.Length);
                 }
 
                 if (missing.Length > 0)
@@ -1022,11 +1069,217 @@ namespace FTProject
                 }
             }
 
+            if (onProgress != null) onProgress(1f);
             if (onDone != null)
             {
                 onDone();
             }
         }
+
+        // ==================================================================
+        // 热更新（UI 补全 A3）—— 唯一的上线阻塞项
+        // ==================================================================
+        // ⚠️【与手册骨架的关键差异，别照抄网上 2.x 教程】
+        //   手册 §7.2 的骨架用了 `UpdatePackageVersionAsync` + `CreateResourceDownloader(...)`
+        //   + `OnDownloadProgressCallback` + `BeginDownload()`，那是 **YooAsset 2.x** 的 API。
+        //   本工程是 **3.0.6**：`UpdatePackageVersionAsync` / `UpdatePackageManifestAsync` 已废弃，
+        //   只在 Compatibility 层留了 [Obsolete] 包装。3.0.x 的正确对应关系是：
+        //     · 「取最新版本」      = `RequestPackageVersionAsync()`（它本来就查远端最新）
+        //     · 「更新/加载清单」   = `LoadPackageManifestAsync(version)` —— 即已有的第③步，
+        //                             它会下载并激活新清单，**不再有独立的 Update 步骤**
+        //     · 「下载进度」        = `DownloadProgressChanged` 事件（不是 OnDownloadProgressCallback）
+        //     · 「开始下载」        = `StartDownload()`（不是 BeginDownload）
+        //   ⚠️ 三步初始化契约不变：Init 里仍是 初始化 → 请求版本 → 加载清单（最后 SetActiveManifest）。
+        //      本方法在 **Init 之后**调用，复用同一个 _package，绝不重复初始化。
+
+        /// <summary>
+        /// IHotUpdateLoader 入口：把 CheckUpdateCo 交给本工程的协程宿主驱动。
+        /// 【为什么必须交给 ResLoaderRunner】UI 层拿不到（也不该拿）IEnumerator，
+        /// 统一由 ResLoaderRunner 启动，保证"运行态逐帧推进、非运行态当场跑完"两条路径一致。
+        /// </summary>
+        public void StartCheckUpdate(
+            Action<string> onPhase,
+            Action<int, int> onProgress,
+            Action<long, long> onBytes,
+            Action<string> onError,
+            Action<bool> onDone)
+        {
+            ResLoaderRunner.Start(CheckUpdateCo(onPhase, onProgress, onBytes, onError, onDone));
+        }
+
+        /// <summary>
+        /// 检查并执行资源热更新。协程，需由 ResLoaderRunner.Start 驱动。
+        /// 回调语义：<paramref name="onDone"/> 的参数 = **本次是否真的下载过内容**。
+        /// 出错时只调 <paramref name="onError"/>（不调 onDone），由界面决定是否重试。
+        /// </summary>
+        public IEnumerator CheckUpdateCo(
+            Action<string> onPhase,
+            Action<int, int> onProgress,
+            Action<long, long> onBytes,
+            Action<string> onError,
+            Action<bool> onDone)
+        {
+            if (_package == null || !_ready)
+            {
+                if (onError != null)
+                {
+                    onError("资源系统尚未初始化完成，无法检查更新");
+                }
+                yield break;
+            }
+
+            // ---- ① 请求最新版本 -------------------------------------------------
+            if (onPhase != null) onPhase("正在检查更新...");
+
+            string startError;
+            RequestPackageVersionOperation versionOp = StartRequestVersion(out startError);
+            if (versionOp == null)
+            {
+                if (onError != null) onError("请求资源版本失败：" + startError);
+                yield break;
+            }
+
+            yield return WaitOpCo(versionOp, "检查更新-请求版本");
+
+            if (versionOp.Status != EOperationStatus.Succeeded)
+            {
+                if (onError != null) onError("请求资源版本失败：" + versionOp.Error);
+                yield break;
+            }
+
+            string latestVersion = versionOp.PackageVersion;
+            string currentVersion = _package.GetPackageVersion();
+
+            // ---- ② 比对版本 -----------------------------------------------------
+            if (onPhase != null) onPhase("正在比对资源版本...");
+            yield return null;   // 让 PhaseText 至少显示一帧，否则"比对"会被瞬间跳过看不见
+
+            if (string.IsNullOrEmpty(latestVersion) || latestVersion == currentVersion)
+            {
+                if (onPhase != null) onPhase("资源已是最新");
+                if (onDone != null) onDone(false);
+                yield break;
+            }
+
+            Debug.Log(string.Format("[Res] 发现新资源版本：{0} → {1}，开始更新。",
+                string.IsNullOrEmpty(currentVersion) ? "(未知)" : currentVersion, latestVersion));
+
+            // ---- ③ 加载（必要时下载）新清单并激活 --------------------------------
+            // ⚠️ 这一步等价于 2.x 的 UpdatePackageManifest，**必须**做：
+            //    只下 bundle 不换清单，之后所有加载都会按旧清单去找 → 找不到新资源。
+            if (onPhase != null) onPhase("正在加载资源清单...");
+
+            LoadPackageManifestOperation manifestOp = StartLoadManifest(latestVersion, out startError);
+            if (manifestOp == null)
+            {
+                if (onError != null) onError("加载资源清单失败：" + startError);
+                yield break;
+            }
+
+            yield return WaitOpCo(manifestOp, "检查更新-加载清单");
+
+            if (manifestOp.Status != EOperationStatus.Succeeded)
+            {
+                if (onError != null) onError("加载资源清单失败：" + manifestOp.Error);
+                yield break;
+            }
+
+            // ---- ④ 差异下载 -----------------------------------------------------
+            ResourceDownloaderOperation downloader;
+            try
+            {
+                // YooAsset 3.0.6 走 options 结构（2.x 的 `CreateResourceDownloader(并发, 重试)` 已移除）
+                var options = new ResourceDownloaderOptions(10, 3);   // 并发 10，失败重试 3
+                downloader = _package.CreateResourceDownloader(options);
+            }
+            catch (System.Exception ex)
+            {
+                if (onError != null) onError("创建下载任务失败：" + ex.Message);
+                yield break;
+            }
+
+            if (downloader == null || downloader.TotalDownloadCount == 0)
+            {
+                // 版本号变了但没有需要下载的资源（例如只改了清单里的哈希）→ 视为"无需下载"
+                if (onPhase != null) onPhase("资源已是最新");
+                if (onDone != null) onDone(false);
+                yield break;
+            }
+
+            if (onPhase != null) onPhase("正在下载资源...");
+
+            _downloader = downloader;
+            IsPaused = false;
+            string lastError = null;
+
+            downloader.DownloadProgressChanged += args =>
+            {
+                if (onProgress != null) onProgress(args.CurrentDownloadCount, args.TotalDownloadCount);
+                if (onBytes != null) onBytes(args.CurrentDownloadBytes, args.TotalDownloadBytes);
+            };
+            downloader.DownloadError += args =>
+            {
+                lastError = string.IsNullOrEmpty(args.FileName)
+                    ? args.ErrorInfo
+                    : args.FileName + "：" + args.ErrorInfo;
+            };
+
+            downloader.StartDownload();
+
+            while (downloader.IsDone == false)
+            {
+                yield return null;
+            }
+
+            _downloader = null;
+
+            if (downloader.Status != EOperationStatus.Succeeded)
+            {
+                if (onError != null)
+                {
+                    onError(string.IsNullOrEmpty(lastError) ? downloader.Error : lastError);
+                }
+                yield break;
+            }
+
+            Debug.Log(string.Format("[Res] 热更新完成，共下载 {0} 个文件。", downloader.TotalDownloadCount));
+            if (onPhase != null) onPhase("更新完成");
+            if (onDone != null) onDone(true);
+        }
+
+        /// <summary>暂停当前下载（无进行中的下载时空操作）。</summary>
+        public void PauseDownload()
+        {
+            IsPaused = true;
+            if (_downloader != null)
+            {
+                _downloader.PauseDownload();
+            }
+        }
+
+        /// <summary>继续当前下载（无进行中的下载时空操作）。</summary>
+        public void ResumeDownload()
+        {
+            IsPaused = false;
+            if (_downloader != null)
+            {
+                _downloader.ResumeDownload();
+            }
+        }
+
+        /// <summary>是否正在下载（界面按钮状态用）。</summary>
+        public bool IsDownloading
+        {
+            get { return _downloader != null && _downloader.IsDone == false; }
+        }
+
+        /// <summary>
+        /// 是否处于"已暂停"。
+        /// 【为什么自己记一个标记】YooAsset 的下载器没有暴露"暂停中"查询，
+        /// 而界面必须能区分"正在下载"与"已暂停"（按钮要在"暂停/继续"之间切换）。
+        /// 由本类的 PauseDownload/ResumeDownload 维护，不依赖底层实现。
+        /// </summary>
+        public bool IsPaused { get; private set; }
 
         private void Fail(string message)
         {

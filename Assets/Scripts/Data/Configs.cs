@@ -63,8 +63,22 @@ namespace FTProject
         /// </summary>
         public static void LoadAsync(Action<bool> onDone)
         {
+            LoadAsync(null, onDone);
+        }
+
+        /// <summary>
+        /// 异步加载全部配置表（带阶段进度，UI 补全 A2）。
+        /// <paramref name="onStep"/> 参数为 (已完成表数, 总表数)——按"已就绪 tables / 总 tables"报，
+        /// 而不是编一个假的百分比：9 张表的解析是分次同步完成的，只有"几张完了"是真实信息。
+        /// </summary>
+        public static void LoadAsync(Action<int, int> onStep, Action<bool> onDone)
+        {
             if (IsLoaded)
             {
+                if (onStep != null)
+                {
+                    onStep(ConfigKeys.Length, ConfigKeys.Length);
+                }
                 if (onDone != null)
                 {
                     onDone(true);
@@ -73,9 +87,19 @@ namespace FTProject
             }
 
             // 先整包预热，顺带做一次"资源是否存在"的自检
-            ResLoader.Instance.Preload(ConfigKeys, () =>
-            {
-                FailedTables.Clear();
+            ResLoader.Instance.Preload(ConfigKeys,
+                progress =>
+                {
+                    if (onStep != null)
+                    {
+                        int done = Mathf.Clamp(
+                            Mathf.RoundToInt(progress * ConfigKeys.Length), 0, ConfigKeys.Length);
+                        onStep(done, ConfigKeys.Length);
+                    }
+                },
+                () =>
+                {
+                    FailedTables.Clear();
 
                 EnemyTable = LoadTable("tbenemydata", n => new TBEnemyData(n));
                 TowerTable = LoadTable("tbtowerinfo", n => new TBTowerInfo(n));

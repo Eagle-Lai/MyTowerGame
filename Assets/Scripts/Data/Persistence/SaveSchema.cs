@@ -33,7 +33,10 @@ namespace FTProject
     public static class SaveSchema
     {
         /// <summary>当前表结构版本。**改动任何列语义时必须 +1，并在 Migrations 里补一段。**</summary>
-        public const int CurrentVersion = 1;
+        /// <remarks>
+        /// v2（UI 补全 B4）：level_progress 增加 best_time_ms（最快通关的游戏内毫秒数）。
+        /// </remarks>
+        public const int CurrentVersion = 2;
 
         public const string MetaSchemaVersion = "schema_version";
         public const string MetaCreatedAt = "created_at";
@@ -70,12 +73,17 @@ namespace FTProject
             ");",
 
             // 关卡进度：主键即关卡 id，写入天然幂等
+            // best_time_ms：**最快**通关用时（游戏内毫秒，0 = 尚无记录）。
+            //   ⚠️ 与 stars/best_hp_left/clear_count 同为"改了就能占便宜"的数值 → 走密文，
+            //   所以列类型是 TEXT 而不是 INTEGER（密文信封是 Base64 字符串）。
+            //   代价同其它敏感列：不能参与 SQL 排序/聚合 —— 取最快值在 C# 里做（见 SaveManager）。
             "CREATE TABLE IF NOT EXISTS level_progress (" +
             "  level_id     INTEGER PRIMARY KEY," +
             "  stars        TEXT," +
             "  best_hp_left TEXT," +
             "  clear_count  TEXT," +
             "  last_play_at INTEGER," +
+            "  best_time_ms TEXT," +
             "  updated_at   INTEGER" +
             ");",
 
@@ -172,9 +180,9 @@ namespace FTProject
         }
 
         /// <summary>
-        /// 逐版本迁移。当前只有 v1，因此这里是空实现 —— 但**框架先搭好**：
-        /// 等到 v2 时只需在 switch 里加一个 case，而不是临时设计一套迁移机制。
-        /// 每个 case 都是"把库从 n 升到 n+1"，逐个串起来自然支持跨多版本升级。
+        /// 逐版本迁移。每个 case 都是"把库从 n 升到 n+1"，逐个串起来自然支持跨多版本升级。
+        /// ⚠️ 老库（v1）的 level_progress 没有 best_time_ms 列，必须在这里补 ALTER，
+        /// 否则老存档读取时会报"no such column"。
         /// </summary>
         private static void RunMigrations(IDatabase db, int fromVersion)
         {
@@ -184,7 +192,12 @@ namespace FTProject
             {
                 switch (v)
                 {
-                    // case 1: 示例（将来启用）：db.Execute("ALTER TABLE xxx ADD COLUMN yyy INTEGER DEFAULT 0;"); break;
+                    // v1 → v2：关卡时间记录（UI 补全 B4「最佳用时」）
+                    // 密文列 → TEXT；老行该列为 NULL，读取端 UnprotectInt(null) 回落 0（= 无记录）。
+                    case 1:
+                        db.Execute("ALTER TABLE level_progress ADD COLUMN best_time_ms TEXT;");
+                        break;
+
                     default:
                         UnityEngine.Debug.LogWarning("[Save] 没有为版本 " + v + " 定义迁移步骤，已跳过。");
                         break;

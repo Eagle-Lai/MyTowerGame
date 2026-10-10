@@ -18,6 +18,12 @@ namespace FTProject
         public int bestHpLeft;
         /// <summary>累计通关次数</summary>
         public int clearCount;
+        /// <summary>
+        /// 历史**最快**通关用时（游戏内毫秒，0 = 尚无记录）。
+        /// 【为什么是游戏内时间】见 GameClock.LevelElapsedSec：它是确定性的、跨倍速可比，
+        /// 作为"最佳记录"才公平；用墙钟时间会让高倍速玩家的记录失真。
+        /// </summary>
+        public int bestTimeMs;
 
         public bool Cleared { get { return stars > 0; } }
     }
