@@ -17,7 +17,7 @@
 - ⚠️ **跑生成类菜单前必须确认 `isCompiling==false && isPlaying==false`**，否则用旧程序集静默生成旧结果；编辑器会自己重进播放态。
 - ⚠️ `screenshot` 偶发丢 Overlay 层（重截即可）；单次调用延迟数秒~十几秒，抓不到 1.2s 瞬态。
 - ⚠️ 改 `UIPrefabBuilder` 后比对 `ui_prefabs_preRebuild/*.prefab` 的 anchor/pivot/pos 查回归。
-- `git push`：远端 GitHub `Eagle-Lai/MyTowerGame.git`。⚠️ **不要用 `GIT_CONFIG_SYSTEM=/dev/null`** —— 它禁用了 system config 里的 credential helper，直接导致 `could not read Username`。**直接 `git push origin main` 通常就能成**（读操作 `git ls-remote` 能过就说明凭证可用）；偶发失败重试一次即可。
+- `git push`：远端 GitHub `Eagle-Lai/MyTowerGame.git`。⚠️ **不要用 `GIT_CONFIG_SYSTEM=/dev/null`** —— 它禁用了 system config 里的 credential helper，直接导致 `could not read Username`。**直接 `git push origin main` 通常就能成**（读操作 `git ls-remote` 能过就说明凭证可用）；偶发失败重试一次即可。⚠️ 它常打一行 `error: could not lock config file .../PortableGit/etc/gitconfig: File exists` —— **这不代表失败**（credential-helper-selector 写系统配置失败而已），推送照常完成；判据只看 `main -> main` 那行 + 事后 `ls-remote` 核对 sha。
 - Unity 2022.3.62f3c1，**Built-in RP**（霓虹只能烘进贴图）。
 
 ## 配置 / 资源
