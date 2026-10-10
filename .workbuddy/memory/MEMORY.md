@@ -17,7 +17,11 @@
 - ⚠️ **跑生成类菜单前必须确认 `isCompiling==false && isPlaying==false`**，否则用旧程序集静默生成旧结果；编辑器会自己重进播放态。
 - ⚠️ `screenshot` 偶发丢 Overlay 层（重截即可）；单次调用延迟数秒~十几秒，抓不到 1.2s 瞬态。
 - ⚠️ 改 `UIPrefabBuilder` 后比对 `ui_prefabs_preRebuild/*.prefab` 的 anchor/pivot/pos 查回归。
-- `git push`：远端 GitHub `Eagle-Lai/MyTowerGame.git`。⚠️ **不要用 `GIT_CONFIG_SYSTEM=/dev/null`** —— 它禁用了 system config 里的 credential helper，直接导致 `could not read Username`。**直接 `git push origin main` 通常就能成**（读操作 `git ls-remote` 能过就说明凭证可用）；偶发失败重试一次即可。⚠️ 它常打一行 `error: could not lock config file .../PortableGit/etc/gitconfig: File exists` —— **这不代表失败**（credential-helper-selector 写系统配置失败而已），推送照常完成；判据只看 `main -> main` 那行 + 事后 `ls-remote` 核对 sha。
+- `git push`：远端 GitHub `Eagle-Lai/MyTowerGame.git`（**public 仓库** → `fetch`/`ls-remote` 不需要凭证，**不能拿它验凭证**；要验就用 `git push --dry-run` 或 `git credential fill`）。
+  ★ **弹「Select a credential helper」弹窗的根治（2026-10-10 已修）**：根因是 PortableGit 的**系统级** `etc/gitconfig` 里写着 `credential.helper = helper-selector`，push 取凭证时先弹这个 GUI。
+  正解 = **在用户级 `~/.gitconfig` 的 `[credential]` 段插一条空 `helper =`**（官方语义：空值把 helper 列表清空 → 丢掉 system 那条），**后面再跟原来那条 manager**；这样**不必碰 WorkBuddy 安装目录**，也不怕它升级。
+  ⚠️ 光勾弹窗里的 "Always use this from now on" 没用：它要写**系统级**配置，而 `etc/gitconfig.lock` 一残留写入就失败（报 `could not lock config file ... File exists`）→ 于是每次都弹。那个 0 字节锁可直接删。
+  ⚠️ **不要用 `GIT_CONFIG_SYSTEM=/dev/null`**（禁用系统 credential helper → `could not read Username`，还会连 autocrlf / lfs filter 一起丢掉）。直接 `git push origin main` 即可，偶发失败**重试一次**；判定成功看 `main -> main` 那行 + 事后 `git ls-remote --heads origin main` 核对 sha。
 - Unity 2022.3.62f3c1，**Built-in RP**（霓虹只能烘进贴图）。
 
 ## 配置 / 资源
