@@ -90,9 +90,11 @@ namespace FTProject
                 return;
             }
 
-            SetText(_title, info.victory ? "通关完成！" : "防御失败");
+            SetText(_title, info.victory
+                ? (Localization.Get("Level Clear!") ?? "通关完成！")
+                : (Localization.Get("Defense Failed") ?? "防御失败"));
             SetText(_levelName, string.IsNullOrEmpty(info.levelName)
-                ? string.Format("关卡 {0}", info.levelId)
+                ? (Localization.Get("Level {0}", info.levelId) ?? string.Format("关卡 {0}", info.levelId))
                 : info.levelName);
 
             // ---- 星级评价 ----
@@ -102,16 +104,20 @@ namespace FTProject
 
             if (info.victory)
             {
-                SetText(_starDetail, string.Format(
-                    "<color=#9FB3C8>本次</color> {0}　　<color=#9FB3C8>历史最高</color> {1}",
-                    SelectView.StarRichText(info.stars), SelectView.StarRichText(info.previousBest)));
+                SetText(_starDetail, Localization.Get("This {0}    Best {1}",
+                        SelectView.StarRichText(info.stars), SelectView.StarRichText(info.previousBest))
+                    ?? string.Format(
+                        "<color=#9FB3C8>本次</color> {0}　　<color=#9FB3C8>历史最高</color> {1}",
+                        SelectView.StarRichText(info.stars), SelectView.StarRichText(info.previousBest)));
             }
             else
             {
                 // 失败不给星，但历史成绩仍然要显示 —— 这正是"重新进游戏也能看到记录"的体现
-                SetText(_starDetail, string.Format(
-                    "<color=#9FB3C8>历史最高</color> {0}",
-                    SelectView.StarRichText(info.previousBest)));
+                SetText(_starDetail, Localization.Get("<color=#9FB3C8>Best</color> {0}",
+                        SelectView.StarRichText(info.previousBest))
+                    ?? string.Format(
+                        "<color=#9FB3C8>历史最高</color> {0}",
+                        SelectView.StarRichText(info.previousBest)));
             }
 
             // "新纪录"只在真的超过历史最好成绩时出现
@@ -124,13 +130,14 @@ namespace FTProject
                 }
                 if (show)
                 {
-                    SetText(_recordTip, "★ 新纪录！刷新了本关最高星级");
+                    SetText(_recordTip, Localization.Get("★ New Record! Best stars improved") ?? "★ 新纪录！刷新了本关最高星级");
                 }
             }
 
             // ---- 战绩 ----
-            SetText(_stats, string.Format("剩余生命 {0}/{1}　　击杀 {2}　　漏怪 {3}",
-                info.hp, info.maxHp, info.killed, info.leaked));
+            SetText(_stats, Localization.Get("HP {0}/{1}    Kills {2}    Leaks {3}", info.hp, info.maxHp, info.killed, info.leaked)
+                ?? string.Format("剩余生命 {0}/{1}　　击杀 {2}　　漏怪 {3}",
+                    info.hp, info.maxHp, info.killed, info.leaked));
 
             // ---- 按钮 ----
             // 三种情况分开处理，避免"最后一关却显示一个可点的下一关"或
@@ -148,20 +155,23 @@ namespace FTProject
                     _nextBtn.interactable = canGo;
                     if (!canGo)
                     {
-                        SetText(_nextLabel, "已是最后一关");
+                        SetText(_nextLabel, Localization.Get("Final Level") ?? "已是最后一关");
                     }
                     else if (!string.IsNullOrEmpty(info.nextLevelName))
                     {
-                        SetText(_nextLabel, "下一关：" + info.nextLevelName);
+                        SetText(_nextLabel, Localization.Get("Next: {0}", info.nextLevelName)
+                            ?? ("下一关：" + info.nextLevelName));
                     }
                     else
                     {
-                        SetText(_nextLabel, "下一关");
+                        SetText(_nextLabel, Localization.Get("Next Level") ?? "下一关");
                     }
                 }
             }
 
-            SetText(_retryLabel, info.victory ? "重玩本关" : "重新挑战");
+            SetText(_retryLabel, info.victory
+                ? (Localization.Get("Replay") ?? "重玩本关")
+                : (Localization.Get("Try Again") ?? "重新挑战"));
         }
 
         // ------------------------------------------------------------------

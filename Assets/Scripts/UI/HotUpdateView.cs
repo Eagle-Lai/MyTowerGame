@@ -224,8 +224,42 @@ namespace FTProject
         {
             if (_phaseText != null)
             {
-                _phaseText.text = phase;
+                _phaseText.text = LocalizePhase(phase);
                 _phaseText.color = TextPrimary;
+            }
+        }
+
+        /// <summary>
+        /// 把下载器产出的阶段原文映射到多语言。
+        /// 【为什么不改下载器】阶段字符串同时被 <see cref="IsIndeterminatePhase"/> 用来判断
+        ///   "是否可量化进度"，把本地化推进资源层会让这条判断随语言漂移；
+        ///   所以本地化只发生在展示层：**原文 → key → 查表**，查不到就显示原文。
+        /// </summary>
+        private static string LocalizePhase(string phase)
+        {
+            if (string.IsNullOrEmpty(phase))
+            {
+                return phase;
+            }
+            string key = PhaseKeyOf(phase);
+            return (key != null ? Localization.Get(key) : null) ?? phase;
+        }
+
+        private static string PhaseKeyOf(string phase)
+        {
+            switch (phase)
+            {
+                case "正在检查更新...": return "Checking for updates...";
+                case "正在比对资源版本...": return "Comparing resource versions...";
+                case "正在加载资源清单...": return "Loading resource manifest...";
+                case "资源已是最新": return "Resources are up to date";
+                case "正在下载资源...": return "Downloading resources...";
+                case "更新完成": return "Update complete";
+                case "下载失败": return "Download failed";
+                case "已暂停": return "Paused";
+                case "当前模式：无需更新资源": return "Current mode: no resource update needed";
+                case "编辑器模式：无需更新资源": return "Editor mode: no resource update needed";
+                default: return null;
             }
         }
 
@@ -258,7 +292,9 @@ namespace FTProject
                 return;
             }
             bool show = !string.IsNullOrEmpty(reason);
-            _failText.text = show ? ("下载失败：" + reason) : string.Empty;
+            _failText.text = show
+                ? (Localization.Get("Download failed: {0}", reason) ?? ("下载失败：" + reason))
+                : string.Empty;
             if (_failText.gameObject.activeSelf != show)
             {
                 _failText.gameObject.SetActive(show);
@@ -288,8 +324,8 @@ namespace FTProject
         {
             if (_sizeText != null)
             {
-                _sizeText.text = string.Format("已下载 {0:F1} MB / {1:F1} MB",
-                    _currentBytes / 1048576f, _totalBytes / 1048576f);
+                _sizeText.text = Localization.Get("Downloaded {0:F1} MB / {1:F1} MB", _currentBytes / 1048576f, _totalBytes / 1048576f)
+                    ?? string.Format("已下载 {0:F1} MB / {1:F1} MB", _currentBytes / 1048576f, _totalBytes / 1048576f);
             }
             if (_speedText != null)
             {
@@ -300,11 +336,13 @@ namespace FTProject
                     int left = Mathf.Max(0, Mathf.RoundToInt((_totalBytes - _currentBytes) / _speedBytesPerSec));
                     eta = string.Format("{0:00}:{1:00}", left / 60, left % 60);
                 }
-                _speedText.text = string.Format("速度 {0:F1} MB/s　剩余约 {1}", mbs, eta);
+                _speedText.text = Localization.Get("Speed {0:F1} MB/s   ETA {1}", mbs, eta)
+                    ?? string.Format("速度 {0:F1} MB/s　剩余约 {1}", mbs, eta);
             }
             if (_detailText != null)
             {
-                _detailText.text = string.Format("文件 {0}/{1}　失败 0", _currentCount, _totalCount);
+                _detailText.text = Localization.Get("Files {0}/{1}   Failed 0", _currentCount, _totalCount)
+                    ?? string.Format("文件 {0}/{1}　失败 0", _currentCount, _totalCount);
             }
         }
 

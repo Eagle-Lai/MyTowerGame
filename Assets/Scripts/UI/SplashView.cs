@@ -110,7 +110,7 @@ namespace FTProject
                 // 省略号随时间的简单循环（1~3 个点），比转圈图省一张贴图
                 int n = 1 + ((int)(_t * 2.5f) % 3);
                 string suffix = n == 1 ? "." : (n == 2 ? ".." : "...");
-                _dots.text = "正在启动" + suffix;
+                _dots.text = (Localization.Get("Starting...") ?? "正在启动") + suffix;
             }
 
             if (_t >= HoldSeconds)

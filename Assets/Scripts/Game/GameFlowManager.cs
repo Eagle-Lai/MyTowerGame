@@ -149,7 +149,7 @@ namespace FTProject
             if (!ok)
             {
                 Debug.LogError("[Flow] 配置表加载失败，已中止建关。请查看上方 [Config] 错误日志。");
-                Tips("配置表加载失败，请查看 Console");
+                Tips(Localization.Get("Config load failed, see Console") ?? "配置表加载失败，请查看 Console");
                 State = GameFlowState.None;
                 return;
             }
@@ -206,7 +206,8 @@ namespace FTProject
             if (!isTower)
             {
                 // 怪物图鉴（B3）尚未实现：明确提示，不静默失败
-                EventDispatcher.TriggerEvent<string>(EventName.ShowTipEvent, "怪物图鉴：界面生成中");
+                EventDispatcher.TriggerEvent<string>(EventName.ShowTipEvent,
+                    Localization.Get("Monster codex: UI not ready yet") ?? "怪物图鉴：界面生成中");
                 UIManager.Instance.Open<MainMenuView>("MainMenuView", UILayout.NormalPanel);
                 return;
             }
@@ -233,7 +234,7 @@ namespace FTProject
             if (Level == null || Map == null)
             {
                 Debug.LogError(string.Format("[Flow] 关卡 {0} 配置不完整，无法建关", levelId));
-                Tips("关卡配置不完整");
+                Tips(Localization.Get("Level config incomplete") ?? "关卡配置不完整");
                 State = GameFlowState.None;
                 return;
             }
@@ -327,7 +328,7 @@ namespace FTProject
                 "[Flow] 关卡 {0}「{1}」就绪：棋盘 {2}×{3}，格子 {4} 世界单位，回合 {5} 个\n{6}",
                 Level.Id, Level.Name, Map.Cols, Map.Rows, cellSize, _roundIds.Count,
                 AStarManager.Instance.DescribeCurrentPath()));
-            Tips(string.Format("关卡就绪：{0}，点击「开始」迎战", Level.Name));
+            Tips(Localization.Get("Level ready: {0}, click Start to fight", Level.Name) ?? string.Format("关卡就绪：{0}，点击「开始」迎战", Level.Name));
 
             // 可选：关卡就绪后自动开始第一回合
             // （常数表 Global.autoStartRoundDelayMs；默认 0，留给玩家先看地图 + 布防）
@@ -421,12 +422,12 @@ namespace FTProject
 
             if (State == GameFlowState.RoundRunning)
             {
-                Tips("回合进行中，请等待本回合结束");
+                Tips(Localization.Get("Round in progress, wait for it to finish") ?? "回合进行中，请等待本回合结束");
                 return;
             }
             if (State == GameFlowState.GameOver)
             {
-                Tips("本局已结束");
+                Tips(Localization.Get("Game already ended") ?? "本局已结束");
                 return;
             }
             if (State != GameFlowState.Preparing)
@@ -442,7 +443,8 @@ namespace FTProject
             RoundConfig round = Configs.GetRound(_roundIds[_roundCursor]);
             if (round == null)
             {
-                Tips(string.Format("回合 {0} 配置缺失", _roundIds[_roundCursor]));
+                Tips(Localization.Get("Round {0} config missing", _roundIds[_roundCursor])
+                    ?? string.Format("回合 {0} 配置缺失", _roundIds[_roundCursor]));
                 Debug.LogError(string.Format("[Flow] 找不到回合配置 id={0}", _roundIds[_roundCursor]));
                 return;
             }
@@ -454,7 +456,8 @@ namespace FTProject
             {
                 AudioManager.Instance.Play(AudioName.RoundStart);
             }
-            Tips(string.Format("回合 {0}/{1} 开始", _roundCursor + 1, _roundIds.Count));
+            Tips(Localization.Get("Round {0}/{1} start", _roundCursor + 1, _roundIds.Count)
+                ?? string.Format("回合 {0}/{1} 开始", _roundCursor + 1, _roundIds.Count));
         }
 
         /// <summary>
@@ -543,7 +546,8 @@ namespace FTProject
                 if (rc != null && rc.RewardGold > 0)
                 {
                     PlayerDataManager.Instance.AddGold(rc.RewardGold);
-                    Tips(string.Format("回合奖励 +{0} 金币", rc.RewardGold));
+                    Tips(Localization.Get("Round reward +{0} gold", rc.RewardGold)
+                        ?? string.Format("回合奖励 +{0} 金币", rc.RewardGold));
                 }
             }
 
@@ -584,7 +588,8 @@ namespace FTProject
                 _pendingResult = BuildClearInfo(true, stars, previousBest);
 
                 EventDispatcher.TriggerEvent<int, int, int>(EventName.LevelClearEvent, Level.Id, stars, pd.Hp);
-                Tips(string.Format("通关！获得 {0}", SelectView.Stars(stars)));
+                Tips(Localization.Get("Cleared! Earned {0}", SelectView.Stars(stars))
+                    ?? string.Format("通关！获得 {0}", SelectView.Stars(stars)));
 
                 PlayerDataManager.Instance.Win();
             }
@@ -631,7 +636,7 @@ namespace FTProject
                 Debug.Log("[Flow] 自动开始下一回合");
                 if (_hud != null)
                 {
-                    _hud.SetStartButtonLabel("下一回合");
+                    _hud.SetStartButtonLabel(Localization.Get("Next Round") ?? "下一回合");
                 }
                 OnStartRequest();
                 return;
@@ -645,9 +650,11 @@ namespace FTProject
                 int sec = Mathf.CeilToInt(_autoNextTimer);
                 if (_hud != null)
                 {
-                    _hud.SetStartButtonLabel(string.Format("下一回合({0})", sec));
+                    _hud.SetStartButtonLabel(Localization.Get("Next Round ({0})", sec)
+                        ?? string.Format("下一回合({0})", sec));
                 }
-                Tips(string.Format("回合完成，{0} 秒后自动开始下一回合（也可直接点「下一回合」）", sec));
+                Tips(Localization.Get("Round complete, next round starts in {0}s (or tap Next Round)", sec)
+                    ?? string.Format("回合完成，{0} 秒后自动开始下一回合（也可直接点「下一回合」）", sec));
             }
         }
 
@@ -659,7 +666,9 @@ namespace FTProject
             ResetGameSpeed();
             Debug.Log(string.Format("[Flow] 本局结束：{0}\n{1}",
                 victory ? "胜利" : "失败", PlayerDataManager.Instance.DumpDebugInfo()));
-            Tips(victory ? "恭喜通关！" : "防御失败……");
+            Tips(victory
+                ? (Localization.Get("Congratulations!") ?? "恭喜通关！")
+                : (Localization.Get("Defense failed...") ?? "防御失败……"));
 
             // 屏幕震动（UI 补全 C3）：只有"失败"才震，且给最大的系数 1.5 ——
             // 生命归零是本局最重的一次负面事件；胜利时抖一下反而像出错。
@@ -855,7 +864,8 @@ namespace FTProject
 
             Debug.Log(string.Format("[Flow] 已恢复第 {0} 关的局内快照：回合进度 {1}/{2}，塔 {3} 座",
                 levelId, _roundCursor, _roundIds.Count, built));
-            Tips(string.Format("已从上次进度继续（下一回合：第 {0} 回合）", _roundCursor + 1));
+            Tips(Localization.Get("Resumed from last progress (next round: {0})", _roundCursor + 1)
+                ?? string.Format("已从上次进度继续（下一回合：第 {0} 回合）", _roundCursor + 1));
         }
 
         // ------------------------------------------------------------------
@@ -952,7 +962,8 @@ namespace FTProject
         /// </summary>
         private void BeginLevelWithMask(int levelId)
         {
-            LevelLoadingMask.Show(string.Format("正在进入第 {0} 关...", levelId));
+            LevelLoadingMask.Show(Localization.Get("Entering level {0}...", levelId)
+                ?? string.Format("正在进入第 {0} 关...", levelId));
             StartCoroutine(InitLevelDeferred(levelId));
         }
 
@@ -1077,7 +1088,8 @@ namespace FTProject
                 if (view == null)
                 {
                     // 面板资源未就绪时降级：提示玩家升级/出售暂不可用（逻辑本身没坏）
-                    Tips("塔操作面板资源未就绪，暂无法升级/出售（补齐 TowerInfoView 后可用）");
+                    Tips(Localization.Get("Tower panel not ready, cannot upgrade/sell yet")
+                        ?? "塔操作面板资源未就绪，暂无法升级/出售（补齐 TowerInfoView 后可用）");
                     return;
                 }
                 _towerPanelOpened = true;

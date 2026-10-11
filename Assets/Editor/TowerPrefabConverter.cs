@@ -168,9 +168,9 @@ namespace FTProject.EditorTools
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
 
-            Debug.Log("[M2] 防御塔转换结果：\n" + report.Text);
-            EditorUtility.DisplayDialog("转换防御塔预制体",
-                string.Format("{0}\n\n{1}", ok ? "完成" : "有错误，请查看 Console", report.Text), "好");
+            Debug.Log(ok
+                ? "[M2] 防御塔转换完成：\n" + report.Text
+                : "[M2] 防御塔转换有错误：\n" + report.Text);
         }
 
         /// <summary>供一键向导调用（不弹窗）</summary>

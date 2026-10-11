@@ -110,7 +110,7 @@ namespace FTProject
                 return;
             }
 
-            SetText(_title, string.Format("第 {0} 关", levelId));
+            SetText(_title, Localization.Get("Level {0} Detail", levelId) ?? string.Format("第 {0} 关", levelId));
             SetText(_levelName, string.IsNullOrEmpty(lv.Name) ? string.Empty : lv.Name);
 
             SaveManager sm = SaveManager.Instance;
@@ -126,7 +126,9 @@ namespace FTProject
             }
             // 【为什么先算出字符串再赋值】把三元表达式拆成独立语句：
             // 多行调用会让参数个数的静态校验脚本误判（它按行解析）。
-            string bestText = stars > 0 ? string.Format("历史最佳 {0} 星", stars) : "尚未通关";
+            string bestText = stars > 0
+                ? (Localization.Get("Best {0} Star", stars) ?? string.Format("历史最佳 {0} 星", stars))
+                : (Localization.Get("Not cleared yet") ?? "尚未通关");
             SetText(_bestStarText, bestText);
 
             // 波次总数 = 各回合的 WaveCount 之和（回合数 ≠ 波数，分开显示）
@@ -167,16 +169,17 @@ namespace FTProject
             string diff = lv.Difficulty >= 3 ? "★★★" : (lv.Difficulty == 2 ? "★★☆" : "★☆☆");
             int bestTimeMs = sm != null ? sm.GetBestTimeMs(levelId) : 0;
 
-            SetText(_info[0], string.Format("回合数　{0}", lv.RoundCount));
-            SetText(_info[1], string.Format("波次　　{0}", totalWaves));
-            SetText(_info[2], string.Format("初始金币　{0}", lv.InitialGold));
-            SetText(_info[3], string.Format("初始生命　{0}", lv.InitialHp));
-            SetText(_info[4], string.Format("难度　　{0}", diff));
+            SetText(_info[0], Localization.Get("Rounds    {0}", lv.RoundCount) ?? string.Format("回合数　{0}", lv.RoundCount));
+            SetText(_info[1], Localization.Get("Waves     {0}", totalWaves) ?? string.Format("波次　　{0}", totalWaves));
+            SetText(_info[2], Localization.Get("Start Gold {0}", lv.InitialGold) ?? string.Format("初始金币　{0}", lv.InitialGold));
+            SetText(_info[3], Localization.Get("Start HP   {0}", lv.InitialHp) ?? string.Format("初始生命　{0}", lv.InitialHp));
+            SetText(_info[4], Localization.Get("Difficulty {0}", diff) ?? string.Format("难度　　{0}", diff));
             // 【最佳用时】0 显示成 --:--（SaveManager.FormatTime 统一口径）——
             // "没有记录"与"0 秒通关"必须一眼分得开
-            SetText(_info[5], string.Format("最佳用时　{0}", SaveManager.FormatTime(bestTimeMs)));
+            SetText(_info[5], Localization.Get("Best Time {0}", SaveManager.FormatTime(bestTimeMs))
+                ?? string.Format("最佳用时　{0}", SaveManager.FormatTime(bestTimeMs)));
 
-            SetText(_enemyLabel, "本关出现怪物");
+            SetText(_enemyLabel, Localization.Get("Enemies in this level") ?? "本关出现怪物");
             SetText(_enemyIcons, BuildEnemySummary(enemyIds));
 
             // 未解锁的关卡不给"开始挑战"，只留"返回"（效果图 21 的既定行为）
@@ -186,7 +189,9 @@ namespace FTProject
             }
             if (_playLabel != null)
             {
-                _playLabel.text = stars > 0 ? "再次挑战" : "开始挑战";
+                _playLabel.text = stars > 0
+                    ? (Localization.Get("Challenge Again") ?? "再次挑战")
+                    : (Localization.Get("Start Challenge") ?? "开始挑战");
             }
             if (_replayBtn != null && _replayBtn.gameObject.activeSelf != unlocked)
             {
@@ -226,7 +231,8 @@ namespace FTProject
             }
             if (sorted.Count > shown)
             {
-                sb.Append(string.Format("　等 {0} 种", sorted.Count));
+                sb.Append(Localization.Get("    {0} kinds", sorted.Count)
+                    ?? string.Format("　等 {0} 种", sorted.Count));
             }
             return sb.ToString();
         }

@@ -121,11 +121,10 @@ namespace FTProject.EditorTools
             List<string> paths = GetSelectedAssetPaths();
             if (paths.Count == 0)
             {
-                EditorUtility.DisplayDialog("未选中文件夹",
-                    "请先在 Project 窗口中选中一个（或多个）文件夹，再执行该命令。", "知道了");
+                Debug.LogWarning("[MissingScript清理] 未选中文件夹：请先在 Project 窗口中选中一个（或多个）文件夹，再执行该命令。");
                 return;
             }
-            RunWithConfirm(paths, false, true);
+            RunAndReport(paths, false, true, false);
         }
 
         [MenuItem("Tools/资源工具/清理预制体 Missing Script/清理 Project 窗口中选中的文件夹", true)]
@@ -143,11 +142,10 @@ namespace FTProject.EditorTools
             List<string> paths = GetSelectedAssetPaths();
             if (paths.Count == 0)
             {
-                EditorUtility.DisplayDialog("未选中资源",
-                    "请在 Project 窗口中选中需要处理的文件夹或预制体。", "知道了");
+                Debug.LogWarning("[MissingScript清理] 未选中资源：请在 Project 窗口中选中需要处理的文件夹或预制体。");
                 return;
             }
-            RunWithConfirm(paths, false, true);
+            RunAndReport(paths, false, true, false);
         }
 
         [MenuItem("Assets/清理选中项中的 Missing Script", true)]
@@ -165,11 +163,10 @@ namespace FTProject.EditorTools
             List<string> paths = GetSelectedAssetPaths();
             if (paths.Count == 0)
             {
-                EditorUtility.DisplayDialog("未选中文件夹",
-                    "请先在 Project 窗口中选中一个（或多个）文件夹，再执行该命令。", "知道了");
+                Debug.LogWarning("[MissingScript清理] 未选中文件夹：请先在 Project 窗口中选中一个（或多个）文件夹，再执行该命令。");
                 return;
             }
-            RunAndReport(paths, true, true, true);
+            RunAndReport(paths, true, true, false);
         }
 
         #endregion
@@ -177,7 +174,8 @@ namespace FTProject.EditorTools
         #region 对外调用接口
 
         /// <summary>
-        /// 带确认弹窗地执行清理
+        /// 带确认弹窗地执行清理。**仅用于人工交互**，自动化不得调用（会阻塞编辑器）。
+        /// 自动化请直接用 <see cref="RunAndReport"/>（把 showDialog 传 false）。
         /// </summary>
         public static void RunWithConfirm(List<string> assetPaths, bool dryRun, bool showResultDialog)
         {
@@ -194,36 +192,24 @@ namespace FTProject.EditorTools
         }
 
         /// <summary>
-        /// 执行清理并在结束后弹出结果提示
+        /// 执行清理，并把汇总结果打到 Console。
         /// </summary>
         /// <param name="assetPaths">文件夹路径或 .prefab 资源路径（可混合）</param>
         /// <param name="dryRun">true = 只扫描统计，不写回文件</param>
         /// <param name="verbose">是否输出每个预处理文件的日志</param>
-        /// <param name="showDialog">是否在结束后弹出汇总对话框</param>
-        public static CleanReport RunAndReport(List<string> assetPaths, bool dryRun, bool verbose, bool showDialog)
+        /// <param name="openDetailWindow">结束后是否直接打开结果面板（人工交互用；自动化传 false）</param>
+        public static CleanReport RunAndReport(List<string> assetPaths, bool dryRun, bool verbose, bool openDetailWindow)
         {
             CleanReport report = Run(assetPaths, dryRun, verbose);
             LastReport = report;
 
-            if (!showDialog)
-            {
-                return report;
-            }
+            // 【为什么不再弹窗】带 DisplayDialog 的菜单会阻塞编辑器，自动化调用直接卡死。
+            // 汇总一律打日志；需要看明细时由人主动点「打开清理面板」。
+            Debug.Log(string.Format("[MissingScript清理] {0}：\n{1}",
+                dryRun ? "预览扫描完成（未修改任何文件）" : "清理完成（已写回磁盘）",
+                report.Describe()));
 
-            StringBuilder sb = new StringBuilder();
-            sb.AppendLine(report.Describe());
-            if (report.Details.Count > 0)
-            {
-                sb.AppendLine();
-                sb.AppendLine("详情请查看 Console 日志，或点击“查看详情”打开结果面板。");
-            }
-
-            bool openDetail = EditorUtility.DisplayDialog(
-                dryRun ? "预览扫描完成" : "清理完成",
-                sb.ToString(),
-                "查看详情", "关闭");
-
-            if (openDetail)
+            if (openDetailWindow)
             {
                 MissingScriptCleanerWindow.ShowWindow();
             }

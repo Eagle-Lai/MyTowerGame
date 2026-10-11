@@ -39,8 +39,22 @@ namespace FTProject.EditorTools
         private const float BarTopMarginRatio = 0.14f;
         private static readonly Color HpFillColor = new Color(0.35f, 0.90f, 0.35f, 1f);
 
+        /// <summary>
+        /// 菜单入口：批量导入全部怪物（生成战斗预制体）。直接执行、不弹窗（自动化友好）；
+        /// 需要执行前二次确认的走「带确认」菜单。
+        /// </summary>
         [MenuItem("Tools/塔防/高级（单步重建）/导入全部怪物（生成战斗预制体）", false, 306)]
         public static void BuildAllFromMenu()
+        {
+            BuildAllInternal_NoDialog();
+        }
+
+        /// <summary>
+        /// 「带确认」入口，等价于旧菜单 + 执行前确认弹窗。**仅用于人工交互**，
+        /// 自动化不得调用（会阻塞编辑器）。
+        /// </summary>
+        [MenuItem("Tools/塔防/高级（单步重建）/强制执行：导入全部怪物（带确认）", false, 316)]
+        public static void BuildAllFromMenuConfirm()
         {
             if (!EditorUtility.DisplayDialog("导入全部怪物",
                     string.Format("将处理 {0} 个怪物，为每个生成：\n" +
@@ -52,17 +66,21 @@ namespace FTProject.EditorTools
             {
                 return;
             }
+            BuildAllInternal_NoDialog();
+        }
 
+        private static void BuildAllInternal_NoDialog()
+        {
             EditorUtil.Report report = new EditorUtil.Report();
             BuildAllInternal(report);
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
 
-            Debug.Log("[怪物导入] 结果：\n" + report.Text);
-            EditorUtility.DisplayDialog("导入全部怪物",
-                string.Format("{0}\n\n错误 {1} · 警告 {2}\n\n详见 Console。",
-                    report.Errors > 0 ? "有错误，请查看 Console" : "完成",
-                    report.Errors, report.Warnings), "好");
+            Debug.Log(report.Errors > 0
+                ? string.Format("[怪物导入] 有错误（{0} 项 · 警告 {1} 项）：\n{2}",
+                    report.Errors, report.Warnings, report.Text)
+                : string.Format("[怪物导入] 完成（警告 {0} 项）：\n{1}",
+                    report.Warnings, report.Text));
         }
 
         /// <summary>供一键向导调用（不弹窗）</summary>

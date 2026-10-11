@@ -165,21 +165,21 @@ namespace FTProject
             {
                 Debug.LogWarning("[Launcher] LoadingView 打开失败（prefab 可能还没生成），加载界面不可见");
             }
-            PublishLoading("正在初始化资源系统...", 0f);
+            PublishLoading(Localization.Get("Initializing resources...") ?? "正在初始化资源系统...", 0f);
 
             ResLoader.Instance.Init(
-                progress => PublishLoading("正在初始化资源系统...", progress * LoadingResWeight),
+                progress => PublishLoading(Localization.Get("Initializing resources...") ?? "正在初始化资源系统...", progress * LoadingResWeight),
                 () =>
                 {
                     if (!ResLoader.Instance.IsReady)
                     {
                         Debug.LogError("[Launcher] 资源加载器初始化失败，启动中止。");
-                        PublishLoadingFailed("资源系统初始化失败，请查看 Console");
+                        PublishLoadingFailed(Localization.Get("Resource init failed, see Console") ?? "资源系统初始化失败，请查看 Console");
                         EventDispatcher.TriggerEvent<bool>(EventName.ConfigLoadedEvent, false);
                         return;
                     }
 
-                    PublishLoading("正在加载配置表...", LoadingResWeight);
+                    PublishLoading(Localization.Get("Loading config...") ?? "正在加载配置表...", LoadingResWeight);
                     BeginHotUpdate();
                 });
         }
@@ -287,7 +287,7 @@ namespace FTProject
             {
                 Debug.LogWarning("[Launcher] LoadingView 打开失败（prefab 可能还没生成），配置加载将无界面执行");
             }
-            PublishLoading("正在加载配置表...", LoadingResWeight);
+            PublishLoading(Localization.Get("Loading config...") ?? "正在加载配置表...", LoadingResWeight);
 
             Configs.LoadAsync(
                 (done, total) =>
@@ -297,12 +297,12 @@ namespace FTProject
                         return;
                     }
                     float ratio = done / (float)total;
-                    PublishLoading("正在加载配置表...",
+                    PublishLoading(Localization.Get("Loading config...") ?? "正在加载配置表...",
                         LoadingResWeight + (LoadingConfigEnd - LoadingResWeight) * ratio);
                 },
                 ok =>
                 {
-                    PublishLoading("正在准备关卡数据...", LoadingConfigEnd);
+                    PublishLoading(Localization.Get("Preparing level data...") ?? "正在准备关卡数据...", LoadingConfigEnd);
 
                     // 配置就绪后，CombatSystem 要按最终 cellSize 重建空间哈希
                     if (ok && CombatSystem.Instance != null)
@@ -312,11 +312,16 @@ namespace FTProject
 
                     if (!ok)
                     {
-                        PublishLoadingFailed("配置表加载失败，请查看 Console");
+                        PublishLoadingFailed(Localization.Get("Config load failed, see Console") ?? "配置表加载失败，请查看 Console");
                     }
                     else
                     {
-                        PublishLoading("准备完成", 1f);
+                        // 配置表就绪 → 立刻确定语言并构建多语言字典。
+                        // 【必须在广播 ConfigLoadedEvent 之前】该事件之后 UI 会开始实例化，
+                        // 各 TextLocalizer/ImageLocalizer 一 OnEnable 就要取词/取字体。
+                        LanguageManager.Initialize(SaveManager.Instance);
+
+                        PublishLoading(Localization.Get("Ready") ?? "准备完成", 1f);
                     }
 
                     Phase = BootPhase.Ready;

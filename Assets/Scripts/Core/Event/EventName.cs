@@ -178,6 +178,19 @@ namespace FTProject
         public const string GameSpeedChangedEvent = "GameSpeedChangedEvent";
 
         // ------------------------------------------------------------------
+        // 多语言
+        // ------------------------------------------------------------------
+
+        /// <summary>
+        /// 语言已切换，参数：int（Language 枚举值）。
+        /// 订阅方：所有 TextLocalizer / ImageLocalizer —— 收到后刷新自己的文本/字体/图片。
+        /// 由 LanguageManager.SetLanguage 广播。
+        /// 【为什么用 int 而不是 Language 枚举】工程 EventDispatcher 的泛型重载按 Action&lt;T&gt; 匹配，
+        /// 传枚举会走装箱/泛型约束更复杂的路径；int 与现有 GameSpeedChangedEvent（float）等模式一致、最稳。
+        /// </summary>
+        public const string LanguageChangedEvent = "LanguageChangedEvent";
+
+        // ------------------------------------------------------------------
         // 启动链（UI 补全 A1/A2/A3）—— Splash → Loading → HotUpdate → 主菜单
         // ------------------------------------------------------------------
 

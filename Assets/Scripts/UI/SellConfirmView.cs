@@ -51,7 +51,8 @@ namespace FTProject
                 // 【降级】弹窗缺失时不静默卖掉，而是提示"暂不可用"——
                 // 不可撤销的操作绝不能因为 UI 缺失就自动执行。
                 Debug.LogError("[Sell] SellConfirmView 打开失败（prefab 可能还没生成），已取消本次出售");
-                EventDispatcher.TriggerEvent<string>(EventName.ShowTipEvent, "出售确认界面不可用");
+                EventDispatcher.TriggerEvent<string>(EventName.ShowTipEvent,
+                    Localization.Get("Sell is unavailable here") ?? "出售确认界面不可用");
                 return;
             }
             view.Setup(tower);
@@ -87,8 +88,8 @@ namespace FTProject
             float rate = Configs.Global != null ? Configs.Global.SellRefundRate : 1f;
             if (_warnText != null)
             {
-                _warnText.text = string.Format(
-                    "出售后将退回 {0}% 的累计投入\n且无法撤销", Mathf.RoundToInt(rate * 100f));
+                _warnText.text = Localization.Get("Refund {0}% of total investment.\nThis cannot be undone.", Mathf.RoundToInt(rate * 100f))
+                    ?? string.Format("出售后将退回 {0}% 的累计投入\n且无法撤销", Mathf.RoundToInt(rate * 100f));
             }
         }
 
@@ -103,7 +104,9 @@ namespace FTProject
 
             if (_towerName != null)
             {
-                _towerName.text = string.IsNullOrEmpty(cfg.Name) ? "塔" : cfg.Name;
+                _towerName.text = string.IsNullOrEmpty(cfg.Name)
+                    ? (Localization.Get("Tower") ?? "塔")
+                    : cfg.Name;
             }
 
             float rate = Configs.Global != null ? Configs.Global.SellRefundRate : 1f;

@@ -31,6 +31,16 @@ namespace FTProject.EditorTools
         /// <summary>Luban 正常 1~2 秒跑完，给 120 秒兜底（首次可能要预热）</summary>
         private const int TimeoutMs = 120000;
 
+        /// <summary>
+        /// 导出代码目录里**不由 Luban 生成、但必须保留**的文件（相对 OutCodeDir）。
+        ///
+        /// 【为什么需要】Luban 在写 --output_code_dir 时会**清掉目录里它不认识的旧文件**。
+        /// 而 `FTProject.Gen.asmdef` 是手工放进 `Assets/Gen/` 的程序集定义（把 Gen 钉成独立热更集），
+        /// Luban 不认识它 → 每次导出都会被删除，导致 Gen 的脚本掉回 Assembly-CSharp、
+        /// 破坏 HybridCLR 的程序集划分。这里在导出前后自动备份/还原它们。
+        /// </summary>
+        private static readonly string[] KeepFilesInCodeDir = { "FTProject.Gen.asmdef", "FTProject.Gen.asmdef.meta" };
+
         [MenuItem("Tools/塔防/3. 导出配置表（Luban）", false, 103)]
         public static void ExportFromMenu()
         {
@@ -38,9 +48,14 @@ namespace FTProject.EditorTools
             bool ok = ExportInternal(report);
             AssetDatabase.Refresh();
 
-            UnityEngine.Debug.Log("[Luban] 导出" + (ok ? "成功" : "失败") + "：\n" + report.Text);
-            EditorUtility.DisplayDialog("导出配置表",
-                string.Format("{0}\n\n{1}", ok ? "完成" : "失败，请查看 Console", report.Text), "好");
+            if (ok)
+            {
+                UnityEngine.Debug.Log("[Luban] 导出成功：\n" + report.Text);
+            }
+            else
+            {
+                UnityEngine.Debug.LogError("[Luban] 导出失败：\n" + report.Text);
+            }
         }
 
         /// <summary>供一键向导调用（不弹窗）。失败返回 false 并已写入 report。</summary>
@@ -90,6 +105,18 @@ namespace FTProject.EditorTools
             // 本机若只装了 .NET 8/10，没有这个变量 Luban 会报 "You must install .NET"
             psi.EnvironmentVariables["DOTNET_ROLL_FORWARD"] = "LatestMajor";
 
+            // --- 保护 OutCodeDir 里非 Luban 产物（见 KeepFilesInCodeDir 说明）---
+            string outCodeAbs = System.IO.Path.Combine(projectRoot, OutCodeDir.Replace('/', '\\'));
+            var kept = new System.Collections.Generic.Dictionary<string, string>();
+            foreach (string name in KeepFilesInCodeDir)
+            {
+                string p = System.IO.Path.Combine(outCodeAbs, name);
+                if (System.IO.File.Exists(p))
+                {
+                    kept[p] = System.IO.File.ReadAllText(p);
+                }
+            }
+
             EditorUtility.DisplayProgressBar("导出配置表", "正在运行 Luban…", 0.5f);
             int exitCode;
             try
@@ -130,6 +157,15 @@ namespace FTProject.EditorTools
             finally
             {
                 EditorUtility.ClearProgressBar();
+
+                // 还原被 Luban 清掉的受保护文件（并补回 .meta，避免 Unity 重新分配 GUID）
+                foreach (var kv in kept)
+                {
+                    if (!System.IO.File.Exists(kv.Key))
+                    {
+                        System.IO.File.WriteAllText(kv.Key, kv.Value);
+                    }
+                }
             }
 
             // 工具的输出对排查很有用（表缺列、类型不匹配都会在这里），全部落到 Console
@@ -145,10 +181,10 @@ namespace FTProject.EditorTools
                 return false;
             }
 
-            // 产物自检：8 张表必须都在，且能被当作 TextAsset 读到
+            // 产物自检：各表必须都在，且能被当作 TextAsset 读到
             int ok = 0;
             string[] tables = { "tbenemydata", "tbtowerinfo", "tbenemylist", "tbrounddata",
-                                "tbsceneinfo", "tbbulletdata", "tblevelmap", "tbglobal" };
+                                "tbsceneinfo", "tbbulletdata", "tblevelmap", "tbglobal", "tblocalization" };
             for (int i = 0; i < tables.Length; i++)
             {
                 string path = OutDataDir + "/" + tables[i] + ".json";

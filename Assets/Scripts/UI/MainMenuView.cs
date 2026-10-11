@@ -79,12 +79,14 @@ namespace FTProject
             if (sm != null)
             {
                 SetText(_starText, string.Format("{0}/{1}", sm.TotalStars, totalLevels * 3));
-                SetText(_clearText, string.Format("已通关 {0}/{1}", sm.ClearedCount, totalLevels));
+                SetText(_clearText, Localization.Get("Cleared {0}/{1}", sm.ClearedCount, totalLevels)
+                    ?? string.Format("已通关 {0}/{1}", sm.ClearedCount, totalLevels));
             }
             else
             {
                 SetText(_starText, string.Format("0/{0}", totalLevels * 3));
-                SetText(_clearText, string.Format("已通关 0/{0}", totalLevels));
+                SetText(_clearText, Localization.Get("Cleared {0}/{1}", 0, totalLevels)
+                    ?? string.Format("已通关 0/{0}", totalLevels));
             }
         }
 
@@ -111,8 +113,12 @@ namespace FTProject
         private void OnClickQuit()
         {
             // 退出是"不可撤销"的（对玩家来说等于关掉游戏），必须先确认
-            ConfirmView.Show("退出游戏", "确定要退出游戏吗？", ConfirmType.Warning, DoQuit,
-                "退出", "取消");
+            ConfirmView.Show(
+                Localization.Get("Quit Game") ?? "退出游戏",
+                Localization.Get("Are you sure you want to quit?") ?? "确定要退出游戏吗？",
+                ConfirmType.Warning, DoQuit,
+                Localization.Get("Quit") ?? "退出",
+                Localization.Get("Cancel") ?? "取消");
         }
 
         private static void DoQuit()

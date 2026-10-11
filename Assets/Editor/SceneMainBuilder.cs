@@ -49,10 +49,20 @@ namespace FTProject.EditorTools
 
         /// <summary>
         /// 菜单入口：**危险**，会重建整个 main.unity（原文件先备份）。
-        /// 为了不被误点，收进「高级（单步重建）」子菜单。
+        /// 直接执行、不弹窗（自动化友好）；需要执行前二次确认的走「带确认」菜单。
         /// </summary>
         [MenuItem("Tools/塔防/高级（单步重建）/重建 main 场景（危险：会清空重建）", false, 307)]
         public static void Build()
+        {
+            BuildInternal_NoDialog();
+        }
+
+        /// <summary>
+        /// 「带确认」入口，等价于旧菜单 + 执行前确认弹窗。**仅用于人工交互**，
+        /// 自动化不得调用（会阻塞编辑器）。
+        /// </summary>
+        [MenuItem("Tools/塔防/高级（单步重建）/强制执行：重建 main 场景（带确认）", false, 317)]
+        public static void BuildConfirm()
         {
             if (!EditorUtility.DisplayDialog("重建 main 场景",
                     "此操作会**清空并重建** main.unity 的全部根对象，" +
@@ -62,12 +72,16 @@ namespace FTProject.EditorTools
             {
                 return;
             }
+            BuildInternal_NoDialog();
+        }
+
+        private static void BuildInternal_NoDialog()
+        {
             EditorUtil.Report report = new EditorUtil.Report();
             bool ok = BuildInternal(report);
-            Debug.Log("[M0] 场景搭建结果：\n" + report.Text);
-            EditorUtility.DisplayDialog("重建 main 场景",
-                string.Format("{0}\n\n{1}",
-                    ok ? "完成，已打开 main.unity" : "有错误，请查看 Console", report.Text), "好");
+            Debug.Log(ok
+                ? "[M0] 场景重建完成，已打开 main.unity：\n" + report.Text
+                : "[M0] 场景重建有错误：\n" + report.Text);
         }
 
         /// <summary>

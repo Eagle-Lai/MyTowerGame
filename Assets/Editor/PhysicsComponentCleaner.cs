@@ -35,7 +35,7 @@ namespace FTProject.EditorTools
             Object[] selection = Selection.objects;
             if (selection == null || selection.Length == 0)
             {
-                EditorUtility.DisplayDialog("清理物理组件", "请先在 Project 窗口选中至少一个预制体。", "好");
+                Debug.LogWarning("[M0] 清理物理组件：请先在 Project 窗口选中至少一个预制体。");
                 return;
             }
 
@@ -62,9 +62,6 @@ namespace FTProject.EditorTools
             AssetDatabase.SaveAssets();
             Debug.Log(string.Format("[M0] 物理组件清理完成：{0} 个预制体共移除 {1} 个组件\n{2}",
                 fileCount, totalRemoved, string.Join("\n", touched.ToArray())));
-            EditorUtility.DisplayDialog("清理物理组件",
-                string.Format("完成。\n受影响预制体：{0} 个\n移除组件：{1} 个\n\n详见 Console。",
-                    fileCount, totalRemoved), "好");
         }
 
         [MenuItem("Tools/塔防/高级（单步重建）/清理全部战斗预制体的物理组件", false, 304)]
@@ -73,10 +70,9 @@ namespace FTProject.EditorTools
             EditorUtil.Report report = new EditorUtil.Report();
             CleanAllInternal(report);
             AssetDatabase.SaveAssets();
-            Debug.Log("[M0] 全量物理组件清理：\n" + report.Text);
-            EditorUtility.DisplayDialog("清理物理组件",
-                string.Format("{0}\n\n{1}",
-                    report.Errors > 0 ? "有错误，请查看 Console" : "完成", report.Text), "好");
+            Debug.Log(report.Errors > 0
+                ? "[M0] 全量物理组件清理有错误：\n" + report.Text
+                : "[M0] 全量物理组件清理完成：\n" + report.Text);
         }
 
         /// <summary>供一键向导调用（不弹窗）</summary>

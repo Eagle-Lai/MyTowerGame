@@ -39,10 +39,9 @@ namespace FTProject.EditorTools
             ConfigureInternal(report);
             AssetDatabase.SaveAssets();
 
-            Debug.Log("[M0] 工程设置配置结果：\n" + report.Text);
-            EditorUtility.DisplayDialog("配置工程设置",
-                string.Format("{0}\n\n{1}",
-                    report.Errors > 0 ? "有错误，请查看 Console" : "完成", report.Text), "好");
+            Debug.Log(report.Errors > 0
+                ? "[M0] 工程设置配置有错误：\n" + report.Text
+                : "[M0] 工程设置配置完成：\n" + report.Text);
         }
 
         /// <summary>供一键向导调用（不弹窗）</summary>

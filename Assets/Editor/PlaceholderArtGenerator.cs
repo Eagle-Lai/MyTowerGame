@@ -39,9 +39,7 @@ namespace FTProject.EditorTools
             GenerateInternal(report);
             AssetDatabase.Refresh();
 
-            Debug.Log("[M0] 占位美术生成完成：\n" + report.Text);
-            EditorUtility.DisplayDialog("生成占位美术",
-                string.Format("完成，共输出到 {0}\n\n{1}", Dir, report.Text), "好");
+            Debug.Log("[M0] 占位美术生成完成 → " + Dir + "：\n" + report.Text);
         }
 
         /// <summary>

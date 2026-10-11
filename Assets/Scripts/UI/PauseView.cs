@@ -40,7 +40,7 @@ namespace FTProject
 
             if (_title != null)
             {
-                _title.text = "暂停";
+                _title.text = Localization.Get("Game Paused") ?? "暂停";
             }
         }
 

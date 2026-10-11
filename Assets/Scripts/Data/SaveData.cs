@@ -28,12 +28,19 @@ namespace FTProject
         public bool Cleared { get { return stars > 0; } }
     }
 
-    /// <summary>玩家设置。目前只有音量与静音，后续加画质/语言时往这里加字段即可。</summary>
+    /// <summary>玩家设置。目前只有音量、静音、语言。</summary>
     [Serializable]
     public class GameSettings
     {
         public float volume = 0.8f;
         public bool muted;
+
+        /// <summary>
+        /// 玩家选择的语言码（如 "en" / "zh-Hans" / "zh-Hant"）。
+        /// 空字符串 = 尚无显式选择，用 LocalizationSettings.defaultLanguage。
+        /// 【为什么存字符串码而不是枚举 int】将来在枚举中间插语言会让老存档的 int 含义漂移。
+        /// </summary>
+        public string language = "";
 
         public void Clamp()
         {

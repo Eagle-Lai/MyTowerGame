@@ -54,16 +54,16 @@ namespace FTProject.EditorTools
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
 
-            Debug.Log("[UISkin] UI 皮肤美术生成结果：\n" + report.Text);
-            EditorUtility.DisplayDialog("生成 UI 皮肤美术",
-                string.Format("{0}\n\n{1}",
-                    report.Errors > 0 ? "有错误，请查看 Console" : "完成", report.Text), "好");
+            Debug.Log(report.Errors > 0
+                ? "[UISkin] UI 皮肤美术生成有错误：\n" + report.Text
+                : "[UISkin] UI 皮肤美术生成完成：\n" + report.Text);
         }
 
         /// <summary>
         /// 无弹窗入口（供 Unity MCP / 批处理调用）。
         /// 【为什么单开一个】带 EditorUtility.DisplayDialog 的菜单会**阻塞编辑器**，
         /// 自动化调用会直接卡死；自动化一律走本入口，只往 Console 打日志。
+        /// 注：主菜单 GenerateFromMenu() 也已在 2026-10 改为无弹窗，本入口保留作向后兼容。
         /// </summary>
         [MenuItem("Tools/塔防/自动化（无弹窗）/生成 UI 皮肤美术", false, 900)]
         public static void GenerateNoDialog()

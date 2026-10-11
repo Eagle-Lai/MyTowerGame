@@ -316,10 +316,9 @@ namespace FTProject.EditorTools
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
 
-            Debug.Log("[M0] UI 预制体补缺结果：\n" + report.Text);
-            EditorUtility.DisplayDialog("补缺 UI 预制体",
-                string.Format("{0}\n\n{1}",
-                    report.Errors > 0 ? "有错误，请查看 Console" : "完成", report.Text), "好");
+            Debug.Log(report.Errors > 0
+                ? "[M0] UI 预制体补缺有错误：\n" + report.Text
+                : "[M0] UI 预制体补缺完成：\n" + report.Text);
         }
 
         [MenuItem("Tools/塔防/高级（单步重建）/生成 UI 预制体（全量重建）", false, 305)]
@@ -330,15 +329,15 @@ namespace FTProject.EditorTools
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
 
-            Debug.Log("[M0] UI 预制体生成结果：\n" + report.Text);
-            EditorUtility.DisplayDialog("生成 UI 预制体",
-                string.Format("{0}\n\n{1}",
-                    report.Errors > 0 ? "有错误，请查看 Console" : "完成", report.Text), "好");
+            Debug.Log(report.Errors > 0
+                ? "[M0] UI 预制体生成有错误：\n" + report.Text
+                : "[M0] UI 预制体生成完成：\n" + report.Text);
         }
 
         /// <summary>
         /// 无弹窗全量重建（供 Unity MCP / 批处理调用）。
         /// 【为什么单开一个】带 EditorUtility.DisplayDialog 的菜单会**阻塞编辑器**，自动化会卡死。
+        /// 注：主菜单 Build() 也已在 2026-10 改为无弹窗，本入口保留作向后兼容/语义显式。
         /// </summary>
         [MenuItem("Tools/塔防/自动化（无弹窗）/生成 UI 预制体（全量重建）", false, 902)]
         public static void BuildNoDialog()
@@ -479,16 +478,16 @@ namespace FTProject.EditorTools
                 new Vector2(320f, 56f), "UI_Chip_Neutral");
 
             // 左上：金币 / 生命
-            CreateText(root.transform, "GoldText", "金币 0",
+            CreateText(root.transform, "GoldText", "Gold 0",
                 new Vector2(0f, 1f), new Vector2(40f, -30f), new Vector2(520f, 52f),
                 TextAnchor.MiddleLeft, SmallFontSize);
 
-            CreateText(root.transform, "HpText", "生命 0/0",
+            CreateText(root.transform, "HpText", "HP 0/0",
                 new Vector2(0f, 1f), new Vector2(40f, -84f), new Vector2(520f, 52f),
                 TextAnchor.MiddleLeft, SmallFontSize);
 
             // 顶部中央：回合 / 波次
-            CreateText(root.transform, "RoundText", "准备中",
+            CreateText(root.transform, "RoundText", "In Progress",
                 new Vector2(0.5f, 1f), new Vector2(0f, -30f), new Vector2(700f, 56f),
                 TextAnchor.MiddleCenter, BigFontSize);
 
@@ -499,7 +498,7 @@ namespace FTProject.EditorTools
             }
             // 左=倍速（工具类，次要）、右=开始（主 CTA）—— 与"原设计里 倍速在左、开始在右"一致
             CreateButton(root.transform, "SpeedButton", "×1", new Vector2(-SideBtnX, SideBtnY));
-            CreateButton(root.transform, "StartButton", "开始", new Vector2(SideBtnX, SideBtnY), true);
+            CreateButton(root.transform, "StartButton", "Start", new Vector2(SideBtnX, SideBtnY), true);
 
             GameObject saved = PrefabUtility.SaveAsPrefabAsset(root, HudPath);
             Object.DestroyImmediate(root);
@@ -625,19 +624,19 @@ namespace FTProject.EditorTools
             ApplySlicedSkin(panelImg, "UI_Panel_Cyan", new Color(0.12f, 0.16f, 0.24f, 0.96f));
 
             // 标题 / 属性
-            CreateText(panel.transform, "Title", "防御塔  Lv.1",
+            CreateText(panel.transform, "Title", "Tower Panel  Lv.1",
                 new Vector2(0.5f, 1f), new Vector2(0f, -34f), new Vector2(500f, 52f),
                 TextAnchor.MiddleCenter, BigFontSize);
 
-            TextMeshProUGUI stats = CreateText(panel.transform, "Stats", "攻击 -   射程 -   攻速 -",
+            TextMeshProUGUI stats = CreateText(panel.transform, "Stats", "ATK -   RNG -   SPD -",
                 new Vector2(0.5f, 1f), new Vector2(0f, -100f), new Vector2(500f, 44f),
                 TextAnchor.MiddleCenter, SmallFontSize);
             stats.enableWordWrapping = true;
 
             // 三个按钮（竖排）
-            CreatePanelButton(panel.transform, "UpgradeBtn", "升级", new Vector2(0f, -20f), 320f, true);
-            CreatePanelButton(panel.transform, "SellBtn", "出售", new Vector2(0f, -110f));
-            CreatePanelButton(panel.transform, "CloseBtn", "关闭", new Vector2(0f, -200f));
+            CreatePanelButton(panel.transform, "UpgradeBtn", "Upgrade", new Vector2(0f, -20f), 320f, true);
+            CreatePanelButton(panel.transform, "SellBtn", "Sell", new Vector2(0f, -110f));
+            CreatePanelButton(panel.transform, "CloseBtn", "Close", new Vector2(0f, -200f));
 
             GameObject saved = PrefabUtility.SaveAsPrefabAsset(root, TowerInfoPath);
             Object.DestroyImmediate(root);
@@ -743,11 +742,11 @@ namespace FTProject.EditorTools
 
             GameObject panel;
             // 最后一个参数 0 = 整页外壳：Panel 铺满屏幕（关卡选择是全屏页，不是小弹窗）
-            GameObject root = CreateDialogShell("SelectView", "选择关卡",
+            GameObject root = CreateDialogShell("SelectView", "Select Level",
                 Vector2.zero, report, out panel, 0f);
             root.AddComponent<SelectView>();
 
-            CreateText(panel.transform, "Summary", "已通关 0/8　★ 0/24",
+            CreateText(panel.transform, "Summary", "Cleared 0/8　★ 0/24",
                 new Vector2(0.5f, 1f), new Vector2(0f, -182f), new Vector2(1400f, 60f),
                 TextAnchor.MiddleCenter, SelectSummaryFontSize);
 
@@ -827,7 +826,7 @@ namespace FTProject.EditorTools
             CreatePanelButton(panel.transform, "RightBtn", ">",
                 new Vector2(SelectArrowX, SelectListPos.y), SelectArrowW, false, SelectArrowH, SelectArrowFontSize);
 
-            CreatePanelButton(panel.transform, "CloseBtn", "返回", new Vector2(0f, -430f), 340f, true, 84f);
+            CreatePanelButton(panel.transform, "CloseBtn", "Back", new Vector2(0f, -430f), 340f, true, 84f);
 
             GameObject saved = PrefabUtility.SaveAsPrefabAsset(root, SelectPath);
             Object.DestroyImmediate(root);
@@ -896,7 +895,7 @@ namespace FTProject.EditorTools
             // 运行时按远近改 alpha（SelectView.LateUpdate），预制体里先挂好，避免每帧 AddComponent
             body.AddComponent<CanvasGroup>();
 
-            TextMeshProUGUI t = CreateText(body.transform, "Label", "关卡",
+            TextMeshProUGUI t = CreateText(body.transform, "Label", "Level",
                 new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(SelectItemW, SelectItemH),
                 TextAnchor.MiddleCenter, SelectItemFontSize);
             RectTransform trt = (RectTransform)t.transform;
@@ -973,14 +972,14 @@ namespace FTProject.EditorTools
             EditorUtil.EnsureFolderOfFile(PausePath);
 
             GameObject panel;
-            GameObject root = CreateDialogShell("PauseView", "暂停",
+            GameObject root = CreateDialogShell("PauseView", "Game Paused",
                 new Vector2(560f, 520f), report, out panel);
             root.AddComponent<PauseView>();
 
-            CreatePanelButton(panel.transform, "ResumeBtn", "继续", new Vector2(0f, 60f));
-            CreatePanelButton(panel.transform, "RestartBtn", "重新开始本关", new Vector2(0f, -30f));
-            CreatePanelButton(panel.transform, "SettingsBtn", "设置", new Vector2(0f, -120f));
-            CreatePanelButton(panel.transform, "QuitBtn", "返回关卡选择", new Vector2(0f, -210f));
+            CreatePanelButton(panel.transform, "ResumeBtn", "Continue", new Vector2(0f, 60f));
+            CreatePanelButton(panel.transform, "RestartBtn", "Restart Level", new Vector2(0f, -30f));
+            CreatePanelButton(panel.transform, "SettingsBtn", "Settings", new Vector2(0f, -120f));
+            CreatePanelButton(panel.transform, "QuitBtn", "Back to Levels", new Vector2(0f, -210f));
 
             GameObject saved = PrefabUtility.SaveAsPrefabAsset(root, PausePath);
             Object.DestroyImmediate(root);
@@ -1005,21 +1004,19 @@ namespace FTProject.EditorTools
             EditorUtil.EnsureFolderOfFile(SettingPath);
 
             GameObject panel;
-            GameObject root = CreateDialogShell("SettingView", "设置",
+            GameObject root = CreateDialogShell("SettingView", "Settings",
                 new Vector2(620f, 600f), report, out panel);
             root.AddComponent<SettingView>();
 
-            CreateText(panel.transform, "VolumeText", "音量 80%",
+            CreateText(panel.transform, "VolumeText", "Volume 80%",
                 new Vector2(0.5f, 0.5f), new Vector2(0f, 120f), new Vector2(520f, 56f),
                 TextAnchor.MiddleCenter, BigFontSize);
 
-            // 音量用 -/+ 两个按钮而不是 Slider：Slider 需要 Fill/Handle 一整套子节点与互相引用，
-            // 写在生成器里长且易错；当前只有两个设置项，按钮调档更简单也更好点。
-            CreatePanelButton(panel.transform, "VolDownBtn", "音量 −", new Vector2(-170f, 40f));
-            CreatePanelButton(panel.transform, "VolUpBtn", "音量 ＋", new Vector2(170f, 40f));
-            CreatePanelButton(panel.transform, "MuteBtn", "静音", new Vector2(0f, -50f));
-            CreatePanelButton(panel.transform, "ResetBtn", "重置存档", new Vector2(0f, -140f));
-            CreatePanelButton(panel.transform, "CloseBtn", "关闭", new Vector2(0f, -230f));
+            // 音量用滑动条拖拽调节（SettingView.OnVolumeChanged）；VolumeText 同步显示百分比。
+            CreateSlider(panel.transform, "VolumeSlider", new Vector2(0f, 40f), new Vector2(480f, 40f), 0.8f);
+            CreatePanelButton(panel.transform, "MuteBtn", "Mute", new Vector2(0f, -50f));
+            CreatePanelButton(panel.transform, "ResetBtn", "Reset Save", new Vector2(0f, -140f));
+            CreatePanelButton(panel.transform, "CloseBtn", "Close", new Vector2(0f, -230f));
 
             GameObject saved = PrefabUtility.SaveAsPrefabAsset(root, SettingPath);
             Object.DestroyImmediate(root);
@@ -1028,7 +1025,7 @@ namespace FTProject.EditorTools
                 report.Error("保存失败：" + SettingPath);
                 return;
             }
-            report.Ok("SettingView.prefab（Bg / Panel( Title / VolumeText / VolDownBtn / VolUpBtn / MuteBtn / ResetBtn / CloseBtn )）");
+            report.Ok("SettingView.prefab（Bg / Panel( Title / VolumeText / VolumeSlider / MuteBtn / ResetBtn / CloseBtn )）");
         }
 
         // ------------------------------------------------------------------
@@ -1051,11 +1048,11 @@ namespace FTProject.EditorTools
             EditorUtil.EnsureFolderOfFile(LevelClearPath);
 
             GameObject panel;
-            GameObject root = CreateDialogShell("LevelClearView", "通关完成！",
+            GameObject root = CreateDialogShell("LevelClearView", "Level Clear!",
                 new Vector2(640f, 680f), report, out panel);
             root.AddComponent<LevelClearView>();
 
-            CreateText(panel.transform, "LevelName", "第 1 关",
+            CreateText(panel.transform, "LevelName", "Level 1",
                 new Vector2(0.5f, 0.5f), new Vector2(0f, 210f), new Vector2(560f, 48f),
                 TextAnchor.MiddleCenter, SmallFontSize);
 
@@ -1066,26 +1063,26 @@ namespace FTProject.EditorTools
 
             // 「本次」与「历史最高」并排 —— 存档里的星级是只升不降的合并值，
             // 不分开显示的话，二次通关打出低分反而会看到高分。
-            CreateText(panel.transform, "StarDetail", "本次 ☆☆☆　　历史最高 ☆☆☆",
+            CreateText(panel.transform, "StarDetail", "This ☆☆☆　　Best ☆☆☆",
                 new Vector2(0.5f, 0.5f), new Vector2(0f, 42f), new Vector2(560f, 44f),
                 TextAnchor.MiddleCenter, SmallFontSize);
 
             // 新纪录提示：默认隐藏，由 LevelClearView.Show 依据数据决定是否点亮
             TextMeshProUGUI recordTip = CreateText(panel.transform, "RecordTip",
-                "★ 新纪录！刷新了本关最高星级",
+                "★ New Record! Best stars improved",
                 new Vector2(0.5f, 0.5f), new Vector2(0f, -6f), new Vector2(560f, 40f),
                 TextAnchor.MiddleCenter, SmallFontSize);
             recordTip.gameObject.SetActive(false);
 
-            CreateText(panel.transform, "Stats", "剩余生命 0/0　　击杀 0　　漏怪 0",
+            CreateText(panel.transform, "Stats", "HP 0/0　　Kills 0　　Leaks 0",
                 new Vector2(0.5f, 0.5f), new Vector2(0f, -66f), new Vector2(560f, 46f),
                 TextAnchor.MiddleCenter, SmallFontSize);
 
             // 按钮加宽到 420：Label 文案含关卡名（"下一关：雪原前哨"），
             // 而 CreateText 关掉了自动换行，320 宽会溢出到面板外。其余两枚回 320（规范口径）。
-            CreatePanelButton(panel.transform, "NextBtn", "下一关", new Vector2(0f, -136f), 420f, true);
-            CreatePanelButton(panel.transform, "RetryBtn", "重玩本关", new Vector2(0f, -216f));
-            CreatePanelButton(panel.transform, "SelectBtn", "返回关卡选择", new Vector2(0f, -290f));
+            CreatePanelButton(panel.transform, "NextBtn", "Next Level", new Vector2(0f, -136f), 420f, true);
+            CreatePanelButton(panel.transform, "RetryBtn", "Replay", new Vector2(0f, -216f));
+            CreatePanelButton(panel.transform, "SelectBtn", "Back to Levels", new Vector2(0f, -290f));
 
             GameObject saved = PrefabUtility.SaveAsPrefabAsset(root, LevelClearPath);
             Object.DestroyImmediate(root);
@@ -1145,12 +1142,99 @@ namespace FTProject.EditorTools
             lrt.sizeDelta = Vector2.zero;
         }
 
+        /// <summary>
+        /// 生成一个可直接使用的 uGUI Slider（对应 SettingView 的 Panel/VolumeSlider）。
+        /// 结构与 Unity 内置 DefaultControls.CreateSlider 一致：
+        /// Background / Fill Area→Fill / Handle Slide Area→Handle，
+        /// 皮肤走工程自带 sprite（ApplySlicedSkin），缺失时用纯色兜底。
+        /// </summary>
+        private static void CreateSlider(Transform parent, string name, Vector2 anchoredPos,
+            Vector2 size, float value)
+        {
+            GameObject go = new GameObject(name, typeof(RectTransform));
+            go.transform.SetParent(parent, false);
+
+            RectTransform rt = (RectTransform)go.transform;
+            rt.anchorMin = new Vector2(0.5f, 0.5f);
+            rt.anchorMax = new Vector2(0.5f, 0.5f);
+            rt.pivot = new Vector2(0.5f, 0.5f);
+            rt.anchoredPosition = anchoredPos;
+            rt.sizeDelta = size;
+
+            // 背景：整条轨道（必须可接收射线 —— Slider 根节点没有 Graphic，拖拽事件靠它命中）
+            Image trackBg = CreateSliderLeaf(go.transform, "Background",
+                new Vector2(0f, 0.25f), new Vector2(1f, 0.75f), Vector2.zero, Vector2.zero,
+                img => ApplySlicedSkin(img, "UI_Btn_Secondary", new Color(0.25f, 0.25f, 0.28f, 1f)));
+            trackBg.raycastTarget = true;
+
+            // 已填充部分：Fill Area → Fill
+            Image fill = CreateSliderLeaf(go.transform, "Fill Area",
+                new Vector2(0f, 0.25f), new Vector2(1f, 0.75f), new Vector2(7f, 0f), new Vector2(-7f, 0f),
+                img => ApplySlicedSkin(img, "UI_Btn_Primary", new Color(0.35f, 0.65f, 0.45f, 1f)),
+                "Fill");
+            fill.rectTransform.anchorMin = new Vector2(0f, 0f);
+            fill.rectTransform.anchorMax = new Vector2(0f, 1f);
+            fill.rectTransform.offsetMin = Vector2.zero;
+            fill.rectTransform.offsetMax = Vector2.zero;
+
+            // 滑块：Handle Slide Area → Handle（宽度 24，高度撑满）
+            Image handle = CreateSliderLeaf(go.transform, "Handle Slide Area",
+                new Vector2(0f, 0.25f), new Vector2(1f, 0.75f), new Vector2(10f, 0f), new Vector2(-10f, 0f),
+                img => ApplySlicedSkin(img, "UI_Btn_Primary", new Color(0.92f, 0.92f, 0.92f, 1f)),
+                "Handle");
+            handle.rectTransform.anchorMin = new Vector2(0f, 0f);
+            handle.rectTransform.anchorMax = new Vector2(0f, 1f);
+            handle.rectTransform.sizeDelta = new Vector2(24f, 0f);
+
+            Slider slider = go.AddComponent<Slider>();
+            slider.fillRect = fill.rectTransform;
+            slider.handleRect = handle.rectTransform;
+            slider.targetGraphic = handle;
+            slider.direction = Slider.Direction.LeftToRight;
+            slider.minValue = 0f;
+            slider.maxValue = 1f;
+            slider.wholeNumbers = false;
+            slider.SetValueWithoutNotify(Mathf.Clamp01(value));
+        }
+
+        /// <summary>
+        /// Slider 的两层子节点（Area 容器 + 内层 Image），返回内层 Image 供 Slider 引用。
+        /// innerName 指定内层节点名（Fill / Handle / Background）；area 的锚点由调用方传。
+        /// </summary>
+        private static Image CreateSliderLeaf(Transform parent, string areaName,
+            Vector2 anchorMin, Vector2 anchorMax, Vector2 offsetMin, Vector2 offsetMax,
+            System.Action<Image> skin, string innerName = "Img")
+        {
+            GameObject area = new GameObject(areaName, typeof(RectTransform));
+            area.transform.SetParent(parent, false);
+            RectTransform art = (RectTransform)area.transform;
+            art.anchorMin = anchorMin;
+            art.anchorMax = anchorMax;
+            art.pivot = new Vector2(0.5f, 0.5f);
+            art.offsetMin = offsetMin;
+            art.offsetMax = offsetMax;
+
+            GameObject inner = new GameObject(innerName, typeof(RectTransform));
+            inner.transform.SetParent(art, false);
+            RectTransform irt = (RectTransform)inner.transform;
+            irt.anchorMin = Vector2.zero;
+            irt.anchorMax = Vector2.one;
+            irt.pivot = new Vector2(0.5f, 0.5f);
+            irt.offsetMin = Vector2.zero;
+            irt.offsetMax = Vector2.zero;
+
+            Image img = inner.AddComponent<Image>();
+            img.raycastTarget = false;
+            if (skin != null) skin(img);
+            return img;
+        }
+
         // ==================================================================
         // UI 补全 P1：启动链三界面（Splash / Loading / HotUpdate）
         // ==================================================================
         // 【三者的共同点】都是**整页**（stretchInset = 0），都自带深色底。
         // 【为什么标题不用 CreateDialogShell 的 Title】骨架给整页标题的规格是
-        //   "64 号、距顶 64"（那是给"选择关卡""防御塔图鉴"这类页面标题用的）；
+        //   "64 号、距顶 64"（那是给"Select Level""Tower Codex"这类页面标题用的）；
         //   而这三个界面要的是自己的主视觉（开屏 96 号品牌名 / 加载与热更新是"居中构图"）。
         //   硬把标题挪过去会让骨架方法的语义变模糊，所以这里传空标题，
         //   再各自建自己的文本节点 —— 骨架的 Title 仍然存在（空串，不可见），不破坏契约。
@@ -1199,7 +1283,7 @@ namespace FTProject.EditorTools
             }
             logoImg.raycastTarget = false;
 
-            TextMeshProUGUI gameTitle = CreateText(panel.transform, "GameTitle", "自由人塔防",
+            TextMeshProUGUI gameTitle = CreateText(panel.transform, "GameTitle", "FREEDOM TOWER",
                 new Vector2(0.5f, 0.5f), new Vector2(0f, -160f), new Vector2(900f, 120f),
                 TextAnchor.MiddleCenter, 96);
             gameTitle.color = Cyan;
@@ -1215,7 +1299,7 @@ namespace FTProject.EditorTools
                 TextAnchor.MiddleRight, 22);
             ver.color = TextTertiary;
 
-            TextMeshProUGUI dots = CreateText(panel.transform, "LoadingDots", "正在启动...",
+            TextMeshProUGUI dots = CreateText(panel.transform, "LoadingDots", "Starting...",
                 new Vector2(0.5f, 0.5f), new Vector2(0f, -380f), new Vector2(400f, 40f),
                 TextAnchor.MiddleCenter, 26);
             dots.color = TextSecondary;
@@ -1266,7 +1350,7 @@ namespace FTProject.EditorTools
             }
             logoImg.raycastTarget = false;
 
-            TextMeshProUGUI status = CreateText(panel.transform, "StatusText", "正在初始化资源系统...",
+            TextMeshProUGUI status = CreateText(panel.transform, "StatusText", "Initializing resources...",
                 new Vector2(0.5f, 0.5f), new Vector2(0f, -40f), new Vector2(1200f, 56f),
                 TextAnchor.MiddleCenter, 32);
             status.color = TextPrimary;
@@ -1322,7 +1406,7 @@ namespace FTProject.EditorTools
             percent.color = Gold;
 
             TextMeshProUGUI tip = CreateText(panel.transform, "TipText",
-                "可以在任意空地建塔，路径会实时重算",
+                "You can build on any open ground; paths recompute in real time.",
                 new Vector2(0.5f, 0.5f), new Vector2(0f, -300f), new Vector2(1400f, 44f),
                 TextAnchor.MiddleCenter, 26);
             tip.color = TextSecondary;
@@ -1350,12 +1434,12 @@ namespace FTProject.EditorTools
             GameObject root = CreateDialogShell("HotUpdateView", "", Vector2.zero, report, out panel, 0f);
             root.AddComponent<HotUpdateView>();
 
-            TextMeshProUGUI title = CreateText(panel.transform, "HotTitle", "资源更新",
+            TextMeshProUGUI title = CreateText(panel.transform, "HotTitle", "Resource Update",
                 new Vector2(0.5f, 0.5f), new Vector2(0f, 220f), new Vector2(900f, 80f),
                 TextAnchor.MiddleCenter, 56);
             title.color = TextPrimary;
 
-            TextMeshProUGUI phase = CreateText(panel.transform, "PhaseText", "正在检查更新...",
+            TextMeshProUGUI phase = CreateText(panel.transform, "PhaseText", "Checking for updates...",
                 new Vector2(0.5f, 0.5f), new Vector2(0f, 100f), new Vector2(1200f, 56f),
                 TextAnchor.MiddleCenter, 32);
             phase.color = TextPrimary;
@@ -1408,17 +1492,17 @@ namespace FTProject.EditorTools
                 TextAnchor.MiddleCenter, 40);
             percent.color = Cyan;
 
-            TextMeshProUGUI sizeText = CreateText(panel.transform, "SizeText", "已下载 0.0 MB / 0.0 MB",
+            TextMeshProUGUI sizeText = CreateText(panel.transform, "SizeText", "Downloaded 0.0 MB / 0.0 MB",
                 new Vector2(0.5f, 0.5f), new Vector2(0f, -120f), new Vector2(1200f, 40f),
                 TextAnchor.MiddleCenter, 26);
             sizeText.color = TextSecondary;
 
-            TextMeshProUGUI speedText = CreateText(panel.transform, "SpeedText", "速度 0.0 MB/s　剩余约 --:--",
+            TextMeshProUGUI speedText = CreateText(panel.transform, "SpeedText", "Speed 0.0 MB/s　ETA --:--",
                 new Vector2(0.5f, 0.5f), new Vector2(0f, -160f), new Vector2(1200f, 40f),
                 TextAnchor.MiddleCenter, 24);
             speedText.color = TextSecondary;
 
-            TextMeshProUGUI detailText = CreateText(panel.transform, "DetailText", "文件 0/0　失败 0",
+            TextMeshProUGUI detailText = CreateText(panel.transform, "DetailText", "Files 0/0　Failed 0",
                 new Vector2(0.5f, 0.5f), new Vector2(0f, -206f), new Vector2(1200f, 40f),
                 TextAnchor.MiddleCenter, 22);
             detailText.color = TextTertiary;
@@ -1433,17 +1517,17 @@ namespace FTProject.EditorTools
             bgrt.sizeDelta = new Vector2(900f, 88f);
 
             // 左槽：暂停 / 继续 互斥（同一位置，靠 SetActive 切换）
-            CreatePanelButton(btnGroup.transform, "PauseBtn", "暂停", new Vector2(-160f, 0f), 240f, false, 80f, 32);
-            CreatePanelButton(btnGroup.transform, "ResumeBtn", "继续", new Vector2(-160f, 0f), 240f, false, 80f, 32);
+            CreatePanelButton(btnGroup.transform, "PauseBtn", "Game Paused", new Vector2(-160f, 0f), 240f, false, 80f, 32);
+            CreatePanelButton(btnGroup.transform, "ResumeBtn", "Continue", new Vector2(-160f, 0f), 240f, false, 80f, 32);
             // 右槽：重试
-            CreatePanelButton(btnGroup.transform, "RetryBtn", "重试", new Vector2(160f, 0f), 240f, false, 80f, 32);
+            CreatePanelButton(btnGroup.transform, "RetryBtn", "Retry", new Vector2(160f, 0f), 240f, false, 80f, 32);
 
             TextMeshProUGUI failText = CreateText(panel.transform, "FailText", string.Empty,
                 new Vector2(0.5f, 0.5f), new Vector2(0f, -390f), new Vector2(1400f, 60f),
                 TextAnchor.MiddleCenter, 26);
             failText.color = DangerRed;
 
-            // 默认态：显示"暂停"，隐藏"继续""重试"与失败文案（与 HotUpdateView.Awake 的初值一致）
+            // 默认态：显示"Game Paused"，隐藏"Continue""Retry"与失败文案（与 HotUpdateView.Awake 的初值一致）
             SetNodeActive(panel.transform, "BtnGroup/ResumeBtn", false);
             SetNodeActive(panel.transform, "BtnGroup/RetryBtn", false);
             SetNodeActive(panel.transform, "FailText", false);
@@ -1538,13 +1622,13 @@ namespace FTProject.EditorTools
                 new Vector2(380f, 380f), "UI_TowerIcon_Normal", new Color(0.208f, 0.878f, 1f, 0.12f), false);
 
             // 标题基线 y_svg 488 → Y=+52；88 号字的盒中心 ≈ +52−31 = +21
-            TextMeshProUGUI title = CreateText(panel.transform, "GameTitle", "自由人塔防",
+            TextMeshProUGUI title = CreateText(panel.transform, "GameTitle", "FREEDOM TOWER",
                 new Vector2(0.5f, 0.5f), new Vector2(0f, 83f), new Vector2(1000f, 130f),
                 TextAnchor.MiddleCenter, 88);
             title.color = Cyan;
 
             // 副标题基线 y_svg 540 → Y=0；26 号 → 盒中心 ≈ −9
-            TextMeshProUGUI sub = CreateText(panel.transform, "Subtitle", "FREEDOM TOWER · 单机塔防",
+            TextMeshProUGUI sub = CreateText(panel.transform, "Subtitle", "FREEDOM TOWER · Tower Defense",
                 new Vector2(0.5f, 0.5f), new Vector2(0f, 9f), new Vector2(1000f, 44f),
                 TextAnchor.MiddleCenter, 26);
             sub.color = TextSecondary;
@@ -1558,16 +1642,16 @@ namespace FTProject.EditorTools
                 TextAnchor.MiddleLeft, 30);
             star.color = Gold;
 
-            TextMeshProUGUI clear = CreateText(panel.transform, "ClearText", "已通关 0/0",
+            TextMeshProUGUI clear = CreateText(panel.transform, "ClearText", "Cleared 0/0",
                 new Vector2(0f, 1f), new Vector2(72f, -196f), new Vector2(368f, 40f),
                 TextAnchor.MiddleLeft, 28);
             clear.color = TextSecondary;
 
             // 四颗入口按钮：中心 Y 依次 −66 / −184 / −302 / −420（对应 y_svg 606/724/842/960）
-            CreatePanelButton(panel.transform, "StartBtn", "开始游戏", new Vector2(0f, -66f), 480f, true, 92f, 34);
-            CreatePanelButton(panel.transform, "CodexBtn", "防御塔图鉴", new Vector2(0f, -184f), 480f, false, 92f, 32);
-            CreatePanelButton(panel.transform, "SettingBtn", "设置", new Vector2(0f, -302f), 480f, false, 92f, 32);
-            CreatePanelButton(panel.transform, "QuitBtn", "退出游戏", new Vector2(0f, -420f), 480f, false, 92f, 32);
+            CreatePanelButton(panel.transform, "StartBtn", "Start Game", new Vector2(0f, -66f), 480f, true, 92f, 34);
+            CreatePanelButton(panel.transform, "CodexBtn", "Tower Codex", new Vector2(0f, -184f), 480f, false, 92f, 32);
+            CreatePanelButton(panel.transform, "SettingBtn", "Settings", new Vector2(0f, -302f), 480f, false, 92f, 32);
+            CreatePanelButton(panel.transform, "QuitBtn", "Quit Game", new Vector2(0f, -420f), 480f, false, 92f, 32);
 
             TextMeshProUGUI ver = CreateText(panel.transform, "Version", string.Empty,
                 new Vector2(1f, 0f), new Vector2(-48f, 38f), new Vector2(240f, 32f),
@@ -1603,7 +1687,7 @@ namespace FTProject.EditorTools
                 new Vector2(1000f, 24f), "UI_Chip_Gold", Gold);
 
             // 标题基线 y_svg 146 → 面板中心 y_svg 540 → Y=+394；48 号 → 盒中心 ≈ +377
-            TextMeshProUGUI title = CreateText(panel.transform, "DetailTitle", "关卡",
+            TextMeshProUGUI title = CreateText(panel.transform, "DetailTitle", "Level",
                 new Vector2(0.5f, 0.5f), new Vector2(0f, 411f), new Vector2(940f, 64f),
                 TextAnchor.MiddleCenter, 48);
             title.color = TextPrimary;
@@ -1651,7 +1735,7 @@ namespace FTProject.EditorTools
                 TextAnchor.MiddleCenter, 28);
 
             // 本关怪物预览
-            TextMeshProUGUI enemyLabel = CreateText(panel.transform, "EnemyLabel", "本关出现怪物",
+            TextMeshProUGUI enemyLabel = CreateText(panel.transform, "EnemyLabel", "Enemies in this level",
                 new Vector2(0.5f, 0.5f), new Vector2(0f, -16f), new Vector2(880f, 32f),
                 TextAnchor.MiddleCenter, 24);
             enemyLabel.color = TextSecondary;
@@ -1661,9 +1745,9 @@ namespace FTProject.EditorTools
                 TextAnchor.MiddleCenter, 24);
             enemyRow.color = TextPrimary;
 
-            CreatePanelButton(panel.transform, "PlayBtn", "开始挑战", new Vector2(0f, -194f), 560f, true, 88f, 34);
-            CreatePanelButton(panel.transform, "ReplayBtn", "从头重打", new Vector2(-160f, -288f), 300f, false, 76f, 30);
-            CreatePanelButton(panel.transform, "CloseBtn", "返回", new Vector2(160f, -288f), 300f, false, 76f, 30);
+            CreatePanelButton(panel.transform, "PlayBtn", "Start Challenge", new Vector2(0f, -194f), 560f, true, 88f, 34);
+            CreatePanelButton(panel.transform, "ReplayBtn", "Restart", new Vector2(-160f, -288f), 300f, false, 76f, 30);
+            CreatePanelButton(panel.transform, "CloseBtn", "Back", new Vector2(160f, -288f), 300f, false, 76f, 30);
 
             EditorUtility.SetDirty(root);
             PrefabUtility.SaveAsPrefabAsset(root, LevelDetailPath);
@@ -1691,7 +1775,7 @@ namespace FTProject.EditorTools
             CreateImageAt(panel.transform, "TopBar", new Vector2(0.5f, 1f), Vector2.zero,
                 new Vector2(800f, 24f), "UI_Chip_Gold", Fire);
 
-            TextMeshProUGUI title = CreateText(panel.transform, "SellTitle", "确认出售？",
+            TextMeshProUGUI title = CreateText(panel.transform, "SellTitle", "Sell this tower?",
                 new Vector2(0.5f, 0.5f), new Vector2(0f, 241f), new Vector2(740f, 56f),
                 TextAnchor.MiddleCenter, 48);
             title.color = TextPrimary;
@@ -1699,7 +1783,7 @@ namespace FTProject.EditorTools
             CreateImageAt(panel.transform, "TowerIcon", new Vector2(0.5f, 0.5f), new Vector2(0f, 158f),
                 new Vector2(100f, 100f), "UI_TowerIcon_Normal", new Color(0.18f, 0.29f, 0.4f, 1f), false);
 
-            TextMeshProUGUI name = CreateText(panel.transform, "TowerName", "塔",
+            TextMeshProUGUI name = CreateText(panel.transform, "TowerName", "Tower",
                 new Vector2(0.5f, 0.5f), new Vector2(0f, 89f), new Vector2(740f, 44f),
                 TextAnchor.MiddleCenter, 32);
             name.color = TextPrimary;
@@ -1710,7 +1794,7 @@ namespace FTProject.EditorTools
             warn.color = Fire;
             warn.enableWordWrapping = true;   // 两句警告文案要换行
 
-            TextMeshProUGUI refundLabel = CreateText(panel.transform, "RefundLabel", "退回金币",
+            TextMeshProUGUI refundLabel = CreateText(panel.transform, "RefundLabel", "Refund",
                 new Vector2(0.5f, 0.5f), new Vector2(-100f, -80f), new Vector2(240f, 56f),
                 TextAnchor.MiddleCenter, 30);
             refundLabel.color = TextSecondary;
@@ -1721,8 +1805,8 @@ namespace FTProject.EditorTools
             refundValue.color = Gold;
 
             // 两按钮**并排同 y**（效果图 v2 修正：v1 竖排会越出面板底）
-            CreatePanelButton(panel.transform, "ConfirmBtn", "确认出售", new Vector2(-260f, -210f), 240f, true, 88f, 32);
-            CreatePanelButton(panel.transform, "CancelBtn", "取消", new Vector2(260f, -210f), 240f, false, 88f, 32);
+            CreatePanelButton(panel.transform, "ConfirmBtn", "Confirm Sell", new Vector2(-260f, -210f), 240f, true, 88f, 32);
+            CreatePanelButton(panel.transform, "CancelBtn", "Cancel", new Vector2(260f, -210f), 240f, false, 88f, 32);
 
             EditorUtility.SetDirty(root);
             PrefabUtility.SaveAsPrefabAsset(root, SellConfirmPath);
@@ -1750,7 +1834,7 @@ namespace FTProject.EditorTools
             CreateImageAt(panel.transform, "TopBar", new Vector2(0.5f, 1f), Vector2.zero,
                 new Vector2(760f, 24f), "UI_Chip_Gold", Cyan);
 
-            TextMeshProUGUI title = CreateText(panel.transform, "BodyTitle", "确认",
+            TextMeshProUGUI title = CreateText(panel.transform, "BodyTitle", "Confirm",
                 new Vector2(0.5f, 0.5f), new Vector2(0f, 201f), new Vector2(700f, 56f),
                 TextAnchor.MiddleCenter, 48);
             title.color = TextPrimary;
@@ -1764,8 +1848,8 @@ namespace FTProject.EditorTools
             CreateImageAt(panel.transform, "DangerIcon", new Vector2(0.5f, 0.5f), new Vector2(0f, -16f),
                 new Vector2(96f, 96f), "UI_Panel_Red", DangerRed);
 
-            CreatePanelButton(panel.transform, "ConfirmBtn", "确定", new Vector2(-220f, -168f), 240f, true, 88f, 32);
-            CreatePanelButton(panel.transform, "CancelBtn", "取消", new Vector2(220f, -168f), 240f, false, 88f, 32);
+            CreatePanelButton(panel.transform, "ConfirmBtn", "OK", new Vector2(-220f, -168f), 240f, true, 88f, 32);
+            CreatePanelButton(panel.transform, "CancelBtn", "Cancel", new Vector2(220f, -168f), 240f, false, 88f, 32);
 
             EditorUtility.SetDirty(root);
             PrefabUtility.SaveAsPrefabAsset(root, ConfirmPath);
@@ -1803,7 +1887,7 @@ namespace FTProject.EditorTools
             root.AddComponent<TowerCodexView>();
 
             // 标题基线 y_svg 90（整页 64 号）→ 盒中心 ≈ 450 + 22 = +472
-            TextMeshProUGUI title = CreateText(panel.transform, "CodexTitle", "防御塔图鉴",
+            TextMeshProUGUI title = CreateText(panel.transform, "CodexTitle", "Tower Codex",
                 new Vector2(0.5f, 0.5f), new Vector2(0f, 472f), new Vector2(1400f, 92f),
                 TextAnchor.MiddleCenter, 64);
             title.color = TextPrimary;
@@ -1866,7 +1950,7 @@ namespace FTProject.EditorTools
                 new Vector2(0.5f, 0.5f), new Vector2(0f, -330f), new Vector2(600f, 44f),
                 TextAnchor.MiddleCenter, 28);
 
-            CreatePanelButton(panel.transform, "CloseBtn", "返回", new Vector2(0f, -430f), 340f, true, 84f, 32);
+            CreatePanelButton(panel.transform, "CloseBtn", "Back", new Vector2(0f, -430f), 340f, true, 84f, 32);
 
             GameObject saved = PrefabUtility.SaveAsPrefabAsset(root, TowerCodexPath);
             Object.DestroyImmediate(root);
@@ -1912,7 +1996,7 @@ namespace FTProject.EditorTools
             CreateImageAt(body.transform, "Icon", new Vector2(0.5f, 0.5f), new Vector2(0f, 180f),
                 new Vector2(240f, 240f), "UI_TowerIcon_Normal", new Color(0.18f, 0.29f, 0.4f, 1f), false);
 
-            CreateText(body.transform, "TypeName", "塔", new Vector2(0.5f, 0.5f), new Vector2(0f, 10f),
+            CreateText(body.transform, "TypeName", "Tower", new Vector2(0.5f, 0.5f), new Vector2(0f, 10f),
                 new Vector2(400f, 52f), TextAnchor.MiddleCenter, 40);
             CreateText(body.transform, "Role", string.Empty, new Vector2(0.5f, 0.5f), new Vector2(0f, -40f),
                 new Vector2(400f, 40f), TextAnchor.MiddleCenter, 26);

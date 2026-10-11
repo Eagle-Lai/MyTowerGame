@@ -104,6 +104,12 @@ _CHANGED = [
     'Assets/Scripts/UI/LevelLoadingMask.cs',
     'Assets/Scripts/Bullet/BaseBullet.cs',
     'Assets/Scripts/Tower/BaseTower.cs',
+    # —— 真机热更（本机资源服务器）：地址配置 + 远端服务 + dll 下载通道 ——
+    'Assets/Scripts/Core/Res/ResServerConfig.cs',
+    'Assets/Scripts/Core/Res/FTRemoteService.cs',
+    'Assets/AOTAssembly/HotUpdateDllDownloader.cs',
+    'Assets/AOTAssembly/BootLoader.cs',
+    'Assets/AOTAssembly/HotUpdateAssembler.cs',
 ]
 for _rel in _CHANGED:
     TARGETS.append(os.path.join(PROJ, *_rel.split('/')))
@@ -192,27 +198,94 @@ def strip(src):
 
 
 def split_args(s):
-    """按顶层逗号切分实参；空串表示 0 个参数。"""
+    """按顶层逗号切分实参；空串表示 0 个参数。
+
+    ★ 两处 lambda / 泛型相关的修正（2026-10-11）：
+      ① `=>` 的 `>` **不是**泛型收尾符。
+         旧实现见到 `>` 就 depth-1，于是 `x => ...` 会让 depth 漂成 -1、-2，
+         之后所有逗号都不再算"顶层分隔"，实参被整体并成 1 个 → 假 FAIL。
+      ② lambda 体内的逗号不算分隔符（例如 `(a, b) => ...` 的形参表）。
+         判据：进入 `=>` 后把当前层级记为 lambda 层，该层级的逗号跳过，
+         直到遇到与之配对的收尾括号。
+    """
     s = s.strip()
     if not s:
         return []
     args = []
     depth = 0
+    gen = 0                 # 泛型 < > 嵌套深度（**独立于括号深度**）
     cur = ''
-    for ch in s:
+    in_lambda = False
+    lambda_base = 0
+    lambda_opened = False
+    prev = '>'
+
+    def _is_generic_open(text, idx):
+        """判断 text[idx] 的 '<' 是泛型开始还是小于号比较。
+
+        ★ 为什么必须区分（2026-10-11 修）：
+          旧实现见到 '<' 就 depth+1、见到 '>' 就 depth-1。
+          而实参里 `total > 0 ? a : b`、`i < n` 这类**比较运算极其常见**
+          （本工程实测 1300+ 处），每来一个就把 depth 打乱 →
+          "实参个数"整体算错，报出的位置与被算错的调用可能毫不相干。
+
+        判据（保守，认不出就当比较运算）：
+          '<' 紧跟标识符，且向后在遇到运算符/括号/分号之前能看到配对的 '>'。
+        """
+        if idx + 1 >= len(text):
+            return False
+        nxt = text[idx + 1]
+        if not (nxt.isalpha() or nxt == '_'):
+            return False
+        j = idx + 1
+        while j < len(text) and text[j] not in ';\n){}':
+            if text[j] == '>':
+                return True
+            if text[j] in '+-*/%&|!=?':
+                return False
+            j += 1
+        return False
+
+    for _idx, ch in enumerate(s):
+        # `=>` 的 '>' 先吃掉，绝不能当作泛型收尾或比较运算
+        if ch == '>' and prev == '=':
+            cur += ch
+            if in_lambda is False:
+                in_lambda = True
+                lambda_base = depth
+                lambda_opened = False
+            prev = ch
+            continue
+
         if ch in '([{':
             depth += 1
+            if in_lambda and ch == '{':
+                lambda_opened = True
         elif ch in ')]}':
             depth -= 1
-        elif ch == ',' and depth == 0:
-            args.append(cur)
-            cur = ''
-            continue
+            if in_lambda and lambda_opened and ch == '}' and depth == lambda_base:
+                in_lambda = False
+        elif ch == ',' and depth == 0 and gen == 0:
+            # ★ 无花括号的 lambda（`x => ok = success`）体是**单个表达式**，
+            #   它的结束点就是顶层逗号 —— 不能把逗号当成"lambda 体内部"而跳过，
+            #   否则相邻的两个 lambda 实参会粘成一个（本工程 dll 下载器的回调就是这种）。
+            #   只有带花括号的 lambda（`x => { ... }`）体内逗号才需要忽略。
+            if in_lambda is False or lambda_opened is False:
+                args.append(cur)
+                cur = ''
+                prev = ch
+                continue
         elif ch == '<':
-            depth += 1
+            # 只有泛型 '<' 才进深度；比较运算的 '<' 一概忽略
+            if _is_generic_open(s, _idx):
+                gen += 1
         elif ch == '>':
-            depth -= 1
+            # 只有与已开泛型配对的 '>' 才出深度；比较运算的 '>' 忽略
+            if gen > 0:
+                gen -= 1
+
         cur += ch
+        prev = ch
     args.append(cur)
     return args
 

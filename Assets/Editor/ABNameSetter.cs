@@ -27,10 +27,16 @@ namespace FTProject.EditorTools
             EditorUtil.Report report = new EditorUtil.Report();
             Apply(report);
             AssetDatabase.Refresh();
-            Debug.Log("[M0] AssetBundle 打标结果：\n" + report.Text);
-            EditorUtility.DisplayDialog("AssetBundle 打标",
-                string.Format("{0}\n\n{1}",
-                    report.Errors > 0 ? "有错误，请查看 Console" : "完成", report.Text), "好");
+            // 【为什么不再弹窗】带 DisplayDialog 的菜单会阻塞编辑器，自动化调用直接卡死。
+            // 结果一律只打日志，成功/失败都能在 Console 里看到（见 EditorUtil.Report.Text）。
+            if (report.Errors > 0)
+            {
+                Debug.LogError("[M0] AssetBundle 打标有错误：\n" + report.Text);
+            }
+            else
+            {
+                Debug.Log("[M0] AssetBundle 打标完成：\n" + report.Text);
+            }
         }
 
         /// <summary>供向导与打包脚本调用</summary>
@@ -103,8 +109,22 @@ namespace FTProject.EditorTools
             }
         }
 
+        /// <summary>
+        /// 菜单入口：清除 ResTable 范围内的 AssetBundle 标记。
+        /// 直接执行、不弹窗（自动化友好）；需要二次确认的走「强制执行」菜单。
+        /// </summary>
         [MenuItem("Tools/塔防/高级（单步重建）/清除 ResTable 范围内的 AssetBundle 标记", false, 310)]
         public static void ClearAll()
+        {
+            ClearAllInternal();
+        }
+
+        /// <summary>
+        /// 「强制执行」入口，等价于旧菜单 + 确认弹窗。**仅用于人工交互**，
+        /// 自动化不得调用（会阻塞编辑器）。
+        /// </summary>
+        [MenuItem("Tools/塔防/高级（单步重建）/强制执行：清除 ResTable 范围内的 AssetBundle 标记（带确认）", false, 311)]
+        public static void ClearAllForce()
         {
             if (!EditorUtility.DisplayDialog("清除 AssetBundle 标记",
                     "将清除 **ResTable 登记范围内**资源的 AssetBundle 标记" +
@@ -114,7 +134,11 @@ namespace FTProject.EditorTools
             {
                 return;
             }
+            ClearAllInternal();
+        }
 
+        private static void ClearAllInternal()
+        {
             // ★ 只遍历 ResTable 登记的路径，逐条清除
             int cleared = 0;
             int scanned = 0;
@@ -144,10 +168,8 @@ namespace FTProject.EditorTools
                 AssetDatabase.Refresh();
             }
 
-            Debug.Log(string.Format("[M0] 已扫描 ResTable 内 {0} 条，清除 {1} 个资源的 AssetBundle 标记",
+            Debug.Log(string.Format("[M0] 清除完成：已扫描 ResTable 内 {0} 条，清除 {1} 个资源的 AssetBundle 标记",
                 scanned, cleared));
-            EditorUtility.DisplayDialog("清除完成",
-                string.Format("已扫描 {0} 条，清除 {1} 个资源。", scanned, cleared), "好");
         }
     }
 }

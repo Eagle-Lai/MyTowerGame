@@ -7,11 +7,10 @@ namespace FTProject
     /// <summary>
     /// 设置界面（M3-6）。
     ///
-    /// 【为什么音量用 +/- 按钮而不是 Slider】
-    ///   uGUI 的 Slider 需要 Fill/Handle 一整套子节点与三个组件的互相引用，
-    ///   写在 prefab 里既长又容易错位。而本工程当前只有"音量 + 静音"两个设置项，
-    ///   用两个按钮调档更简单、更好点，也不会因为布局问题失效。
-    ///   将来设置项变多时再换 Slider 不迟（本界面对外只暴露 SetVolume，替换成本很低）。
+    /// 【为什么音量用 Slider】(M3-6 修订)
+    ///   音量改为滑动条拖拽调节，所见即所得；VolumeText 仍同步显示百分比。
+    ///   Slider 节点树（Background / Fill Area / Handle）由 UIPrefabBuilder 生成，
+    ///   本脚本只关心 Panel/VolumeSlider 的 onValueChanged。
     ///
     /// 【设置写到哪里】SaveManager（持久化），并立刻推给 AudioManager 生效。
     /// </summary>
@@ -19,12 +18,8 @@ namespace FTProject
     {
         public const string LogicalName = "SettingView";
 
-        /// <summary>每次点击调整的音量步长</summary>
-        private const float Step = 0.1f;
-
         private TMP_Text _volumeText;
-        private Button _volDown;
-        private Button _volUp;
+        private Slider _volumeSlider;
         private Button _muteBtn;
         private TMP_Text _muteLabel;
         private Button _resetBtn;
@@ -35,15 +30,13 @@ namespace FTProject
         {
             _title = FindText("Panel/Title");
             _volumeText = FindText("Panel/VolumeText");
-            _volDown = FindButton("Panel/VolDownBtn");
-            _volUp = FindButton("Panel/VolUpBtn");
+            _volumeSlider = FindSlider("Panel/VolumeSlider");
             _muteBtn = FindButton("Panel/MuteBtn");
             _muteLabel = FindText("Panel/MuteBtn/Label");
             _resetBtn = FindButton("Panel/ResetBtn");
             _closeBtn = FindButton("Panel/CloseBtn");
 
-            if (_volDown != null) _volDown.onClick.AddListener(delegate { StepVolume(-Step); });
-            if (_volUp != null) _volUp.onClick.AddListener(delegate { StepVolume(Step); });
+            if (_volumeSlider != null) _volumeSlider.onValueChanged.AddListener(OnVolumeChanged);
             if (_muteBtn != null) _muteBtn.onClick.AddListener(OnClickMute);
             if (_resetBtn != null) _resetBtn.onClick.AddListener(OnClickReset);
             if (_closeBtn != null) _closeBtn.onClick.AddListener(OnClickClose);
@@ -52,7 +45,7 @@ namespace FTProject
 
             if (_title != null)
             {
-                _title.text = "设置";
+                _title.text = Localization.Get("Settings") ?? "设置";
             }
         }
 
@@ -61,10 +54,9 @@ namespace FTProject
             Refresh();
         }
 
-        private void StepVolume(float delta)
+        private void OnVolumeChanged(float value)
         {
-            GameSettings s = SaveManager.Instance.Settings;
-            SaveManager.Instance.SetVolume(s.volume + delta);
+            SaveManager.Instance.SetVolume(value);
             Refresh();
         }
 
@@ -79,8 +71,12 @@ namespace FTProject
         {
             // UI 补全 C2：重置存档是**不可撤销**的，必须先确认。
             // 改造前这里点一下就真的清了（玩家点错就没了）。
-            ConfirmView.Show("重置存档", "将清空所有关卡进度与星级，此操作不可撤销。",
-                ConfirmType.Danger, DoReset, "确定重置", "取消");
+            ConfirmView.Show(
+                Localization.Get("Reset Save") ?? "重置存档",
+                Localization.Get("This will erase all progress. Continue?") ?? "将清空所有关卡进度与星级，此操作不可撤销。",
+                ConfirmType.Danger, DoReset,
+                Localization.Get("OK") ?? "确定重置",
+                Localization.Get("Cancel") ?? "取消");
         }
 
         private void DoReset()
@@ -90,7 +86,8 @@ namespace FTProject
             SaveManager.Instance.ResetAll();
             SaveManager.Instance.ApplyToAudio();
             Refresh();
-            EventDispatcher.TriggerEvent<string>(EventName.ShowTipEvent, "存档已重置");
+            EventDispatcher.TriggerEvent<string>(EventName.ShowTipEvent,
+                Localization.Get("Save reset") ?? "存档已重置");
         }
 
         private void OnClickClose()
@@ -101,8 +98,13 @@ namespace FTProject
         private void Refresh()
         {
             GameSettings s = SaveManager.Instance.Settings;
-            SetText(_volumeText, string.Format("音量 {0}%", Mathf.RoundToInt(s.volume * 100f)));
-            SetText(_muteLabel, s.muted ? "取消静音" : "静音");
+            SetText(_volumeText,
+                Localization.Get("Volume {0}%", Mathf.RoundToInt(s.volume * 100f))
+                ?? string.Format("音量 {0}%", Mathf.RoundToInt(s.volume * 100f)));
+            if (_volumeSlider != null) _volumeSlider.SetValueWithoutNotify(s.volume);
+            SetText(_muteLabel, s.muted
+                ? (Localization.Get("Unmute") ?? "取消静音")
+                : (Localization.Get("Mute") ?? "静音"));
         }
 
         private TMP_Text FindText(string path)
@@ -114,6 +116,17 @@ namespace FTProject
                 return null;
             }
             return tr.GetComponent<TMP_Text>();
+        }
+
+        private Slider FindSlider(string path)
+        {
+            Transform tr = transform.Find(path);
+            if (tr == null)
+            {
+                Debug.LogWarning("[Setting] 缺少滑动条节点「" + path + "」");
+                return null;
+            }
+            return tr.GetComponent<Slider>();
         }
 
         private Button FindButton(string path)

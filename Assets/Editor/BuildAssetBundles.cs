@@ -47,8 +47,6 @@ namespace FTProject.EditorTools
             if (!CheckConfigReady(report))
             {
                 Debug.LogError("[M0] 打包中止：配置表未就绪。\n" + report.Text);
-                EditorUtility.DisplayDialog("打包 AssetBundle",
-                    "中止：配置表未导出。\n\n" + report.Text, "好");
                 return;
             }
 
@@ -56,10 +54,7 @@ namespace FTProject.EditorTools
             ABNameSetter.Apply(report);
             if (report.Errors > 0)
             {
-                Debug.LogError("[M0] 打包中止：存在未就绪的资源。\n" + report.Text);
-                EditorUtility.DisplayDialog("打包 AssetBundle",
-                    "中止：ResTable 里有资源不存在。\n\n" + report.Text +
-                    "\n\n请先执行「Tools ▸ 塔防 ▸ 一键完成 M0 资源准备」。", "好");
+                Debug.LogError("[M0] 打包中止：ResTable 里有资源不存在。请先执行「Tools ▸ 塔防 ▸ 一键补齐 M0 资源」。\n" + report.Text);
                 return;
             }
 
@@ -89,8 +84,6 @@ namespace FTProject.EditorTools
             {
                 report.Error("BuildPipeline 返回 null，打包失败。请查看 Console 上方的详细错误。");
                 Debug.LogError("[M0] AssetBundle 打包失败：\n" + report.Text);
-                EditorUtility.DisplayDialog("打包 AssetBundle",
-                    "失败，请查看 Console。\n\n" + report.Text, "好");
                 return;
             }
 
@@ -138,10 +131,9 @@ namespace FTProject.EditorTools
             }
 
             AssetDatabase.Refresh();
-            Debug.Log("[M0] AssetBundle 打包完成：\n" + report.Text);
-            EditorUtility.DisplayDialog("打包 AssetBundle",
-                string.Format("{0}\n\n{1}",
-                    report.Errors > 0 ? "有错误，请查看 Console" : "完成", report.Text), "好");
+            Debug.Log(report.Errors > 0
+                ? "[M0] AssetBundle 打包有错误：\n" + report.Text
+                : "[M0] AssetBundle 打包完成：\n" + report.Text);
         }
 
         // ------------------------------------------------------------------

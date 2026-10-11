@@ -145,6 +145,16 @@ namespace FTProject
         /// </summary>
         private static TMP_FontAsset ResolveFont()
         {
+            // 多语言字体优先（数字本身无需翻译，但字形集要跟随当前语言）
+            LanguageManager.EnsureSettings();
+            if (LanguageManager.Settings != null)
+            {
+                TMP_FontAsset localized = LanguageManager.GetFont(LanguageManager.Current);
+                if (localized != null)
+                {
+                    return localized;
+                }
+            }
             TMP_FontAsset font = TMP_Settings.defaultFontAsset;
             if (font == null && TMP_Settings.fallbackFontAssets != null && TMP_Settings.fallbackFontAssets.Count > 0)
             {

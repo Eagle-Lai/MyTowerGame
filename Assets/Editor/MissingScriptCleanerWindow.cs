@@ -298,7 +298,7 @@ namespace FTProject.EditorTools
                 string path = AssetDatabase.GetAssetPath(_target);
                 if (!AssetDatabase.IsValidFolder(path) && !path.EndsWith(".prefab"))
                 {
-                    EditorUtility.DisplayDialog("目标无效", "请选择文件夹或 .prefab 文件。", "知道了");
+                    Debug.LogWarning("[MissingScript清理] 目标无效：请选择文件夹或 .prefab 文件。");
                     _target = null;
                 }
             }

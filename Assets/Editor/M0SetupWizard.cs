@@ -26,8 +26,22 @@ namespace FTProject.EditorTools
     /// </summary>
     public static class M0SetupWizard
     {
+        /// <summary>
+        /// 菜单入口：一键补齐 M0 资源（安全模式，只补缺失）。
+        /// 直接执行、不弹窗（自动化友好）；需要执行前二次确认的走「带确认」菜单。
+        /// </summary>
         [MenuItem("Tools/塔防/一键补齐 M0 资源（安全：只补缺失）", false, 10)]
         public static void RunAll()
+        {
+            RunAllInternal();
+        }
+
+        /// <summary>
+        /// 「带确认」入口，等价于旧菜单 + 执行前确认弹窗。**仅用于人工交互**，
+        /// 自动化不得调用（会阻塞编辑器）。
+        /// </summary>
+        [MenuItem("Tools/塔防/强制执行：一键补齐 M0 资源（带确认）", false, 11)]
+        public static void RunAllForce()
         {
             if (!EditorUtility.DisplayDialog("M0 资源补齐（安全模式）",
                     "本模式**只补齐缺失的产物，已存在的一律跳过**，不会覆盖手工修改。\n\n" +
@@ -45,17 +59,19 @@ namespace FTProject.EditorTools
             {
                 return;
             }
+            RunAllInternal();
+        }
 
+        private static void RunAllInternal()
+        {
             EditorUtil.Report report = new EditorUtil.Report();
             report.Head("M0 资源补齐（安全模式：只补缺失）");
 
             // 1. 导出配置表（Luban）—— 必须最先做：后面所有步骤都依赖表已就绪
             if (!LubanExporter.ExportInternal(report))
             {
-                Debug.LogError("[M0] 导出配置表失败，已中止一键流程。\n" + report.Text);
-                EditorUtility.DisplayDialog("M0 资源补齐",
-                    "中止：配置表导出失败。\n\n" + report.Text +
-                    "\n\n（常见原因：Excel 被占用没保存 / 表结构改错）", "好");
+                Debug.LogError("[M0] 导出配置表失败，已中止一键流程。" +
+                               "（常见原因：Excel 被占用没保存 / 表结构改错）\n" + report.Text);
                 return;
             }
 
@@ -92,24 +108,24 @@ namespace FTProject.EditorTools
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
 
-            Debug.Log("[M0] 资源补齐完成：\n" + report.Text);
-
+            // 【为什么不再弹窗】带 DisplayDialog 的菜单会阻塞编辑器，自动化调用直接卡死。
+            // "要不要顺便打包 AB" 也改为纯日志提示 —— 打包是耗时操作，本就该由人显式决定，
+            // 走「Tools ▸ 塔防 ▸ 5. 打包 AssetBundle」即可。
             bool hasError = report.Errors > 0;
-            bool buildAb = EditorUtility.DisplayDialog("M0 资源补齐",
-                string.Format("{0}\n错误 {1} · 警告 {2}\n\n完整报告已打印到 Console。\n\n" +
-                              "{3}",
-                    hasError ? "有错误，请先按报告修复" : "全部完成",
-                    report.Errors, report.Warnings,
-                    hasError
-                        ? "请查看 Console 的 [M0] 开头日志。"
-                        : "下一步建议：\n① 运行「Tools ▸ 塔防 ▸ 0. 自检」确认产物可用\n" +
-                          "② 打开 Assets/Scenes/main.unity 按 Play 试跑（编辑器走直读模式，不需要打 AB）\n" +
-                          "③ 需要验证真 AB 链路时，先点「打包 AssetBundle」，再加 FORCE_AB 宏"),
-                "好", "顺便打包 AB");
-
-            if (!buildAb)
+            if (hasError)
             {
-                BuildAssetBundles.Build();
+                Debug.LogError(string.Format("[M0] 资源补齐有错误（{0} 项），请按报告修复：\n{1}",
+                    report.Errors, report.Text));
+            }
+            else
+            {
+                Debug.Log(string.Format(
+                    "[M0] 资源补齐全部完成（警告 {0} 项）。\n" +
+                    "下一步建议：\n" +
+                    "① 运行「Tools ▸ 塔防 ▸ 0. 自检（先跑这个）」确认产物可用\n" +
+                    "② 打开 Assets/Scenes/main.unity 按 Play 试跑（编辑器走直读模式，不需要打 AB）\n" +
+                    "③ 需要验证真 AB 链路时，先点「打包 AssetBundle」，再加 FORCE_AB 宏\n" +
+                    "{1}", report.Warnings, report.Text));
             }
         }
 
@@ -123,10 +139,10 @@ namespace FTProject.EditorTools
             EditorUtil.Report report = new EditorUtil.Report();
             RunSelfCheckInternal(report);
 
-            Debug.Log("[M0] 自检报告：\n" + report.Text);
-            EditorUtility.DisplayDialog("M0 自检",
-                string.Format("错误 {0} · 警告 {1}\n\n详见 Console 的 [M0] 日志。",
-                    report.Errors, report.Warnings), "好");
+            Debug.Log(report.Errors > 0
+                ? string.Format("[M0] 自检发现 {0} 个阻塞项：\n{1}", report.Errors, report.Text)
+                : string.Format("[M0] 自检完成（错误 {0} · 警告 {1}）：\n{2}",
+                    report.Errors, report.Warnings, report.Text));
         }
 
         /// <summary>
@@ -138,7 +154,11 @@ namespace FTProject.EditorTools
         {
             EditorUtil.Report report = new EditorUtil.Report();
             RunSelfCheckInternal(report);
-            Debug.Log("[M0] 自检报告：\n" + report.Text);
+            Debug.Log(report.Errors > 0
+                ? string.Format("[M0] 自检报告（错误 {0} · 警告 {1}）：\n{2}",
+                    report.Errors, report.Warnings, report.Text)
+                : string.Format("[M0] 自检报告（通过，警告 {0}）：\n{1}",
+                    report.Warnings, report.Text));
         }
 
         private static void RunSelfCheckInternal(EditorUtil.Report report)

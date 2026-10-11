@@ -116,7 +116,7 @@ namespace FTProject
             }
             if (_startLabel != null)
             {
-                _startLabel.text = "开始";
+                _startLabel.text = Localization.Get("Start") ?? "开始";
             }
 
             // 倍速按钮（P2b）：点击循环 ×1→×2→×3→×1
@@ -213,7 +213,7 @@ namespace FTProject
                 _startButton.interactable = false;
                 if (_startLabel != null)
                 {
-                    _startLabel.text = "进行中";
+                    _startLabel.text = Localization.Get("In Progress") ?? "进行中";
                 }
             }
             EventDispatcher.TriggerEvent(EventName.StartRoundRequestEvent);
@@ -350,17 +350,17 @@ namespace FTProject
 
         private void OnRoundStart(int roundIndex)
         {
-            SetText(_roundText, string.Format("回合 {0}", roundIndex));
+            SetText(_roundText, Localization.Get("Round {0}", roundIndex) ?? string.Format("回合 {0}", roundIndex));
         }
 
         private void OnWaveStart(int waveIndex)
         {
-            SetText(_roundText, string.Format("第 {0} 波", waveIndex));
+            SetText(_roundText, Localization.Get("Wave {0}", waveIndex) ?? string.Format("第 {0} 波", waveIndex));
         }
 
         private void OnRoundClear(int roundIndex)
         {
-            SetText(_roundText, string.Format("回合 {0} 完成", roundIndex));
+            SetText(_roundText, Localization.Get("Round {0} Clear", roundIndex) ?? string.Format("回合 {0} 完成", roundIndex));
             // 恢复"开始"按钮，让玩家推进到下一回合
             if (_startButton != null)
             {
@@ -368,7 +368,7 @@ namespace FTProject
             }
             if (_startLabel != null)
             {
-                _startLabel.text = "下一回合";
+                _startLabel.text = Localization.Get("Next Round") ?? "下一回合";
             }
         }
 
@@ -380,7 +380,9 @@ namespace FTProject
             }
             if (_startLabel != null)
             {
-                _startLabel.text = victory ? "已通关" : "已失败";
+                _startLabel.text = victory
+                    ? (Localization.Get("Cleared") ?? "已通关")
+                    : (Localization.Get("Failed") ?? "已失败");
             }
             // 结算后倍速按钮不可用（策划案 §7.3：倍速档位在 GameOver 时复位且不再可切）
             if (_speedButton != null)

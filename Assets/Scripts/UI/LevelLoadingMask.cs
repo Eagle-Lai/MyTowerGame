@@ -113,10 +113,15 @@ namespace FTProject
             trt.anchoredPosition = Vector2.zero;
             trt.sizeDelta = new Vector2(1200f, 60f);
             TextMeshProUGUI tmp = textGo.AddComponent<TextMeshProUGUI>();
-            // 字体走 ResTable 已登记的逻辑名（与其它界面同一份资产）；取不到再退 TMP 默认。
+            // 字体按当前语言取（多语言设置优先）；取不到再退 ResTable 里的中文 SDF，最后退 TMP 默认。
             // 遮罩只在切关时使用，那时资源系统早已就绪。
             TMP_FontAsset font = null;
-            if (ResLoader.Instance.IsReady)
+            LanguageManager.EnsureSettings();
+            if (LanguageManager.Settings != null)
+            {
+                font = LanguageManager.GetFont(LanguageManager.Current);
+            }
+            if (font == null && ResLoader.Instance.IsReady)
             {
                 font = ResLoader.Instance.Load<TMP_FontAsset>("Font_SiYuanSongTi_SDF");
             }

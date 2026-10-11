@@ -71,14 +71,16 @@ namespace FTProject
             if (_topBar != null) _topBar.color = theme;
             if (_typeName != null)
             {
-                _typeName.text = string.IsNullOrEmpty(cfg.Name) ? ("塔 " + cfg.Type) : cfg.Name;
+                _typeName.text = string.IsNullOrEmpty(cfg.Name)
+                    ? (Localization.Get("Tower {0}", cfg.Type) ?? ("塔 " + cfg.Type))
+                    : cfg.Name;
                 _typeName.color = theme;
             }
             if (_role != null) _role.text = roleText;
-            if (_dpsRow != null) _dpsRow.text = string.Format("伤害　{0}", cfg.Power);
-            if (_rangeRow != null) _rangeRow.text = string.Format("射程　{0:F1} 格", cfg.RadiusGrid);
-            if (_speedRow != null) _speedRow.text = string.Format("攻速　{0:F2} 秒", cfg.CooldownSec);
-            if (_priceRow != null) _priceRow.text = string.Format("造价　{0} 金币", cfg.Prices);
+            if (_dpsRow != null) _dpsRow.text = Localization.Get("Damage   {0}", cfg.Power) ?? string.Format("伤害　{0}", cfg.Power);
+            if (_rangeRow != null) _rangeRow.text = Localization.Get("Range    {0:F1}", cfg.RadiusGrid) ?? string.Format("射程　{0:F1} 格", cfg.RadiusGrid);
+            if (_speedRow != null) _speedRow.text = Localization.Get("Speed    {0:F2}", cfg.CooldownSec) ?? string.Format("攻速　{0:F2} 秒", cfg.CooldownSec);
+            if (_priceRow != null) _priceRow.text = Localization.Get("Cost     {0}", cfg.Prices) ?? string.Format("造价　{0} 金币", cfg.Prices);
             if (_desc != null)
             {
                 _desc.text = string.IsNullOrEmpty(cfg.Desc) ? roleText : cfg.Desc;
@@ -132,11 +134,11 @@ namespace FTProject
         {
             switch (type)
             {
-                case 2: return "范围爆炸 · 清群核心";
-                case 3: return "减速光环 · 增益全队";
-                case 4: return "直线穿透 · 一列贯穿";
-                case 5: return "高单伤 · 专克重甲";
-                default: return "单体速射 · 性价比基准";
+                case 2: return Localization.Get("Area blast · swarm clearer") ?? "范围爆炸 · 清群核心";
+                case 3: return Localization.Get("Slows enemies · control") ?? "减速光环 · 增益全队";
+                case 4: return Localization.Get("Pierces a line of enemies") ?? "直线穿透 · 一列贯穿";
+                case 5: return Localization.Get("Hitscan burst · anti-boss") ?? "高单伤 · 专克重甲";
+                default: return Localization.Get("Single-target rapid fire") ?? "单体速射 · 性价比基准";
             }
         }
 

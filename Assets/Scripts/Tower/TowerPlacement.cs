@@ -38,7 +38,10 @@ namespace FTProject
         private int _hoverCol = -1;
         private CellHighlight _hoverState = CellHighlight.None;
         private bool _canBuild;
-        private string _blockReason = "无法建造";
+        /// <summary>不可建造的原因 key（多语言），显示时查表；空串 = 可建造。</summary>
+        private string _blockReason = "Cannot Build Here";
+        /// <summary>原因文案里的可选参数（目前只有"金币不足（需要 N）"用到）。</summary>
+        private int? _blockArg;
 
         /// <summary>当前选中的已建造塔（M2-B1）。未选中为 null。</summary>
         private BaseTower _selected;
@@ -101,12 +104,14 @@ namespace FTProject
             TowerConfig cfg = Configs.GetTowerByTypeAndLevel(type, level);
             if (cfg == null)
             {
-                Tips(string.Format("找不到 type={0} level={1} 的塔配置", type, level));
+                Tips(Localization.Get("No tower config for type={0} level={1}", type, level)
+                    ?? string.Format("找不到 type={0} level={1} 的塔配置", type, level));
                 return;
             }
             if (!PlayerDataManager.Instance.TryPeek(cfg.Prices))
             {
-                Tips(string.Format("金币不足，需要 {0}", cfg.Prices));
+                Tips(Localization.Get("Not enough gold, need {0}", cfg.Prices)
+                    ?? string.Format("金币不足，需要 {0}", cfg.Prices));
                 return;
             }
 
@@ -123,7 +128,8 @@ namespace FTProject
 
             CreateGhost(cfg);
             EventDispatcher.TriggerEvent(EventName.BuildingTower);
-            Tips(string.Format("{0}：移动到可建造格上点击放置，右键/ESC 取消", cfg.Name));
+            Tips(Localization.Get("{0}: move to a buildable tile and click to place, right-click/ESC to cancel", cfg.Name)
+                ?? string.Format("{0}：移动到可建造格上点击放置，右键/ESC 取消", cfg.Name));
         }
 
         /// <summary>
@@ -470,7 +476,7 @@ namespace FTProject
                 }
                 else if (inside)
                 {
-                    Tips(_blockReason);
+                    Tips(BlockReasonText());
                 }
             }
         }
@@ -483,37 +489,40 @@ namespace FTProject
 
             if (cell == null)
             {
-                _blockReason = "超出棋盘范围";
+                _blockReason = "Cannot Build Here";
                 return;
             }
             if (!cell.IsBuildable)
             {
-                _blockReason = "该位置不可建造";
+                _blockReason = "Not Buildable Here";
                 return;
             }
             if (cell.HasTower)
             {
-                _blockReason = "该位置已有防御塔";
+                _blockReason = "Tower already there";
                 return;
             }
             CombatSystem combat = CombatSystem.Instance;
             if (combat != null && combat.HasAliveEnemyNear(cell.Center, board.CellSize * 0.5f))
             {
-                _blockReason = "该格上正有怪物";
+                _blockReason = "An enemy is on this tile, try another spot";
                 return;
             }
             if (!PlayerDataManager.Instance.TryPeek(_cfg.Prices))
             {
-                _blockReason = string.Format("金币不足（需要 {0}）", _cfg.Prices);
+                // 带参数的 key：语序可随语言调整
+                _blockReason = "Not enough gold, need {0}";
+                _blockArg = _cfg.Prices;
                 return;
             }
             if (WouldBlockPath(row, col))
             {
-                _blockReason = "不能完全阻断怪物路径";
+                _blockReason = "Cannot fully block the path";
                 return;
             }
             _canBuild = true;
             _blockReason = string.Empty;
+            _blockArg = null;
         }
 
         /// <summary>
@@ -586,6 +595,39 @@ namespace FTProject
         private static void Tips(string msg)
         {
             EventDispatcher.TriggerEvent<string>(EventName.ShowTipEvent, msg);
+        }
+
+        /// <summary>
+        /// 把 _blockReason（key）解析成当前语言的文案。
+        /// 【为什么把 key 存在字段里】_blockReason 在 EvaluateCell 每帧被重算，
+        ///   用"存 key + 显示时查表"只需一处映射；若直接存译文，切换语言后残留的
+        ///   旧译文会一直挂在字段上（直到下一次 EvaluateCell 才刷新）。
+        /// </summary>
+        private string BlockReasonText()
+        {
+            if (string.IsNullOrEmpty(_blockReason))
+            {
+                return string.Empty;
+            }
+            string text = _blockArg.HasValue
+                ? Localization.Get(_blockReason, _blockArg.Value)
+                : Localization.Get(_blockReason);
+            return text ?? FallbackBlockReason(_blockReason);
+        }
+
+        /// <summary>表里缺 key 时的中文兜底（保证"零破坏"）。</summary>
+        private static string FallbackBlockReason(string key)
+        {
+            switch (key)
+            {
+                case "Cannot Build Here": return "超出棋盘范围";
+                case "Not Buildable Here": return "该位置不可建造";
+                case "Tower already there": return "该位置已有防御塔";
+                case "An enemy is on this tile, try another spot": return "该格上正有怪物";
+                case "Not enough gold, need {0}": return "金币不足（需要 {0}）";
+                case "Cannot fully block the path": return "不能完全阻断怪物路径";
+                default: return "无法建造";
+            }
         }
     }
 }

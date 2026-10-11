@@ -29,7 +29,7 @@ namespace FTProject.EditorTools
         {
             EditorUtil.Report report = new EditorUtil.Report();
             GenerateAll(report);
-            EditorUtility.DisplayDialog("生成占位 BGM", report.Text, "好");
+            Debug.Log("[BGM] 占位 BGM 生成完成 → " + OutPath + "：\n" + report.Text);
         }
 
         [MenuItem("Tools/塔防/自动化（无弹窗）/生成占位 BGM（选关）", false, 904)]

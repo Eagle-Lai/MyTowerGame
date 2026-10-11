@@ -218,7 +218,7 @@ namespace FTProject
         {
             if (_tower == null || _tower.Config == null)
             {
-                SetText(_title, "防御塔");
+                SetText(_title, Localization.Get("Tower Panel") ?? "防御塔");
                 SetText(_stats, string.Empty);
                 return;
             }
@@ -227,8 +227,10 @@ namespace FTProject
             SetText(_title, string.Format("{0}  Lv.{1}", cfg.Name, cfg.Level));
             // 带上 DPS：升级值不值得，玩家看"攻击力"是看不出来的，
             // 而 power / CD 才是这条升级链真正在卖的东西。
-            SetText(_stats, string.Format("攻击 {0:0.#}   射程 {1:0.#} 格   攻速 {2:0.00}s   DPS {3:0.#}",
-                cfg.Power, cfg.RadiusGrid, cfg.CooldownSec, cfg.Power / cfg.CooldownSec));
+            SetText(_stats, Localization.Get("ATK {0}  RNG {1}  SPD {2}s  DPS {3}",
+                    cfg.Power, cfg.RadiusGrid, cfg.CooldownSec, cfg.Power / cfg.CooldownSec)
+                ?? string.Format("攻击 {0:0.#}   射程 {1:0.#} 格   攻速 {2:0.00}s   DPS {3:0.#}",
+                    cfg.Power, cfg.RadiusGrid, cfg.CooldownSec, cfg.Power / cfg.CooldownSec));
 
             RefreshButtons();
         }
@@ -253,7 +255,7 @@ namespace FTProject
                 if (cfg.IsMaxLevel)
                 {
                     _upgradeBtn.interactable = false;
-                    SetText(_upgradeLabel, "已满级");
+                    SetText(_upgradeLabel, Localization.Get("MAX") ?? "已满级");
                 }
                 else
                 {
@@ -262,8 +264,8 @@ namespace FTProject
                     int cost = next != null ? next.Prices : 0;
                     _upgradeBtn.interactable = next != null && pd.Gold >= cost;
                     SetText(_upgradeLabel, next != null
-                        ? string.Format("升级 ({0})", cost)
-                        : "无下一级");
+                        ? (Localization.Get("Upgrade ({0})", cost) ?? string.Format("升级 ({0})", cost))
+                        : (Localization.Get("No Next Level") ?? "无下一级"));
                 }
             }
 
@@ -274,7 +276,8 @@ namespace FTProject
                 int refund = Mathf.Max(0, Mathf.RoundToInt(cfg.SellPrice * rate));
                 _sellBtn.interactable = true;
                 // 文案常驻（不再有"确认态"，所以不需要"别把它刷回去"的保护）
-                SetText(_sellLabel, string.Format("出售 (+{0})", refund));
+                SetText(_sellLabel, Localization.Get("Sell (+{0})", refund)
+                    ?? string.Format("出售 (+{0})", refund));
             }
         }
 

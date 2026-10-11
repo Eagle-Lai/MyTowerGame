@@ -53,10 +53,9 @@ namespace FTProject.EditorTools
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
 
-            Debug.Log("[TMP 迁移] 结果：\n" + report.Text);
-            EditorUtility.DisplayDialog("Text → TextMeshPro 迁移",
-                string.Format("{0}\n\n处理 {1} 个预制体\n\n{2}",
-                    report.Errors > 0 ? "有错误，请查看 Console" : "完成", files, report.Text), "好");
+            Debug.Log(report.Errors > 0
+                ? string.Format("[TMP 迁移] 有错误（处理 {0} 个预制体）：\n{1}", files, report.Text)
+                : string.Format("[TMP 迁移] 完成（处理 {0} 个预制体）：\n{1}", files, report.Text));
         }
 
         /// <summary>供向导调用（不弹窗）。返回处理的预制体数量。</summary>

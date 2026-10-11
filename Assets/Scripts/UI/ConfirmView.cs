@@ -99,8 +99,10 @@ namespace FTProject
 
             SetText(_title, title);
             SetText(_body, body);
-            SetText(_confirmLabel, string.IsNullOrEmpty(confirmLabel) ? "确定" : confirmLabel);
-            SetText(_cancelLabel, string.IsNullOrEmpty(cancelLabel) ? "取消" : cancelLabel);
+            SetText(_confirmLabel, string.IsNullOrEmpty(confirmLabel)
+                ? (Localization.Get("OK") ?? "确定") : confirmLabel);
+            SetText(_cancelLabel, string.IsNullOrEmpty(cancelLabel)
+                ? (Localization.Get("Cancel") ?? "取消") : cancelLabel);
 
             if (_title != null) _title.color = TextPrimary;
             if (_body != null) _body.color = TextSecondary;

@@ -390,7 +390,8 @@ namespace FTProject
             // 未解锁：给明确提示，不进关（与旧版一字不差的逻辑）
             if (item.UserIntData2 == 0)
             {
-                EventDispatcher.TriggerEvent<string>(EventName.ShowTipEvent, "先通关上一关才能解锁");
+                EventDispatcher.TriggerEvent<string>(EventName.ShowTipEvent,
+                    Localization.Get("Clear the previous level first") ?? "先通关上一关才能解锁");
                 return;
             }
 
@@ -578,7 +579,7 @@ namespace FTProject
                     StarRichText(stars),
                     unlocked
                         ? "<color=#7A8CA6>" + Difficulty(diff) + "</color>"
-                        : "<color=#5A6B80>未解锁</color>");
+                        : "<color=#5A6B80>" + (Localization.Get("Locked") ?? "未解锁") + "</color>");
             }
 
             return item;
@@ -589,10 +590,11 @@ namespace FTProject
             int cleared = SaveManager.Instance.ClearedCount;
             int stars = SaveManager.Instance.TotalStars;
             // 数字提亮、星级用金色（效果图 01 的 Summary 配色）
-            SetText(_summary, string.Format(
-                "已通关 <color=#E8F0FA>{0}/{1}</color>　<color=#FFC94D>★ {2}/{3}</color>",
-                cleared, levelCount, stars, levelCount * 3));
-            SetText(_title, "选择关卡");
+            SetText(_summary, Localization.Get("Cleared <color=#E8F0FA>{0}/{1}</color>　<color=#FFC94D>★ {2}/{3}</color>", cleared, levelCount, stars, levelCount * 3)
+                ?? string.Format(
+                    "已通关 <color=#E8F0FA>{0}/{1}</color>　<color=#FFC94D>★ {2}/{3}</color>",
+                    cleared, levelCount, stars, levelCount * 3));
+            SetText(_title, Localization.Get("Select Level") ?? "选择关卡");
         }
 
         /// <summary>星级字符串。用实心/空心星而不是数字，一眼能扫完所有关卡。</summary>
@@ -613,9 +615,9 @@ namespace FTProject
 
         public static string Difficulty(int d)
         {
-            if (d <= 1) return "难度 Ⅰ";
-            if (d == 2) return "难度 Ⅱ";
-            return "难度 Ⅲ";
+            if (d <= 1) return Localization.Get("Difficulty I") ?? "难度 Ⅰ";
+            if (d == 2) return Localization.Get("Difficulty II") ?? "难度 Ⅱ";
+            return Localization.Get("Difficulty III") ?? "难度 Ⅲ";
         }
 
         private void OnClickClose()

@@ -30,11 +30,9 @@ namespace FTProject.EditorTools
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
 
-            Debug.Log("[M0] 战斗预制体生成结果：\n" + report.Text);
-            EditorUtility.DisplayDialog("生成战斗预制体",
-                string.Format("{0}\n\n错误 {1} · 警告 {2}\n\n详见 Console。",
-                    report.Errors > 0 ? "有错误，请查看 Console" : "完成",
-                    report.Errors, report.Warnings), "好");
+            Debug.Log(report.Errors > 0
+                ? "[M0] 战斗预制体生成有错误：\n" + report.Text
+                : "[M0] 战斗预制体生成完成：\n" + report.Text);
         }
 
         /// <summary>供一键向导调用（不弹窗）</summary>

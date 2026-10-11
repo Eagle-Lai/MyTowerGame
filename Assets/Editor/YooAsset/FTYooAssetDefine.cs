@@ -28,6 +28,18 @@ namespace FTProject.EditorTools
         public const string Symbol = "USE_YOOASSET";
 
         /// <summary>
+        /// 热更编译宏名。打开后 YooAsset 走 HostPlayMode（联机模式），
+        /// 启动时去 <c>ResServerConfig.ServerUrl</c> 比对版本并下载差异。
+        ///
+        /// 【为什么与 USE_YOOASSET 分开两个宏】
+        ///   两者正交：
+        ///     USE_YOOASSET → "用不用 YooAsset 这套资源系统"
+        ///     FT_HOTUPDATE → "用 YooAsset 时，从本地包读还是从远端下载"
+        ///   合并成一个宏的话，"想在编辑器里验证离线包"与"真机走热更"就无法共存了。
+        /// </summary>
+        public const string HotUpdateSymbol = "FT_HOTUPDATE";
+
+        /// <summary>
         /// 一并处理的平台组。工程实际出包是 Standalone + Android，iOS/WebGL 顺带写上，
         /// 避免将来新增平台时漏配。
         /// </summary>
@@ -55,18 +67,37 @@ namespace FTProject.EditorTools
             Apply(false);
         }
 
+        // ------------------------------------------------------------------
+        // 热更宏（FT_HOTUPDATE）
+        // ------------------------------------------------------------------
+
+        [MenuItem("Tools/塔防/YooAsset 接入/3. 启用 FT_HOTUPDATE 宏（真机热更）", false, 212)]
+        public static void EnableHotUpdate()
+        {
+            ApplySymbol(HotUpdateSymbol, true);
+        }
+
+        [MenuItem("Tools/塔防/YooAsset 接入/4. 停用 FT_HOTUPDATE 宏（离线模式）", false, 213)]
+        public static void DisableHotUpdate()
+        {
+            ApplySymbol(HotUpdateSymbol, false);
+        }
+
         [MenuItem("Tools/塔防/YooAsset 接入/0. 查看宏状态", false, 209)]
         public static void ReportStatus()
         {
             List<string> on = new List<string>();
             List<string> off = new List<string>();
+            List<string> hotOn = new List<string>();
+            List<string> hotOff = new List<string>();
 
             for (int i = 0; i < Targets.Length; i++)
             {
                 NamedBuildTarget target = Targets[i];
                 try
                 {
-                    if (HasSymbol(PlayerSettings.GetScriptingDefineSymbols(target), Symbol))
+                    string symbols = PlayerSettings.GetScriptingDefineSymbols(target);
+                    if (HasSymbol(symbols, Symbol))
                     {
                         on.Add(target.TargetName);
                     }
@@ -74,23 +105,40 @@ namespace FTProject.EditorTools
                     {
                         off.Add(target.TargetName);
                     }
+
+                    if (HasSymbol(symbols, HotUpdateSymbol))
+                    {
+                        hotOn.Add(target.TargetName);
+                    }
+                    else
+                    {
+                        hotOff.Add(target.TargetName);
+                    }
                 }
                 catch (Exception e)
                 {
                     off.Add(target.TargetName + "(读取失败:" + e.GetType().Name + ")");
+                    hotOff.Add(target.TargetName + "(读取失败:" + e.GetType().Name + ")");
                 }
             }
 
             Debug.Log(string.Format(
-                "[YooAsset] USE_YOOASSET 宏状态\n" +
-                "  已启用平台：{0}\n" +
-                "  未启用平台：{1}\n" +
-                "  当前加载器实现：{2}\n" +
-                "  当前平台：{3}",
+                "[YooAsset] 宏状态\n" +
+                "  USE_YOOASSET 已启用平台：{0}\n" +
+                "  USE_YOOASSET 未启用平台：{1}\n" +
+                "  FT_HOTUPDATE 已启用平台：{2}\n" +
+                "  FT_HOTUPDATE 未启用平台：{3}\n" +
+                "  当前加载器实现：{4}\n" +
+                "  当前平台：{5}\n" +
+                "  热更服务器地址：{6}（ResServerConfig 常量，编辑器下仅供参考；\n" +
+                "    真机以 APK 内打包的值 + persistentDataPath/server.txt 覆盖为准）",
                 on.Count == 0 ? "（无）" : string.Join("、", on.ToArray()),
                 off.Count == 0 ? "（无）" : string.Join("、", off.ToArray()),
+                hotOn.Count == 0 ? "（无）" : string.Join("、", hotOn.ToArray()),
+                hotOff.Count == 0 ? "（无）" : string.Join("、", hotOff.ToArray()),
                 ResLoader.ImplName,
-                EditorUserBuildSettings.activeBuildTarget));
+                EditorUserBuildSettings.activeBuildTarget,
+                ResServerConfig.ServerUrl));
         }
 
         // ==================================================================
@@ -116,6 +164,17 @@ namespace FTProject.EditorTools
 
         private static void Apply(bool enable)
         {
+            ApplySymbol(Symbol, enable);
+        }
+
+        /// <summary>
+        /// 在全部目标平台上开关一个宏。
+        /// 【为什么要按平台组遍历】编译宏是按平台组存的；只改当前平台会静默失效。
+        /// 【为什么异常要跳过而不是中断】iOS/WebGL 等平台组在部分环境下不可读写，
+        ///   中断会导致"改到一半"，其余平台漏改 —— 统一收集后一并告警更清晰。
+        /// </summary>
+        private static void ApplySymbol(string symbol, bool enable)
+        {
             List<string> changed = new List<string>();
             List<string> skipped = new List<string>();
 
@@ -127,7 +186,7 @@ namespace FTProject.EditorTools
                 try
                 {
                     string before = PlayerSettings.GetScriptingDefineSymbols(target);
-                    string after = Toggle(before, Symbol, enable);
+                    string after = Toggle(before, symbol, enable);
 
                     if (string.Equals(before ?? string.Empty, after, StringComparison.Ordinal))
                     {
@@ -152,13 +211,13 @@ namespace FTProject.EditorTools
             string action = enable ? "启用" : "停用";
             if (changed.Count == 0)
             {
-                Debug.Log(string.Format("[YooAsset] USE_YOOASSET 在所有目标平台上都已是「{0}」状态，无需改动。", action));
+                Debug.Log(string.Format("[YooAsset] {0} 在所有目标平台上都已是「{1}」状态，无需改动。", symbol, action));
             }
             else
             {
-                Debug.Log(string.Format("[YooAsset] 已{0} USE_YOOASSET，改动 {1} 个平台：\n{2}\n" +
+                Debug.Log(string.Format("[YooAsset] 已{0} {1}，改动 {2} 个平台：\n{3}\n" +
                     "  Unity 正在重新编译；编译完成后菜单「Tools ▸ 塔防 ▸ YooAsset 接入 ▸ 接入向导」才可用。",
-                    action, changed.Count, string.Join("\n", changed.ToArray())));
+                    action, symbol, changed.Count, string.Join("\n", changed.ToArray())));
             }
 
             if (skipped.Count > 0)

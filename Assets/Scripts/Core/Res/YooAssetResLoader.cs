@@ -481,10 +481,22 @@ namespace FTProject
         }
 
         /// <summary>
-        /// 按运行环境选择初始化参数。刻意复用既有的 FORCE_AB 宏作为"是否走真资源包"的开关，
-        /// 语义与 EditorResLoader / BundleResLoader 的选择口径完全一致：
-        ///   编辑器且未定义 FORCE_AB → 编辑器模拟模式（改完资源即可运行，无需构建）
-        ///   其它（真机 / 定义了 FORCE_AB） → 离线模式，直接读随包的内置资源
+        /// 按运行环境选择初始化参数。三种模式：
+        ///   ① 编辑器模拟模式：编辑器 且 未定义 FORCE_AB（改完资源即可运行，无需构建）
+        ///   ② 联机运行模式  ：定义了 FT_HOTUPDATE 且 ResServerConfig.EnableHotUpdate
+        ///                      → 启动时去远端比对版本、下载差异（**这就是热更新**）
+        ///   ③ 离线模式      ：其余情况，只读随包内置资源
+        ///
+        /// 【为什么热更单独给一个 FT_HOTUPDATE 宏，而不是复用 FORCE_AB】
+        ///   FORCE_AB 的语义是"在编辑器里也走真资源包"，用来验证 AB 链路本身；
+        ///   而热更关心的是"去哪里下载"。两者正交：
+        ///     · 只有 FORCE_AB       → 编辑器里验证"能读包"，但读的是随包资源（离线）
+        ///     · 只有 FT_HOTUPDATE   → 真机上走远端下载
+        ///   用一个宏表达两件事，迟早会互相干扰（例如想单独验证离线包却被迫连服务器）。
+        ///
+        /// ⚠️ 本方法在**每次 Init 时**执行。HostPlayMode 下不会重新下载已经是最新的文件，
+        ///    YooAsset 会先比版本、再按清单里的哈希判断哪些 bundle 本地已有 —— 所以
+        ///    "每次启动都走一遍"是可接受的开销，不会重复下载。
         /// </summary>
         private static InitializePackageOptions CreateInitOptions()
         {
@@ -503,12 +515,133 @@ namespace FTProject
             options.EditorFileSystemParameters =
                 FileSystemParameters.CreateDefaultEditorFileSystemParameters(simulate.PackageRootDirectory);
             return options;
+#elif FT_HOTUPDATE
+            // ---- 联机运行模式（热更新的核心）------------------------------------
+            // 两个文件系统缺一不可：
+            //   BuiltinFileSystem —— 随包的"首包资源"，新装的玩家没网时至少能起来
+            //   SandboxFileSystem —— persistentDataPath 下的可写缓存，下载的新资源落在这里
+            // YooAsset 会优先用沙盒（新版本），没有才回落到内置（首包版本）。
+            string serverUrl = ResServerConfig.GetServerUrl();
+
+            if (ResServerConfig.EnableHotUpdate == false || ResServerConfig.IsValidServerUrl(serverUrl) == false)
+            {
+                // 【降级而不是报错】地址没配好时退回离线模式，至少让游戏能进得去。
+                // 这比"启动直接失败"友好得多：玩家玩到的是首包版本，而不是黑屏。
+                Debug.LogWarning(string.Format(
+                    "[Res] 热更已跳过：EnableHotUpdate={0}，服务器地址=\"{1}\"。\n" +
+                    "  将使用离线模式（只读随包资源）。\n" +
+                    "  要启用热更，请在 ResServerConfig.cs 里把地址改成形如 http://192.168.x.x:8000 的可用地址。",
+                    ResServerConfig.EnableHotUpdate, serverUrl));
+
+                OfflinePlayModeOptions offlineOptions = new OfflinePlayModeOptions();
+                offlineOptions.BuiltinFileSystemParameters =
+                    FileSystemParameters.CreateDefaultBuiltinFileSystemParameters();
+                return offlineOptions;
+            }
+
+            if (ResServerConfig.VerboseLog)
+            {
+                Debug.Log(string.Format(
+                    "[Res] 热更已启用。服务器根地址 = {0}\n" +
+                    "  YooAsset 将在其后自动追加 \"/<平台>/<包裹>/<版本>/\"，例如：\n" +
+                    "  {1}/Android/{2}/<版本>/{2}.version",
+                    serverUrl, serverUrl, PackageName));
+            }
+
+            FTRemoteService remoteService = new FTRemoteService(serverUrl);
+
+            HostPlayModeOptions hostOptions = new HostPlayModeOptions();
+            hostOptions.BuiltinFileSystemParameters =
+                FileSystemParameters.CreateDefaultBuiltinFileSystemParameters();
+            hostOptions.CacheFileSystemParameters = BuildSandboxParameters(remoteService);
+            return hostOptions;
 #else
             OfflinePlayModeOptions options = new OfflinePlayModeOptions();
             options.BuiltinFileSystemParameters = FileSystemParameters.CreateDefaultBuiltinFileSystemParameters();
             return options;
 #endif
         }
+
+        /// <summary>
+        /// 构建沙盒（可写缓存）文件系统参数，并**显式打开 YooAsset 三个默认关闭的能力**。
+        ///
+        /// ==================================================================
+        /// 【为什么必须显式打开 —— YooAsset 3.0.x 的默认值几乎都是"关着的"】
+        ///   读源码 `SandboxFileSystem.cs` 可确认：
+        ///     · FileVerifyLevel        = EFileVerifyLevel.Low    ← 只验"文件存在"，不验内容
+        ///     · ResumeDownloadMinimumSize = long.MaxValue         ← 断点续传**恒不启用**
+        ///     · DownloadWatchdogTimeout   = 0                     ← 看门狗监控**禁用**
+        ///   即：不传参的话，"完整性校验 / 断点续传 / 卡死检测"三样全都形同虚设。
+        ///   这三样恰好就是需求第 3、4 条要的东西，所以必须在这里显式配置。
+        ///
+        /// 【每个参数的作用与取值理由】
+        ///   ① FileVerifyLevel = High
+        ///      用 CRC 校验已缓存文件的完整性。开销是首次构建缓存时多一次全量读，
+        ///      收益是**能发现"文件在但内容坏了"**（Low/Middle 都发现不了）。
+        ///      对"下载中断后残留半截文件"这类问题，这是唯一能兜住的档位。
+        ///
+        ///   ② DownloadResumeMinimumSize = 1 MB
+        ///      大于等于该尺寸的 bundle 走断点续传（`Range: bytes=N-`）。
+        ///      设 1MB 是因为：小文件重下的代价 < 发 Range 请求 + 服务端多一次处理的代价。
+        ///      默认的 long.MaxValue 等于"永不续传"，必须改掉。
+        ///
+        ///   ③ DownloadWatchdogTimeout = 30 秒
+        ///      监控"数据接收停滞"：连接还在但 30 秒没有任何新字节 → 判定卡死并重试。
+        ///      ⚠️ 这不是"总下载超时"（文件下载本身不设超时，见 YooAsset 源码
+        ///      `DownloadAndCacheFileOperation` 里 `timeout = 0` 的注释），
+        ///      而是**卡死检测**。真正的总超时由上层 CheckUpdateCo 负责。
+        ///
+        ///   ④ DownloadMaxConcurrency = 8 / DownloadMaxRequestPerFrame = 4
+        ///      默认是 10 / 8。移动端下调是因为：Wi-Fi 弱网下高并发会互相抢带宽，
+        ///      反而拉长整体耗时；单帧发 8 个请求也可能在低端机上造成尖峰。
+        ///      8/4 是更稳的移动端取值。
+        ///
+        /// ⚠️ **改这里的参数必须重跑 HybridCLR Generate/All 吗？** 不需要 ——
+        ///    本文件属于热更层（FTProject.Runtime），改完热更即可生效。
+        /// ==================================================================
+        /// </summary>
+        private static FileSystemParameters BuildSandboxParameters(FTRemoteService remoteService)
+        {
+            FileSystemParameters parameters =
+                FileSystemParameters.CreateDefaultSandboxFileSystemParameters(remoteService);
+
+            // ① 完整性校验：CRC 级（默认 Low 形同虚设）
+            parameters.AddParameter(EFileSystemParameter.FileVerifyLevel, EFileVerifyLevel.High);
+
+            // ② 断点续传：≥1MB 的文件启用（默认 long.MaxValue = 永不启用）
+            parameters.AddParameter(EFileSystemParameter.DownloadResumeMinimumSize,
+                ResumeDownloadMinimumSizeBytes);
+
+            // ③ 看门狗：30 秒无新数据判定卡死（默认 0 = 禁用）
+            parameters.AddParameter(EFileSystemParameter.DownloadWatchdogTimeout,
+                DownloadWatchdogTimeoutSeconds);
+
+            // ④ 并发与单帧请求数：移动端更保守的取值（默认 10 / 8）
+            parameters.AddParameter(EFileSystemParameter.DownloadMaxConcurrency, DownloadMaxConcurrency);
+            parameters.AddParameter(EFileSystemParameter.DownloadMaxRequestPerFrame, DownloadMaxRequestPerFrame);
+
+            if (ResServerConfig.VerboseLog)
+            {
+                Debug.Log(string.Format(
+                    "[Res] 沙盒文件系统参数：校验={0}，断点续传阈值={1:N0} 字节，看门狗={2}s，并发={3}，每帧请求={4}",
+                    EFileVerifyLevel.High, ResumeDownloadMinimumSizeBytes,
+                    DownloadWatchdogTimeoutSeconds, DownloadMaxConcurrency, DownloadMaxRequestPerFrame));
+            }
+
+            return parameters;
+        }
+
+        /// <summary>断点续传的最小文件尺寸（字节）。1MB 以下重下比续传更划算。</summary>
+        private const long ResumeDownloadMinimumSizeBytes = 1024L * 1024L;
+
+        /// <summary>下载看门狗超时（秒）：数据接收停滞多久判定卡死。</summary>
+        private const int DownloadWatchdogTimeoutSeconds = 30;
+
+        /// <summary>下载最大并发数（YooAsset 推荐范围 1–32）。</summary>
+        private const int DownloadMaxConcurrency = 8;
+
+        /// <summary>每帧最多发起多少个下载请求（YooAsset 推荐范围 1–10）。</summary>
+        private const int DownloadMaxRequestPerFrame = 4;
 
         private void LogReady()
         {
@@ -1211,6 +1344,7 @@ namespace FTProject
             _downloader = downloader;
             IsPaused = false;
             string lastError = null;
+            bool timedOut = false;
 
             downloader.DownloadProgressChanged += args =>
             {
@@ -1226,12 +1360,55 @@ namespace FTProject
 
             downloader.StartDownload();
 
+            // ---- 总超时保护（需求 5："整个更新流程需设置总超时"）------------------
+            // 【为什么 YooAsset 自己不管这个】
+            //   看源码 DownloadAndCacheFileOperation 的注释写得很明确：
+            //     `int timeout = 0; //注意：文件下载不做超时检测`
+            //   它只提供 DownloadWatchdogTimeout（卡死检测），不提供整批下载的上限。
+            //   所以"整批多久没下完就放弃"必须由调用方算。
+            //
+            // 【超时后的行为 —— 关键：不阻断启动】
+            //   调用 CancelDownload() 让下载器收敛（它会 abort 所有在途请求），
+            //   然后用 onError 通知界面。此时**已下完的那部分 bundle 是有效的**
+            //   （YooAsset 是逐文件落缓存 + 逐个校验，不是整批原子提交），
+            //   下次启动会从这里继续（断点续传已开启）。
+            //   ⇒ 最坏情况 = 这次少更了一部分资源，但游戏仍能用**上一次的完整清单**启动。
+            //     （清单是最后才 SetActiveManifest 的，没下完就不会切清单 —— 安全。）
+            float deadline = Time.realtimeSinceStartup + TotalDownloadTimeoutSeconds;
+
             while (downloader.IsDone == false)
             {
+                if (Time.realtimeSinceStartup >= deadline && timedOut == false)
+                {
+                    timedOut = true;
+                    Debug.LogWarning(string.Format(
+                        "[Res] 资源下载超过总超时 {0} 秒，取消本次下载（已下载部分保留，下次续传）。",
+                        TotalDownloadTimeoutSeconds));
+                    try
+                    {
+                        downloader.CancelDownload();
+                    }
+                    catch (System.Exception ex)
+                    {
+                        Debug.LogWarning("[Res] 取消下载时抛异常（忽略）：" + ex.Message);
+                    }
+                }
                 yield return null;
             }
 
             _downloader = null;
+
+            if (timedOut)
+            {
+                // 超时走错误通道：界面可据此提示"网络较慢，可稍后重试"，而不是假装成功。
+                if (onError != null)
+                {
+                    onError(string.Format(
+                        "资源下载超时（超过 {0} 秒）。已下载部分已保留，可稍后重试或直接使用当前版本。",
+                        TotalDownloadTimeoutSeconds));
+                }
+                yield break;
+            }
 
             if (downloader.Status != EOperationStatus.Succeeded)
             {
@@ -1246,6 +1423,13 @@ namespace FTProject
             if (onPhase != null) onPhase("更新完成");
             if (onDone != null) onDone(true);
         }
+
+        /// <summary>
+        /// 整批资源下载的总超时（秒）。超过则取消本次下载并走错误通道。
+        /// 需求第 5 条要求整个更新流程有总超时；YooAsset 只提供看门狗（卡死检测），
+        /// 不提供批次总上限，所以在这里自己算。
+        /// </summary>
+        private const float TotalDownloadTimeoutSeconds = 300f;
 
         /// <summary>暂停当前下载（无进行中的下载时空操作）。</summary>
         public void PauseDownload()

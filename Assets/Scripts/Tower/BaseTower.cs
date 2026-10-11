@@ -618,18 +618,18 @@ namespace FTProject
             CellData cell = board.GetCell(row, col);
             if (cell == null)
             {
-                Tips("该位置无法建造");
+                Tips(Localization.Get("No Tile Here") ?? "该位置无法建造");
                 return null;
             }
             if (!cell.IsBuildable)
             {
                 board.SetHighlight(row, col, CellHighlight.Blocked);
-                Tips("该位置不可建造");
+                Tips(Localization.Get("Not Buildable Here") ?? "该位置不可建造");
                 return null;
             }
             if (cell.HasTower)
             {
-                Tips("该位置已有防御塔");
+                Tips(Localization.Get("Tower already there") ?? "该位置已有防御塔");
                 return null;
             }
 
@@ -643,7 +643,7 @@ namespace FTProject
             CombatSystem combat = CombatSystem.Instance;
             if (combat != null && combat.HasAliveEnemyNear(cell.Center, board.CellSize * 0.5f))
             {
-                Tips("该格上正有怪物，换个位置吧");
+                Tips(Localization.Get("An enemy is on this tile, try another spot") ?? "该格上正有怪物，换个位置吧");
                 return null;
             }
 
@@ -663,7 +663,7 @@ namespace FTProject
                     point.IsWall = oldWall;
                 }
                 board.SetHighlight(row, col, CellHighlight.Blocked);
-                Tips("不能完全阻断怪物路径");
+                Tips(Localization.Get("Cannot fully block the path") ?? "不能完全阻断怪物路径");
                 return null;
             }
 
@@ -675,7 +675,7 @@ namespace FTProject
                 {
                     point.IsWall = oldWall;
                 }
-                Tips("金币不足");
+                Tips(Localization.Get("Not enough gold") ?? "金币不足");
                 return null;
             }
 
@@ -691,7 +691,7 @@ namespace FTProject
                 {
                     PlayerDataManager.Instance.AddGold(cfg.Prices);   // 退还（恢复路径没扣过，自然也不用退）
                 }
-                Tips("防御塔资源加载失败");
+                Tips(Localization.Get("Failed to load tower asset") ?? "防御塔资源加载失败");
                 Debug.LogError("[Tower] 建塔失败：无法加载 " + cfg.ResName);
                 return null;
             }
@@ -756,7 +756,7 @@ namespace FTProject
             }
             if (old.Config.IsMaxLevel)
             {
-                Tips("该防御塔已满级");
+                Tips(Localization.Get("Tower is already at max level") ?? "该防御塔已满级");
                 return null;
             }
 
@@ -765,21 +765,22 @@ namespace FTProject
             TowerConfig nextCfg = Configs.GetNextLevel(old.Config);
             if (nextCfg == null)
             {
-                Tips("该防御塔暂无可升级的下一级配置");
+                Tips(Localization.Get("No next-level config available") ?? "该防御塔暂无可升级的下一级配置");
                 return null;
             }
 
             CellData cell = old.Cell;
             if (cell == null)
             {
-                Tips("该防御塔不在格子上，无法升级");
+                Tips(Localization.Get("Tower is not on a tile, cannot upgrade") ?? "该防御塔不在格子上，无法升级");
                 return null;
             }
 
             // ① 扣费（在一切破坏性操作之前，失败则完全无副作用）
             if (!PlayerDataManager.Instance.TrySpend(nextCfg.Prices))
             {
-                Tips(string.Format("金币不足，升级需要 {0}", nextCfg.Prices));
+                Tips(Localization.Get("Not enough gold, upgrade needs {0}", nextCfg.Prices)
+                    ?? string.Format("金币不足，升级需要 {0}", nextCfg.Prices));
                 return null;
             }
 
@@ -789,7 +790,7 @@ namespace FTProject
             if (go == null)
             {
                 PlayerDataManager.Instance.AddGold(nextCfg.Prices);   // 退还
-                Tips("升级失败：防御塔资源加载失败，已退还金币");
+                Tips(Localization.Get("Upgrade failed: tower asset missing, gold refunded") ?? "升级失败：防御塔资源加载失败，已退还金币");
                 Debug.LogError("[Tower] 升级失败：无法加载 " + nextCfg.ResName + "（原塔保持不变）");
                 return null;
             }
@@ -831,7 +832,8 @@ namespace FTProject
             {
                 AudioManager.Instance.PlayAt(AudioName.TowerUpgrade, tower.Position);
             }
-            Tips(string.Format("已升级为 {0} Lv.{1}", nextCfg.Name, nextCfg.Level));
+            Tips(Localization.Get("Upgraded to {0} Lv.{1}", nextCfg.Name, nextCfg.Level)
+                ?? string.Format("已升级为 {0} Lv.{1}", nextCfg.Name, nextCfg.Level));
 
             return tower;
         }
@@ -869,7 +871,8 @@ namespace FTProject
             }
             ResLoader.Instance.ReleaseInstance(resName, tower.gameObject);
             AStarManager.Instance.RequestRefresh();
-            Tips(string.Format("已出售防御塔，返还 {0} 金币", refund));
+            Tips(Localization.Get("Tower sold, refunded {0} gold", refund)
+                ?? string.Format("已出售防御塔，返还 {0} 金币", refund));
             return true;
         }
 

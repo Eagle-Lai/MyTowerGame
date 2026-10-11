@@ -56,6 +56,11 @@ crashlytics-build.properties
 # 独立 AB 打包输出目录（工程根目录，随构建重新生成）
 /Bundles/
 
+# 本机热更资源服务器根目录（把 Bundles/<平台>/<包裹>/<版本>/ 与
+# StreamingAssets/HybridCLR/*.dll 拷进来，用 Python http.server 提供给真机）。
+# 内容全部可从上面两处重新拷贝，属派生物；用 Tools/sync_to_server.sh 一键同步。
+/ServerRoot/
+
 # 注意：Assets/ConfigJson/ 是 Luban 的输出目录，属于**源数据**，必须入库！
 # （它不在忽略列表里。历史上曾把它当"派生副本"忽略并放在 StreamingAssets/json，
 #   但 StreamingAssets 下的文件不会导入成 TextAsset，编辑器读不到内容，已改正。）

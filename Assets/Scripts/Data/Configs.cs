@@ -39,6 +39,9 @@ namespace FTProject
         /// <summary>音效表（M2）。没有音频文件时表里仍有行，只是资源取不到 → 静默不播。</summary>
         public static TBAudio AudioTable { get; private set; }
 
+        /// <summary>多语言文本表。语言无关地存三种语言文本，运行时按当前语言取。</summary>
+        public static TBLocalization LocalizationTable { get; private set; }
+
         /// <summary>全局参数（单行）</summary>
         public static GlobalConfig Global { get; private set; }
 
@@ -50,7 +53,8 @@ namespace FTProject
         private static readonly string[] ConfigKeys =
         {
             "tbenemydata", "tbtowerinfo", "tbbulletdata", "tbenemylist",
-            "tbrounddata", "tbsceneinfo", "tblevelmap", "tbglobal", "tbaudio"
+            "tbrounddata", "tbsceneinfo", "tblevelmap", "tbglobal", "tbaudio",
+            "tblocalization"
         };
 
         // ------------------------------------------------------------------
@@ -110,6 +114,7 @@ namespace FTProject
                 LevelMapTable = LoadTable("tblevelmap", n => new TBLevelMap(n));
                 GlobalTable = LoadTable("tbglobal", n => new TBGlobal(n));
                 AudioTable = LoadTable("tbaudio", n => new TBAudio(n));
+                LocalizationTable = LoadTable("tblocalization", n => new TBLocalization(n));
                 _audioByLogicalName = null;   // 换了一份表数据 → 索引缓存必须作废
 
                 // Global 是单行表，单独取
@@ -198,11 +203,12 @@ namespace FTProject
                 "  TBSceneInfo  : {6} 条\n" +
                 "  TBLevelMap   : {7} 条\n" +
                 "  TBGlobal     : {8} 条\n" +
-                "  TBAudio      : {9} 条",
+                "  TBAudio      : {9} 条\n" +
+                "  TBLocalization: {10} 条",
                 ok ? "完成" : "完成（有失败项）",
                 Count(EnemyTable), Count(TowerTable), Count(BulletTable), Count(WaveTable),
                 Count(RoundTable), Count(LevelTable), Count(LevelMapTable), Count(GlobalTable),
-                Count(AudioTable));
+                Count(AudioTable), Count(LocalizationTable));
 
             if (ok)
             {
@@ -223,6 +229,7 @@ namespace FTProject
         private static int Count(TBLevelMap t) { return t != null && t.DataList != null ? t.DataList.Count : 0; }
         private static int Count(TBGlobal t) { return t != null && t.DataList != null ? t.DataList.Count : 0; }
         private static int Count(TBAudio t) { return t != null && t.DataList != null ? t.DataList.Count : 0; }
+        private static int Count(TBLocalization t) { return t != null && t.DataList != null ? t.DataList.Count : 0; }
 
         /// <summary>交叉引用自检：波次引用的怪物、关卡引用的回合/棋盘是否都存在</summary>
         private static void ValidateCrossReferences()

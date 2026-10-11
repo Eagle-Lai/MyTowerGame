@@ -441,6 +441,31 @@ namespace FTProject
             if (_storage != null) _storage.Flush();
         }
 
+        /// <summary>
+        /// 读玩家显式选择的语言。从未选择过返回 false（此时应回退到配置里的默认语言）。
+        /// </summary>
+        public bool TryGetLanguage(out Language lang)
+        {
+            EnsureLoaded();
+            string code = _data.settings != null ? _data.settings.language : null;
+            if (string.IsNullOrEmpty(code))
+            {
+                lang = Language.English;
+                return false;
+            }
+            lang = LanguageUtil.FromCode(code);
+            return true;
+        }
+
+        /// <summary>写玩家选择的语言并落盘。</summary>
+        public void SetLanguage(Language lang)
+        {
+            EnsureLoaded();
+            _data.settings.language = lang.ToCode();
+            PersistSettings();
+            if (_storage != null) _storage.Flush();
+        }
+
         /// <summary>把设置推给音频系统。AudioManager 可能还没初始化，所以判空。</summary>
         public void ApplyToAudio()
         {

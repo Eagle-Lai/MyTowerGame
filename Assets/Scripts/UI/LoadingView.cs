@@ -46,6 +46,13 @@ namespace FTProject
             "穿透塔能一次打穿一整列敌人",
         };
 
+        /// <summary>Tips 对应的多语言 key（与 Tips 一一对应，取不到 key 时回退中文原文）。</summary>
+        private static readonly string[] TipKeys =
+        {
+            "You can build on any open ground; paths recompute in real time.", "Towers never waste fire when they have no target.", "Selling a tower refunds part of its total investment.", "Slow towers greatly boost the damage of all nearby towers.",
+            "Flying enemies ignore ground paths; watch your anti-air coverage.", "There is build time between rounds, but you can start early.", "Pierce towers can hit a whole column of enemies at once.",
+        };
+
         private TMP_Text _statusText;
         private TMP_Text _percentText;
         private TMP_Text _tipText;
@@ -169,7 +176,8 @@ namespace FTProject
             }
             // 顺序轮播而不是随机：随机会出现"连续两次同一条"，看起来像没换
             _tipIndex = (_tipIndex + 1) % Tips.Length;
-            _tipText.text = Tips[_tipIndex];
+            string key = _tipIndex < TipKeys.Length ? TipKeys[_tipIndex] : null;
+            _tipText.text = (key != null ? Localization.Get(key) : null) ?? Tips[_tipIndex];
         }
 
         private TMP_Text FindText(string path)

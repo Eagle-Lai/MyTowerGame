@@ -315,11 +315,11 @@ namespace FTProject.EditorTools
 
                 if (added > 0)
                 {
-                    EditorUtility.DisplayDialog(
-                        "收集器配置已生成",
-                        string.Format("新增 {0} 个收集器，已保存到 Assets/BundleCollectorSetting.asset。\n\n" +
-                                      "下一步建议执行「静态一致性校验」，确认没有漏收或错配。", added),
-                        "好");
+                    // 【为什么不再弹窗】带 DisplayDialog 的窗口逻辑会阻塞编辑器，自动化调用卡死。
+                    // 结果已经在日志区（_log）里，并同时打到 Console，人不必被弹窗打断。
+                    Debug.Log(string.Format(
+                        "[YooAsset] 收集器配置已生成：新增 {0} 个收集器，已保存到 Assets/BundleCollectorSetting.asset。" +
+                        "下一步建议执行「静态一致性校验」，确认没有漏收或错配。", added));
                 }
             }
             catch (Exception e)
@@ -656,16 +656,39 @@ namespace FTProject.EditorTools
         {
             ClearLog();
 
-            if (HasSettingAsset() == false)
+            EditorUtil.Report report = new EditorUtil.Report();
+            bool ok = BuildRealBundlesCore(_version, _fullRebuild, report);
+            Info(report.Text.TrimEnd());
+            if (ok)
             {
-                Fail("还没有收集器配置资产，请先执行「生成 / 修复收集器配置」。");
-                return;
+                Success("真实资源包构建成功（详见 Console）。");
+            }
+            else
+            {
+                Fail("真实资源包构建失败（详见 Console）。");
+            }
+        }
+
+        /// <summary>
+        /// 构建真实资源包的核心实现（**可编程调用**）。
+        ///
+        /// 【为什么要抽成 static】「一键完整构建」（BuildApkFull）也要执行 AB 构建，
+        /// 逻辑必须与窗口按钮**完全一致**，否则会出现"窗口能打、一键打不出（或反之）"的漂移。
+        /// 窗口按钮与外部流水线都只调用本方法，日志统一走 EditorUtil.Report + Console。
+        /// </summary>
+        /// <returns>true = 构建成功</returns>
+        public static bool BuildRealBundlesCore(string version, bool fullRebuild, EditorUtil.Report report)
+        {
+            if (BundleCollectorSettingData.HasSettingAsset() == false)
+            {
+                report.Error("还没有收集器配置资产，请先执行「生成 / 修复收集器配置」（YooAsset 接入向导 ①）。");
+                return false;
             }
 
-            if (string.IsNullOrEmpty(_version))
+            if (string.IsNullOrEmpty(version))
             {
-                Fail("资源包版本不能为空。");
-                return;
+                report.Error("资源包版本不能为空。");
+                return false;
             }
 
             FTBundlePackRule.ResetReport();
@@ -679,7 +702,7 @@ namespace FTProject.EditorTools
                 param.BuildBundleType = (int)EBundleType.AssetBundle;
                 param.BuildTarget = EditorUserBuildSettings.activeBuildTarget;
                 param.PackageName = PackageName;
-                param.PackageVersion = _version;
+                param.PackageVersion = version;
                 param.FileNameStyle = EFileNameStyle.HashName;
                 // 首包：把资源包拷进 StreamingAssets/yoo（离线模式直接读它）。
                 // ClearAndCopyAll 清的是 yoo 子目录，不会碰到旧的 StreamingAssets/AssetBundles。
@@ -699,19 +722,19 @@ namespace FTProject.EditorTools
                 //    `[ErrorCode115] Package output directory exists: '…/FreeTower/1.0.0'`。
                 //    这不是本工程特有的用法问题 —— YooAsset 官方构建窗口的"清空构建缓存"
                 //    开关默认也是关的，在它那里点第二次构建同样会报这个错。
-                param.ClearBuildCacheFiles = _fullRebuild;
-                if (_fullRebuild)
+                param.ClearBuildCacheFiles = fullRebuild;
+                if (fullRebuild)
                 {
-                    Warn("「彻底重建」已开启：会清空整个包裹根目录（含编辑器模拟清单 Simulate）" +
+                    report.Warn("「彻底重建」已开启：会清空整个包裹根目录（含编辑器模拟清单 Simulate）" +
                          "与 Unity SBP 构建缓存，本次构建会比较慢。Simulate 会在下次进 Play 时自动重建。");
                 }
                 else
                 {
                     string cleanError;
-                    if (CleanPackageOutputDirectory(param, out cleanError) == false)
+                    if (CleanPackageOutputDirectoryStatic(param, out cleanError) == false)
                     {
-                        Fail("清理上一次的同版本输出目录失败：" + cleanError);
-                        return;
+                        report.Error("清理上一次的同版本输出目录失败：" + cleanError);
+                        return false;
                     }
                 }
 
@@ -720,38 +743,34 @@ namespace FTProject.EditorTools
 
                 if (result.Success)
                 {
-                    Success("真实资源包构建成功。");
-                    Info("输出目录：" + result.OutputPackageDirectory);
-                    Info("随包目录：" + param.BundledFileRoot + "（离线模式读这里）");
+                    report.Ok("真实资源包构建成功。");
+                    report.Ok("输出目录：" + result.OutputPackageDirectory);
+                    report.Ok("随包目录：" + param.BundledFileRoot + "（离线模式读这里）");
+                    return true;
                 }
                 else
                 {
-                    Fail(string.Format("构建失败于任务 {0}：{1}", result.FailedTask, result.ErrorInfo));
+                    report.Error(string.Format("构建失败于任务 {0}：{1}", result.FailedTask, result.ErrorInfo));
+                    return false;
                 }
             }
             catch (Exception e)
             {
-                Fail("真实资源包构建异常：" + e.Message);
+                report.Error("真实资源包构建异常：" + e.Message);
                 Debug.LogException(e);
+                return false;
             }
         }
 
         /// <summary>
-        /// 构建前置清理：只删掉本次要写入的那个"包裹输出目录"。
+        /// 构建前置清理（static 版，逻辑与窗口版 <see cref="CleanPackageOutputDirectory"/> 一致）：
+        /// 只删掉本次要写入的那个"包裹输出目录"。
         ///
         /// 【为什么必须做】YooAsset 的 `TaskPrepare.PrepareOutputDirectory` 一旦发现
         /// 包裹输出目录已存在，就直接抛 `[ErrorCode115] Package output directory exists` ——
         /// 也就是说**同一个版本号构建第二次必然失败**。
-        /// （这不是本工程特有的用法问题：YooAsset 官方构建窗口里的"清空构建缓存"开关
-        ///   默认也是关的，在那儿点第二次构建同样会报这个错。）
-        ///
-        /// 【为什么默认只精确删这一个目录】`ClearBuildCacheFiles = true` 会连
-        /// `{BuildOutputRoot}/{平台}/{包裹}` 整个根目录一起删，其中包含 `Simulate` ——
-        /// 而 `Simulate` 正是编辑器模拟模式当前正在用的清单，向导第 ④ 步「回读校验」
-        /// 就在同一次编辑器会话里跑。只删本次版本目录的另一个好处是 Unity 的
-        /// SBP 构建缓存保持温热，重建更快。要彻底重建时用界面上的「彻底重建」开关。
         /// </summary>
-        private bool CleanPackageOutputDirectory(ScriptableBuildParameters param, out string error)
+        private static bool CleanPackageOutputDirectoryStatic(ScriptableBuildParameters param, out string error)
         {
             error = string.Empty;
             string dir = param.GetPackageOutputDirectory();
@@ -764,7 +783,7 @@ namespace FTProject.EditorTools
 
                 // 输出根目录在工程根下的 Bundles/，不在 Assets/ 下，因此不需要 AssetDatabase.Refresh()。
                 Directory.Delete(dir, true);
-                Info("已清掉上一次的同版本输出目录：" + dir);
+                Debug.Log("[YooAsset] 已清掉上一次的同版本输出目录：" + dir);
                 return true;
             }
             catch (Exception e)
