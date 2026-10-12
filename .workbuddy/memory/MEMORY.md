@@ -85,7 +85,10 @@
 ## 列表 / SuperScrollView
 
 - `SelectView` 全屏横向画廊；条目 `Prefabs/UI/SelectLevelItem.prefab`（生成器产出，不必登记 ResTable）。
-- 交互：居中才算选中；点非居中先滑正中；箭头只挪。⚠️ 吸附：条目宽须 ≡ 视口宽；邻卡可见=RectMask2D(1300)+Viewport(900) 同心；Viewport pivot.x=0，用 offsetMin/Max。
+- ★ 交互：居中才算选中；点非居中先滑正中；箭头只挪。**吸附硬约束：Viewport 宽必须恰好 = 卡片宽，且为固定尺寸（非 stretch）** —— 现 1250/1250（卡片 1250×550，2026-10 由 1500×650 手改），pivot.x=0、`anchoredPosition.x=-625`。
+- ★★ `LoopListView2.InitListView` 会把 viewport `GetLocalCorners` **一次性快照**缓存（`mViewPortRectLocalCorners`），之后永不重取 → **绝不能在 `OnEnable` 里初始化**（那时 Canvas 未排版，stretch 的 List/Viewport 宽=0/负 → 缓存负宽视口 → 只显示 1 张卡且完全不能横向滑动）。`SelectView.Build()` 只挂 `_pendingInit`，真正 `DoInitListView()` 延到**首帧 LateUpdate**。
+- 卡片 prefab 根节点是 `SetActive(false)`（手工版如此、生成器同步）；**无影响** —— 插件 `ItemPool.CreateItem` 实例化后强制 `SetActive(true)`、`Init` 里还先把源 prefab 关掉。但换池化实现前必须记得删掉这句。
+- 清单同步（**三处**）：`UIPrefabBuilder.cs` 的 `SelectItemW/SelectItemH/SelectItemGap`(=视口宽) ↔ `SelectView.cs` 的 `ItemWidth/ItemGap`(=1250/56，用于估算未实例化条目位置) ↔ 登记名 `SelectLevelItem`。
 - ⚠️ 别用 `mOnSnapItemFinished` 判滑到位 → 每帧轮询中心距（4px，兜底 2.5s）。
 - `InitListView` 只调一次；`onClick` 只在 `IsInitHandlerCalled` 首挂、读 `UserIntData1/2`；视觉层挂 `Body`；首次定位延到首帧 `LateUpdate`。
 
