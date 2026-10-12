@@ -49,7 +49,7 @@ namespace FTProject
         ///   估算"还没实例化出来的条目"的位置。用它的默认值 20 会让内容总宽度被严重低估，
         ///   初始化定位时会被 clamp 回 0（表现为"要定位到第 N 关却永远停在第 1 关"）。
         /// </summary>
-        private const float ItemWidth = 900f;
+        private const float ItemWidth = 1250f;
         private const float ItemGap = 56f;
 
         /// <summary>
@@ -77,7 +77,7 @@ namespace FTProject
         /// <summary>
         /// 判定"已经停在正中"的距离阈值（像素）。
         /// 【为什么不是 0.01】插件收尾是指数逼近，等它走完要 2 秒，玩家会觉得"点了半天没反应"。
-        ///   4px 在 900 宽的卡片上肉眼不可辨，到了就直接进关，手感才跟得上。
+        ///   4px 在 1250 宽的卡片上肉眼不可辨，到了就直接进关，手感才跟得上。
         /// </summary>
         private const float CenteredEpsilon = 4f;
 
@@ -92,6 +92,17 @@ namespace FTProject
 
         /// <summary>InitListView 只允许调一次（再调 LoopListView2 会直接报错），用它守住</summary>
         private bool _listInited;
+
+        /// <summary>
+        /// 等首帧排版完成后才执行 InitListView（见 <see cref="Build"/> 的说明）。
+        /// 【为什么必须延后】LoopListView2 在 InitListView 里会把 viewport 的
+        ///   `GetLocalCorners` 快照**缓存**下来（mViewPortRectLocalCorners），之后所有
+        ///   "显示/回收/吸附"的算式都用这份缓存。而本界面的 List 是**拉伸型**
+        ///   （锚点 0,0/1,1），OnEnable 那刻 Canvas 尚未排版 → List 宽 = 0 →
+        ///   Viewport 拉伸算出的宽 = 0 − 2×inset（负值）→ 缓存进去一份**负宽**视口，
+        ///   于是插件永远只留 1 张卡、且横向完全不动（实测 shown=1、contentPos 不随交互变化）。
+        /// </summary>
+        private bool _pendingInit;
 
         /// <summary>待居中到第几个条目；&lt;0 表示无需处理（首次打开时用）</summary>
         private int _pendingCenterIndex = -1;
@@ -120,7 +131,19 @@ namespace FTProject
 
         private void LateUpdate()
         {
-            if (_list == null || !_listInited || _levels == null)
+            if (_list == null || _levels == null)
+            {
+                return;
+            }
+
+            // ★★ 首帧才真正 InitListView（见 Build 里的 _pendingInit 说明）
+            if (_pendingInit)
+            {
+                _pendingInit = false;
+                DoInitListView();
+            }
+
+            if (!_listInited)
             {
                 return;
             }
@@ -208,23 +231,20 @@ namespace FTProject
             // 兜底：预制体里已经勾好，这里再确认一次（漏勾则"吸附居中"整个失效）
             _list.ItemSnapEnable = true;
 
-            if (!_listInited)
+            if (!_listInited && !_pendingInit)
             {
-                _listInited = true;
-                LoopListViewInitParam p = LoopListViewInitParam.CopyDefaultInitParam();
-                p.mItemDefaultWithPaddingSize = ItemWidth + ItemGap;
-                // 默认 0.3 的平滑时长偏拖沓：卡片"肉眼到位"要 0.5s 以上，
-                // 点一下要等这么久才进关会显得卡顿。0.25 约 0.4s，仍看得清是"滑过去"的。
-                p.mSmoothDumpRate = 0.25f;
-                _list.InitListView(_levels.Count, OnGetItemByIndex, p);
-
-                // 初次打开：居中到"最靠前的未通关关卡"（通关后重进会自动停在下一关）。
-                // 这一次用**瞬时**定位而不是动画 —— 刚打开界面就自己滑一段会很怪。
-                _pendingCenterIndex = FirstUnclearedIndex();
+                // ★★ 不在这里立刻 InitListView —— 见 DoInitListView / _pendingInit 的说明：
+                //   此刻 Canvas 还没排版，拉伸型 List / Viewport 的 rect 是 0（甚至负宽），
+                //   插件会把这份错误的视口尺寸缓存下来，导致横向列表只剩 1 张卡且不能滑动。
+                //   改成挂个"待初始化"标记，等第一帧 LateUpdate（排版已完成）再真正初始化。
+                _pendingInit = true;
+                RefreshHeader(_levels.Count);
+                return;
             }
-            else
+
+            // 重复打开：关卡数量一般不变，但星级 / 解锁态会变 → 整体重刷一遍内容
+            if (_listInited)
             {
-                // 重复打开：关卡数量一般不变，但星级 / 解锁态会变 → 整体重刷一遍内容
                 if (_list.ItemTotalCount != _levels.Count)
                 {
                     _list.SetListItemCount(_levels.Count, false);
@@ -233,6 +253,29 @@ namespace FTProject
             }
 
             RefreshHeader(_levels.Count);
+        }
+
+        /// <summary>
+        /// 真正执行 InitListView（由第一帧 LateUpdate 调用，此时 Canvas 必已排版）。
+        /// 拆出来是为了让 <see cref="Build"/> 能在"开着界面复用"与"首次打开"两条路径上保持一致。
+        /// </summary>
+        private void DoInitListView()
+        {
+            if (_listInited)
+            {
+                return;
+            }
+            _listInited = true;
+            LoopListViewInitParam p = LoopListViewInitParam.CopyDefaultInitParam();
+            p.mItemDefaultWithPaddingSize = ItemWidth + ItemGap;
+            // 默认 0.3 的平滑时长偏拖沓：卡片"肉眼到位"要 0.5s 以上，
+            // 点一下要等这么久才进关会显得卡顿。0.25 约 0.4s，仍看得清是"滑过去"的。
+            p.mSmoothDumpRate = 0.25f;
+            _list.InitListView(_levels.Count, OnGetItemByIndex, p);
+
+            // 初次打开：居中到"最靠前的未通关关卡"（通关后重进会自动停在下一关）。
+            // 这一次用**瞬时**定位而不是动画 —— 刚打开界面就自己滑一段会很怪。
+            _pendingCenterIndex = FirstUnclearedIndex();
         }
 
         /// <summary>第一个"还没拿到星"的关卡下标；全通关则停在最后一关。空表返回 -1。</summary>

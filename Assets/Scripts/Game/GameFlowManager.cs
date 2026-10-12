@@ -1013,10 +1013,41 @@ namespace FTProject
             StartLevel(levelId);
         }
 
+        /// <summary>
+        /// 选关界面点「返回」。
+        ///
+        /// 【修了什么】原实现只 <c>Close(SelectView)</c> 就返回 —— 但选关**没有自己的场景**：
+        ///   选关是叠在主菜单上的一层整页界面（见 <see cref="OnStartGameRequest"/>：先把主菜单
+        ///   Close 掉才开选关）。只关掉自己，屏幕就只剩背景，玩家**既没回到主菜单、也没回到对局**，
+        ///   看起来就是"点了返回没反应"。这里补上"回主菜单"这一步。
+        ///
+        /// 【为什么用 State 区分】选关有两个入口：
+        ///   · 主菜单「开始游戏」→ State 仍是 None（没有对局）→ 返回 = 回主菜单；
+        ///   · 对局中「退出选关」(QuitToSelect) → State != None → 返回 = 回对局（先 Teardown 再开选关，
+        ///     否则旧棋盘 / HUD 会跟回来，与 <see cref="QuitToSelect"/> 的拆卸口径一致）。
+        /// </summary>
         private void OnCloseSelectRequest()
         {
             UIManager.Instance.Close(SelectView.LogicalName);
-            // 已经在关卡里就什么都不做（返回按钮主要用于"没有对局时"）
+
+            if (State == GameFlowState.None)
+            {
+                // 没有进行中的对局 → 返回主菜单。缺 prefab 时降级：直接进选关（不让启动卡住）。
+                MainMenuView menu = UIManager.Instance.Open<MainMenuView>(
+                    MainMenuView.LogicalName, UILayout.NormalPanel);
+                if (menu == null)
+                {
+                    Debug.LogWarning("[Flow] MainMenuView 打开失败（prefab 可能还没生成），降级为直接进选关");
+                    OpenSelectOrFirstLevel();
+                }
+                return;
+            }
+
+            // 对局中退出的选关 → 返回 = 回对局（先按要求拆卸，再重新建关）
+            TeardownLevel();
+            State = GameFlowState.None;
+            ResetGameSpeed();
+            InitLevel(Level != null ? Level.Id : Configs.GetFirstLevelId());
         }
 
         private void OnPauseRequest()

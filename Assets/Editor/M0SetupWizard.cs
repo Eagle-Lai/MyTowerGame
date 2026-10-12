@@ -328,10 +328,12 @@ namespace FTProject.EditorTools
                 CheckMonsterSample(report, monsterTotal - 1);
             }
             // UI
+            // ★ 文本节点是芯片底的子节点（路径两段式）：Bg_Gold/GoldText 等。
+            //   塔按钮当前只有三颗（穿透/激光已从 HUD 撤下，见 UIPrefabBuilder.TowerButtons）。
             CheckUiPrefab(report, UIPrefabBuilder.HudPath, "HudView",
-                new[] { "GoldText", "HpText", "RoundText", "StartButton", "SpeedButton",
-                        "Btn_Tower_Normal", "Btn_Tower_Power", "Btn_Tower_Retard",
-                        "Btn_Tower_Pierce", "Btn_Tower_Laser" });
+                new[] { "Bg_Gold/GoldText", "Bg_Hp/HpText", "Bg_Round/RoundText",
+                        "StartButton", "SpeedButton",
+                        "Btn_Tower_Normal", "Btn_Tower_Power", "Btn_Tower_Retard" });
             CheckUiPrefab(report, UIPrefabBuilder.TipsPath, "TipsView", new[] { "TipText" });
             CheckUiPrefab(report, UIPrefabBuilder.TowerInfoPath, "TowerInfoView", new[] { "Bg", "Panel" });
             CheckUiPrefab(report, UIPrefabBuilder.SelectPath, "SelectView", new[] { "Bg", "Panel" });

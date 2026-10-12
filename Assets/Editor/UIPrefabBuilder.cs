@@ -15,16 +15,22 @@ namespace FTProject.EditorTools
     ///
     /// HudView 节点：
     ///   HudView
-    ///   ├── GoldText        金币
-    ///   ├── HpText          生命
-    ///   ├── RoundText       回合 / 波次
+    ///   ├── Bg_Gold        金币芯片底
+    ///   │   └── GoldText     金币文本（★ 文本内嵌在芯片底下，随底一起动）
+    ///   ├── Bg_Hp          生命芯片底
+    ///   │   └── HpText       生命文本
+    ///   ├── Bg_Round       回合芯片底
+    ///   │   └── RoundText    回合 / 波次文本
     ///   ├── Btn_Tower_Normal 建塔·单体（type=1）→ PriceText
     ///   ├── Btn_Tower_Power  建塔·范围（type=2）→ PriceText
     ///   ├── Btn_Tower_Retard 建塔·减速（type=3）→ PriceText ★ 名字 Retard ↔ 枚举 Slow，映射见 HudView
-    ///   ├── Btn_Tower_Pierce 建塔·穿透（type=4）→ PriceText
-    ///   ├── Btn_Tower_Laser  建塔·激光（type=5）→ PriceText
+    ///   ├── SpeedButton     倍速（→ SpeedButton/Label）
     ///   └── StartButton     开始 / 下一回合（→ StartButton/Label）
     ///
+    ///   ★ 文本节点挂在其芯片底之下（不是与 Bg_* 平级）—— 芯片底移动时文本跟着走，
+    ///     且文本用全拉伸锚点铺满芯片，不另外定位。改层级必须与 HudView.cs 的 Find 路径成对改。
+    ///   ★ 塔按钮**只有三颗**（Normal/Power/Retard）；穿透(4)/激光(5) 暂不上 HUD
+    ///     （配置表 type=4/5 的行保留，将来恢复只需在 TowerButtons 里加回两条 + HudView 名单）。
     ///   ★ 塔按钮**不带 Label**，价格走 PriceText 子节点（契约见 Docs/HudView_Sync_and_TowerUI_Plan.md §2）
     ///
     /// TipsView 节点：
@@ -34,7 +40,7 @@ namespace FTProject.EditorTools
     /// LevelClearView 节点（通关 / 失败结算弹窗）：
     ///   LevelClearView
     ///   ├── Bg（全屏遮罩；刻意**不接**"点击关闭"，见 LevelClearView.cs 的说明）
-    ///   └── Panel（640×680）
+    ///   └── Panel（820×720）
     ///       ├── Title         通关完成！ / 防御失败
     ///       ├── LevelName     关卡名
     ///       ├── Stars         本次星级（大号，★☆ 字形）
@@ -129,17 +135,16 @@ namespace FTProject.EditorTools
         /// </summary>
         public const string SelectItemPath = "Assets/Prefabs/UI/SelectLevelItem.prefab";
 
-        /// <summary>关卡列表的可视区域宽度（= List 节点的宽度，也是真正裁切卡片的那一层）</summary>
-        private const float SelectListW = 1300f;
+        /// <summary>
+        /// 关卡列表的可视高度（Viewport 的高度；宽度恒等于卡片宽 SelectViewportW）。
+        /// </summary>
         private const float SelectListH = 500f;
 
         /// <summary>关卡列表在整页面板里的位置（页面中心为原点）</summary>
         private static readonly Vector2 SelectListPos = new Vector2(0f, 10f);
 
         /// <summary>
-        /// 关卡卡片尺寸与横向间距。
-        /// ★ 这三个数与 SelectView.cs 的对应常量必须一致 ——
-        ///   那边用它们估算"尚未实例化的条目"的位置，写岔会让初始化定位被 clamp 回 0。
+        /// 关卡卡片的尺寸与横向间距（改动时**成套改**，见文末 ★）。
         ///
         /// 【为什么"视口宽度"必须等于卡片宽度，而且必须比可视区窄 —— 两个硬约束】
         ///   约束①（精确居中）：LoopListView2 的横向吸附把容器位置 clamp 在
@@ -151,12 +156,34 @@ namespace FTProject.EditorTools
         ///     于是这里刻意让 **视口比可视区窄**：视口只负责"居中/吸附的参照"，
         ///     可视区（List 上的 RectMask2D）才负责裁切。两者中心对齐，因此
         ///     "在视口里居中" == "在可视区里居中"。
-        ///   结论：视口 900 ≡ 卡片宽 900，可视区 1300 → 左右各留 200 的空槽，
-        ///         邻卡因此能露出约 144px；且首关/末关都**精确居中**。
+        ///   ★ 2026-10 手工版微调：卡片 **1250×550**（原 1500×650）。视口宽恒等卡片宽
+        ///     （= 1250），可视区（List）仍是整页 1920 宽 → 步长 1306 落在
+        ///     `[1250, 1920)` 区间内，上面两条约束同时成立，左右邻卡各露约 279px。
+        ///   ★ 改这些数必须**成套改**：SelectViewportW 会自动跟随（`= SelectItemW`），
+        ///     但 SelectView.cs 的 ItemWidth 是另一份拷贝，**必须手工同步** ——
+        ///     那边用它估算"尚未实例化的条目"的位置，写岔会让初始化定位被 clamp 回 0。
         /// </summary>
-        private const float SelectItemW = 900f;
-        private const float SelectItemH = 440f;
+        private const float SelectItemW = 1250f;
+        private const float SelectItemH = 550f;
         private const float SelectItemGap = 56f;
+
+        /// <summary>
+        /// 关卡列表的**可视区（List）与视口（Viewport）几何**。
+        ///
+        /// 【为什么 List 改成整页铺满】原来 List 是固定 1300×500 居中的一块；手工版把它
+        ///   拉伸铺满整个 Panel（anchor 0..1），好处是"不同分辨率下可视区自动适配"，
+        ///   真正的"居中/吸附参照"下放给 Viewport —— Viewport **固定宽 = 卡片宽**（关键！）。
+        ///
+        /// ★★ 硬约束（血泪教训，2026-10 修）：Viewport 宽 **必须恒等于卡片宽**，且**不能跟随屏宽**。
+        ///   原因：LoopListView2 在 `InitListView` 里把 viewport 的 `GetLocalCorners`
+        ///   **快照缓存**下来（mViewPortRectLocalCorners），之后所有"显示/回收/吸附"都用它。
+        ///   若 viewport 是**拉伸型**（宽随父级），而 InitListView 又发生在排版之前，
+        ///   缓存到的就是"父级宽 0"推出来的**负宽**视口 → 插件横向列表整个失灵
+        ///   （症状：只显示 1 张卡、完全不响应滑动/箭头 —— 实测踩过）。
+        ///   固定宽视口不依赖父级尺寸，任何时候取 corners 都是对的。
+        ///   （TowerCodexView 一直用固定 460 宽视口 = 卡片 460，所以一直是好的。）
+        /// </summary>
+        private const float SelectViewportW = SelectItemW;
 
         /// <summary>关卡卡片上文案的基础字号（三行会用富文本逐行再给号，见 SelectView）</summary>
         private const int SelectItemFontSize = 56;
@@ -196,16 +223,17 @@ namespace FTProject.EditorTools
         private static readonly string[] TowerInfoChildren = { "Bg", "Panel" };
 
         // HudView 由本生成器管理的直接子节点集合（用于重建前的安全护栏）
+        // ★ 文本节点（GoldText/HpText/RoundText）**不在这一层**：它们挂在 Bg_* 芯片底之下
+        //   （见 BuildHud 与 HudView.cs 的 Find 路径）。护栏比对的是直接子节点，
+        //   所以这里只列直挂 HudView 的节点；芯片底下的文本由 Bg_* 的成立 implicit 覆盖。
         private static readonly string[] HudChildren =
         {
             "Bg_Gold", "Bg_Hp", "Bg_Round",
-            "GoldText", "HpText", "RoundText",
             "Btn_Tower_Normal", "Btn_Tower_Power", "Btn_Tower_Retard",
-            "Btn_Tower_Pierce", "Btn_Tower_Laser",
             "StartButton", "SpeedButton",
         };
 
-        // 塔按钮：节点名 / 塔型枚举 / 参考位置（锚点左下）。
+        // 塔按钮：节点名 / 塔型枚举 / 参考位置（锚点=画布中心）。
         // 【为什么没有 Label 字段】契约规定塔按钮**不配 Label**（纯图标按钮，对齐原作塔栏）。
         // 需要显示价格时用 PriceText 子节点。曾经这里有个 Label 字段，
         // 结果生成器产出的 prefab 与手工版不一致（手工版无 Label），一跑生成器就"多出文字"。
@@ -216,16 +244,17 @@ namespace FTProject.EditorTools
             public Vector2 Pos;
         }
 
-        // 五类塔等距铺开（间距 274），整体在 1920 参考宽度下居中。
-        // 【为什么改坐标】原来是三颗、位置 -633/-359/-123（偏左）；加到五颗后必须重新居中，
-        // 否则最右一颗会顶到「开始」按钮上。
+        // 三颗塔（Normal/Power/Retard）**沿用手工版保留的槽位坐标**：
+        //   手工版把穿透(4)/激光(5) 撤下后，只删了这两颗、**没有重新居中**，
+        //   三颗仍占原来五槽里的左三格（-548/-274/0）。生成器必须与磁盘一致，
+        //   否则「全量重建」会把整排按钮挪位（表现为与手工版对不上）。
+        // 【将来恢复穿透/激光】在这里按原槽位补回 (274, -427)/(548, -427) 两条，
+        //   并同步 HudView.cs 的 TowerNodeNames/TowerNodeTypes 与 M0SetupWizard 的检查名单。
         private static readonly TowerButtonSpec[] TowerButtons =
         {
             new TowerButtonSpec { NodeName = "Btn_Tower_Normal", TowerType = 1, Pos = new Vector2(-548f, -427f) },
             new TowerButtonSpec { NodeName = "Btn_Tower_Power",  TowerType = 2, Pos = new Vector2(-274f, -427f) },
             new TowerButtonSpec { NodeName = "Btn_Tower_Retard", TowerType = 3, Pos = new Vector2(0f,    -427f) },
-            new TowerButtonSpec { NodeName = "Btn_Tower_Pierce", TowerType = 4, Pos = new Vector2(274f,  -427f) },
-            new TowerButtonSpec { NodeName = "Btn_Tower_Laser",  TowerType = 5, Pos = new Vector2(548f,  -427f) },
         };
 
         // 参考分辨率下的字号
@@ -239,9 +268,9 @@ namespace FTProject.EditorTools
         /// 倍速/开始两颗按钮（各 220×72）相对画布中心的横向偏移。
         ///
         /// 【为什么不放在"底中"】效果图 02 与策划案 §6.2.2 都把这两颗按钮放在底中 (∓140, 60)，
-        ///   但那一条 y=49..177 的底带**已经被五颗 128×128 塔按钮占满**（x 348..1572）：
-        ///   放在底中会盖住第 3、4 颗塔按钮，点击被 StartButton 抢走
-        ///   —— 等于"减速塔/穿透塔点不了"，是实打实的功能缺陷（效果图本身的几何冲突）。
+        ///   但那一条 y=49..177 的底带**已被塔建造栏占满**（当前三颗 128×128 塔按钮 x 348..1148，
+        ///   将来恢复五颗会铺到 1572）：放在底中会盖住中间的塔按钮，点击被 StartButton 抢走
+        ///   —— 等于"减速塔点不了"，是实打实的功能缺陷（效果图本身的几何冲突）。
         ///   因此把两颗按钮挪到塔栏**两侧的空白区**（各留 64px 间距），
         ///   纵向与塔栏同一中心线，视觉上仍是"底部一排"，但互不遮挡。
         /// </summary>
@@ -470,28 +499,22 @@ namespace FTProject.EditorTools
             root.AddComponent<HudView>();
 
             // 芯片底（先建，保证在文本之下）：金币 / 生命 / 回合
-            CreateChip(root.transform, "Bg_Gold", new Vector2(0f, 1f), new Vector2(40f, -30f),
+            // ★ create 返回芯片底的 Transform，文本挂到它下面（层级见类注释）。
+            //   Bg_Round 加宽到 580：回合文案会出现「第 N 波 · 进行中」这种长句，320 装不下。
+            Transform goldChip = CreateChip(root.transform, "Bg_Gold", new Vector2(0f, 1f), new Vector2(40f, -30f),
                 new Vector2(268f, 52f), "UI_Chip_Gold");
-            CreateChip(root.transform, "Bg_Hp", new Vector2(0f, 1f), new Vector2(40f, -84f),
+            Transform hpChip = CreateChip(root.transform, "Bg_Hp", new Vector2(0f, 1f), new Vector2(40f, -84f),
                 new Vector2(268f, 52f), "UI_Chip_HP");
-            CreateChip(root.transform, "Bg_Round", new Vector2(0.5f, 1f), new Vector2(0f, -30f),
-                new Vector2(320f, 56f), "UI_Chip_Neutral");
+            Transform roundChip = CreateChip(root.transform, "Bg_Round", new Vector2(0.5f, 1f), new Vector2(0f, -30f),
+                new Vector2(580f, 56f), "UI_Chip_Neutral");
 
-            // 左上：金币 / 生命
-            CreateText(root.transform, "GoldText", "Gold 0",
-                new Vector2(0f, 1f), new Vector2(40f, -30f), new Vector2(520f, 52f),
-                TextAnchor.MiddleLeft, SmallFontSize);
+            // 文本内嵌在芯片底之下：全拉伸锚点铺满芯片，不再单独定位/定尺寸
+            // （芯片挪位置，文本自然跟随；也不会因分辨率变化而漂移）
+            CreateChipText(goldChip, "GoldText", "Gold 0", TextAnchor.MiddleLeft, SmallFontSize);
+            CreateChipText(hpChip, "HpText", "HP 0/0", TextAnchor.MiddleLeft, SmallFontSize);
+            CreateChipText(roundChip, "RoundText", "In Progress", TextAnchor.MiddleCenter, BigFontSize);
 
-            CreateText(root.transform, "HpText", "HP 0/0",
-                new Vector2(0f, 1f), new Vector2(40f, -84f), new Vector2(520f, 52f),
-                TextAnchor.MiddleLeft, SmallFontSize);
-
-            // 顶部中央：回合 / 波次
-            CreateText(root.transform, "RoundText", "In Progress",
-                new Vector2(0.5f, 1f), new Vector2(0f, -30f), new Vector2(700f, 56f),
-                TextAnchor.MiddleCenter, BigFontSize);
-
-            // 底部：五颗塔按钮 + 倍速 + 开始
+            // 底部：三颗塔按钮 + 倍速 + 开始
             for (int i = 0; i < TowerButtons.Length; i++)
             {
                 CreateTowerButton(root.transform, TowerButtons[i]);
@@ -508,12 +531,12 @@ namespace FTProject.EditorTools
                 report.Error("保存失败：" + HudPath);
                 return;
             }
-            report.Ok("HudView.prefab（Bg_Gold/Bg_Hp/Bg_Round / GoldText / HpText / RoundText / " +
-                      "Btn_Tower_Normal·Power·Retard·Pierce·Laser / StartButton / SpeedButton）");
+            report.Ok("HudView.prefab（Bg_Gold+GoldText / Bg_Hp+HpText / Bg_Round+RoundText / " +
+                      "Btn_Tower_Normal·Power·Retard / StartButton / SpeedButton）");
         }
 
-        /// <summary>HUD 上的"芯片底"（金币/生命/回合），不吃点击</summary>
-        private static void CreateChip(Transform parent, string name, Vector2 anchor, Vector2 anchoredPos,
+        /// <summary>HUD 上的"芯片底"（金币/生命/回合），不吃点击。返回其 Transform 供挂子文本。</summary>
+        private static Transform CreateChip(Transform parent, string name, Vector2 anchor, Vector2 anchoredPos,
             Vector2 size, string spriteName)
         {
             GameObject go = new GameObject(name, typeof(RectTransform));
@@ -527,11 +550,90 @@ namespace FTProject.EditorTools
             Image img = go.AddComponent<Image>();
             img.raycastTarget = false;
             ApplySlicedSkin(img, spriteName, new Color(0.12f, 0.16f, 0.24f, 0.85f));
+            return go.transform;
         }
 
-        // ------------------------------------------------------------------
-        // Tips
-        // ------------------------------------------------------------------
+        /// <summary>
+        /// 芯片底内嵌的文本：**全拉伸铺满父芯片**，不单独定位。
+        ///
+        /// 【为什么和 CreateText 分开】CreateText 用"以锚点为准的定位 + 固定 size"，
+        ///   适合自由摆放；芯片文本必须严丝合缝地填满芯片（且芯片一动就跟着动），
+        ///   用固定 pos/size 反而会漂。所以这里单开一个"填满父节点"的版本。
+        /// </summary>
+        private static void CreateChipText(Transform chip, string name, string content,
+            TextAnchor align, int fontSize)
+        {
+            GameObject go = new GameObject(name, typeof(RectTransform));
+            go.transform.SetParent(chip, false);
+
+            RectTransform rt = (RectTransform)go.transform;
+            rt.anchorMin = Vector2.zero;
+            rt.anchorMax = Vector2.one;
+            rt.pivot = new Vector2(0.5f, 0.5f);
+            rt.anchoredPosition = Vector2.zero;
+            rt.sizeDelta = Vector2.zero;
+
+            TextMeshProUGUI t = go.AddComponent<TextMeshProUGUI>();
+            TMP_FontAsset font = EditorUtil.GetDefaultTmpFont();
+            if (font != null)
+            {
+                t.font = font;
+            }
+            t.text = content;
+            t.fontSize = fontSize;
+            t.alignment = ToTmpAlignment(align);
+            t.color = TextColor;
+            t.raycastTarget = false;
+            Material outlineMat = GetOrCreateOutlineMaterial(font);
+            if (outlineMat != null)
+            {
+                t.fontSharedMaterial = outlineMat;
+            }
+            t.enableWordWrapping = false;
+            t.overflowMode = TextOverflowModes.Overflow;
+        }
+
+        /// <summary>
+        /// 生成一个文本节点，锚点可分别指定 min/max（用于"四边拉伸"或"横向拉伸"等自适应框）。
+        /// 与 <see cref="CreateText"/> 的区别：后者锚点 min==max（定尺寸框），本方法可以给
+        /// 出 min≠max 的拉伸框（如 anchorMin=(0,0.5) / anchorMax=(1,0.5) 横向跟随父级宽度）。
+        /// 【为什么单独加】手工版对 TipText / BodyTitle / SellTitle 等用了"拉伸框"口径，
+        ///   通用 CreateText 表达不了，硬凑会在下次重生成时被冲回定尺寸框。
+        /// </summary>
+        private static TextMeshProUGUI CreateTextStretched(Transform parent, string name, string content,
+            Vector2 anchorMin, Vector2 anchorMax, Vector2 anchoredPos, Vector2 size,
+            TextAnchor align, int fontSize)
+        {
+            GameObject go = new GameObject(name, typeof(RectTransform));
+            go.transform.SetParent(parent, false);
+
+            RectTransform rt = (RectTransform)go.transform;
+            rt.anchorMin = anchorMin;
+            rt.anchorMax = anchorMax;
+            rt.pivot = new Vector2(0.5f, 0.5f);
+            rt.anchoredPosition = anchoredPos;
+            rt.sizeDelta = size;
+
+            TextMeshProUGUI t = go.AddComponent<TextMeshProUGUI>();
+            TMP_FontAsset font = EditorUtil.GetDefaultTmpFont();
+            if (font != null)
+            {
+                t.font = font;
+            }
+            t.text = content;
+            t.fontSize = fontSize;
+            t.alignment = ToTmpAlignment(align);
+            t.color = TextColor;
+            t.raycastTarget = false;
+            Material outlineMat = GetOrCreateOutlineMaterial(font);
+            if (outlineMat != null)
+            {
+                t.fontSharedMaterial = outlineMat;
+            }
+            t.enableWordWrapping = false;
+            t.overflowMode = TextOverflowModes.Overflow;
+            return t;
+        }
 
         private static void BuildTips(EditorUtil.Report report)
         {
@@ -561,8 +663,10 @@ namespace FTProject.EditorTools
             barImg.raycastTarget = false;
             ApplySlicedSkin(barImg, "UI_Tip_Bar", new Color(0.06f, 0.09f, 0.13f, 0.72f));
 
-            TextMeshProUGUI tip = CreateText(root.transform, "TipText", string.Empty,
-                new Vector2(0.5f, 0.30f), Vector2.zero, new Vector2(1100f, 60f),
+            // 提示文字：**横向拉伸**跟随屏宽（锚点 x 0..1），高度 100、中心略高于 TipBar 中心。
+            //   手工版把固定 1100×60 改成随屏宽自适应，两侧留白交给 Stretch 后的框。
+            TextMeshProUGUI tip = CreateTextStretched(root.transform, "TipText", string.Empty,
+                new Vector2(0f, 0.5f), new Vector2(1f, 0.5f), new Vector2(0f, -12f), new Vector2(0f, 100f),
                 TextAnchor.MiddleCenter, BigFontSize);
             tip.enableWordWrapping = true;
             tip.overflowMode = TextOverflowModes.Overflow;
@@ -619,7 +723,9 @@ namespace FTProject.EditorTools
             prt.anchorMax = new Vector2(0.5f, 0.5f);
             prt.pivot = new Vector2(0.5f, 0.5f);
             prt.anchoredPosition = Vector2.zero;
-            prt.sizeDelta = new Vector2(560f, 460f);
+            // 【为什么是 600 高】手工版把面板拉高到 600，给 DPS/射程/攻速 三行属性 + 升级按钮留足空间
+            //   （460 高时底部按钮会贴边）。面板一变高，后续所有 y 需要相应上移，见下方各节点坐标。
+            prt.sizeDelta = new Vector2(560f, 600f);
             Image panelImg = panel.AddComponent<Image>();
             ApplySlicedSkin(panelImg, "UI_Panel_Cyan", new Color(0.12f, 0.16f, 0.24f, 0.96f));
 
@@ -658,7 +764,7 @@ namespace FTProject.EditorTools
 
         private static GameObject CreateDialogShell(string rootName, string title,
             Vector2 panelSize, EditorUtil.Report report, out GameObject panel,
-            float stretchInset = -1f)
+            float stretchInset = -1f, Vector2? overrideTitleSize = null)
         {
             GameObject root = new GameObject(rootName, typeof(RectTransform));
             Stretch((RectTransform)root.transform);
@@ -707,8 +813,11 @@ namespace FTProject.EditorTools
                 prt.pivot = new Vector2(0.5f, 0.5f);
                 prt.anchoredPosition = Vector2.zero;
                 prt.sizeDelta = panelSize;
+                // 【为什么标题尺寸独立成参数】手工版对个别弹窗的整页标题做了独立微调
+                //   （如 ConfirmView 的 700×100）——通用公式 `panelSize.x-60` 会把它冲掉。
+                //   调用方传入 overrideTitleSize 时以手工值为准；不传才回落到公式。
                 titlePos = new Vector2(0f, -36f);
-                titleSize = new Vector2(panelSize.x - 60f, 56f);
+                titleSize = overrideTitleSize ?? new Vector2(panelSize.x - 60f, 56f);
                 titleFont = BigFontSize;
             }
 
@@ -753,17 +862,21 @@ namespace FTProject.EditorTools
             GameObject list = new GameObject("List", typeof(RectTransform));
             list.transform.SetParent(panel.transform, false);
             RectTransform lrt = (RectTransform)list.transform;
-            lrt.anchorMin = new Vector2(0.5f, 0.5f);
-            lrt.anchorMax = new Vector2(0.5f, 0.5f);
+            // ★ List（可视区）**整页铺满**：原来固定 1300×500 居中，手工版改成拉伸，
+            //   于是"可视区宽 = 屏宽"，适配任意分辨率；真正的"居中参照"下放给 Viewport。
+            lrt.anchorMin = Vector2.zero;
+            lrt.anchorMax = Vector2.one;
             lrt.pivot = new Vector2(0.5f, 0.5f);
-            lrt.anchoredPosition = SelectListPos;
-            lrt.sizeDelta = new Vector2(SelectListW, SelectListH);
+            lrt.anchoredPosition = Vector2.zero;
+            lrt.sizeDelta = Vector2.zero;
 
             // ★★ 裁切放在 List（可视区）而不是 Viewport —— 这是"精确居中 + 邻卡可见"能同时成立的关键。
             //   见 SelectItemW 的注释：Viewport 只当"居中/吸附的参照"，可以比可视区窄。
             //   List 自己那张 Image 同时充当滚动轨道，并给拖动提供射线目标。
+            //   【注意 alpha = 0】手工版把轨道底色改透明（只留裁切+Rx 命中，不再显色）——
+            //   RectMask2D 只认 RectTransform 的矩形，与 Image 的颜色无关，所以"透明仍能裁切"。
             Image trackImg = list.AddComponent<Image>();
-            trackImg.color = new Color(0.04f, 0.06f, 0.10f, 0.6f);
+            trackImg.color = new Color(0.04f, 0.06f, 0.10f, 0f);
             trackImg.raycastTarget = true;
             list.AddComponent<RectMask2D>();
 
@@ -783,11 +896,18 @@ namespace FTProject.EditorTools
             //   （实测点了居中锚点时会整块左移 180，所有卡片跟着跑偏）。
             //   所以这里先把 pivot.x 设成 0，再用 offsetMin/offsetMax 直接描述矩形：
             //   这两个值本身就是"相对父矩形四边"的绝对量，与 pivot 无关，之后怎么改都不动。
+            //
+            // ★ Viewport = **固定尺寸**（不随父级拉伸）：锚点/轴心都用 (0, 0.5)、
+            //   宽恒等于卡片宽、高 = SelectListH、水平居中。
+            //   【为什么必须是固定尺寸而不是拉伸】见 SelectViewportW 的说明：
+            //   LoopListView2 在 InitListView 时缓存 viewport 的 GetLocalCorners；
+            //   若 viewport 是拉伸型，而 InitListView 早于排版 → 缓存到负宽视口 → 列表失灵。
+            //   固定尺寸与父级无关，任何时候取 corners 都正确。
             vrt.pivot = new Vector2(0f, 0.5f);
-            vrt.anchorMin = new Vector2(0f, 0.5f);
-            vrt.anchorMax = new Vector2(1f, 0.5f);
-            vrt.offsetMin = new Vector2((SelectListW - SelectItemW) * 0.5f, -SelectListH * 0.5f);
-            vrt.offsetMax = new Vector2(-(SelectListW - SelectItemW) * 0.5f, SelectListH * 0.5f);
+            vrt.anchorMin = new Vector2(0.5f, 0.5f);
+            vrt.anchorMax = new Vector2(0.5f, 0.5f);
+            vrt.anchoredPosition = new Vector2(-SelectViewportW * 0.5f, 0f);
+            vrt.sizeDelta = new Vector2(SelectViewportW, SelectListH);
             // 不挂 Graphic：看不见也点不到，纯粹是给 LoopListView2 用的参照矩形
 
             GameObject content = new GameObject("Content", typeof(RectTransform));
@@ -843,7 +963,8 @@ namespace FTProject.EditorTools
         /// 生成器**完全拥有**这份资产，每次全量重建都覆盖。
         ///
         /// 结构：
-        ///   SelectLevelItem   RT 880×300（锚点/轴心 = 左侧中点）+ LoopListViewItem2
+        ///   SelectLevelItem   RT SelectItemW×SelectItemH（锚点/轴心 = 左侧中点）+ LoopListViewItem2
+        ///                     ★ 根节点 **SetActive(false)**（2026-10 手工版如此，见下方实现处说明）
         ///   └── Body          拉伸铺满；Image + Button + CanvasGroup
         ///       └── Label     三行文案
         /// </summary>
@@ -907,6 +1028,16 @@ namespace FTProject.EditorTools
             trt.sizeDelta = new Vector2(-120f, -80f);
             t.enableWordWrapping = true;
             t.overflowMode = TextOverflowModes.Overflow;
+
+            // ★ 卡片根节点存为 **禁用状态**（与 2026-10 手工版一致，用户确认"原样同步"）。
+            //   【为什么这样也没问题】LoopListView2 实例化条目时是"无条件强制激活"的：
+            //     ItemPool.Init   → mPrefabObj.SetActive(false)   （自己先把源 prefab 关掉）
+            //     ItemPool.CreateItem → Instantiate 后 go.SetActive(true)（第 101 行）
+            //   所以根节点的 active 值对运行结果**没有任何影响**，
+            //   这里保留 false 只是为了"生成器产出 == 磁盘事实"，避免下次全量重建把手工状态冲掉。
+            //   ⚠️ 但它是个"迷惑点"：若日后有人改用别的池化/实例化路径（不强制激活），
+            //      卡片会整片不可见 —— 到那时记得把这一行删掉。
+            go.SetActive(false);
 
             GameObject saved = PrefabUtility.SaveAsPrefabAsset(go, SelectItemPath);
             Object.DestroyImmediate(go);
@@ -1013,7 +1144,9 @@ namespace FTProject.EditorTools
                 TextAnchor.MiddleCenter, BigFontSize);
 
             // 音量用滑动条拖拽调节（SettingView.OnVolumeChanged）；VolumeText 同步显示百分比。
-            CreateSlider(panel.transform, "VolumeSlider", new Vector2(0f, 40f), new Vector2(480f, 40f), 0.8f);
+            // 【为什么是 y=55 / 高 55】手工版把滑块下移并加高（原 40/40 → 55/55），与上方 VolumeText
+            //   拉开一点呼吸空间，同时加粗拖拽热区（高 55 更好点）。
+            CreateSlider(panel.transform, "VolumeSlider", new Vector2(0f, 55f), new Vector2(480f, 55f), 0.8f);
             CreatePanelButton(panel.transform, "MuteBtn", "Mute", new Vector2(0f, -50f));
             CreatePanelButton(panel.transform, "ResetBtn", "Reset Save", new Vector2(0f, -140f));
             CreatePanelButton(panel.transform, "CloseBtn", "Close", new Vector2(0f, -230f));
@@ -1049,7 +1182,7 @@ namespace FTProject.EditorTools
 
             GameObject panel;
             GameObject root = CreateDialogShell("LevelClearView", "Level Clear!",
-                new Vector2(640f, 680f), report, out panel);
+                new Vector2(820f, 720f), report, out panel, -1f, new Vector2(580f, 56f));
             root.AddComponent<LevelClearView>();
 
             CreateText(panel.transform, "LevelName", "Level 1",
@@ -1583,6 +1716,31 @@ namespace FTProject.EditorTools
             return img;
         }
 
+        /// <summary>
+        /// 贴顶的**横向拉伸色条**：锚点 x 0..1（随父节点宽伸缩）、y 固定贴顶，高度由 height 指定。
+        ///
+        /// 【为什么需要它】`CreateImageAt` 的 anchorMin == anchorMax，做不出"跟随父宽"。
+        ///   而弹窗顶部的装饰色条恰恰要"面板多宽它就多宽"——写死宽度在面板尺寸调整时会露馅
+        ///   （LevelDetailView 就发生过：面板 1000→900，色条还留 1000，两边各戳出 50）。
+        /// </summary>
+        private static Image CreateStretchedBar(Transform parent, string name, float height,
+            string spriteName, Color fallback)
+        {
+            GameObject go = new GameObject(name, typeof(RectTransform));
+            go.transform.SetParent(parent, false);
+            RectTransform rt = (RectTransform)go.transform;
+            rt.anchorMin = new Vector2(0f, 1f);
+            rt.anchorMax = new Vector2(1f, 1f);
+            rt.pivot = new Vector2(0.5f, 1f);
+            rt.anchoredPosition = Vector2.zero;
+            rt.sizeDelta = new Vector2(0f, height);
+
+            Image img = go.AddComponent<Image>();
+            img.raycastTarget = false;
+            ApplySlicedSkin(img, spriteName, fallback);
+            return img;
+        }
+
         // ==================================================================
         // UI 补全 P2/P3：主菜单 / 关卡详情 / 出售确认 / 通用确认
         // ==================================================================
@@ -1628,22 +1786,26 @@ namespace FTProject.EditorTools
             title.color = Cyan;
 
             // 副标题基线 y_svg 540 → Y=0；26 号 → 盒中心 ≈ −9
+            // ★ 手工版把副标题**隐藏**了（与 GameTitle 内容重复，版面更干净）。
+            //   用 SetActive(false) 而不是删节点：将来想恢复只需在 prefab 里勾回来，
+            //   代码引用（MainMenuView.cs 的 _subtitle）也仍然成立。
             TextMeshProUGUI sub = CreateText(panel.transform, "Subtitle", "FREEDOM TOWER · Tower Defense",
                 new Vector2(0.5f, 0.5f), new Vector2(0f, 9f), new Vector2(1000f, 44f),
                 TextAnchor.MiddleCenter, 26);
             sub.color = TextSecondary;
+            sub.gameObject.SetActive(false);
 
-            // 玩家总览（左上）：底衬先建，文字后建 → 文字压在底衬上
-            CreateImageAt(panel.transform, "StatBg", new Vector2(0f, 1f), new Vector2(48f, -120f),
-                new Vector2(416f, 112f), "UI_Panel_Cyan", new Color(0.12f, 0.16f, 0.24f, 0.85f));
+            // 玩家总览（左上）：底衬先建，文字**挂在底衬之下**（随底一起动）
+            Transform statBg = CreateImageAt(panel.transform, "StatBg", new Vector2(0f, 1f), new Vector2(91f, -120f),
+                new Vector2(416f, 112f), "UI_Panel_Cyan", new Color(0.12f, 0.16f, 0.24f, 0.85f)).transform;
 
-            TextMeshProUGUI star = CreateText(panel.transform, "StarText", "0/0",
-                new Vector2(0f, 1f), new Vector2(72f, -146f), new Vector2(368f, 40f),
+            TextMeshProUGUI star = CreateText(statBg, "StarText", "0/0",
+                new Vector2(0f, 1f), new Vector2(24f, -18.5f), new Vector2(368f, 40f),
                 TextAnchor.MiddleLeft, 30);
             star.color = Gold;
 
-            TextMeshProUGUI clear = CreateText(panel.transform, "ClearText", "Cleared 0/0",
-                new Vector2(0f, 1f), new Vector2(72f, -196f), new Vector2(368f, 40f),
+            TextMeshProUGUI clear = CreateText(statBg, "ClearText", "Cleared 0/0",
+                new Vector2(0f, 1f), new Vector2(24f, -64.1f), new Vector2(368f, 40f),
                 TextAnchor.MiddleLeft, 28);
             clear.color = TextSecondary;
 
@@ -1661,7 +1823,7 @@ namespace FTProject.EditorTools
             EditorUtility.SetDirty(root);
             PrefabUtility.SaveAsPrefabAsset(root, MainMenuPath);
             Object.DestroyImmediate(root);
-            report.Ok("MainMenuView.prefab（Logo / GameTitle / Subtitle / StatBg+StarText+ClearText / Start+Codex+Setting+Quit / Version）");
+            report.Ok("MainMenuView.prefab（Logo / GameTitle / Subtitle(隐藏) / StatBg+StarText+ClearText / Start+Codex+Setting+Quit / Version）");
         }
 
         private static void BuildLevelDetail(EditorUtil.Report report)
@@ -1677,14 +1839,18 @@ namespace FTProject.EditorTools
             AssetDatabase.DeleteAsset(LevelDetailPath);
             EditorUtil.EnsureFolderOfFile(LevelDetailPath);
 
-            // 弹窗 1000×900（效果图 21：y_svg 90..990）
+            // 弹窗 900×900（手工版把宽度收到 900；高度不变）
+            // 【标题 940×56】手工版标题比面板还宽（940 > 900）—— 是刻意让它两边**溢出面板**，
+            //   形成"标题压在面板边沿"的版面；不要回落到公式 900−60=840，否则标题会缩进面板内。
             GameObject panel;
-            GameObject root = CreateDialogShell("LevelDetailView", "", new Vector2(1000f, 900f), report, out panel, -1f);
+            GameObject root = CreateDialogShell("LevelDetailView", "", new Vector2(900f, 900f), report, out panel, -1f,
+                new Vector2(940f, 56f));
             root.AddComponent<LevelDetailView>();
 
-            // 顶部色条 24px（效果图实测；§2.5 的"4px"是卡片细分隔线，两者不是一回事）
-            CreateImageAt(panel.transform, "TopBar", new Vector2(0.5f, 1f), Vector2.zero,
-                new Vector2(1000f, 24f), "UI_Chip_Gold", Gold);
+            // 顶部色条：**横向拉伸**贴满面板宽（锚点 x 0..1，sizeDelta.x=0），高度 8px。
+            //   手工版把"固定 1000 宽"改成"跟随面板宽"——面板若再变宽，色条自动跟着，
+            //   不必回来看这个数字（这正是当初写死 1000 的隐患）。
+            CreateStretchedBar(panel.transform, "TopBar", 8f, "UI_Chip_Gold", Gold);
 
             // 标题基线 y_svg 146 → 面板中心 y_svg 540 → Y=+394；48 号 → 盒中心 ≈ +377
             TextMeshProUGUI title = CreateText(panel.transform, "DetailTitle", "Level",
@@ -1769,49 +1935,54 @@ namespace FTProject.EditorTools
             EditorUtil.EnsureFolderOfFile(SellConfirmPath);
 
             GameObject panel;
-            GameObject root = CreateDialogShell("SellConfirmView", "", new Vector2(800f, 620f), report, out panel, -1f);
+            GameObject root = CreateDialogShell("SellConfirmView", "", new Vector2(1000f, 750f), report, out panel, -1f,
+                new Vector2(740f, 56f));
             root.AddComponent<SellConfirmView>();
 
-            CreateImageAt(panel.transform, "TopBar", new Vector2(0.5f, 1f), Vector2.zero,
-                new Vector2(800f, 24f), "UI_Chip_Gold", Fire);
+            // 顶栏加高到 102 并下移到 y=-29：它现在**托着标题文字**（标题是它的子节点）。
+            //   改回 24 高会让标题整条露在栏外（标题在栏内垂直居中）。
+            Image topBar = CreateImageAt(panel.transform, "TopBar", new Vector2(0.5f, 1f), new Vector2(0f, -29f),
+                new Vector2(800f, 102f), "UI_Chip_Gold", Fire);
 
-            TextMeshProUGUI title = CreateText(panel.transform, "SellTitle", "Sell this tower?",
-                new Vector2(0.5f, 0.5f), new Vector2(0f, 241f), new Vector2(740f, 56f),
+            // ★ 标题挂在 TopBar 之下（不是 panel 直挂）：文字随栏居中，栏动文字动。
+            //   几何口径 = **四边拉伸**（与 ConfirmView 的 BodyTitle 一致）。
+            TextMeshProUGUI title = CreateTextStretched(topBar.transform, "SellTitle", "Sell this tower?",
+                Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero,
                 TextAnchor.MiddleCenter, 48);
             title.color = TextPrimary;
 
-            CreateImageAt(panel.transform, "TowerIcon", new Vector2(0.5f, 0.5f), new Vector2(0f, 158f),
+            CreateImageAt(panel.transform, "TowerIcon", new Vector2(0.5f, 0.5f), new Vector2(0f, 132f),
                 new Vector2(100f, 100f), "UI_TowerIcon_Normal", new Color(0.18f, 0.29f, 0.4f, 1f), false);
 
             TextMeshProUGUI name = CreateText(panel.transform, "TowerName", "Tower",
-                new Vector2(0.5f, 0.5f), new Vector2(0f, 89f), new Vector2(740f, 44f),
+                new Vector2(0.5f, 0.5f), new Vector2(0f, 63f), new Vector2(740f, 44f),
                 TextAnchor.MiddleCenter, 32);
             name.color = TextPrimary;
 
             TextMeshProUGUI warn = CreateText(panel.transform, "WarnText", string.Empty,
-                new Vector2(0.5f, 0.5f), new Vector2(0f, -5f), new Vector2(700f, 72f),
+                new Vector2(0.5f, 0.5f), new Vector2(0f, -31f), new Vector2(700f, 72f),
                 TextAnchor.MiddleCenter, 27);
             warn.color = Fire;
             warn.enableWordWrapping = true;   // 两句警告文案要换行
 
             TextMeshProUGUI refundLabel = CreateText(panel.transform, "RefundLabel", "Refund",
-                new Vector2(0.5f, 0.5f), new Vector2(-100f, -80f), new Vector2(240f, 56f),
+                new Vector2(0.5f, 0.5f), new Vector2(-100f, -106f), new Vector2(240f, 56f),
                 TextAnchor.MiddleCenter, 30);
             refundLabel.color = TextSecondary;
 
             TextMeshProUGUI refundValue = CreateText(panel.transform, "RefundValue", "0",
-                new Vector2(0.5f, 0.5f), new Vector2(80f, -78f), new Vector2(240f, 56f),
+                new Vector2(0.5f, 0.5f), new Vector2(80f, -104f), new Vector2(240f, 56f),
                 TextAnchor.MiddleCenter, 34);
             refundValue.color = Gold;
 
             // 两按钮**并排同 y**（效果图 v2 修正：v1 竖排会越出面板底）
-            CreatePanelButton(panel.transform, "ConfirmBtn", "Confirm Sell", new Vector2(-260f, -210f), 240f, true, 88f, 32);
-            CreatePanelButton(panel.transform, "CancelBtn", "Cancel", new Vector2(260f, -210f), 240f, false, 88f, 32);
+            CreatePanelButton(panel.transform, "ConfirmBtn", "Confirm Sell", new Vector2(-260f, -256f), 240f, true, 88f, 32);
+            CreatePanelButton(panel.transform, "CancelBtn", "Cancel", new Vector2(260f, -256f), 240f, false, 88f, 32);
 
             EditorUtility.SetDirty(root);
             PrefabUtility.SaveAsPrefabAsset(root, SellConfirmPath);
             Object.DestroyImmediate(root);
-            report.Ok("SellConfirmView.prefab（TopBar / SellTitle / TowerIcon / TowerName / WarnText / RefundLabel+RefundValue / Confirm+Cancel）");
+            report.Ok("SellConfirmView.prefab（TopBar+SellTitle / TowerIcon / TowerName / WarnText / RefundLabel+RefundValue / Confirm+Cancel）");
         }
 
         private static void BuildConfirm(EditorUtil.Report report)
@@ -1828,14 +1999,20 @@ namespace FTProject.EditorTools
             EditorUtil.EnsureFolderOfFile(ConfirmPath);
 
             GameObject panel;
-            GameObject root = CreateDialogShell("ConfirmView", "", new Vector2(760f, 560f), report, out panel, -1f);
+            // 【为什么显式给标题尺寸 700×100】手工版把这个弹窗的整页标题放大到 700×100
+            //   （比通用公式 960−60=900 宽、100 高），不再回落到公式。
+            GameObject root = CreateDialogShell("ConfirmView", "", new Vector2(960f, 560f), report, out panel, -1f,
+                new Vector2(700f, 100f));
             root.AddComponent<ConfirmView>();
 
-            CreateImageAt(panel.transform, "TopBar", new Vector2(0.5f, 1f), Vector2.zero,
-                new Vector2(760f, 24f), "UI_Chip_Gold", Cyan);
+            // 顶栏加高到 80 并下移到 y=-24：它现在**托着正文标题**（BodyTitle 是它的子节点）。
+            Image topBar = CreateImageAt(panel.transform, "TopBar", new Vector2(0.5f, 1f), new Vector2(0f, -24f),
+                new Vector2(760f, 80f), "UI_Chip_Gold", Cyan);
 
-            TextMeshProUGUI title = CreateText(panel.transform, "BodyTitle", "Confirm",
-                new Vector2(0.5f, 0.5f), new Vector2(0f, 201f), new Vector2(700f, 56f),
+            // ★ 正文标题挂在 TopBar 之下（不是 panel 直挂）：文字随栏居中，栏动文字动。
+            //   几何口径 = **四边拉伸**（锚点 0,0/1,1、pos 0,0、size 0,0），这样文字框随顶栏尺寸自适应。
+            TextMeshProUGUI title = CreateTextStretched(topBar.transform, "BodyTitle", "Confirm",
+                Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero,
                 TextAnchor.MiddleCenter, 48);
             title.color = TextPrimary;
 
@@ -1854,7 +2031,7 @@ namespace FTProject.EditorTools
             EditorUtility.SetDirty(root);
             PrefabUtility.SaveAsPrefabAsset(root, ConfirmPath);
             Object.DestroyImmediate(root);
-            report.Ok("ConfirmView.prefab（TopBar / BodyTitle / BodyText / DangerIcon / Confirm+Cancel）");
+            report.Ok("ConfirmView.prefab（TopBar+BodyTitle / BodyText / DangerIcon / Confirm+Cancel）");
         }
 
         // ==================================================================

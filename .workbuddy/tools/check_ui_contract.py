@@ -77,11 +77,15 @@ def builder_nodes(section, has_shell):
     """
     按**代码顺序**还原 Build<View> 方法产出的节点路径集合。
 
-    支持三种建节点方式（生成器里都用到了）：
+    支持四种建节点方式（生成器里都用到了）：
       1. CreateDialogShell(...)      → 固定产 Bg / Panel / Panel/Title（out panel）
       2. new GameObject("X") + X.transform.SetParent(Y.transform, false) → Y路径/X
       3. CreateText/CreateButton/CreatePanelButton(<容器>.transform, "X", ...)
          —— CreatePanelButton 额外产 X/Label
+      4. CreateChip / CreateImageAt / CreateStretchedBar(<容器>.transform, "X", ...)
+         并**把返回值赋给某个变量** → 该变量即代表节点 X，后续可作容器再挂子节点
+         （例：`Transform statBg = CreateImageAt(panel.transform, "StatBg", ...)` 之后
+           `CreateText(statBg.transform, "StarText", ...)` ⇒ Panel/StatBg/StarText）
     没被 SetParent 过的那一个就是 prefab 根，路径为空。
     """
     nodes = set()
@@ -96,12 +100,23 @@ def builder_nodes(section, has_shell):
     events = []
     for m in re.finditer(r'([A-Za-z_]\w*)\s*=\s*new\s+GameObject\(\s*"([^"]+)"', section):
         events.append((m.start(), 0, ('decl', m.group(1), m.group(2))))
+    # ★ 把"创建工厂的返回值赋给变量"登记成一次 decl：
+    #   变量名 → 该工厂产出的节点名。工厂第 1 参是父容器，第 2 参是节点名。
+    #   覆盖 CreateChip / CreateImageAt / CreateStretchedBar / CreateText 等
+    #   （CreateText 同时会被下面的 create 事件记一次节点，这里额外记 decl 以支持它当容器）。
+    for m in re.finditer(
+            r'([A-Za-z_]\w*)\s*=\s*'
+            r'(CreateChip|CreateImageAt|CreateStretchedBar|CreateText|CreateTextStretched|CreatePanelButton|CreateButton)\('
+            r'\s*([A-Za-z_]\w*)\s*\.\s*transform\s*,\s*"([^"]+)"',
+            section):
+        events.append((m.start(), 0, ('decl_parent', m.group(1), m.group(3), m.group(4))))
     for m in re.finditer(
             r'([A-Za-z_]\w*)\s*\.\s*transform\s*\.\s*SetParent\(\s*([A-Za-z_]\w*)\s*\.\s*transform\s*,',
             section):
         events.append((m.start(), 1, ('parent', m.group(1), m.group(2))))
     for m in re.finditer(
-            r'(CreatePanelButton|CreateText|CreateButton|CreateImageAt)\(\s*([A-Za-z_]\w*)\s*\.\s*transform\s*,\s*"([^"]+)"',
+            r'(CreatePanelButton|CreateText|CreateTextStretched|CreateButton|CreateImageAt|CreateChip|CreateStretchedBar|CreateChipText)'
+            r'\(\s*([A-Za-z_]\w*)(?:\s*\.\s*transform)?\s*,\s*"([^"]+)"',
             section):
         events.append((m.start(), 2, ('create', m.group(1), m.group(2), m.group(3))))
     events.sort(key=lambda x: (x[0], x[1]))
@@ -112,6 +127,9 @@ def builder_nodes(section, has_shell):
     for _, _, ev in events:
         if ev[0] == 'decl':
             names[ev[1]] = ev[2]
+        elif ev[0] == 'decl_parent':
+            names[ev[1]] = ev[3]        # 变量代表"父容器下名为 X 的节点"
+            child_vars.add(ev[1])
         elif ev[0] == 'parent':
             child_vars.add(ev[1])
     for var in names:
@@ -123,7 +141,16 @@ def builder_nodes(section, has_shell):
     for _, _, ev in events:
         if ev[0] == 'decl':
             continue
-        if ev[0] == 'parent':
+        if ev[0] == 'decl_parent':
+            # 变量 = 父容器下的一个新节点：先算父路径，再把变量注册为该节点路径
+            var, parent_var, node_name = ev[1], ev[2], ev[3]
+            p = varpath.get(parent_var)
+            if p is None:
+                continue
+            path = (p + '/' + node_name) if p else node_name
+            varpath[var] = path
+            nodes.add(path)
+        elif ev[0] == 'parent':
             child, parent = ev[1], ev[2]
             p = varpath.get(parent)
             n = names.get(child)

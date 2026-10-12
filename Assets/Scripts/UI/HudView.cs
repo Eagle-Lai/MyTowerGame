@@ -19,6 +19,11 @@ namespace FTProject
     ///   Btn_Tower_Normal (type=1) / Btn_Tower_Power (type=2) / Btn_Tower_Retard (type=3)
     ///   ★ 命名映射：节点里的 "Retard" ⇄ 枚举 TowerType.Slow(3)，同一件事的两种叫法，
     ///     映射只在本文件的 TowerTypeOf 与美术目录两处，别处不要各写一份。
+    ///
+    /// 【节点层级：文本内嵌在芯片底下】
+    ///   GoldText / HpText / RoundText 是 Bg_Gold / Bg_Hp / Bg_Round 的**子节点**
+    ///   （不再是 HudView 的直接子节点），所以取值路径是 "Bg_Gold/GoldText" 这种两段式。
+    ///   改层级必须与 UIPrefabBuilder.BuildHud 成对改。
     /// </summary>
     public class HudView : MonoBehaviour
     {
@@ -54,12 +59,17 @@ namespace FTProject
         private bool _placing;
 
         /// <summary>
-        /// 建造栏的塔按钮（M2 起五类）。
+        /// 建造栏的塔按钮（当前三类：单体/范围/减速）。
         ///
         /// 【为什么节点名必须显式映射，不能由配置推导】
         ///   Slow(3) 在美术/节点/资源目录里叫 "Retard" —— 这处不一致无法用字符串规则还原。
         ///   所以塔型 ↔ 节点名 的对应关系**只在这里写一次**，
         ///   UIPrefabBuilder 与 prefab 三处保持同名即可（契约见 Docs/HudView_Sync_and_TowerUI_Plan.md §2）。
+        ///
+        /// 【为什么只有三颗】穿透(4)/激光(5) 的美术仍是占位（Tower_Normal0），
+        ///   手工版已把这两颗从 HUD 撤下。配置表 type=4/5 的行保留，
+        ///   将来恢复：这里加回两个名字 + TowerNodeTypes 加 4/5，
+        ///   并在 UIPrefabBuilder.TowerButtons 与 M0SetupWizard 检查名单同步补回。
         ///
         /// 【为什么在 Awake 里按固定名单绑定，而不是读配置表动态生成】
         ///   HUD 的 Awake 可能早于 Configs 加载完成；靠配置决定"绑哪几个节点"会在时序上翻车。
@@ -69,11 +79,10 @@ namespace FTProject
         private static readonly string[] TowerNodeNames =
         {
             "Btn_Tower_Normal", "Btn_Tower_Power", "Btn_Tower_Retard",
-            "Btn_Tower_Pierce", "Btn_Tower_Laser",
         };
 
-        // 与 TowerNodeNames 一一对应（TowerType：1单体/2范围/3减速/4穿透/5激光）
-        private static readonly int[] TowerNodeTypes = { 1, 2, 3, 4, 5 };
+        // 与 TowerNodeNames 一一对应（TowerType：1单体/2范围/3减速）
+        private static readonly int[] TowerNodeTypes = { 1, 2, 3 };
 
         private void Awake()
         {
@@ -104,9 +113,10 @@ namespace FTProject
 
         private void BindNodes()
         {
-            _goldText = FindText("GoldText");
-            _hpText = FindText("HpText");
-            _roundText = FindText("RoundText");
+            // 文本内嵌在芯片底之下（Bg_* 的子节点），路径必须是两段式
+            _goldText = FindText("Bg_Gold/GoldText");
+            _hpText = FindText("Bg_Hp/HpText");
+            _roundText = FindText("Bg_Round/RoundText");
 
             _startButton = FindButton("StartButton");
             _startLabel = FindChildText("StartButton/Label");

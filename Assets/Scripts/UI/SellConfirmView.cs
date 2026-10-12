@@ -60,7 +60,7 @@ namespace FTProject
 
         private void Awake()
         {
-            _title = FindText("Panel/SellTitle");
+            _title = FindText("Panel/TopBar/SellTitle");
             _towerName = FindText("Panel/TowerName");
             _warnText = FindText("Panel/WarnText");
             _refundValue = FindText("Panel/RefundValue");

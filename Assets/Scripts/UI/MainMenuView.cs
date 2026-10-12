@@ -37,8 +37,8 @@ namespace FTProject
         {
             _title = FindText("Panel/GameTitle");
             _subtitle = FindText("Panel/Subtitle");
-            _starText = FindText("Panel/StarText");
-            _clearText = FindText("Panel/ClearText");
+            _starText = FindText("Panel/StatBg/StarText");
+            _clearText = FindText("Panel/StatBg/ClearText");
             _version = FindText("Panel/Version");
             _startBtn = FindButton("Panel/StartBtn");
             _codexBtn = FindButton("Panel/CodexBtn");

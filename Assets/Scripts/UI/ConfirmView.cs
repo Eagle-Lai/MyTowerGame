@@ -74,7 +74,7 @@ namespace FTProject
 
         private void Awake()
         {
-            _title = FindText("Panel/BodyTitle");
+            _title = FindText("Panel/TopBar/BodyTitle");
             _body = FindText("Panel/BodyText");
             _confirmBtn = FindButton("Panel/ConfirmBtn");
             _cancelBtn = FindButton("Panel/CancelBtn");
