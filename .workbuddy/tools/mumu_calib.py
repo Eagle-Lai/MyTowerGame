@@ -5,7 +5,7 @@ user32 = ctypes.windll.user32
 MOUSEEVENTF_LEFTDOWN = 0x0002
 MOUSEEVENTF_LEFTUP = 0x0004
 SW_RESTORE = 9
-HWND = 17369318
+HWND = 91817136
 
 def rect():
     r = ctypes.wintypes.RECT() if hasattr(ctypes, 'wintypes') else None

@@ -237,8 +237,8 @@ namespace FTProject
             bool inBoard = board != null && board.ScreenToCell(Input.mousePosition, out row, out col);
             CellData cell = inBoard ? board.GetCell(row, col) : null;
             BaseTower hit = cell != null ? cell.Tower : null;
-            Debug.Log(string.Format("[Place] 点塔判定 overUi={0} inBoard={1} cell=({2},{3}) tower={4}",
-                overUi, inBoard, row, col, hit != null ? hit.name : "null"));
+            Debug.Log(string.Format("[Place] 点塔判定 screen=({0:F0},{1:F0}) overUi={2} inBoard={3} cell=({4},{5}) tower={6}",
+                Input.mousePosition.x, Input.mousePosition.y, overUi, inBoard, row, col, hit != null ? hit.name : "null"));
 
             // 点在 UI 上不要触发（否则点 HUD 面板会顺手选中/取消塔）
             if (overUi)

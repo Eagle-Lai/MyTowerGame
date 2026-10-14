@@ -1129,6 +1129,8 @@ namespace FTProject
                 if (view == null)
                 {
                     // 面板资源未就绪时降级：提示玩家升级/出售暂不可用（逻辑本身没坏）
+                    // 【真机诊断埋点】"点塔后不弹面板"若出现这条，说明 TowerInfoView 资源加载失败
+                    Debug.LogWarning("[Flow] TowerInfoView 打开失败（面板资源未就绪），升级/出售入口不可用");
                     Tips(Localization.Get("Tower panel not ready, cannot upgrade/sell yet")
                         ?? "塔操作面板资源未就绪，暂无法升级/出售（补齐 TowerInfoView 后可用）");
                     return;

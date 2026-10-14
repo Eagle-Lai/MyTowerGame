@@ -758,10 +758,17 @@ namespace FTProject
             }
             if (old == null || old.Config == null || !old.IsBuilt)
             {
+                // 【真机诊断埋点】塔句柄无效（空/未建成）——"升级没反应"时先看这条
+                Debug.LogWarning(string.Format("[Tower] TryUpgrade 失败：old={0} config={1} isBuilt={2}",
+                    old == null ? "null" : old.name,
+                    old == null || old.Config == null ? "null" : old.Config.Name,
+                    old != null && old.IsBuilt));
                 return null;
             }
             if (old.Config.IsMaxLevel)
             {
+                // 【真机诊断埋点】满级拦截（按钮此时本应置灰，若用户仍点到这里说明按钮状态不同步）
+                Debug.Log(string.Format("[Tower] TryUpgrade 失败：{0} 已是满级 Lv.{1}", old.Config.Name, old.Config.Level));
                 Tips(Localization.Get("Tower is already at max level") ?? "该防御塔已满级");
                 return null;
             }
@@ -771,6 +778,9 @@ namespace FTProject
             TowerConfig nextCfg = Configs.GetNextLevel(old.Config);
             if (nextCfg == null)
             {
+                // 【真机诊断埋点】升级链断了（配置问题）——"升级没反应"时看这条
+                Debug.LogWarning(string.Format("[Tower] TryUpgrade 失败：{0} Lv.{1} 找不到下一级配置（upgradeTo={2}）",
+                    old.Config.Name, old.Config.Level, old.Config.UpgradeTo));
                 Tips(Localization.Get("No next-level config available") ?? "该防御塔暂无可升级的下一级配置");
                 return null;
             }
@@ -778,6 +788,8 @@ namespace FTProject
             CellData cell = old.Cell;
             if (cell == null)
             {
+                // 【真机诊断埋点】塔不在格子上（数据不一致）
+                Debug.LogWarning("[Tower] TryUpgrade 失败：塔不在格子上（cell=null）");
                 Tips(Localization.Get("Tower is not on a tile, cannot upgrade") ?? "该防御塔不在格子上，无法升级");
                 return null;
             }
@@ -785,6 +797,9 @@ namespace FTProject
             // ① 扣费（在一切破坏性操作之前，失败则完全无副作用）
             if (!PlayerDataManager.Instance.TrySpend(nextCfg.Prices))
             {
+                // 【真机诊断埋点】金币不足（按钮置灰时本不该触发；若触发说明 HUD 状态不同步）
+                Debug.Log(string.Format("[Tower] TryUpgrade 失败：金币不足（升级需要 {0}，现有 {1}）",
+                    nextCfg.Prices, PlayerDataManager.Instance.Gold));
                 Tips(Localization.Get("Not enough gold, upgrade needs {0}", nextCfg.Prices)
                     ?? string.Format("金币不足，升级需要 {0}", nextCfg.Prices));
                 return null;

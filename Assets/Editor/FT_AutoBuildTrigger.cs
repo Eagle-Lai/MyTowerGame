@@ -1,3 +1,4 @@
+// 触发记录：2026-10-14 17:07 借道构建（资产变更 → 域重载 → 消费 trigger）
 using System.IO;
 using UnityEditor;
 using UnityEngine;
