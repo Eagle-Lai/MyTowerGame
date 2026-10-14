@@ -119,6 +119,8 @@ namespace FTProject
             _level = level;
             _cfg = cfg;
             _active = true;
+            // 【真机诊断埋点】放置态进入成功（按钮→配置→金币检查全通过）
+            Debug.Log(string.Format("[Place] EnterPlacement {0} Lv.{1} price={2}", cfg.Name, cfg.Level, cfg.Prices));
             _hoverRow = -1;
             _hoverCol = -1;
             _hoverState = CellHighlight.None;
@@ -467,16 +469,53 @@ namespace FTProject
                 _ghost.transform.position = new Vector3(world.x, world.y, 0f);
             }
 
-            // 点击放置（避开 UI，否则点 HUD 按钮也会顺手把塔放下去）
-            if (Input.GetMouseButtonDown(0) && !IsPointerOverUI())
+            // 点击放置（避开 UI，否则点 HUD 按钮也会顺手把塔放下去）。
+            //
+            // 【交互 v2 —— 双手势兼容】
+            //   ① 按下即放（原行为，鼠标/点按用户：点哪放哪）；
+            //   ② 松手兜底（触摸拖动用户：按住拖到目标格松手落子）。
+            //   TryPlace 成功会 ExitPlacement 退出放置态 → 同一手势的 up 不会再触发，天然防重。
+            //   【真机诊断埋点】"不能建造"时按这几个日志定位断点：
+            //     down/up/inside/canBuild/overUi 全打出来，哪一环断了一眼可见。
+            if (Input.GetMouseButtonDown(0))
             {
-                if (inside && _canBuild)
+                bool overUiDown = IsPointerOverUI();
+                bool insideDown = board.ScreenToCell(Input.mousePosition, out int rDown, out int cDown);
+                Debug.Log(string.Format("[Place] down overUi={0} inside={1}", overUiDown, insideDown));
+                if (overUiDown)
                 {
-                    TryPlace(board, row, col);
+                    return;
                 }
-                else if (inside)
+                if (!insideDown)
+                {
+                    // 棋盘外按下：只提示，不取消（防误触；取消走右键/ESC/再点一次塔按钮）
+                    Tips("Tap on a buildable tile to place");
+                    return;
+                }
+                if (_canBuild)
+                {
+                    TryPlace(board, rDown, cDown);
+                }
+                else
                 {
                     Tips(BlockReasonText());
+                }
+                return;
+            }
+
+            if (Input.GetMouseButtonUp(0))
+            {
+                bool insideUp = board.ScreenToCell(Input.mousePosition, out int rUp, out int cUp);
+                bool overUiUp = IsPointerOverUI();
+                Debug.Log(string.Format("[Place] up overUi={0} inside={1} canBuild={2}", overUiUp, insideUp, _canBuild));
+                if (overUiUp)
+                {
+                    return;
+                }
+                // 拖动兜底：down 时按偏了（没放出去），拖到可建格松手 → 放
+                if (insideUp && _canBuild)
+                {
+                    TryPlace(board, rUp, cUp);
                 }
             }
         }

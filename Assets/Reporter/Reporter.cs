@@ -1672,20 +1672,33 @@ public class Reporter : MonoBehaviour
 	int gestureCount = 0;
 	bool isGestureDone()
 	{
+		// 【MuMu/模拟器适配】原版在 Android 上只认 Input.touches —— 但模拟器里
+		// 用电脑鼠标操作时系统注入的是鼠标事件，touches 恒为空，画圈永远无效。
+		// 改成"触摸 + 鼠标"双轨：有一根手指走 touch，没有手指但鼠标按下走 mouse。
+		bool dragging = false;
+		Vector2 p = Vector2.zero;
+
 		if (Application.platform == RuntimePlatform.Android ||
 			Application.platform == RuntimePlatform.IPhonePlayer) {
-			if (Input.touches.Length != 1) {
-				gestureDetector.Clear();
-				gestureCount = 0;
+			if (Input.touchCount == 1) {
+				Touch t = Input.touches[0];
+				if (t.phase == TouchPhase.Canceled || t.phase == TouchPhase.Ended) {
+					gestureDetector.Clear();
+					gestureCount = 0;
+				}
+				else if (t.phase == TouchPhase.Moved) {
+					dragging = true;
+					p = t.position;
+				}
+			}
+			else if (Input.touchCount == 0 && Input.GetMouseButton(0)) {
+				// 模拟器鼠标路径
+				dragging = true;
+				p = Input.mousePosition;
 			}
 			else {
-				if (Input.touches[0].phase == TouchPhase.Canceled || Input.touches[0].phase == TouchPhase.Ended)
-					gestureDetector.Clear();
-				else if (Input.touches[0].phase == TouchPhase.Moved) {
-					Vector2 p = Input.touches[0].position;
-					if (gestureDetector.Count == 0 || (p - gestureDetector[gestureDetector.Count - 1]).magnitude > 10)
-						gestureDetector.Add(p);
-				}
+				gestureDetector.Clear();
+				gestureCount = 0;
 			}
 		}
 		else {
@@ -1695,11 +1708,15 @@ public class Reporter : MonoBehaviour
 			}
 			else {
 				if (Input.GetMouseButton(0)) {
-					Vector2 p = new Vector2(Input.mousePosition.x, Input.mousePosition.y);
-					if (gestureDetector.Count == 0 || (p - gestureDetector[gestureDetector.Count - 1]).magnitude > 10)
-						gestureDetector.Add(p);
+					dragging = true;
+					p = new Vector2(Input.mousePosition.x, Input.mousePosition.y);
 				}
 			}
+		}
+
+		if (dragging) {
+			if (gestureDetector.Count == 0 || (p - gestureDetector[gestureDetector.Count - 1]).magnitude > 10)
+				gestureDetector.Add(p);
 		}
 
 		if (gestureDetector.Count < 10)

@@ -43,7 +43,11 @@ namespace FTProject.AOT
     /// </summary>
     public class BootLoader : MonoBehaviour
     {
-        /// <summary>热更完成后进入的场景名（Build Settings 里的场景名，不带扩展名）。</summary>
+        /// <summary>
+        /// main 场景名（仅用于日志/注释说明；**实际加载由热更侧 EnterMainScene 完成**，
+        /// 场景地址在 HotUpdateEntry.MainSceneAddress —— 场景从 YooAsset AB 加载，
+        /// 真机上 Build Settings 只保留 Boot 一个启用场景）。
+        /// </summary>
         private const string MainSceneName = "main";
 
         /// <summary>
@@ -131,10 +135,47 @@ namespace FTProject.AOT
             SetStatus("准备就绪");
             yield return null;
 
-            // ③ 卸载 Boot 场景，进入 main
-            //    说明：热更侧入口此时应已完成"管理器注册"等无场景依赖的初始化；
-            //    若有依赖场景对象的初始化，应放在 main 场景的 GameSceneLauncher 里。
-            SceneManager.LoadScene(MainSceneName, LoadSceneMode.Single);
+            // ③ 进入 main（**由热更侧加载场景**）
+            //    【为什么不再 SceneManager.LoadScene】HybridCLR 真机上，挂了热更脚本的
+            //    场景打进 Build Settings 会在打包时被烘焙成空壳（热更程序集在
+            //    IFilterBuildAssemblies 阶段被剔除），运行时表现为
+            //    "missing script / serialization layout" 错误。
+            //    所以 main 场景必须从 AssetBundle 加载，而资源系统的模式选择
+            //    （联机/离线）只有热更侧知道 —— 交棒给 IHotUpdateEntry.EnterMainScene。
+            //    场景以 Single 模式激活后本场景自动卸载，本协程随之自然终止
+            //    （成功路径不需要收尾动作）；失败则把错误显示在启动界面上。
+            bool sceneDone = false;
+            bool sceneOk = false;
+            string sceneError = null;
+            entry.EnterMainScene((ok, err) =>
+            {
+                sceneDone = true;
+                sceneOk = ok;
+                sceneError = err;
+            });
+
+            float guard = 0f;
+            while (!sceneDone)
+            {
+                yield return null;
+                guard += Time.unscaledDeltaTime;
+                if (guard > 60f)
+                {
+                    SetStatus("启动失败：\n加载 main 场景超时（60s）");
+                    Debug.LogError("[Boot] 加载 main 场景超时 —— 资源系统可能卡在初始化，详情见上方 [Res] 日志。");
+                    yield break;
+                }
+            }
+
+            if (!sceneOk)
+            {
+                SetStatus("启动失败：\n" + sceneError);
+                Debug.LogError("[Boot] 热更侧加载 main 场景失败：" + sceneError);
+                yield break;
+            }
+
+            // 成功路径：场景激活瞬间本场景已卸载，一般走不到这里；走到也无害。
+            SetStatus("准备就绪");
         }
 
         /// <summary>
@@ -164,7 +205,7 @@ namespace FTProject.AOT
         /// </summary>
         private IEnumerator ProbeAndDownloadDllsCo()
         {
-            const string ServerUrlForAOT = "http://192.168.43.100:8000";   // ★ 必须与 ResServerConfig.ServerUrl 一致
+            const string ServerUrlForAOT = "http://10.0.2.2:8000";   // ★ 必须与 ResServerConfig.ServerUrl 一致（模拟器 NAT 网关；真机换局域网 IP，改这里 + ResServerConfig 两处同步）
 
             SetStatus("正在检查资源服务器…");
             SetProgress(0.02f);

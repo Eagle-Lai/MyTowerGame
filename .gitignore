@@ -61,6 +61,11 @@ crashlytics-build.properties
 # 内容全部可从上面两处重新拷贝，属派生物；用 Tools/sync_to_server.sh 一键同步。
 /ServerRoot/
 
+# 公司E 本机热更资源服务器（junction：Android/HybridCLR→StreamingAssets/HybridCLR，
+# Android/FreeTower→Bundles/Android/FreeTower），同样只服务本机 python http.server。
+# 内容与上面两处构成重复，且 junction 在异机不可用，不入库。
+/HotUpdateServer/
+
 # 注意：Assets/ConfigJson/ 是 Luban 的输出目录，属于**源数据**，必须入库！
 # （它不在忽略列表里。历史上曾把它当"派生副本"忽略并放在 StreamingAssets/json，
 #   但 StreamingAssets 下的文件不会导入成 TextAsset，编辑器读不到内容，已改正。）
@@ -97,6 +102,8 @@ Luban/Config/Datas/~$*.xlsx
 # 校验效果图排版时会把 SVG 包成 HTML 用 headless Chrome 截图核对，
 # 会生成数十 MB 的浏览器 profile 与临时 png。纯中间产物，随时可重建。
 /.workbuddy/tmp/
+# 会话级临时文件（如 tmp_sid.txt：记录当前会话 id），随用随弃
+/.workbuddy/tmp_*
 
 # Python 工具脚本的运行缓存（由解释器自动生成，可丢弃）
 __pycache__/

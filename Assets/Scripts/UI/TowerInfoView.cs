@@ -156,6 +156,8 @@ namespace FTProject
                 return;
             }
             _tower = tower;
+            // 【真机诊断埋点】面板被打开并喂了数据 —— 升级面板本身是活的
+            Debug.Log("[TowerInfoView] Show: " + tower.name);
             SetContentVisible(true);
             Refresh();
         }
@@ -305,6 +307,8 @@ namespace FTProject
             {
                 return;
             }
+            // 【真机诊断埋点】UpgradeBtn 确实被点到了
+            Debug.Log("[TowerInfoView] OnClickUpgrade: " + _tower.name);
             EventDispatcher.TriggerEvent<BaseTower>(EventName.TowerUpgradeRequestEvent, _tower);
             // 结果由 TowerUpgradeSuccess 事件回来刷新
         }

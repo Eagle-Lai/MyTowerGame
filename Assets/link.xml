@@ -1,0 +1,9 @@
+<linker>
+  <!--
+    WorkBuddy 2026-10-14：防 IL2CPP 裁剪。
+    真机日志曾出现 "Could not produce class with ID 198/199"（ParticleSystem /
+    ParticleSystemRenderer）—— AB 里的特效 prefab 反序列化时粒子组件被 stripped，
+    表现为"升级特效/转圈圈等粒子效果不显示"。保留粒子模块即可。
+  -->
+  <assembly fullname="UnityEngine.ParticleSystemModule" preserve="all"/>
+</linker>

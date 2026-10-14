@@ -1111,6 +1111,10 @@ namespace FTProject
                 return;
             }
 
+            // 【真机诊断埋点】"点塔没反应/不能升级"时，先看这条有没有出现：
+            //   有 → 选中链路通，问题在面板；没有 → 点击没选中（输入/射线问题）。
+            Debug.Log("[Flow] OnTowerSelected: " + tower.name);
+
             TowerInfoView view;
             if (!_towerPanelOpened)
             {
@@ -1139,6 +1143,10 @@ namespace FTProject
 
         private void OnTowerUpgradeRequest(BaseTower tower)
         {
+            // 【真机诊断埋点】面板 UpgradeBtn → 这里 → TryUpgrade。
+            //   有这条但没升级 → TryUpgrade 内部失败（金币/满级/资源），Tips 有提示；
+            //   连这条都没有 → 按钮点击没发事件（prefab 节点缺失或点击被吞）。
+            Debug.Log("[Flow] OnTowerUpgradeRequest: " + (tower != null ? tower.name : "null"));
             TowerManager.Instance.TryUpgrade(tower);
         }
 

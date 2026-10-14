@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 using UnityEngine.Networking;
+using UnityEngine.SceneManagement;
 
 namespace FTProject
 {
@@ -686,6 +687,36 @@ namespace FTProject
         // ==================================================================
         // 诊断
         // ==================================================================
+
+        /// <summary>
+        /// 旧 AB 链路（未启用 YooAsset 时）的场景加载。
+        /// ⚠️ 本实现按场景名走 SceneManager —— 要求场景在 Build Settings 里；
+        /// HybridCLR 真机上"包体场景挂热更脚本"会 missing，正式热更链路请用
+        /// YooAssetResLoader（场景从 AB 加载）。本实现只是让接口在旧链路下编译通过、
+        /// 并保持"无热更组件的场景"可用。
+        /// </summary>
+        public void LoadSceneAsync(string location, Action<bool, string> onResult)
+        {
+            AsyncOperation op = SceneManager.LoadSceneAsync(location, LoadSceneMode.Single);
+            if (op == null)
+            {
+                Debug.LogError(string.Format("[Res] BundleResLoader 场景加载失败：{0}", location));
+                if (onResult != null) onResult(false, "场景加载失败：" + location);
+                return;
+            }
+
+            ResLoaderRunner.Start(WaitSceneOpCo(location, op, onResult));
+        }
+
+        private static IEnumerator WaitSceneOpCo(string location, AsyncOperation op, Action<bool, string> onResult)
+        {
+            while (!op.isDone)
+            {
+                yield return null;
+            }
+
+            if (onResult != null) onResult(true, null);
+        }
 
         public string DumpDebugInfo()
         {

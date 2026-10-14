@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using YooAsset;
 
 namespace FTProject
@@ -1109,6 +1110,53 @@ namespace FTProject
         public void Preload(string[] logicalNames, Action<float> onProgress, Action onDone)
         {
             ResLoaderRunner.Start(PreloadCo(logicalNames, onProgress, onDone));
+        }
+
+        // ==================================================================
+        // 场景加载（IResLoader.LoadSceneAsync）
+        // ==================================================================
+
+        /// <summary>
+        /// 异步加载场景（Single 模式）。
+        /// 【为什么必须在 YooAssetResLoader 里做】HybridCLR 真机上，挂了热更脚本的
+        /// 场景只能从 AssetBundle 加载 —— 包体 BuildSettings 场景在打包时热更程序集
+        /// 被剔除，组件烘焙成空壳。YooAsset 的 SceneHandle 走"内置/沙盒"文件系统，
+        /// 离线模式读随包 bundle，联机模式读下载后的沙盒，两者都覆盖。
+        /// </summary>
+        public void LoadSceneAsync(string location, Action<bool, string> onResult)
+        {
+            if (!_ready)
+            {
+                Fail("[Res] 场景加载失败：资源系统尚未初始化完成（Init 未成功）");
+                if (onResult != null) onResult(false, "资源系统未初始化");
+                return;
+            }
+
+            SceneHandle handle = _package.LoadSceneAsync(location, LoadSceneMode.Single);
+            if (handle == null)
+            {
+                Fail(string.Format("[Res] 场景加载无法启动：{0}", location));
+                if (onResult != null) onResult(false, "场景加载无法启动：" + location);
+                return;
+            }
+
+            ResLoaderRunner.Start(WaitSceneCo(location, handle, onResult));
+        }
+
+        private IEnumerator WaitSceneCo(string location, SceneHandle handle, Action<bool, string> onResult)
+        {
+            yield return handle;
+
+            if (handle.Status != EOperationStatus.Succeeded)
+            {
+                string err = string.Format("场景「{0}」加载失败：{1}", location, handle.Error);
+                Fail("[Res] " + err);
+                if (onResult != null) onResult(false, err);
+                yield break;
+            }
+
+            Debug.Log(string.Format("[Res] 场景「{0}」加载完成", location));
+            if (onResult != null) onResult(true, null);
         }
 
         private IEnumerator PreloadCo(string[] logicalNames, Action<float> onProgress, Action onDone)

@@ -1,5 +1,7 @@
 namespace FTProject.AOT
 {
+    using System;
+
     /// <summary>
     /// 热更启动入口契约（**定义在 AOT 侧，由热更侧实现**）。
     ///
@@ -52,5 +54,24 @@ namespace FTProject.AOT
         ///   约定：重复调用**不应抛异常**，最多打一条 Warning 后返回。
         /// </summary>
         void Start();
+
+        /// <summary>
+        /// 加载 main 场景（**异步**；HybridCLR 真机上场景必须由热更侧从 AssetBundle 加载）。
+        ///
+        /// 【为什么是热更侧的职责】
+        ///   真机上"挂了热更脚本的场景"打进 Build Settings 会在打包时被烘焙成空壳
+        ///   （热更程序集被 IFilterBuildAssemblies 剔除，组件序列化成 32 字节 stub），
+        ///   运行时表现为 missing script + serialization layout 错误。
+        ///   HybridCLR 官方工作流：这类场景必须打 AB，且**在热更 dll 加载后**由
+        ///   AB 加载（YooAsset SceneHandle / AssetBundle.LoadFromFile 均可）。
+        ///   资源系统的模式选择（联机/离线）也只在热更侧可知（依赖 ResServerConfig），
+        ///   所以场景加载放在这里，AOT 侧只等结果。
+        ///
+        /// 【回调约定】
+        ///   - onResult(ok, err)：ok=false 时 err 为可读错误信息
+        ///   - 成功时场景已以 Single 模式激活（Boot 场景随之卸载，Boot 侧协程自然终止）
+        ///   - 回调在主线程；失败时**不会**激活场景，由 AOT 侧决定展示什么
+        /// </summary>
+        void EnterMainScene(Action<bool, string> onResult);
     }
 }

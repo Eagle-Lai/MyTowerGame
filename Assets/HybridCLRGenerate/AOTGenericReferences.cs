@@ -23,6 +23,7 @@ public class AOTGenericReferences : UnityEngine.MonoBehaviour
 	// System.Action<UnityEngine.Vector2>
 	// System.Action<YooAsset.DownloadErrorEventArgs>
 	// System.Action<YooAsset.DownloadProgressChangedEventArgs>
+	// System.Action<byte,object>
 	// System.Action<byte>
 	// System.Action<float>
 	// System.Action<int,int,int>

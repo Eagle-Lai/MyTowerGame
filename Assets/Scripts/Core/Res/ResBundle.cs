@@ -39,6 +39,17 @@ namespace FTProject
         public const string UiHud = "ui_hud";
 
         /// <summary>
+        /// 引导期界面（SplashView / LoadingView / HotUpdateView，资产在 Assets/Resources/BootUI/）。
+        ///
+        /// 【为什么这些 prefab 也要进 AB】它们挂的 View 脚本在**热更程序集**里，
+        /// 真机上 Resources 直接加载必然 "missing script"（HybridCLR 官方：挂热更脚本的
+        /// 资源必须 AB 打包）。真机时序下 main 场景加载前 ResLoader.Init 已完成
+        /// （见 HotUpdateEntry.EnterMainScene），所以 UIManager.Open 能走 ResTable 正常链路。
+        /// Assets/Resources/BootUI 的 Resources 兜底仅剩"编辑器未 Init"一种场景。
+        /// </summary>
+        public const string BootUi = "boot_ui";
+
+        /// <summary>
         /// 字体（TMP 字体资产与描边材质）。
         ///
         /// 【为什么要单独分包】全工程 UI 文本统一用 TextMeshPro，字体资产
@@ -59,13 +70,13 @@ namespace FTProject
         /// <summary>不随怪物清单变化的固定包</summary>
         public static readonly string[] Fixed =
         {
-            Config, CoreArt, Font, TowerNormal, TowerPower, TowerRetard, BulletNormal, UiHud
+            Config, CoreArt, Font, TowerNormal, TowerPower, TowerRetard, BulletNormal, UiHud, BootUi
         };
 
         /// <summary>常驻包：初始化后不参与卸载</summary>
         public static readonly string[] Persistent =
         {
-            Config, CoreArt, Font
+            Config, CoreArt, Font, BootUi
         };
 
         private static string[] _all;

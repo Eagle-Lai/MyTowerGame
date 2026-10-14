@@ -81,6 +81,17 @@ namespace FTProject
         void Preload(string[] logicalNames, Action onDone);
 
         /// <summary>
+        /// 异步加载场景（Single 模式，加载完成即切换，当前场景自动卸载）。
+        /// 【为什么放加载器里】HybridCLR 真机上，**挂了热更脚本的场景必须从 AssetBundle
+        /// 加载**（打进 BuildSettings 的场景在打包时热更程序集被剔除，组件会烘焙成
+        /// 空壳 → 运行时 "missing script / serialization layout" 错误）。
+        /// YooAsset 实现走 SceneHandle（离线模式读随包 bundle，联机模式读沙盒）。
+        /// <paramref name="location"/> = 收集器地址（AddressByFileName 规则 = 不带扩展名的文件名）。
+        /// onResult(ok, err)：ok=false 时 err 为可读错误。回调在主线程。
+        /// </summary>
+        void LoadSceneAsync(string location, Action<bool, string> onResult);
+
+        /// <summary>
         /// 带进度的预加载（按"已处理逻辑名个数 / 总数"回报 0~1）。
         /// 与 <see cref="Init(Action, Action)"/> 同理：只加重载，不动旧签名。
         /// </summary>

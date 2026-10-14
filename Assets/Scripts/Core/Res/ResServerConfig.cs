@@ -50,7 +50,7 @@ namespace FTProject
         ///     http://192.168.43.100:8000/Android/FreeTower/1.0.0/FreeTower.version
         ///   所以这里**只写到平台之前**。多写一段就是 404。
         /// </summary>
-        public const string ServerUrl = "http://192.168.43.100:8000";
+        public const string ServerUrl = "http://10.0.2.2:8000";
 
         /// <summary>
         /// 运行期是否要覆盖地址（调试用）。

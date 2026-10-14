@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using FTProject.AOT;
 
@@ -50,6 +51,13 @@ namespace FTProject
         public static bool Started { get; private set; }
 
         /// <summary>
+        /// main 场景在 YooAsset 里的定位地址。
+        /// 收集器「可寻址 = 关闭」→ 定位地址 = **资源路径**（SupportExtensionless=true
+        /// 时去扩展名变体也可用）。⚠️ 改了场景文件位置要同步这里。
+        /// </summary>
+        private const string MainSceneAddress = "Assets/Scenes/Main.unity";
+
+        /// <summary>
         /// 热更程序集加载完成后由 AOT 侧调用（接口实现）。
         /// 注意：这是在 main 场景**加载之前**执行的，不能碰场景对象。
         /// </summary>
@@ -65,13 +73,45 @@ namespace FTProject
             // 让 Unity 知道"热更代码已经跑起来了" —— 这条日志是排查启动问题的第一现场：
             //   能看到它      → 说明 dll 加载 + 入口实例化 + 接口调用都成功，问题在后续流程
             //   看不到它      → 说明 dll 加载失败，或没有任何实现类（去看 BootLoader 的报错）
-            Debug.Log("[HotUpdate] 热更程序集加载完成，HotUpdateEntry.Start() 已执行。"
+            Debug.Log("[HotUpdate] 热更程序集加载完成，HotUpdateEntry.Start() 已执行（热更验证标记 v2）。"
                 + "（经 IHotUpdateEntry 接口调用，非反射）接下来的启动流程由 main 场景的 Launcher 接管。");
 
             // 预留：在此处做与场景无关的全局初始化。
             // 例如（将来）：
             //   SomeStaticManager.Init();
             //   确保 Luban 配置表已能被解析（注意：真正的表加载在 Launcher 里做）
+        }
+
+        /// <summary>
+        /// 加载 main 场景（IHotUpdateEntry 接口实现，见 AOT 侧接口注释）。
+        ///
+        /// 【为什么绕 ResLoader】资源系统的模式选择（联机 HostPlayMode / 离线 OfflinePlayMode）
+        /// 由 YooAssetResLoader.CreateInitOptions 决定，依赖 ResServerConfig（热更集内）。
+        /// 在这里 Init 一次后，main 场景的 Launcher 再做检查更新时 Init 会直接复用
+        /// （YooAssetResLoader 有重复初始化防护），不会撞"重复初始化"异常。
+        ///
+        /// 【Init 失败怎么算】Init 的失败详情由 ResLoader 打印，这里把 IsReady 状态
+        /// 汇总成回调结果 —— Boot 侧拿到 false 会在启动界面上展示错误。
+        /// </summary>
+        public void EnterMainScene(Action<bool, string> onResult)
+        {
+            if (onResult == null)
+            {
+                return;
+            }
+
+            ResLoader.Instance.Init(() =>
+            {
+                if (ResLoader.Instance.IsReady == false)
+                {
+                    Debug.LogError("[HotUpdate] 资源系统初始化失败，无法加载 main 场景（详情见上方 [Res] 日志）。");
+                    onResult(false, "资源系统初始化失败，无法加载 main 场景");
+                    return;
+                }
+
+                Debug.Log("[HotUpdate] 资源系统就绪，开始加载 main 场景（地址 " + MainSceneAddress + "）…");
+                ResLoader.Instance.LoadSceneAsync(MainSceneAddress, onResult);
+            });
         }
     }
 }

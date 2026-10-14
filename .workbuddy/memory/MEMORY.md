@@ -1,111 +1,52 @@
-# FreedomTower 项目长期记忆
+# FreedomTower 长期记忆（≤3000字，只留不变量；细节见 Docs/ 与日志）
 
-> 只记"踩坑就返工"的不变量；细节见 `Docs/` 与 `YYYY-MM-DD.md`。⚠️ 有注入上限（超出会被截断），新增前先想能不能删。
-
-## ★ 双版本制度（2026-10-12 确立，开工先读）
-
-本工程有两份**并行副本**，经 GitHub `Eagle-Lai/MyTowerGame` 同步（`.workbuddy/` 记忆随 git 走）：
-
-| 版本 | 机器 | 工作区 | 机器环境 / 状态 |
-|---|---|---|---|
-| **家用D盘** | 家用电脑 | `D:\FreedomTower_1` | Unity 2022.3.62f3c1；Android 工具链 `D:\Android\`；工具/venv 在 `C:\Users\78296\` |
-| **公司E盘** | 公司电脑（`BF-202610081033`） | `E:\MyTowerGame` | 2026-10-12 clone；Unity/Android 工具链未装；git 身份=`公司电脑`（本仓库级） |
-
-- ★ **开工第一步 = 识别版本**：看当前工作区路径（`E:\MyTowerGame`→公司E盘；`D:\FreedomTower_1`→家用D盘）；拿不准停下问用户，别猜。
-- ★ **记录必须标版本**：日志 / 记忆条目标 `[家用D]` 或 `[公司E]`；只在一版做过的改动要显式注明（两版内容可能分叉）。
-- ★ **环境严禁跨版本套用**：上表"机器环境"只对各自机器有效（如 `D:\Android` 在公司机上不存在）。
-- 历史归属：2026-09-25 ~ 10-11 全部记录产自**家用D盘**（用户 2026-10-12 确认）。
+## 双版本制度（开工先读）
+- 家用D=`D:\FreedomTower_1`（Unity 2022.3.62f3c1；Android 工具链 `D:\Android\`；工具在 `C:\Users\78296\`）。
+- 公司E=`E:\MyTowerGame`（Unity 已装 Hub；Android 工具链**不完整**：Hub 模块仅 OpenJDK+Tools，SDK/NDK 目录为空；`AppData\Local\Android\Sdk` 残缺无 platforms/NDK；Hub CLI 无 `--headless`（报 bad option），补装模块只能走 Hub GUI；另有 CatchFish `D:\Develop_lzy\CatchFish_Android` Unity2020.3；git 身份=公司电脑）。
+- 开工第一步=识别版本（看工作区路径）；记录标 [家用D]/[公司E]；环境严禁跨版套用；2026-09-25~10-11 记录全属家用D。两版经 GitHub `Eagle-Lai/MyTowerGame` 同步（.workbuddy/ 随 git 走）。
 
 ## 铁律
+- 名写法：自由人塔防=文档｜FREEDOM TOWER=副标题｜freedomtower=包名｜FreeTower=YooAsset包裹名(改了热更失效)｜FTProject=命名空间。菜单 `Tools/塔防` 勿改"塔防"。文档不写盘符。
+- 动手前确认 MCP 连的是本工程（查 Application.dataPath）；跑生成/挂载菜单前 `isCompiling==false && !isPlaying`；改 `Assets/Editor/*.cs` 后必须 refresh 编译完再跑（否则静默用旧程序集，最坑）。
+- 编辑器脚本不弹 DisplayDialog（走 Debug.Log；危险操作拆两档菜单；DOTweenPro 2 处弹窗不动）。
+- git push 弹 credential helper → 用户级 ~/.gitconfig `[credential]` 插空 `helper =`；失败重试一次，`ls-remote` 核 sha。
+- Unity 2022.3.62f3c1 + Built-in RP；screenshot 偶发丢 Overlay 层。
 
-- **游戏名《自由人塔防》/ FREEDOM TOWER**；6 种写法各有归属：`自由人塔防`=文档｜`FREEDOM TOWER`=游戏内副标题｜`freedomtower`=productName/包名｜`FreeTower`=**YooAsset 包裹名**（改了热更失效）｜`FTProject`=命名空间｜`freetower_*`=存档名。⚠️《坚守阵地》：指原版 Fieldrunners 的引用保留。
-- 工程克隆自 `com.unity.template.3d@5.0.4` → 异常默认值先查模板残留（Template3D/SampleScene 已修）。
-- Unity 菜单 = `Tools/塔防/...`（~40 处）："塔防"是玩法类型不是游戏名，不要改。
-- ★ 动手前确认 MCP **连的是本工程**（在线≠连对：查 `Application.dataPath`／Unity 进程 `-projectPath`）；挂了停下让用户确认、别自作主张。
-- ★ 跑生成/挂载菜单前必须 `isCompiling==false && isPlaying==false`；改 `Assets/Editor/*.cs` 后必须 `refresh_unity(compile="request", scope="all")` 等编译完再跑菜单 → 否则静默用旧程序集（最坑返工点）。
-- 编辑器脚本一律不弹 `EditorUtility.DisplayDialog`（阻塞 MCP/CI），结果走 `Debug.Log`；危险操作拆两档菜单。第三方 DOTweenPro 的 2 处弹窗不动。
-- 交付文档不写盘符路径（用"本工程/工程根"）——两台机器盘符不同（见「双版本制度」），写死必错；旧 `D:\FreedomTower`（无 _1）已不存在。
-- `git push`：远端 `Eagle-Lai/MyTowerGame.git`（public：fetch 免凭证，不能拿它验凭证）。弹「Select a credential helper」根治 = 用户级 `~/.gitconfig` `[credential]` 插空 `helper =`；别用 `GIT_CONFIG_SYSTEM=/dev/null`。失败重试一次，看 `main -> main` + `ls-remote` 核 sha。
-- worktree 副本（若出现 `workbuddy/main-*`）：常落后 → 同步前逐字节 diff；权威永远是工程根。
-- Unity 2022.3.62f3c1 + Built-in RP（霓虹只能烘进贴图）。`screenshot` 偶发丢 Overlay 层；改 `UIPrefabBuilder` 后对比 `ui_prefabs_preRebuild/*.prefab`。
+## 程序集/HybridCLR（细节 Docs/HybridCLR_Integration.md）
+- 12 程序集；热更6=Assembly-CSharp/LubanLib/Gen/SuperScrollView/Reporter/Runtime。Assembly-CSharp=兜底集（增删 Assets/ 根脚本须重跑 Generate▸All+拷贝）。
+- ★ AOT 不得引用热更类型；Boot.unity 先 Assembly.Load 再进 main（BuildSettings Boot0/main1）。入口契约 `IHotUpdateEntry←HotUpdateEntry`。
+- dll 名单两处同步：HotUpdateAssembler ↔ HybridCLRSettings.asset（改 YAML）；AOTMetaAssemblies 6 项三处同步（AOTGenericReferences↔HotUpdateAssembler↔HybridCLRDllCopier）；包版本=libil2cpp-version.txt(8.14.1)。
+- ★ YooAsset 初始化三步：InitializePackageAsync→RequestPackageVersion→LoadPackageManifestAsync 才 SetActiveManifest；漏步报 manifest not found。EnableAddressable=false；同版本二次构建 ErrorCode115。
 
-## 环境 / 配置 / 资源
+## 热更/资源
+- dll=独立HTTP(HotUpdateDllDownloader)；AB=YooAsset HostPlayMode（宏 FT_HOTUPDATE，FTYooAssetDefine 菜单3/4）。地址唯一源 Core/Res/ResServerConfig.cs；AOT 侧 BootLoader.ServerUrlForAOT 刻意复制，两处同步。
+- 首启释放 PrefetchStreamingAssetsToPersistent：存在即跳过（保热更成果）。dll md5 清单 `{平台}/HybridCLR/md5.txt`（菜单 HybridCLR/4）须与 dll 同传；GetPlatformFolder 与 ForProbe 同步改。
+- YooAsset 3.0.x 默认值全关 → BuildSandboxParameters 已显式开 High/1MB/30s/并发8；事件 API=DownloadProgressChanged。本地测试 Python http.server 指 Bundles/<平台>/。
 
-- [家用D] Unity 在 `C:\Program Files\Unity 2022.3.62f3c1\`（非 Hub 标准目录；找路径用 `Get-Process Unity`；Hub「Add modules」不可用）。**公司E盘未装**。
-- [家用D] Android 工具链 `D:\Android\`：jdk\temurin-11｜sdk｜ndk\23.1（**公司E盘未装**）；Unity 侧写 EditorPrefs 三键（属性 setter 不落盘）。**cmdline-tools 必须 = 6**（12.0→class 61=JDK17→`UnsupportedClassVersionError`；别迁就 JDK 17）。
-- Luban：改 `Luban/Config/Datas/*.xlsx` 必重导（菜单`3.导出配置表`，`DOTNET_ROLL_FORWARD=LatestMajor`）；新表先登记 `__tables__.xlsx`。
-- ⚠️ xlsx：字段从 B 列起（A 列 tag）；行1/2/3=名/类型/说明；列名须合法 C# 标识符。★ 导出会删 `Assets/Gen/` 里它不认识的文件 → `LubanExporter.KeepFilesInCodeDir` 保护（改 Editor 脚本先重编译）。
-- `ResTable.cs` = 唯一寻址源（`check_code.py` 不扫 `Configs.ConfigKeys`，加表要手工同步）；`ResLoader` 三套按宏切，新依赖一律加宏。
-- ★ YooAsset 初始化必须三步：`InitializePackageAsync` → `RequestPackageVersionAsync` → `LoadPackageManifestAsync`（最后才 `SetActiveManifest`）；漏中间步 → 之后每次加载报 `Active package manifest not found.`。`EnableAddressable=false`；同版本二次构建 `ErrorCode115`。
-- 战斗无物理：`EnemyGrid` + `CombatSystem` 集中 tick；塔无目标绝不开火。
+## 配置/多语言/UI
+- Luban：改 xlsx 必重导（菜单3，DOTNET_ROLL_FORWARD=LatestMajor）；新表登记 __tables__.xlsx；字段从B列起；导出会删 Assets/Gen 陌生文件→KeepFilesInCodeDir 保护。ResTable.cs=唯一寻址源。
+- 多语言：代码在 Assets/Scripts/Localization；主键=英文原文；表权威源=`.workbuddy/tools/gen_localization_table.py` ROWS→xlsx；TextLocalizer key 留空自动取（Text 用 _originalText，绝不用 _text.text）；回退 当前→英文→原文；切语言 SetLanguage+LanguageChangedEvent(Action<int>)；菜单308挂/309清理。
+- UI 生成器 UIPrefabBuilder（改文案=改它+重编译+重生成）；TMP；SiYuanSongTi SDF 动态+多图集。
 
-## 程序集 / HybridCLR（细节 Docs/HybridCLR_Integration.md）
+## SuperScrollView（★最坑）
+- LoopListView2.InitListView 一次性快照 viewport GetLocalCorners → 绝不能 OnEnable 初始化；SelectView.Build 挂 _pendingInit，首帧 LateUpdate 才 DoInitListView。
+- 吸附硬约束：Viewport 宽=卡片宽(1250×550)固定尺寸；pivot.x=0、anchoredPosition.x=-625。清单三处同步：UIPrefabBuilder(SelectItemW/H/Gap)↔SelectView(ItemWidth/ItemGap=1250/56)↔登记名 SelectLevelItem。别用 mOnSnapItemFinished→轮询中心距4px。
 
-- 12 程序集。AOT = `FTProject.AOT`(+`ThirdParty.AOT`/`iTween`/`Editor`/`HybridCLRGenerate`)；热更 6 = `Assembly-CSharp`/`LubanLib`/`Gen`/`ThirdParty.SuperScrollView`/`ThirdParty.Reporter`/`Runtime`。
-- ★ `Assembly-CSharp` = 兜底集（当前仅 `Assets/TestNull.cs`），已纳入热更。⚠️ 增删 `Assets/` 根脚本 → 必须重跑 `Generate ▸ All` + 拷贝，否则报缺 dll。
-- ★ `FTProject.HybridCLRGenerate` 为 `AOTGenericReferences.cs` 单建（否则它掉进兜底集变热更类型、违铁律）。
-- ★ 铁律：**AOT 主包不得引用热更类型**。纯 AOT `Boot.unity` 先 `Assembly.Load` 再进 `main`；BuildSettings Boot(0)→main(1)；反向引用允许。
-- 入口契约 = 接口：`FTProject.AOT.IHotUpdateEntry` ← `FTProject.HotUpdateEntry`；`HotUpdateEntryLocator` 是唯一反射点；实现类须可无参构造。
-- `DOTween`/`DemiLib`/`LitJson` 是预编译 DLL → 只能 AOT；DOTween/iTween 零使用。
-- 热更 dll 顺序：`Assembly-CSharp → LubanLib → Gen → SuperScrollView/Reporter → Runtime`；名单两处同步：`HotUpdateAssembler.HotUpdateAssemblies` ↔ `HybridCLRSettings.asset`（Unity API 改不落盘 → 直接改 YAML）。编辑器下跳过已加载。
-- HybridCLR 包版本必须 = `HybridCLRData/.../libil2cpp-version.txt` 戳（8.14.1），否则 `Generate/All` 报 must run Installer。
-- ★ `AOTMetaAssemblies` 6 项：`System.Core`/`UnityEngine.AssetBundleModule`/`UnityEngine.CoreModule`/`UnityEngine.JSONSerializeModule`/`YooAsset`/`mscorlib`。三处同步：`AOTGenericReferences.cs` ↔ `HotUpdateAssembler` ↔ `HybridCLRDllCopier`（编辑器工具不能引 AOT 集 → 常量手写，菜单自动比对）。
-- `StreamingAssets/HybridCLR/*.dll` 由菜单 HybridCLR/1 拷贝（源 `HybridCLRData/HotUpdateDlls/<平台>/`）；运行时优先级 = persistentDataPath > StreamingAssets > Library/ScriptAssemblies(仅编辑器)。
-- ★ Boot→main 编辑器实测通过（2026-10-11，判据看活动场景变 `main`）。⚠️ 真机未验证：APK 内 StreamingAssets 是压缩包 → 必须 `UnityWebRequest` 或首启释放，**打包前必须处理**。
+## 生命周期/存档/音频/倍速
+- LevelClearView 胜败共用，OnGameOver() 打开；星级先读后写。唯一拆卸 TeardownLevel()：操作态→战斗实体→场景残留→界面；HudView 须在其中 Close。
+- 存档只走 SaveManager（禁 SQL/PlayerPrefs，例外 KeyProvider）；Android 自带 libsqlite3.so；改表三步 CreateStatements→CurrentVersion+1→RunMigrations。
+- 音频：加音频=丢文件+gen_audio_catalog.py；BGM 2源+AudioFadeDriver；倍速唯一源 Core/GameClock.cs（timeScale 只 0/1）。
 
-## 热更 / 资源服务器
+## Unity MCP [公司E 2026-10-13]
+- MyTowerGame=官方包 com.coplaydev.unity-mcp v10.3.0（manifest 钉死）；HTTP 127.0.0.1:8082/mcp；CatchFish=自研 ws8080 桥，严禁混用（曾误加跨工程路由已全撤）。
+- mcp.json 条目 UnityMCP-MyTowerGame；服务器随 Unity 开关；换条目后须重启用连接器；调用前核 dataPath。
 
-- 两条链路：①dll = AOT 侧独立 HTTP（`HotUpdateDllDownloader`，刻意不走 YooAsset）；②AB = YooAsset `HostPlayMode`。
-- `IRemoteService`(3.0.x) = `GetRemoteUrls(fileName)`；⚠️ fileName 已含平台/包裹/版本，只拼根 URL。
-- 地址唯一源 = `Core/Res/ResServerConfig.cs`（static class；`persistentDataPath/server.txt` 可覆盖）。AOT 侧不能引它 → `BootLoader.ServerUrlForAOT` 是刻意复制常量，**两处同步**。
-- 模式分支（`YooAssetResLoader.CreateInitOptions`）：`FT_HOTUPDATE`→HostPlayMode，否则离线；宏开关 `Assets/Editor/YooAsset/FTYooAssetDefine.cs` 菜单 3/4（该文件引 ResServerConfig → 编辑器工具依赖热更集）。
-- 首启释放 `PrefetchStreamingAssetsToPersistent`：`.baseline.stamp` 指纹一致→跳过；`.copy.inprogress` 残留→清空重建；**存在即跳过（保热更成果）**。
-- dll 链路 md5 清单 `{平台}/HybridCLR/md5.txt`（菜单 HybridCLR/4）必须与 dll 同传；拿不到=放弃更新。下载器 .part 续传/重试 3/批超时 90s；BootLoader 探测 4s。⚠️ `GetPlatformFolder` 与 `GetPlatformFolderForProbe` 同步改。
-- ★ YooAsset 3.0.x 默认值全关（无总超时/续传关/看门狗关/校验 Low）→ `BuildSandboxParameters()` 已显式开 High(CRC)/1MB/30s/并发8/每帧4；`CheckUpdateCo` 批超时 300s；重试=原生 `DownloadRetryController`（4xx 不重试）。事件 API = `DownloadProgressChanged` 等（非 2.x callback）。
-- 本地测试 = Python `http.server` 指 `Bundles/<平台>/`。
+## MuMu 真机调试 [公司E 2026-10-13]
+- adb=`C:\Program Files\Netease\MuMu\nx_main\adb.exe`；有效设备 `emulator-5554`（127.0.0.1:16384 connect 上但空响应，勿用）。游戏包 `com.lzyfreedomtower.freedomtower`。adb 常闪断 offline，重试即可；模拟器可由 `MuMuManager.exe control -v 0 launch` 拉起。
+- 实测：无资源服务器时探测 2 次超时→跳过热更、本地 StreamingAssets dll 12/12 加载、入口执行正常；但 main 场景报大量 referenced script missing + serialization layout mismatch → APK 内置 AB 与 StreamingAssets dll 版本不一致，待查。
+- ★ 2026-10-14 已根治（架构级，铁律级结论）：**HybridCLR 真机上挂热更脚本的资源（场景/预制体/SO）必须 AB 打包，Resources/BuildSettings 场景必 missing**。三件套：①main 场景进 AB（收集器 Scene 组），BootLoader 改调 IHotUpdateEntry.EnterMainScene（热更侧 ResLoader.Init→SceneHandle 加载，接口在 AOT 侧定义）；②BootUI 三件套（Splash/Loading/HotUpdateView）进 AB（收集器 BootUI 组+ResTable 登记，ResBundle.BootUi 常驻）；③LocalizationSettings+Language 枚举移入 FTProject.AOT（asmdef 加 Unity.TextMeshPro）。工具：收集器维护菜单 `Tools/塔防/YooAsset 接入/5`（幂等）。★ 坑：Generate/All 的 dll 产物可能落后编辑器编译一拍，重跑菜单 7 即同步；改 dll 后模拟器须 `pm clear` 或卸载重装（persistent 旧 dll 会被"存在即跳过"保住）。
 
-## 多语言（阶段1~5）
-
-- 代码全在 `Assets/Scripts/Localization/`（热更层；无需动 asmdef/dll 名单）。**主键 id = 英文原文**：`Localization.Get("Start")`。
-- 表权威源 = `.workbuddy/tools/gen_localization_table.py` 的 `ROWS`（改它→跑脚本→菜单`3.导出配置表`）→ `Luban/Config/Datas/Localization.xlsx`。
-- `Text/ImageLocalizer.key` public；留空自动取 key：Text 用序列化 `_originalText`（**绝不能用 `_text.text`**）；Image 用 `_originalSprite.name`→节点名。回退链：当前语言→英文→null（`?? 原文`）。
-- ⚠️ 写 key 必须与表一致（写岔静默失效）；插值句整句入表 `Get(key,args)`；`\n` 须转义（CS1010）。
-- SO=`Resources/Localization/LocalizationSettings.asset`；字体 en→LiberationSans、zh-Hans→SiYuanSongTi。
-- 切语言 = `SetLanguage` + `LanguageChangedEvent`（**参数 int，`Action<int>`**）；存档存语言码；字体一律 `GetFont(Current)`；`EnsureSettings()` public 幂等。
-- ⚠️ 不给资源层/下载器加多语言；状态字段存 key 不存译文。
-- prefab 挂载：黑名单 `DynamicNames`+白名单 `ForceStaticNames`+跳过 `SpeedButton`+`IsSymbolOnly`；节点原文必须在表里，否则静默回退。
-
-## 编辑器工具 / UI / 字体
-
-- 多语言菜单 `308` 挂 TextLocalizer（17 prefab）/ `309` 清理误挂。
-- UI 生成器 = `UIPrefabBuilder.cs`（改文案=改它+重编译+重生成）；`EditorUtil.Report`=`Ok/Warn/Skip/Error`（无 `Info`）。
-- 统一 TMP；`SiYuanSongTi SDF` 必须**动态+多图集**（满后新字空白不报错）。
-- ⚠️ 塔按钮锚点 (0.5,0.5)；`SpeedButton/StartButton` 在塔栏两侧；节点名 `Find("Panel/X")` 无映射 → 成对改 + `check_ui_contract.py`；新字形用 ASCII。
-
-## 列表 / SuperScrollView
-
-- `SelectView` 全屏横向画廊；条目 `Prefabs/UI/SelectLevelItem.prefab`（生成器产出，不必登记 ResTable）。
-- ★ 交互：居中才算选中；点非居中先滑正中；箭头只挪。**吸附硬约束：Viewport 宽必须恰好 = 卡片宽，且为固定尺寸（非 stretch）** —— 现 1250/1250（卡片 1250×550，2026-10 由 1500×650 手改），pivot.x=0、`anchoredPosition.x=-625`。
-- ★★ `LoopListView2.InitListView` 会把 viewport `GetLocalCorners` **一次性快照**缓存（`mViewPortRectLocalCorners`），之后永不重取 → **绝不能在 `OnEnable` 里初始化**（那时 Canvas 未排版，stretch 的 List/Viewport 宽=0/负 → 缓存负宽视口 → 只显示 1 张卡且完全不能横向滑动）。`SelectView.Build()` 只挂 `_pendingInit`，真正 `DoInitListView()` 延到**首帧 LateUpdate**。
-- 卡片 prefab 根节点是 `SetActive(false)`（手工版如此、生成器同步）；**无影响** —— 插件 `ItemPool.CreateItem` 实例化后强制 `SetActive(true)`、`Init` 里还先把源 prefab 关掉。但换池化实现前必须记得删掉这句。
-- 清单同步（**三处**）：`UIPrefabBuilder.cs` 的 `SelectItemW/SelectItemH/SelectItemGap`(=视口宽) ↔ `SelectView.cs` 的 `ItemWidth/ItemGap`(=1250/56，用于估算未实例化条目位置) ↔ 登记名 `SelectLevelItem`。
-- ⚠️ 别用 `mOnSnapItemFinished` 判滑到位 → 每帧轮询中心距（4px，兜底 2.5s）。
-- `InitListView` 只调一次；`onClick` 只在 `IsInitHandlerCalled` 首挂、读 `UserIntData1/2`；视觉层挂 `Body`；首次定位延到首帧 `LateUpdate`。
-
-## 结算 / 生命周期 / 存档
-
-- `LevelClearView` 胜败共用，`OnGameOver()` 打开（别监听 `LevelClearEvent`）；星级先读后写；下一关=大于本关的最小 id；F2=强制胜。
-- 唯一拆卸 `TeardownLevel()` 顺序：操作态→战斗实体→场景残留→界面。`*Root` 场景常驻，往其下 new 的须自带清空并登记；HudView 须在其中 Close；`RecycleBullet` 绝不能补 `UnregisterBullet`；`TipsView` 不随切关关。
-- 存档只走 `SaveManager`；禁直接 SQL、禁新增 `PlayerPrefs`（例外 KeyProvider）；见 `Docs/LocalPersistence_SQLite_Design.md`。Android 须自带 `libsqlite3.so`（targetSdk≥24 拒 dlopen；ARMv7 softfp）。改表三步：`SaveSchema.CreateStatements`→`CurrentVersion`+1→`RunMigrations`；密文 TEXT 不能参与 SQL 排序/聚合。
-
-## 音频 / 倍速
-
-- 音频在 `Assets/Audio/{SFX,BGM}/`；加音频=丢文件+`gen_audio_catalog.py`；常量 `Data/AudioName.cs`。BGM 固定 2 源+`AudioFadeDriver`；音量只由 `ApplyBgmVolume()` 写；`unscaledDeltaTime`；`UiClickSfx` 自动挂。
-- 倍速唯一源 `Core/GameClock.cs`（帧号惰性缓存；timeScale 只允许 0/1）；改档走请求事件→四道校验→`GameSpeedChangedEvent`；CombatSystem 改一行覆盖怪/塔/弹。
-
-## 工具 / 命名
-
-- 地图编辑链路：棋盘→`levelmap_export.json`→LevelMap.xlsx→tblevelmap.json；还须进 `SceneInfo.xlsx`。
-- 云端资料库镜像 `Docs/`：md 走 `space.importer.create-doc`（大文档 `--stdin`），svg 走 `drive/upload_drive_file.py`（网盘拒收 md）。
-- 静态校验 9 个（`.workbuddy/tools/`）改完全跑；`check_arity._CHANGED` 不留已删文件；shell 跑 Python 别用 `\s\b\w`；`split_args`：`=>`/比较符 `>` 不当泛型闭合、泛型用独立 `gen` 计数、无花括号 lambda 止于顶层逗号。
-- `TowerType`=Normal1/Aoe2/Slow3/Pierce4/Laser5；目录 Power=Aoe、Retard=Slow；换塔美术四层同步 resName→ResTable→预载→prefab+meta；Pierce/Laser 占位 `Tower_Normal0`。
+## 工具/其他
+- 地图链路：棋盘→levelmap_export.json→LevelMap.xlsx→tblevelmap.json→SceneInfo.xlsx。静态校验9个（.workbuddy/tools）改完全跑。
+- TowerType=Normal1/Aoe2/Slow3/Pierce4/Laser5；目录 Power=Aoe、Retard=Slow；云端资料库镜像 Docs/（md 用 space.importer、svg 用 drive/upload）。
+- 热更服务器（公司E）：HotUpdateServer/ 目录（junction 到 StreamingAssets+AB），python http.server 8000 后台常驻，防火墙规则 FT HotUpdate 8000；模拟器 ServerUrl=10.0.2.2:8000（TUN 劫持详见 2026-10-14 日志）；真机=局域网 IP 且须与 BootLoader.ServerUrlForAOT 同步改。

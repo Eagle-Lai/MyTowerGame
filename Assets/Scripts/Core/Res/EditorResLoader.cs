@@ -1,7 +1,9 @@
 #if UNITY_EDITOR
 using System;
+using System.Collections;
 using System.Text;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEditor;
 
 namespace FTProject
@@ -218,6 +220,38 @@ namespace FTProject
         {
             return string.Format("[Res] EditorResLoader：共登记 {0} 条资源地址（编辑器直读，无 AB 加载）。",
                 CountKeys());
+        }
+
+        // ------------------------------------------------------------------
+        // 场景加载（IResLoader.LoadSceneAsync）
+        // ------------------------------------------------------------------
+
+        /// <summary>
+        /// 编辑器 Play 模式直接按场景名加载（编辑器不受 BuildSettings 限制，
+        /// 工程内任意场景都能 LoadScene —— 与真机的 AB 限制不同）。
+        /// </summary>
+        public void LoadSceneAsync(string location, Action<bool, string> onResult)
+        {
+            AsyncOperation op = SceneManager.LoadSceneAsync(location, LoadSceneMode.Single);
+            if (op == null)
+            {
+                Debug.LogError(string.Format("[Res] 编辑器场景加载失败：{0}（场景名是否存在？）", location));
+                if (onResult != null) onResult(false, "编辑器场景加载失败：" + location);
+                return;
+            }
+
+            // 保证"至少延迟一帧回调"，与 LoadAsync 的既定约定一致
+            ResLoaderRunner.Start(WaitSceneOpCo(location, op, onResult));
+        }
+
+        private static IEnumerator WaitSceneOpCo(string location, AsyncOperation op, Action<bool, string> onResult)
+        {
+            while (!op.isDone)
+            {
+                yield return null;
+            }
+
+            if (onResult != null) onResult(true, null);
         }
 
         // ------------------------------------------------------------------

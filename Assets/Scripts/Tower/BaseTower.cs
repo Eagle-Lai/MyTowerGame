@@ -750,6 +750,12 @@ namespace FTProject
         /// </summary>
         public BaseTower TryUpgrade(BaseTower old)
         {
+            // 【真机诊断埋点】升级请求进入执行层
+            if (old != null)
+            {
+                Debug.Log("[Tower] TryUpgrade: " + old.name
+                    + " (Lv." + (old.Config != null ? old.Config.Level : -1) + ")");
+            }
             if (old == null || old.Config == null || !old.IsBuilt)
             {
                 return null;
