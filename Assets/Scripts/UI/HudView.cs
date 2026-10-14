@@ -218,6 +218,9 @@ namespace FTProject
 
         private void OnClickStart()
         {
+            // 【真机诊断埋点】"点开始没反应"排查链第一环：点击是否到达 HUD。
+            // 后续链路：StartRoundRequestEvent → GameFlowManager.OnStartRoundRequest。
+            Debug.Log("[HUD] 点击开始回合按钮");
             if (_startButton != null)
             {
                 _startButton.interactable = false;
@@ -234,6 +237,9 @@ namespace FTProject
             // 不在这里判断"是否已在放置态"——那是 TowerPlacement 的职责。
             // 统一发同一个请求事件，由它决定是进入还是退出（单一状态源，避免两边状态不一致）。
             _towerType = type;
+            // 【真机诊断埋点】"点塔按钮无反应"排查链第一环：点击是否到达 HUD；
+            // 后续链路看 [Place] EnterPlacement（进入放置）或 [Place] ExitPlacement（切换/取消）。
+            Debug.Log(string.Format("[HUD] 点击塔按钮 type={0} level={1}", type, _towerLevel));
             EventDispatcher.TriggerEvent<int, int>(EventName.BuildTowerRequestEvent, _towerType, _towerLevel);
         }
 

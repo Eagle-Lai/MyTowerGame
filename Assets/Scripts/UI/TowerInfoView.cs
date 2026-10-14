@@ -48,6 +48,12 @@ namespace FTProject
         /// <summary>当前面板展示的塔</summary>
         private BaseTower _tower;
 
+        /// <summary>
+        /// 【真机诊断】上一次升级按钮可用性（-1=未知 / 0=置灰 / 1=可点）。
+        /// 仅在"变化"时打日志，避免每帧刷屏；随 Show(塔) 切换重置，保证新塔首次刷新必打。
+        /// </summary>
+        private int _lastUpgradeInteractable = -1;
+
         /// <summary>面板 prefab 的逻辑名（ResTable 登记）</summary>
         public const string LogicalName = "TowerInfoView";
 
@@ -158,6 +164,7 @@ namespace FTProject
             _tower = tower;
             // 【真机诊断埋点】面板被打开并喂了数据 —— 升级面板本身是活的
             Debug.Log("[TowerInfoView] Show: " + tower.name);
+            _lastUpgradeInteractable = -1;   // 诊断状态随塔切换重置（新塔首次刷新必打一条可用性日志）
             SetContentVisible(true);
             Refresh();
         }
@@ -254,6 +261,8 @@ namespace FTProject
             // ---- 升级 ----
             if (_upgradeBtn != null)
             {
+                // 下一级一律由 upgradeTo 链决定（与 TowerManager.TryUpgrade 同一口径）
+                TowerConfig next = cfg.IsMaxLevel ? null : Configs.GetNextLevel(cfg);
                 if (cfg.IsMaxLevel)
                 {
                     _upgradeBtn.interactable = false;
@@ -261,13 +270,25 @@ namespace FTProject
                 }
                 else
                 {
-                    // 下一级一律由 upgradeTo 链决定（与 TowerManager.TryUpgrade 同一口径）
-                    TowerConfig next = Configs.GetNextLevel(cfg);
                     int cost = next != null ? next.Prices : 0;
                     _upgradeBtn.interactable = next != null && pd.Gold >= cost;
                     SetText(_upgradeLabel, next != null
                         ? (Localization.Get("Upgrade ({0})", cost) ?? string.Format("升级 ({0})", cost))
                         : (Localization.Get("No Next Level") ?? "无下一级"));
+                }
+
+                // 【真机诊断埋点】升级按钮可用性**变化时**打一条：置灰的 Button 不会触发
+                // onClick，"点升级没反应"时先看这条——若为"置灰"，原因（金币不足/无下一级/
+                // 满级）直接列在括号里，不需要再猜。
+                int state = _upgradeBtn.interactable ? 1 : 0;
+                if (state != _lastUpgradeInteractable)
+                {
+                    _lastUpgradeInteractable = state;
+                    Debug.Log(string.Format(
+                        "[TowerInfoView] 升级按钮可用性={0}（塔={1} Lv.{2} 金币={3} 下一级费用={4} 满级={5} 有下一级={6}）",
+                        _upgradeBtn.interactable ? "可点" : "置灰",
+                        cfg.Name, cfg.Level, pd.Gold,
+                        next != null ? next.Prices : -1, cfg.IsMaxLevel, next != null));
                 }
             }
 

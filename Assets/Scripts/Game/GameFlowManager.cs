@@ -330,6 +330,12 @@ namespace FTProject
                 AStarManager.Instance.DescribeCurrentPath()));
             Tips(Localization.Get("Level ready: {0}, click Start to fight", Level.Name) ?? string.Format("关卡就绪：{0}，点击「开始」迎战", Level.Name));
 
+            // ⑪ 【真机诊断】缺失脚本扫描：延时 1 秒，覆盖 HUD / 资源预加载 / 快照恢复
+            //    全部就位后的对象树。无缺失打一行 OK；有缺失则列出"对象路径 + 槽位数"
+            //    （[Audit] 前缀），配合 Unity 自身的 "referenced script is missing" 警告
+            //    可一步定位缺失脚本的宿主对象。
+            RuntimeMissingScriptAudit.RunDeferred(this, 1f);
+
             // 可选：关卡就绪后自动开始第一回合
             // （常数表 Global.autoStartRoundDelayMs；默认 0，留给玩家先看地图 + 布防）
             float firstDelay = Configs.Global != null ? Configs.Global.AutoStartRoundDelaySec : 0f;

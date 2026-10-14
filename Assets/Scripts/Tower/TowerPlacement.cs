@@ -104,12 +104,17 @@ namespace FTProject
             TowerConfig cfg = Configs.GetTowerByTypeAndLevel(type, level);
             if (cfg == null)
             {
+                // 【真机诊断埋点】配置缺失导致"点塔按钮无反应"（同时有 Tips 提示）
+                Debug.LogWarning(string.Format("[Place] EnterPlacement 失败：找不到 type={0} level={1} 的塔配置", type, level));
                 Tips(Localization.Get("No tower config for type={0} level={1}", type, level)
                     ?? string.Format("找不到 type={0} level={1} 的塔配置", type, level));
                 return;
             }
             if (!PlayerDataManager.Instance.TryPeek(cfg.Prices))
             {
+                // 【真机诊断埋点】金币不足导致"点塔按钮无反应"（同时有 Tips 提示）
+                Debug.Log(string.Format("[Place] EnterPlacement 失败：金币不足（需要 {0}，现有 {1}）",
+                    cfg.Prices, PlayerDataManager.Instance.Gold));
                 Tips(Localization.Get("Not enough gold, need {0}", cfg.Prices)
                     ?? string.Format("金币不足，需要 {0}", cfg.Prices));
                 return;
@@ -153,6 +158,10 @@ namespace FTProject
                 return;
             }
             _active = false;
+            // 【真机诊断埋点】与 EnterPlacement 成对：放置态何时进入/退出必须可追溯。
+            // 排查"点塔无反应"时若只看到 Enter 没有 Exit，说明点击被放置分支吞掉 →
+            // 对照本文件 UpdatePlacement 里"点已建塔自动退出并选中"的处理是否生效。
+            Debug.Log(string.Format("[Place] ExitPlacement built={0}", built));
             ClearHover();
             HideRange();
             DestroyGhost();
@@ -211,34 +220,47 @@ namespace FTProject
         /// 处理"非放置态"下的鼠标左键：命中已建造塔 → 选中并广播事件。
         /// 【为什么放在这里】塔是纯 SpriteRenderer，没有 Collider，
         /// 靠"屏幕坐标 → 格子"反查而不是物理射线，与放置预览共用同一套坐标换算，天然一致。
+        ///
+        /// 【真机诊断埋点】一次点击 = 一条日志，覆盖全链路判定：
+        ///   overUi  —— 是否被 UI 拦截（是则直接 return，不改变选中态）
+        ///   inBoard —— 是否落在棋盘格内；(row,col) 为命中格子
+        ///   tower   —— 命中格子上的塔（null = 空格子）
+        /// 排查"点塔没反应"：看这条日志的断点即可（UI 拦截 / 棋盘外 / 空格 / 正常命中→
+        /// 后续应出现 [Place] Select 与 [Flow] OnTowerSelected）。
         /// </summary>
         private void HandleSelectClick()
         {
+            bool overUi = IsPointerOverUI();
+            BoardView board = BoardView.Instance;
+            int row = -1;
+            int col = -1;
+            bool inBoard = board != null && board.ScreenToCell(Input.mousePosition, out row, out col);
+            CellData cell = inBoard ? board.GetCell(row, col) : null;
+            BaseTower hit = cell != null ? cell.Tower : null;
+            Debug.Log(string.Format("[Place] 点塔判定 overUi={0} inBoard={1} cell=({2},{3}) tower={4}",
+                overUi, inBoard, row, col, hit != null ? hit.name : "null"));
+
             // 点在 UI 上不要触发（否则点 HUD 面板会顺手选中/取消塔）
-            if (IsPointerOverUI())
+            if (overUi)
             {
                 return;
             }
-
-            BoardView board = BoardView.Instance;
             if (board == null)
             {
                 return;
             }
-            int row, col;
-            if (!board.ScreenToCell(Input.mousePosition, out row, out col))
+            if (!inBoard)
             {
                 // 点到棋盘外 → 视为取消选中
                 Deselect();
                 return;
             }
-            CellData cell = board.GetCell(row, col);
-            if (cell == null || cell.Tower == null)
+            if (hit == null)
             {
                 Deselect();
                 return;
             }
-            Select(cell.Tower);
+            Select(hit);
         }
 
         /// <summary>选中一座塔：广播事件（UI 据此打开面板）。重复点同一座不重复广播。</summary>
@@ -259,6 +281,8 @@ namespace FTProject
             ClearSelectionHighlight(_selected);
             _selected = tower;
             ApplySelectionHighlight(_selected);
+            // 【真机诊断埋点】选中切换成功（重复点同一座塔会在上方相等判断处静默返回）
+            Debug.Log("[Place] Select: " + tower.name);
             EventDispatcher.TriggerEvent<BaseTower>(EventName.TowerSelectedEvent, _selected);
         }
 
@@ -481,7 +505,7 @@ namespace FTProject
             {
                 bool overUiDown = IsPointerOverUI();
                 bool insideDown = board.ScreenToCell(Input.mousePosition, out int rDown, out int cDown);
-                Debug.Log(string.Format("[Place] down overUi={0} inside={1}", overUiDown, insideDown));
+                Debug.Log(string.Format("[Place] down overUi={0} inside={1} canBuild={2}", overUiDown, insideDown, _canBuild));
                 if (overUiDown)
                 {
                     return;
@@ -498,7 +522,24 @@ namespace FTProject
                 }
                 else
                 {
-                    Tips(BlockReasonText());
+                    // 【点已建塔=转选中】放置态下点到"已有塔的格子"时，玩家的意图几乎必然
+                    // 是"操作这座塔"（升级/出售），而不是"在原地再建一座"（也不可能）。
+                    // 旧行为只弹一条"该位置已有防御塔"并留在放置态 —— 点击被放置分支吞掉，
+                    // 选中/升级面板永远打不开，玩家体验就是"点塔没反应"。
+                    // 现在：退出放置态并把这座塔选中，升级面板随 TowerSelectedEvent 打开。
+                    CellData hitCell = board.GetCell(rDown, cDown);
+                    if (hitCell != null && hitCell.Tower != null)
+                    {
+                        BaseTower hitTower = hitCell.Tower;
+                        Debug.Log(string.Format("[Place] 放置态点击已建塔 ({0},{1}) → 退出放置并选中 {2}",
+                            rDown, cDown, hitTower.name));
+                        ExitPlacement(false);
+                        Select(hitTower);
+                    }
+                    else
+                    {
+                        Tips(BlockReasonText());
+                    }
                 }
                 return;
             }

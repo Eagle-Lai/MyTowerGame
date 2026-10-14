@@ -238,6 +238,7 @@ public class AOTGenericReferences : UnityEngine.MonoBehaviour
 		// object[] UnityEngine.Component.GetComponentsInChildren<object>(bool)
 		// object UnityEngine.GameObject.AddComponent<object>()
 		// object UnityEngine.GameObject.GetComponent<object>()
+		// object[] UnityEngine.GameObject.GetComponents<object>()
 		// object[] UnityEngine.GameObject.GetComponentsInChildren<object>(bool)
 		// object UnityEngine.JsonUtility.FromJson<object>(string)
 		// object UnityEngine.Object.FindObjectOfType<object>()
