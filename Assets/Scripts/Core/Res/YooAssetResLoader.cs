@@ -1331,6 +1331,14 @@ namespace FTProject
             string latestVersion = versionOp.PackageVersion;
             string currentVersion = _package.GetPackageVersion();
 
+            // 【版本日志（P：版本号显示与日志）】无论是否需要更新，都把
+            // "当前版本 → 远端最新版本" 打出来 —— 这是排查"真机到底跑的哪个资源版本"
+            // 时最常看的一条日志，只在版本变化时打会漏掉"版本相同但文件缺失"的情形。
+            Debug.Log(string.Format(
+                "[Version][Res] 检查更新：当前资源版本={0}，远端最新版本={1}",
+                string.IsNullOrEmpty(currentVersion) ? "(未知)" : currentVersion,
+                string.IsNullOrEmpty(latestVersion) ? "(未知)" : latestVersion));
+
             // ---- ② 比对版本 -----------------------------------------------------
             if (onPhase != null) onPhase("正在比对资源版本...");
             yield return null;   // 让 PhaseText 至少显示一帧，否则"比对"会被瞬间跳过看不见
@@ -1399,6 +1407,9 @@ namespace FTProject
             {
                 // 版本号变了但没有需要下载的资源（例如只改了清单里的哈希）→ 视为"无需下载"
                 if (onPhase != null) onPhase("资源已是最新");
+                Debug.Log(string.Format(
+                    "[Version][Res] 无需下载资源，更新后资源版本={0}（与远端一致）。",
+                    string.IsNullOrEmpty(latestVersion) ? "(未知)" : latestVersion));
                 if (onDone != null) onDone(false);
                 yield break;
             }
@@ -1484,6 +1495,22 @@ namespace FTProject
             }
 
             Debug.Log(string.Format("[Res] 热更新完成，共下载 {0} 个文件。", downloader.TotalDownloadCount));
+
+            // 【版本日志】更新完成后再取一次激活版本 —— 清单已在 ③ 换成远端最新，
+            // 这条就是用户要的"更新完后的版本号"（与上面"当前资源版本"成对出现）。
+            string updatedVersion;
+            try
+            {
+                updatedVersion = _package.GetPackageVersion();
+            }
+            catch (Exception)
+            {
+                updatedVersion = "(未知)";
+            }
+            Debug.Log(string.Format(
+                "[Version][Res] 资源热更新完成，更新后资源版本={0}（更新前={1}）。",
+                updatedVersion, string.IsNullOrEmpty(currentVersion) ? "(未知)" : currentVersion));
+
             if (onPhase != null) onPhase("更新完成");
             if (onDone != null) onDone(true);
         }
@@ -1528,6 +1555,30 @@ namespace FTProject
         /// 由本类的 PauseDownload/ResumeDownload 维护，不依赖底层实现。
         /// </summary>
         public bool IsPaused { get; private set; }
+
+        /// <summary>
+        /// 当前激活的资源清单版本（IHotUpdateLoader 实现）。
+        /// 【为什么 try/catch】清单未激活（Init 失败/进行中）时 YooAsset 会抛异常；
+        /// 版本号是展示性信息，取不到就返回 null，绝不让 UI/日志因为取版本而炸。
+        /// </summary>
+        public string CurrentResourceVersion
+        {
+            get
+            {
+                if (_package == null || !_ready)
+                {
+                    return null;
+                }
+                try
+                {
+                    return _package.GetPackageVersion();
+                }
+                catch (Exception)
+                {
+                    return null;
+                }
+            }
+        }
 
         private void Fail(string message)
         {

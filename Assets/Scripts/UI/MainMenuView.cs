@@ -57,7 +57,11 @@ namespace FTProject
             if (_version != null)
             {
                 _version.color = TextTertiary;
-                _version.text = string.IsNullOrEmpty(Application.version) ? string.Empty : "v" + Application.version;
+                // 底部中间版本行（P：版本号显示与日志）：显示"应用版本 · 资源版本"。
+                // 资源版本来自 YooAsset 激活清单 —— 热更完成后进主菜单，这里自动变成新版本；
+                // 编辑器直读 / 纯 AB 模式下资源版本拿不到，只显示应用版本。
+                // 打开主菜单时资源系统必然已 Init（配置表都加载完了），此时取值即最终版本。
+                _version.text = VersionInfo.BuildDisplayVersion();
             }
         }
 

@@ -36,6 +36,14 @@ namespace FTProject
         /// <summary>暂停下载（无下载进行中时空操作）。</summary>
         void PauseDownload();
 
+        /// <summary>
+        /// 当前**已激活**的资源清单版本（供日志与主菜单版本行显示）。
+        /// 【各实现的口径】YooAsset 返回激活清单版本（Init 成功后才有值，
+        /// 热更完成后 = 远端最新版本）；编辑器直读 / 纯 AB 链路没有版本概念，
+        /// 恒返回 null —— 调用方必须容忍 null，显示时自动省略。
+        /// </summary>
+        string CurrentResourceVersion { get; }
+
         /// <summary>继续下载（无下载进行中时空操作）。</summary>
         void ResumeDownload();
 

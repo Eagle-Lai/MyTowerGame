@@ -41,7 +41,7 @@
 ## Unity MCP [公司E 2026-10-13]
 - MyTowerGame=官方包 com.coplaydev.unity-mcp v10.3.0（manifest 钉死）；HTTP 127.0.0.1:8082/mcp；CatchFish=自研 ws8080 桥，严禁混用（曾误加跨工程路由已全撤）。
 - mcp.json 条目 UnityMCP-MyTowerGame；服务器随 Unity 开关；换条目后须重启用连接器；调用前核 dataPath。
-- 无 MCP / batchmode 替代通道：`ReporterHotfixBuild.Start`（全流水线）/`StartDllOnly`（仅重编 dll+md5）；状态文件 Library/FTReporterBuildStatus.txt 轮询；编辑器开着时用同功能菜单 `Tools/塔防/9 与 9a`。注意 batchmode 与编辑器互斥（工程锁会拒绝启动）；**★启动必须用任务机制（shell `&` 会被会话收割，进程不存活）**；GUI 编辑器场景备用 `FT_AutoBuildTrigger`（写 `Library/FT_AUTOBUILD.trigger`=full/dll → 域重载自动构建）。
+- 无 MCP / batchmode 替代通道：`ReporterHotfixBuild.Start`（全流水线）/`StartDllOnly`（仅重编 dll+md5）；状态文件 Library/FTReporterBuildStatus.txt 轮询；编辑器开着时用同功能菜单 `Tools/塔防/9 与 9a`。注意 batchmode 与编辑器互斥（工程锁会拒绝启动）；**★启动必须用任务机制（shell `&` 会被会话收割，进程不存活）**；GUI 编辑器场景备用 `FT_AutoBuildTrigger`（写 `Library/FT_AUTOBUILD.trigger`=full/dll/uimainmenu → 域重载自动构建；uimainmenu=只重建 MainMenuView.prefab 即 UIPrefabBuilder.RebuildMainMenuOnly，防全量覆盖手工 prefab）。
 
 ## MuMu 真机调试 [公司E 2026-10-13]
 - adb：**优先 SDK 版 `C:\Users\Administrator\AppData\Local\Android\Sdk\platform-tools\adb.exe`**（比 MuMu 内置稳定）；其 server 常被重置→**每条命令开头先 `connect 127.0.0.1:16384` 自愈**；设备名在 `emulator-5554`/`127.0.0.1:16384` 间漂移，动态识别。游戏包 `com.lzyfreedomtower.freedomtower`；模拟器可由 `MuMuManager.exe control -v 0 launch` 拉起。触摸注入：`input motionevent` 连发序列能合成画圈手势（已实测调起 Reporter）；双击因命令间隔>0.35s 无法用 adb 模拟（人工双击应正常）。

@@ -136,6 +136,11 @@ namespace FTProject
         {
             Phase = BootPhase.Splash;
 
+            // 【版本日志（P：版本号显示与日志）】启动第一帧就打出"当前版本号"。
+            // 此刻资源系统还没 Init，资源版本显示"(未激活)"是正常现象 ——
+            // 激活后的版本由 [Res] 日志（LogReady）与检查更新日志接力打印。
+            Debug.Log(VersionInfo.BuildLogSummary());
+
             SplashView splash = UIManager.Instance.Open<SplashView>("SplashView", UILayout.NormalPanel);
             if (splash == null)
             {
@@ -251,6 +256,14 @@ namespace FTProject
 
         private void OnHotUpdateDone(bool updated)
         {
+            // 【版本日志】热更流程收尾时的"更新完后的版本号"（无需更新时=当前版本）。
+            // 与 YooAssetResLoader 里的 [Version][Res] 日志互为备份：这条在 Launcher
+            // 视角确认"回调链走完了、此刻激活的版本是多少"。
+            Debug.Log(string.Format(
+                "[Version] 热更新流程结束（本次{0}），当前资源版本={1}。",
+                updated ? "下载了新资源" : "无新资源",
+                VersionInfo.ResourceVersion ?? "(未知)"));
+
             EventDispatcher.TriggerEvent(EventName.HotUpdateFinishedEvent);
             StartCoroutine(FinishHotUpdate());
         }

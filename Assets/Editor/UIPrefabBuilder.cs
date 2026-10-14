@@ -378,6 +378,27 @@ namespace FTProject.EditorTools
             Debug.Log("[M0] UI 预制体生成结果：\n" + report.Text);
         }
 
+        /// <summary>
+        /// **只重建主菜单**（无弹窗、不碰其他 prefab）。2026-10-14 新增。
+        ///
+        /// 【为什么单开这个入口】全量重建（BuildInternal）会把 HudView 等手工改造过的
+        /// prefab 一并覆盖 —— 自动化（batchmode / MCP）里绝不能跑全量。
+        /// 本方法只重建 MainMenuView.prefab（其内容完全由生成器维护，重建安全），
+        /// 供命令行批处理调用：
+        ///   Unity.exe -batchmode -quit -projectPath &lt;工程&gt;
+        ///     -executeMethod FTProject.EditorTools.UIPrefabBuilder.RebuildMainMenuOnly
+        /// 也可走菜单：Tools ▸ 塔防 ▸ 高级（单步重建）▸ 仅重建主菜单（版本行）。
+        /// </summary>
+        [MenuItem("Tools/塔防/高级（单步重建）/仅重建主菜单（版本行）", false, 306)]
+        public static void RebuildMainMenuOnly()
+        {
+            EditorUtil.Report report = new EditorUtil.Report();
+            BuildMainMenu(report);
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+            Debug.Log("[M0] MainMenuView 单独重建结果：\n" + report.Text);
+        }
+
         /// <summary>供一键向导调用（不弹窗）。**全量重建**，会覆盖手工改过的 prefab。</summary>
         public static void BuildInternal(EditorUtil.Report report)
         {
@@ -1815,9 +1836,14 @@ namespace FTProject.EditorTools
             CreatePanelButton(panel.transform, "SettingBtn", "Settings", new Vector2(0f, -302f), 480f, false, 92f, 32);
             CreatePanelButton(panel.transform, "QuitBtn", "Quit Game", new Vector2(0f, -420f), 480f, false, 92f, 32);
 
+            // 版本行：**底部中间**（2026-10-14 需求："主界面底部中间显示当前版本号"）。
+            // 原先在右下角（anchor(1,0) pos(-48,38) 右对齐），移到底边水平居中。
+            // 文字内容由 MainMenuView.cs 在运行时填充（VersionInfo.BuildDisplayVersion：
+            // "v1.0.0 · r2026101501"），prefab 里留空 —— 版本号绝不能硬编码进 prefab。
+            // 宽度给 700：够放"应用版本 + 资源版本"两段，居中锚点保证任意屏宽都居中。
             TextMeshProUGUI ver = CreateText(panel.transform, "Version", string.Empty,
-                new Vector2(1f, 0f), new Vector2(-48f, 38f), new Vector2(240f, 32f),
-                TextAnchor.MiddleRight, 22);
+                new Vector2(0.5f, 0f), new Vector2(0f, 30f), new Vector2(700f, 32f),
+                TextAnchor.MiddleCenter, 22);
             ver.color = TextTertiary;
 
             EditorUtility.SetDirty(root);

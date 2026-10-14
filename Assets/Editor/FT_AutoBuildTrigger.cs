@@ -1,4 +1,6 @@
 // 触发记录：2026-10-14 17:07 借道构建（资产变更 → 域重载 → 消费 trigger）
+// 触发记录：2026-10-14 17:46 主菜单版本行重建（mode=uimainmenu；本注释行的修改本身就是
+//           触发域重载的资产变更 —— 上一次重载先于 trigger 写入，未消费到标志文件）
 using System.IO;
 using UnityEditor;
 using UnityEngine;
@@ -46,6 +48,13 @@ namespace FTProject.EditorTools
                 if (mode == "dll")
                 {
                     ReporterHotfixBuild.StartDllOnly();
+                }
+                else if (mode == "uimainmenu")
+                {
+                    // 只重建 MainMenuView.prefab（UI-only 改动的无人值守通道）。
+                    // 【为什么不能跑 full】全量重建会覆盖 HudView 等手工改造过的 prefab，
+                    // 自动化里绝不允许；主菜单 prefab 完全由生成器维护，单独重建安全。
+                    UIPrefabBuilder.RebuildMainMenuOnly();
                 }
                 else
                 {

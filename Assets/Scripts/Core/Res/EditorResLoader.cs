@@ -292,6 +292,9 @@ namespace FTProject
 
         public bool IsPaused { get { return false; } }
 
+        /// <summary>编辑器直读没有资源版本概念（IHotUpdateLoader 实现），恒 null。</summary>
+        public string CurrentResourceVersion { get { return null; } }
+
         // ------------------------------------------------------------------
         // 工具
         // ------------------------------------------------------------------

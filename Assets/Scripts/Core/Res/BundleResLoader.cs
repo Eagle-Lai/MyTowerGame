@@ -675,6 +675,9 @@ namespace FTProject
 
         public bool IsPaused { get { return false; } }
 
+        /// <summary>整包 AB 没有资源版本概念（IHotUpdateLoader 实现），恒 null。</summary>
+        public string CurrentResourceVersion { get { return null; } }
+
         private void Fail(string message)
         {
             Debug.LogError(message);
