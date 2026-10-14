@@ -63,7 +63,6 @@ namespace FTProject
             //   Tower_Normal0|1|2 → Assets/Prefabs/Tower/Normal/ （贴图 turret[_mkii|_mkiii]_base|barrel_128）
             // 0 级沿用原 Tower_Normal 的美术（turret_base/barrel_128），1/2 级为 mkii/mkiii。
             // ⚠️ 逐级登记而不是靠目录扫描：ResTable 是唯一寻址源，漏登记运行时报"找不到资源地址"。
-            // 另注：Pierce(4)/Laser(5) 塔暂无独立美术，配置里仍复用 Tower_Normal0 作占位模型。
             { "Tower_Normal0", new ResAddress(ResBundle.TowerNormal, "Tower_Normal0", "Assets/Prefabs/Tower/Normal/Tower_Normal0.prefab") },
             { "Tower_Normal1", new ResAddress(ResBundle.TowerNormal, "Tower_Normal1", "Assets/Prefabs/Tower/Normal/Tower_Normal1.prefab") },
             { "Tower_Normal2", new ResAddress(ResBundle.TowerNormal, "Tower_Normal2", "Assets/Prefabs/Tower/Normal/Tower_Normal2.prefab") },
@@ -145,16 +144,14 @@ namespace FTProject
             { "SellConfirmView", new ResAddress(ResBundle.UiHud, "SellConfirmView", "Assets/Prefabs/UI/SellConfirmView.prefab") },
             { "ConfirmView",     new ResAddress(ResBundle.UiHud, "ConfirmView",     "Assets/Prefabs/UI/ConfirmView.prefab") },
 
-            // 塔图鉴图标（UI 补全 B2）
-            // 【为什么必须登记】图鉴卡片是**池化复用**的同一个模板，5 种塔共用一张卡，
+            // 塔图鉴图标（UI 补全 B2；2026-10-14 三塔型收敛后仅 Normal/Power/Retard 三张）
+            // 【为什么必须登记】图鉴卡片是**池化复用**的同一个模板，3 种塔共用一张卡，
             // 图标只能运行时按塔型换 —— 而 UIPrefabBuilder 生成时烘 sprite 的写法
             // （HudView 建造栏那种）只能表达"固定一张图"，救不了复用场景。
             // 于是这里登记为运行时逻辑名，TowerCodexItem 用 ResLoader.Load<Sprite>() 取。
             { "UI_TowerIcon_Normal", new ResAddress(ResBundle.UiHud, "UI_TowerIcon_Normal", "Assets/_UIAssets/UI/UI_TowerIcon_Normal.png") },
             { "UI_TowerIcon_Power",  new ResAddress(ResBundle.UiHud, "UI_TowerIcon_Power",  "Assets/_UIAssets/UI/UI_TowerIcon_Power.png") },
             { "UI_TowerIcon_Retard", new ResAddress(ResBundle.UiHud, "UI_TowerIcon_Retard", "Assets/_UIAssets/UI/UI_TowerIcon_Retard.png") },
-            { "UI_TowerIcon_Pierce", new ResAddress(ResBundle.UiHud, "UI_TowerIcon_Pierce", "Assets/_UIAssets/UI/UI_TowerIcon_Pierce.png") },
-            { "UI_TowerIcon_Laser",  new ResAddress(ResBundle.UiHud, "UI_TowerIcon_Laser",  "Assets/_UIAssets/UI/UI_TowerIcon_Laser.png") },
 
             // ------------------------------------------------------------------
             // Reporter 调试控制台图标（Assets/Reporter/Images，收集器 ReporterData 组）

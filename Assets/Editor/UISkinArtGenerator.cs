@@ -33,7 +33,6 @@ namespace FTProject.EditorTools
         private static readonly Color Red = Hex("FF4D5E");
         private static readonly Color Fire = Hex("FF7A29");
         private static readonly Color Ice = Hex("7DE8FF");
-        private static readonly Color Purple = Hex("7C5CFF");
         private static readonly Color Steel = Hex("9FB3C8");
         private static readonly Color SteelDark = Hex("5E7396");
         private static readonly Color BaseBlue = Hex("2E4A66");
@@ -210,8 +209,6 @@ namespace FTProject.EditorTools
             WriteIcon("UI_TowerIcon_Normal", IconNormal, Cyan, report);
             WriteIcon("UI_TowerIcon_Power", IconPower, Fire, report);
             WriteIcon("UI_TowerIcon_Retard", IconRetard, Ice, report);
-            WriteIcon("UI_TowerIcon_Pierce", IconPierce, Purple, report);
-            WriteIcon("UI_TowerIcon_Laser", IconLaser, Purple, report);
         }
 
         private static void WriteIcon(string name, System.Action<Texture2D> draw, Color halo, EditorUtil.Report report)
@@ -267,35 +264,6 @@ namespace FTProject.EditorTools
             }, Ice, Color.white, 2f);
             DrawLine(tex, 48f, 36f, 48f, 84f, new Color(1f, 1f, 1f, 0.5f), 1.5f);
             DrawLine(tex, 36f, 60f, 60f, 60f, new Color(1f, 1f, 1f, 0.5f), 1.5f);
-        }
-
-        /// <summary>Pierce：钻头穿透（圆基座 + 竖直炮管 + 钻尖）</summary>
-        private static void IconPierce(Texture2D tex)
-        {
-            FillDisc(tex, 48f, 24f, 24f, BaseBlue, SteelDark, 3f);
-            FillBoxRect(tex, 42f, 40f, 54f, 66f, Steel, StrokeC, 1.5f);
-            FillConvexPoly(tex, new[]
-            {
-                new Vector2(36f, 64f), new Vector2(60f, 64f), new Vector2(48f, 90f)
-            }, Steel, Purple, 2f);
-            DrawLine(tex, 36f, 72f, 60f, 72f, Purple, 2f);
-            DrawLine(tex, 40f, 80f, 56f, 80f, Purple, 1.5f);
-            FillDisc(tex, 48f, 24f, 7f, DotLight, DotLight, 0f);
-        }
-
-        /// <summary>Laser：透镜聚焦塔（梯形座 + 同心环）</summary>
-        private static void IconLaser(Texture2D tex)
-        {
-            FillConvexPoly(tex, new[]
-            {
-                new Vector2(30f, 8f), new Vector2(66f, 8f), new Vector2(56f, 46f), new Vector2(40f, 46f)
-            }, BoxDark, SteelDark, 3f);
-            SoftGlow(tex, 48f, 66f, 26f, Purple, 0.55f);
-            DrawRing(tex, 48f, 66f, 16f, 3f, Purple);
-            DrawRing(tex, 48f, 66f, 9f, 2f, new Color(Purple.r, Purple.g, Purple.b, 0.7f));
-            FillDisc(tex, 48f, 66f, 3.5f, Color.white, Color.white, 0f);
-            DrawLine(tex, 40f, 46f, 30f, 32f, new Color(Purple.r, Purple.g, Purple.b, 0.6f), 2f);
-            DrawLine(tex, 56f, 46f, 66f, 32f, new Color(Purple.r, Purple.g, Purple.b, 0.6f), 2f);
         }
 
         // ------------------------------------------------------------------

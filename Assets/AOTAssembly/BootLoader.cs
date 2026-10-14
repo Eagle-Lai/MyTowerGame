@@ -57,9 +57,6 @@ namespace FTProject.AOT
         /// </summary>
         private const int ProbeTimeoutSeconds = 4;
 
-        /// <summary>探测失败后的重试次数（网络抖动时给一次机会，但不恋战）。</summary>
-        private const int ProbeRetryCount = 1;
-
         private void Awake()
         {
             Application.targetFrameRate = 60;
@@ -205,44 +202,126 @@ namespace FTProject.AOT
         /// </summary>
         private IEnumerator ProbeAndDownloadDllsCo()
         {
-            const string ServerUrlForAOT = "http://10.0.2.2:8000";   // ★ 必须与 ResServerConfig.ServerUrl 一致（模拟器 NAT 网关；真机换局域网 IP，改这里 + ResServerConfig 两处同步）
-
             SetStatus("正在检查资源服务器…");
             SetProgress(0.02f);
 
-            // 允许用 persistentDataPath/server.txt 覆盖（与 ResServerConfig 的约定一致），
-            // 这样换服务器时**不用重新打包 dll 链路的地址**。
-            string serverUrl = ReadServerOverride() ?? ServerUrlForAOT;
-
-            if (string.IsNullOrEmpty(serverUrl))
+            // 候选地址来源（优先级从高到低）：
+            //   ① persistentDataPath/server.txt 第一行 —— 手工覆盖，只试这一个（诊断用）；
+            //   ② UDP 自动发现 —— 电脑上 hotupdate_server.py 每秒广播，真机监听 2.5s 拿当前 IP
+            //     （家里 DHCP IP 会变，靠这个免改代码）；
+            //   ③ BootServerSelection.Candidates 常量 —— 模拟器 10.0.2.2（永不变）等固定地址。
+            // 执行顺序：②与③**并行**（UDP 后台监听 + 常量并发探测，谁先出结果用谁）；
+            // ③先成功（模拟器 ~0.1s）立即停 UDP；③失败（真机 4s 超时）时 UDP 多半已收完，
+            // 其结果进入第二阶段探测。server.txt 存在则跳过 UDP，语义与旧版完全一致。
+            string manualOverride = ReadServerOverride();
+            if (string.IsNullOrEmpty(manualOverride) == false)
             {
-                Debug.Log("[Boot] 未配置服务器地址，跳过 dll 热更（使用本地资源）");
+                yield return StartCoroutine(ProbeAndDownloadWithCandidatesCo(
+                    new string[] { manualOverride }, "server.txt 覆盖"));
                 yield break;
             }
 
-            // ---------- ① 探测 ----------
-            bool reachable = false;
-            string probeError = null;
-            yield return StartCoroutine(ProbeServerCo(serverUrl, r => reachable = r, e => probeError = e));
+            // ---------- 阶段 A：常量候选探测 与 UDP 后台监听 并行 ----------
+            BootServerSelection.StartDiscovery();
+            SetStatus("正在检查资源服务器（常量候选 + 自动发现）…");
 
-            if (reachable == false)
+            string constWinner = null;
+            string constWinSource = null;
+            string constErrs = null;
+            yield return StartCoroutine(ProbeCandidatesCo(BootServerSelection.Candidates,
+                (url, src) => { constWinner = url; constWinSource = src; },
+                errs => constErrs = errs));
+
+            if (constWinner != null)
             {
-                // 【关键】不可达 = 正常情况（离线玩、服务器没开），**绝不阻塞启动**
-                Debug.LogWarning("[Boot] 资源服务器不可达（" + (probeError ?? "未知原因")
-                    + "），跳过热更，使用本地资源正常启动。");
+                // 模拟器等固定地址环境秒过：UDP 不用等了
+                BootServerSelection.StopDiscovery();
+                BootServerSelection.SetSelected(constWinner, constWinSource);
+                yield return StartCoroutine(DownloadDllsCo(constWinner));
+                yield break;
+            }
+
+            // ---------- 阶段 B：等 UDP 窗口收完，对发现的候选做探测 ----------
+            SetStatus("正在自动发现热更服务器…");
+            float waitStart = Time.realtimeSinceStartup;
+            while (BootServerSelection.DiscoveryFinished == false)
+            {
+                if (Time.realtimeSinceStartup - waitStart > 5f)
+                {
+                    break;   // 兜底上限，绝不阻塞启动
+                }
+                yield return null;
+            }
+
+            string[] discovered = BootServerSelection.TakeDiscovered();
+            BootServerSelection.StopDiscovery();
+
+            if (discovered == null || discovered.Length == 0)
+            {
+                // 【关键】全部不可达 = 正常情况（离线玩、服务器没开），**绝不阻塞启动**
+                Debug.LogWarning("[Boot] 常量候选与 UDP 自动发现均无可用服务器，跳过热更，"
+                    + "使用本地资源正常启动。\n" + constErrs);
                 SetProgress(0.17f);
                 yield break;
             }
 
-            // ---------- ② 可达 → 执行 dll 热更 ----------
+            SetStatus(string.Format("探测自动发现的服务器（{0} 个）…", discovered.Length));
+            string udpWinner = null;
+            string udpWinSource = null;
+            string udpErrs = null;
+            yield return StartCoroutine(ProbeCandidatesCo(discovered,
+                (url, src) => { udpWinner = url; udpWinSource = "UDP 发现·" + src; },
+                errs => udpErrs = errs));
+
+            if (udpWinner == null)
+            {
+                Debug.LogWarning("[Boot] UDP 发现的候选均不可达，跳过热更，使用本地资源正常启动。\n"
+                    + udpErrs);
+                SetProgress(0.17f);
+                yield break;
+            }
+
+            // 【跨链路共享】把胜出地址记到 AOT 静态桥，热更侧 ResServerConfig.GetServerUrl()
+            // 会优先采用它 —— AB 热更与 dll 热更因此指向同一台服务器。
+            BootServerSelection.SetSelected(udpWinner, udpWinSource);
+            yield return StartCoroutine(DownloadDllsCo(udpWinner));
+        }
+
+        /// <summary>对既定候选数组探测并下载 dll（manualOverride / 二阶段共用尾巴）。</summary>
+        private IEnumerator ProbeAndDownloadWithCandidatesCo(string[] candidates, string sourceTag)
+        {
+            SetStatus(string.Format("正在探测服务器（{0}）…", sourceTag));
+            string winnerUrl = null;
+            string winnerSource = null;
+            string probeErrors = null;
+            yield return StartCoroutine(ProbeCandidatesCo(candidates,
+                (url, src) => { winnerUrl = url; winnerSource = sourceTag + "·" + src; },
+                errs => probeErrors = errs));
+
+            if (winnerUrl == null)
+            {
+                Debug.LogWarning("[Boot] 服务器不可达（" + sourceTag + "），跳过热更，"
+                    + "使用本地资源正常启动。\n" + probeErrors);
+                SetProgress(0.17f);
+                yield break;
+            }
+
+            BootServerSelection.SetSelected(winnerUrl, winnerSource);
+            yield return StartCoroutine(DownloadDllsCo(winnerUrl));
+        }
+
+        /// <summary>胜出地址确定后的 dll 下载段（从 ProbeAndDownloadDllsCo 抽出的共用尾巴）。</summary>
+        private IEnumerator DownloadDllsCo(string serverUrl)
+        {
             SetStatus("正在同步热更 dll…");
+            SetProgress(0.15f);
             HotUpdateDllDownloader.Result result = null;
 
             yield return StartCoroutine(HotUpdateDllDownloader.DownloadAll(
                 serverUrl,
                 (done, total) =>
                 {
-                    SetProgress(total > 0 ? 0.02f + 0.13f * ((float)done / total) : 0.15f);
+                    SetProgress(total > 0 ? 0.15f + 0.10f * ((float)done / total) : 0.17f);
                     SetStatus(string.Format("同步热更 dll {0}/{1}", done, total));
                 },
                 r => result = r));
@@ -253,7 +332,7 @@ namespace FTProject.AOT
                 yield break;
             }
 
-            // ---------- ③ 结果日志（关键节点上报） ----------
+            // ---------- 结果日志（关键节点上报） ----------
             if (result.Updated)
             {
                 Debug.Log("[Boot] 热更 dll 同步完成：" + result.ToSummary());
@@ -273,74 +352,133 @@ namespace FTProject.AOT
         }
 
         /// <summary>
-        /// 探测服务器可达性。
+        /// **并发探测全部候选服务器，第一个可达的胜出**。
         ///
-        /// 【探测目标为什么是 md5.txt】见 <see cref="ProbeAndDownloadDllsCo"/> 注释。
-        /// 【为什么带重试】局域网下首次连接偶发失败（ARP 未预热 / Wi-Fi 唤醒），
-        ///   给一次机会能显著降低"明明服务器开着却探测失败"的概率。
-        ///   但**只重试一次**且不等退避 —— 探测必须快，不能让启动变慢。
-        /// 【URL 平台目录】与下载器保持一致：{root}/{platform}/HybridCLR/md5.txt
+        /// ==================================================================
+        /// 【为什么并发而不是串行】
+        ///   候选来自不同环境（公司/家/模拟器），同一时刻通常只有一个可达，
+        ///   但**无法预知是哪个**。串行逐个试，最坏 4s×N 全超时；并发后
+        ///   总耗时 = 最慢一发（<see cref="ProbeTimeoutSeconds"/> 封顶），
+        ///   可达者按真实网络快慢自然胜出，与书写顺序无关。
+        ///
+        /// 【探测怎么算"可达"】
+        ///   对每个候选的 `md5.txt`（热更 dll 目录下的校验清单）发一次 GET：
+        ///     · HTTP 200 且内容非空 → 可达
+        ///     · 其它（超时 / DNS 失败 / 404 / 5xx）→ 不可达
+        ///   选 `md5.txt` 是因为它是"这次热更真正需要的东西" —— 根路径可能
+        ///   返回 200（比如 nginx 默认页），但热更目录其实没部署。
+        ///
+        /// 【胜出后其余请求怎么办】
+        ///   立即 Abort + Dispose，不留半途连接；胜出地址连同来源说明
+        ///   （"候选 2/3"）经回调交还 <see cref="ProbeAndDownloadDllsCo"/>。
+        ///   全部失败时把每个候选的错误摘要拼给回调，供跳过热更的日志用。
+        /// ==================================================================
         /// </summary>
-        private IEnumerator ProbeServerCo(string serverRoot, Action<bool> onResult, Action<string> onError)
+        private IEnumerator ProbeCandidatesCo(string[] candidates,
+            Action<string, string> onWinner, Action<string> onErrorSummary)
         {
-            string root = serverRoot.TrimEnd('/');
-            string url = string.Format("{0}/{1}/{2}/{3}",
-                root, GetPlatformFolderForProbe(), "HybridCLR", "md5.txt");
+            // 每个候选一个探测槽：发出后不 yield 单发请求，统一轮询收割
+            ProbeSlot[] slots = new ProbeSlot[candidates.Length];
+            slotsErrorSummary = new string[candidates.Length];
 
-            for (int attempt = 0; attempt <= ProbeRetryCount; attempt++)
+            for (int i = 0; i < candidates.Length; i++)
             {
-                float t0 = Time.realtimeSinceStartup;
-                bool ok = false;
-                string err = null;
+                string root = (candidates[i] ?? "").TrimEnd('/');
+                string url = string.Format("{0}/{1}/{2}/{3}",
+                    root, GetPlatformFolderForProbe(), "HybridCLR", "md5.txt");
 
-                using (UnityWebRequest req = UnityWebRequest.Get(url))
+                UnityWebRequest req = UnityWebRequest.Get(url);
+                req.timeout = ProbeTimeoutSeconds;
+                req.downloadHandler = new DownloadHandlerBuffer();
+
+                slots[i] = new ProbeSlot { Index = i, Url = url, Request = req };
+                req.SendWebRequest();   // 异步发出；并发等待靠下面的轮询
+            }
+
+            float t0 = Time.realtimeSinceStartup;
+
+            while (true)
+            {
+                bool allDone = true;
+
+                for (int i = 0; i < slots.Length; i++)
                 {
-                    req.timeout = ProbeTimeoutSeconds;
-                    req.downloadHandler = new DownloadHandlerBuffer();
-
-                    yield return req.SendWebRequest();
-
-                    if (req.result == UnityWebRequest.Result.Success
-                        && req.responseCode == 200
-                        && string.IsNullOrEmpty(req.downloadHandler.text) == false)
+                    ProbeSlot s = slots[i];
+                    if (s == null || s.Done)
                     {
-                        ok = true;
+                        continue;
+                    }
+
+                    if (s.Request.isDone)
+                    {
+                        s.Done = true;
+                        UnityWebRequest r = s.Request;
+
+                        if (r.result == UnityWebRequest.Result.Success
+                            && r.responseCode == 200
+                            && string.IsNullOrEmpty(r.downloadHandler.text) == false)
+                        {
+                            // 先成功者胜出：中止其余请求，立刻返回
+                            Debug.Log(string.Format(
+                                "[Boot] 候选服务器 {0}/{1} 可达（并发探测耗时 {2:F2}s）：{3}",
+                                s.Index + 1, slots.Length, Time.realtimeSinceStartup - t0, s.Url));
+                            AbortProbeSlots(slots, s.Index);
+                            onWinner(candidates[s.Index],
+                                string.Format("候选 {0}/{1}", s.Index + 1, slots.Length));
+                            yield break;
+                        }
+
+                        slotsErrorSummary[s.Index] = string.Format("  候选{0} {1} → {2}（HTTP {3}）",
+                            s.Index + 1, s.Url, r.error, r.responseCode);
                     }
                     else
                     {
-                        err = string.Format("{0}（HTTP {1}）", req.error, req.responseCode);
+                        allDone = false;
                     }
                 }
 
-                float elapsed = Time.realtimeSinceStartup - t0;
-
-                if (ok)
+                if (allDone)
                 {
-                    Debug.Log(string.Format("[Boot] 资源服务器可达（探测耗时 {0:F2}s）：{1}", elapsed, url));
-                    onResult(true);
-                    yield break;
+                    break;
                 }
-
-                Debug.LogWarning(string.Format("[Boot] 服务器探测失败（第 {0} 次，耗时 {1:F2}s）：{2}",
-                    attempt + 1, elapsed, err));
-
-                if (attempt < ProbeRetryCount)
-                {
-                    // 极短等待后重试（0.3s，不引入可观延迟）
-                    float wake = Time.realtimeSinceStartup + 0.3f;
-                    while (Time.realtimeSinceStartup < wake)
-                    {
-                        yield return null;
-                    }
-                }
-                else
-                {
-                    if (onError != null)
-                    {
-                        onError(err);
-                    }
-                }
+                yield return null;
             }
+
+            // 全部失败：统一中止并释放请求，再上抛错误摘要
+            AbortProbeSlots(slots, -1);
+            if (onErrorSummary != null)
+            {
+                onErrorSummary(string.Join("\n", slotsErrorSummary));
+            }
+        }
+
+        /// <summary>中止并释放除胜出者以外的全部探测请求（胜出者本体用完即释；-1 = 全部释放）。</summary>
+        private static void AbortProbeSlots(ProbeSlot[] slots, int winnerIndex)
+        {
+            for (int i = 0; i < slots.Length; i++)
+            {
+                ProbeSlot s = slots[i];
+                if (s == null || s.Request == null)
+                {
+                    continue;
+                }
+                if (i != winnerIndex)
+                {
+                    s.Request.Abort();
+                }
+                s.Request.Dispose();
+            }
+        }
+
+        private string[] slotsErrorSummary = new string[0];
+
+        /// <summary>并发探测的单发请求槽位（Index 对应候选数组下标）。</summary>
+        private class ProbeSlot
+        {
+            public int Index;
+            public string Url;
+            public UnityWebRequest Request;
+            public bool Done;
         }
 
         /// <summary>

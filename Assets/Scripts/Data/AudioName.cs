@@ -18,8 +18,6 @@ namespace FTProject
         public const string TowerFireNormal = "sfx_tower_fire_normal";
         public const string TowerFirePower = "sfx_tower_fire_power";
         public const string TowerFireRetard = "sfx_tower_fire_retard";
-        public const string TowerFirePierce = "sfx_tower_fire_pierce";
-        public const string TowerFireLaser = "sfx_tower_fire_laser";
 
         // ---- 塔 · 操作 ----
         public const string TowerBuild = "sfx_tower_build";
@@ -55,8 +53,6 @@ namespace FTProject
             {
                 case 2: return TowerFirePower;
                 case 3: return TowerFireRetard;
-                case 4: return TowerFirePierce;
-                case 5: return TowerFireLaser;
                 default: return TowerFireNormal;
             }
         }

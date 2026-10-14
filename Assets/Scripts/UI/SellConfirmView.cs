@@ -136,8 +136,6 @@ namespace FTProject
             {
                 case 2: return "Power";
                 case 3: return "Retard";
-                case 4: return "Pierce";
-                case 5: return "Laser";
                 default: return "Normal";
             }
         }

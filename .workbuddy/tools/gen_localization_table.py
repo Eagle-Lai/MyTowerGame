@@ -79,13 +79,12 @@ ROWS = [
     ('Single-target rapid fire', 'Single-target rapid fire', '单体速射 · 性价比基准', '單體速射 · 性價比基準', '普通塔定位'),
     ('Area blast · swarm clearer', 'Area blast · swarm clearer', '范围爆炸 · 清群核心', '範圍爆炸 · 清群核心', '范围塔定位'),
     ('Slows enemies · control', 'Slows enemies · control', '减速控制 · 拖住节奏', '減速控制 · 拖住節奏', '减速塔定位'),
-    ('Pierces a line of enemies', 'Pierces a line of enemies', '贯穿一线 · 串排输出', '貫穿一線 · 串排輸出', '穿刺塔定位'),
-    ('Hitscan burst · anti-boss', 'Hitscan burst · anti-boss', '激光瞬发 · 点杀精英', '雷射瞬發 · 點殺精英', '激光塔定位'),
+    # 【2026-10-14 三塔型收敛】原 Pierces a line of enemies / Hitscan burst · anti-boss
+    # 两条塔型定位文案随穿透塔/激光塔删除。
     ('Normal Tower', 'Normal Tower', '普通塔', '普通塔', ''),
     ('Blast Tower', 'Blast Tower', '范围塔', '範圍塔', ''),
     ('Frost Tower', 'Frost Tower', '减速塔', '減速塔', ''),
-    ('Pierce Tower', 'Pierce Tower', '穿刺塔', '穿刺塔', ''),
-    ('Laser Tower', 'Laser Tower', '激光塔', '雷射塔', ''),
+    # 【2026-10-14 三塔型收敛】原 Pierce Tower / Laser Tower 词条随塔型删除。
     ('Sell Tower', 'Sell Tower', '出售确认', '出售確認', ''),
     ('Refund {0}% of total investment.\nThis cannot be undone.', 'Refund {0}% of total investment.\nThis cannot be undone.', '出售后将退回 {0}% 的累计投入\n且无法撤销', '出售後將退回 {0}% 的累計投入\n且無法撤銷', '占位符 {0} 保留'),
     ('Tower', 'Tower', '塔', '塔', ''),
@@ -95,7 +94,7 @@ ROWS = [
     ('Slow towers greatly boost the damage of all nearby towers.', 'Slow towers greatly boost the damage of all nearby towers.', '减速塔能大幅提升周围所有塔的输出', '減速塔能大幅提升周圍所有塔的輸出', ''),
     ('Flying enemies ignore ground paths; watch your anti-air coverage.', 'Flying enemies ignore ground paths; watch your anti-air coverage.', '飞行怪会无视地面路径，注意覆盖对空', '飛行怪會無視地面路徑，注意覆蓋對空', ''),
     ('There is build time between rounds, but you can start early.', 'There is build time between rounds, but you can start early.', '回合之间有布防时间，也可以立即开始', '回合之間有佈防時間，也可以立即開始', ''),
-    ('Pierce towers can hit a whole column of enemies at once.', 'Pierce towers can hit a whole column of enemies at once.', '穿透塔能一次打穿一整列敌人', '穿透塔能一次打穿一整列敵人', ''),
+    # 【2026-10-14 三塔型收敛】原"穿透塔能一次打穿一整列敌人"加载提示随穿透塔删除。
     ('Initializing resources...', 'Initializing resources...', '正在初始化资源系统...', '正在初始化資源系統...', ''),
     ('Resource Update', 'Resource Update', '资源更新', '資源更新', ''),
     ('Checking for updates...', 'Checking for updates...', '正在检查更新...', '正在檢查更新...', ''),

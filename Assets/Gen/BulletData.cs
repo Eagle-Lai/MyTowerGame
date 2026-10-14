@@ -24,7 +24,6 @@ public sealed partial class BulletData :  Bright.Config.BeanBase
         { if(!_json["speed"].IsNumber) { throw new SerializationException(); }  Speed = _json["speed"]; }
         { if(!_json["hitRadius"].IsNumber) { throw new SerializationException(); }  HitRadius = _json["hitRadius"]; }
         { if(!_json["lifeTimeMs"].IsNumber) { throw new SerializationException(); }  LifeTimeMs = _json["lifeTimeMs"]; }
-        { if(!_json["pierce"].IsNumber) { throw new SerializationException(); }  Pierce = _json["pierce"]; }
         { if(!_json["aoeRadius"].IsNumber) { throw new SerializationException(); }  AoeRadius = _json["aoeRadius"]; }
         { if(!_json["effectType"].IsNumber) { throw new SerializationException(); }  EffectType = _json["effectType"]; }
         { if(!_json["effectValue"].IsNumber) { throw new SerializationException(); }  EffectValue = _json["effectValue"]; }
@@ -33,7 +32,7 @@ public sealed partial class BulletData :  Bright.Config.BeanBase
         PostInit();
     }
 
-    public BulletData(int id, string name, string resName, float speed, float hitRadius, int lifeTimeMs, int pierce, float aoeRadius, int effectType, float effectValue, float scale, string desc ) 
+    public BulletData(int id, string name, string resName, float speed, float hitRadius, int lifeTimeMs, float aoeRadius, int effectType, float effectValue, float scale, string desc ) 
     {
         this.Id = id;
         this.Name = name;
@@ -41,7 +40,6 @@ public sealed partial class BulletData :  Bright.Config.BeanBase
         this.Speed = speed;
         this.HitRadius = hitRadius;
         this.LifeTimeMs = lifeTimeMs;
-        this.Pierce = pierce;
         this.AoeRadius = aoeRadius;
         this.EffectType = effectType;
         this.EffectValue = effectValue;
@@ -80,15 +78,11 @@ public sealed partial class BulletData :  Bright.Config.BeanBase
     /// </summary>
     public int LifeTimeMs { get; private set; }
     /// <summary>
-    /// 穿透数量 0=命中即消失
-    /// </summary>
-    public int Pierce { get; private set; }
-    /// <summary>
     /// 爆炸半径（格）0=单体
     /// </summary>
     public float AoeRadius { get; private set; }
     /// <summary>
-    /// 效果类型 0无/1减速/2持续伤害/3范围伤害/4激光（命中时施加）
+    /// 效果类型 0无/1减速/2持续伤害/3范围伤害（命中时施加）
     /// </summary>
     public int EffectType { get; private set; }
     /// <summary>
@@ -125,7 +119,6 @@ public sealed partial class BulletData :  Bright.Config.BeanBase
         + "Speed:" + Speed + ","
         + "HitRadius:" + HitRadius + ","
         + "LifeTimeMs:" + LifeTimeMs + ","
-        + "Pierce:" + Pierce + ","
         + "AoeRadius:" + AoeRadius + ","
         + "EffectType:" + EffectType + ","
         + "EffectValue:" + EffectValue + ","

@@ -19,13 +19,13 @@
 - ★ YooAsset 初始化三步：InitializePackageAsync→RequestPackageVersion→LoadPackageManifestAsync 才 SetActiveManifest；漏步报 manifest not found。EnableAddressable=false；同版本二次构建 ErrorCode115。
 
 ## 热更/资源
-- dll=独立HTTP(HotUpdateDllDownloader)（路径 {ServerUrl}/Android/HybridCLR/）；AB=YooAsset HostPlayMode。地址唯一源 Core/Res/ResServerConfig.cs；AOT 侧 BootLoader.ServerUrlForAOT 刻意复制，两处同步。
+- dll=独立HTTP(HotUpdateDllDownloader)（路径 {ServerUrl}/Android/HybridCLR/）；AB=YooAsset HostPlayMode。★地址=**UDP 自动发现**[2026-10-14 晚]：唯一源 `Assets/AOTAssembly/BootServerSelection.cs`；电脑端 hotupdate_server.py 每秒广播 `FTHOTUPD1|port=8000`(UDP 28000)，真机 Boot 阶段监听 2.5s 取来源 IP 为候选→md5.txt 探测确认防误报；Candidates 常量只剩模拟器 10.0.2.2（NAT 网关永不变，公司场景主路径）；探测与 UDP 监听**并行**（模拟器 ~0.1s 先出即停 UDP；真机 4s 超时后转 UDP 结果二阶段）。server.txt 覆盖仍最高优先（存在则跳过 UDP）。ResServerConfig.GetServerUrl 优先级 server.txt > SelectedUrl > 常量。**选票全 AOT 侧→改这些必须出 APK**。
 - ★★ AB 热更三铁律 [2026-10-14 源码+实测]：①**FT_HOTUPDATE 宏三平台组必须开**（不开=静默走离线模式，永远读随包版本且不报错——比报错更隐蔽）；②HostPlayMode 请求**全部平铺在 ServerUrl 根**：`/FreeTower.version`(内容=版本号)/`/FreeTower_{ver}.hash`/`/FreeTower_{ver}.bytes`/`/{哈希}.bundle`（HashName 裸名）——**不是目录式**！部署跑 `.workbuddy/tools/deploy_free_tower_cdn.py`；③CheckUpdateCo 版本相同也校验缺失并下载（同步加载遇"未缓存 bundle"首载必败：SFS 无法同步等远端下载、转后台继续；新资源进沙盒靠启动检查兜底）。
 - 首启释放 PrefetchStreamingAssetsToPersistent：存在即跳过（保热更成果）。dll md5 清单 `{平台}/HybridCLR/md5.txt`（菜单 HybridCLR/4）须与 dll 同传；GetPlatformFolder 与 ForProbe 同步改。
 - YooAsset 3.0.x 默认值全关 → BuildSandboxParameters 已显式开 High/1MB/30s/并发8；事件 API=DownloadProgressChanged。本地测试 http.server 根=HotUpdateServer（平铺 AB 部署区 + Android/ 两 junction）。
 
 ## 配置/多语言/UI
-- Luban：改 xlsx 必重导（菜单3，DOTNET_ROLL_FORWARD=LatestMajor）；新表登记 __tables__.xlsx；字段从B列起；导出会删 Assets/Gen 陌生文件→KeepFilesInCodeDir 保护。ResTable.cs=唯一寻址源。
+- Luban：改 xlsx 必重导（菜单3，DOTNET_ROLL_FORWARD=LatestMajor）；新表登记 __tables__.xlsx；字段从B列起；导出会删 Assets/Gen 陌生文件→KeepFilesInCodeDir 保护。ResTable.cs=唯一寻址源。★直接跑 gen_code_json.bat 会把 Assets/Gen/FTProject.Gen.asmdef 删掉（保护只在菜单3路径生效）→ 全项目级联 CS0246；编辑器外跑导出后必核对 asmdef（2026-10-14 踩过）。
 - 多语言：代码在 Assets/Scripts/Localization；主键=英文原文；表权威源=`.workbuddy/tools/gen_localization_table.py` ROWS→xlsx；向已有 xlsx 幂等追加词条用 `append_localization_rows_20261014.py`（自动备份 .bak；跑完必走菜单3重导）；TextLocalizer key 留空自动取（Text 用 _originalText，绝不用 _text.text）；回退 当前→英文→原文；切语言 SetLanguage+LanguageChangedEvent(Action<int>)；菜单308挂/309清理。
 - UI 生成器 UIPrefabBuilder（改文案=改它+重编译+重生成）；TMP；SiYuanSongTi SDF 动态+多图集。
 
@@ -52,5 +52,6 @@
 - 点塔交互：放置态点"已有塔格子"=退出放置并选中（TowerPlacement）；诊断日志前缀：[Place]/[HUD]/[TowerInfoView]/[Audit]（RuntimeMissingScriptAudit 进关延时 1s 扫场景 missing 汇总一条）。
 - ★建造交互 v3 [2026-10-14]：塔按钮手势两分（HudView 判定，TowerDragButton 中继组件运行时 AddComponent 不进 prefab）——快速点按=经典放置态（BuildTowerRequestEvent，点击落子）；长按0.25s/位移30px=**拖拽建造**（TowerDragBeginEvent→TowerPlacement._dragMode，ghost 跟手+悬停高亮，**松手**校验：可建→TryPlace；不可建→Tips 原因+取消；拖回按钮/棋盘外=静默取消）。拖拽触发后一帧窗口 `_suppressTowerClick` 吞 Button.onClick 防误切放置态。HUD 右上角 Btn_Pause（→PauseRequestEvent→PauseView timeScale=0 可恢复）/Btn_Intro（→OpenGameIntroRequestEvent→GameIntroView，弹窗含「回到选关」BackBtn→QuitToSelectRequestEvent + CloseBtn 自关，Info1..4 动态文本 Awake 查表）。拖拽模式 IsPointerOverUI 已升级触摸感知（fingerId 逐一查，真机修复）。
 - 地图链路：棋盘→levelmap_export.json→LevelMap.xlsx→tblevelmap.json→SceneInfo.xlsx。静态校验9个（.workbuddy/tools）改完全跑。
-- TowerType=Normal1/Aoe2/Slow3/Pierce4/Laser5；目录 Power=Aoe、Retard=Slow；云端资料库镜像 Docs/（md 用 space.importer、svg 用 drive/upload）。
-- 热更服务器（公司E）：python http.server 8000 常驻于 HotUpdateServer/（根=**平铺 AB 部署区**；Android/HybridCLR、Android/FreeTower 两 junction 供 dll 下载与查看）；模拟器 ServerUrl=10.0.2.2:8000（TUN 劫持详见 2026-10-14 日志）；真机=局域网 IP 且须与 BootLoader.ServerUrlForAOT 同步改。发版=构建后跑 deploy_free_tower_cdn.py。
+- ★塔型三类定案 [2026-10-14 收敛]：Normal1(飞行+行走)/Aoe2火力=仅行走/Slow3光环(飞行+行走)；Pierce4/Laser5 已整体删除（枚举编号不回收；穿透弹+bullet表pierce列+pierce/laser音效图标全清）。"能否对空"唯一判定=塔表 canAttackAir（FindTarget 与 TickSlowAura 同一条过滤）。旧存档 type=4/5 塔恢复时被跳过（RestoreTower 返回 null），无需迁移。目录 Power=Aoe、Retard=Slow；云端资料库镜像 Docs/（md 用 space.importer、svg 用 drive/upload）。
+- 热更服务器：**`.workbuddy/tools/hotupdate_server.py` 一键常驻**[2026-10-14 晚]（HTTP 8000 静态服务 + UDP 28000 广播线程，多网卡定向广播，--self-test 自收验证；替代裸 http.server）。根=**平铺 AB 部署区**；Android/HybridCLR、Android/FreeTower 两 junction 供 dll 下载与查看；git 忽略，两版各自建。家用D 已重建[2026-10-14 晚]：junction→StreamingAssets/HybridCLR 与 Bundles/.../1.0.1，AB 1.0.1 已部署；防火墙入站规则 **FT HotUpdate 8000** 已建（真机 HTTP 必需）。发版=构建后跑 deploy_free_tower_cdn.py。★环境坑：FlyingBird TUN 代理会劫持 curl（回 502 "upstream connect failed"）→ 自检必须 `curl --noproxy "*"`；起服务器偶发 bind 10013（TUN 瞬时抽风）→ 重试即好。
+- ★ Unity MCP [家用D 2026-10-14]：stdio uvx mcpforunityserver 3.4.8；**WorkBuddy 连接器在 Unity 未启动时拉起会卡死"连接中"、会话内不恢复**→兜底=自起一次性 stdio 实例（spawn uvx→init→activate scripting_ext→execute_code，全程一个进程）或 http 模式+mcp_unity.py（URL 已支持 UNITY_MCP_URL 环境变量，家用D 默认 8082 是公司E 专用）；Unity 桥端口 6401 被占自动回退 6400，**真相源=`~/.unity-mcp/unity-mcp-status-*.json`（含 unity_port/心跳/project_path）**；execute_code 须先 `manage_tools activate scripting_ext`（会话级，每次新连接都要重新激活）。

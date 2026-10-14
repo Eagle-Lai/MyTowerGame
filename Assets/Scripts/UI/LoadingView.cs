@@ -31,7 +31,7 @@ namespace FTProject
         private static readonly Color Danger = new Color(1f, 0.302f, 0.369f, 1f);            // #FF4D5E
 
         /// <summary>
-        /// 加载提示池（策划案 §A2 的 7 条）。
+        /// 加载提示池（策划案 §A2 的 7 条，2026-10-14 起随穿透塔移除剩 6 条）。
         /// ⚠️ 刻意**不写"退回 70%"**：当前 tbglobal 的 sellRefundRate = 1（100%），
         /// 写死 70% 会变成一句与实现不符的假承诺。等数值定稿后再补数字。
         /// </summary>
@@ -43,14 +43,13 @@ namespace FTProject
             "减速塔能大幅提升周围所有塔的输出",
             "飞行怪会无视地面路径，注意覆盖对空",
             "回合之间有布防时间，也可以立即开始",
-            "穿透塔能一次打穿一整列敌人",
         };
 
         /// <summary>Tips 对应的多语言 key（与 Tips 一一对应，取不到 key 时回退中文原文）。</summary>
         private static readonly string[] TipKeys =
         {
             "You can build on any open ground; paths recompute in real time.", "Towers never waste fire when they have no target.", "Selling a tower refunds part of its total investment.", "Slow towers greatly boost the damage of all nearby towers.",
-            "Flying enemies ignore ground paths; watch your anti-air coverage.", "There is build time between rounds, but you can start early.", "Pierce towers can hit a whole column of enemies at once.",
+            "Flying enemies ignore ground paths; watch your anti-air coverage.", "There is build time between rounds, but you can start early.",
         };
 
         private TMP_Text _statusText;

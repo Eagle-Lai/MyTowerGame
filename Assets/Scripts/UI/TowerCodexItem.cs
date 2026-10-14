@@ -7,8 +7,9 @@ namespace FTProject
     /// <summary>
     /// 塔图鉴的一张卡片（UI 补全 B2）。
     ///
-    /// 【为什么卡片必须有脚本】图鉴是**同一个 prefab 被池化复用 5 次**（LoopListView2 的机制），
-    /// 一次显示、一次回收再填别的塔 —— 所以内容只能在运行时灌进去，不能烘死在 prefab 里。
+    /// 【为什么卡片必须有脚本】图鉴是**同一个 prefab 被池化复用 3 次**（LoopListView2 的机制，
+    /// 2026-10-14 起塔型收敛为三类），一次显示、一次回收再填别的塔 ——
+    /// 所以内容只能在运行时灌进去，不能烘死在 prefab 里。
     ///
     /// 【缩放/淡化挂在 Body 而不是根节点】LoopListView2 的条目根节点 pivot 固定 (0,0.5)，
     /// 缩放根节点会让卡片围绕左缘缩放 → 视觉上"居中卡左右空隙一宽一窄"。
@@ -103,15 +104,13 @@ namespace FTProject
             }
         }
 
-        /// <summary>塔型主题色（策划案 §B2 的五色映射）。</summary>
+        /// <summary>塔型主题色（2026-10-14 三塔型收敛后的三色映射）。</summary>
         public static Color ThemeColor(int type)
         {
             switch (type)
             {
                 case 2: return new Color(1f, 0.478f, 0.161f, 1f);      // Power 火 #FF7A29
                 case 3: return new Color(0.490f, 0.910f, 1f, 1f);      // Retard 冰 #7DE8FF
-                case 4: return new Color(0.486f, 0.361f, 1f, 1f);      // Pierce 紫 #7C5CFF
-                case 5: return new Color(0.486f, 0.361f, 1f, 1f);      // Laser 紫 #7C5CFF
                 default: return new Color(0.208f, 0.878f, 1f, 1f);     // Normal 青 #35E0FF
             }
         }
@@ -123,21 +122,17 @@ namespace FTProject
             {
                 case 2: return "Power";
                 case 3: return "Retard";
-                case 4: return "Pierce";
-                case 5: return "Laser";
                 default: return "Normal";
             }
         }
 
-        /// <summary>塔型 → 一句话定位（策划案 §B2 的定位文案）。</summary>
+        /// <summary>塔型 → 一句话定位（三塔型的定位文案）。</summary>
         public static string RoleText(int type)
         {
             switch (type)
             {
                 case 2: return Localization.Get("Area blast · swarm clearer") ?? "范围爆炸 · 清群核心";
                 case 3: return Localization.Get("Slows enemies · control") ?? "减速光环 · 增益全队";
-                case 4: return Localization.Get("Pierces a line of enemies") ?? "直线穿透 · 一列贯穿";
-                case 5: return Localization.Get("Hitscan burst · anti-boss") ?? "高单伤 · 专克重甲";
                 default: return Localization.Get("Single-target rapid fire") ?? "单体速射 · 性价比基准";
             }
         }

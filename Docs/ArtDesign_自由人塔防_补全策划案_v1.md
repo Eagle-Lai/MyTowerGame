@@ -74,7 +74,7 @@ Gold       = #FFC94D   // 金 —— 金币、胜利、星级
 Red        = #FF4D5E   // 红 —— 生命、失败、危险
 Fire       = #FF7A29   // 橙 —— 火焰塔、警示
 Ice        = #7DE8FF   // 冰白 —— 水晶、减速
-Purple     = #7C5CFF   // 紫 —— Pierce/Laser 塔型标识
+Purple     = #7C5CFF   // 紫 —— 备用点缀色（原 Pierce/Laser 塔型标识，2026-10-14 随三塔型收敛退役）
 Steel      = #9FB3C8   // 钢 —— 次要文字、金属件
 SteelDark  = #5E7396   // 暗钢 —— 金属阴影、次级描边
 
@@ -238,7 +238,7 @@ LoadingView                    [RectTransform, 铺满, +LoadingView.cs]
 "减速塔能大幅提升周围所有塔的输出"
 "飞行怪会无视地面路径，注意覆盖对空"
 "回合之间有 5 秒布防时间，也可以立即开始"
-"穿透塔能一次打穿一整列敌人"
+"穿透塔能一次打穿一整列敌人"（此加载提示已随穿透塔于 2026-10-14 移除）
 ```
 
 **验收**：
@@ -449,8 +449,8 @@ TowerCodexItem                 [RectTransform, 460×640, +TowerCodexItem.cs]
 | 1 | Normal | Cyan `#35E0FF` | `UI_TowerIcon_Normal` | 单体速射，性价比基准 |
 | 2 | Power | Fire `#FF7A29` | `UI_TowerIcon_Power` | 范围爆炸，清群核心 |
 | 3 | Retard | Ice `#7DE8FF` | `UI_TowerIcon_Retard` | 减速光环，增益全队 |
-| 4 | Pierce | Purple `#7C5CFF` | `UI_TowerIcon_Pierce` | 直线穿透，一列贯穿 |
-| 5 | Laser | Purple `#7C5CFF` | `UI_TowerIcon_Laser` | 高单伤，专克重甲 |
+| ~~4~~ | ~~Pierce~~ | ~~Purple `#7C5CFF`~~ | ~~`UI_TowerIcon_Pierce`~~ | 直线穿透，一列贯穿（**2026-10-14 随三塔型收敛移除，图标已删**） |
+| ~~5~~ | ~~Laser~~ | ~~Purple `#7C5CFF`~~ | ~~`UI_TowerIcon_Laser`~~ | 高单伤，专克重甲（**2026-10-14 随三塔型收敛移除，图标已删**） |
 
 **几何约束**（复用 `SelectView` 踩过的坑，**必须照抄参数**）：
 - 条目宽 **必须 ≡ 视口宽**（460），否则首/末卡永远偏心
@@ -461,7 +461,7 @@ TowerCodexItem                 [RectTransform, 460×640, +TowerCodexItem.cs]
 - 首次居中延后到第一帧 `LateUpdate`
 
 **验收**：
-- [ ] 5 张卡横向可滑，首卡（Normal）与末卡（Laser）均**精确居中**（偏差 0px）
+- [ ] 3 张卡横向可滑，首卡（Normal）与末卡（Retard）均**精确居中**（偏差 0px）（2026-10-14 起塔图鉴随三塔型收敛为 3 张）
 - [ ] 卡片数据与 `tbtowerinfo` 一致
 - [ ] 左右箭头到头自动置灰
 - [ ] 滚动一圈后点击，事件仍只触发 1 次

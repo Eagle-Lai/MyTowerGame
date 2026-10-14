@@ -344,15 +344,13 @@ namespace FTProject.EditorTools
             }
         }
 
-        /// <summary>塔型 → 建造栏图标 sprite 名（Normal/Power/Retard/Pierce/Laser）</summary>
+        /// <summary>塔型 → 建造栏图标 sprite 名（三塔型：Normal/Power/Retard）</summary>
         private static string TowerIconSpriteName(int towerType)
         {
             switch (towerType)
             {
                 case 2: return "UI_TowerIcon_Power";
                 case 3: return "UI_TowerIcon_Retard";
-                case 4: return "UI_TowerIcon_Pierce";
-                case 5: return "UI_TowerIcon_Laser";
                 default: return "UI_TowerIcon_Normal";
             }
         }
