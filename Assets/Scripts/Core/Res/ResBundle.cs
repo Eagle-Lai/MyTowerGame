@@ -50,6 +50,15 @@ namespace FTProject
         public const string BootUi = "boot_ui";
 
         /// <summary>
+        /// Reporter 调试控制台图标（Assets/Reporter/Images，收集器 ReporterData 组）。
+        ///
+        /// 【为什么单独一个包】Reporter 界面图片由运行时动态装配（见
+        /// GameSceneLauncher.EnsureReporter 的说明），走 ResTable Reporter_* 逻辑名，
+        /// 与游戏 UI 资源解耦；单独成包便于整包管理与将来按需扩展。
+        /// </summary>
+        public const string Reporter = "reporter";
+
+        /// <summary>
         /// 字体（TMP 字体资产与描边材质）。
         ///
         /// 【为什么要单独分包】全工程 UI 文本统一用 TextMeshPro，字体资产
@@ -70,13 +79,13 @@ namespace FTProject
         /// <summary>不随怪物清单变化的固定包</summary>
         public static readonly string[] Fixed =
         {
-            Config, CoreArt, Font, TowerNormal, TowerPower, TowerRetard, BulletNormal, UiHud, BootUi
+            Config, CoreArt, Font, TowerNormal, TowerPower, TowerRetard, BulletNormal, UiHud, BootUi, Reporter
         };
 
         /// <summary>常驻包：初始化后不参与卸载</summary>
         public static readonly string[] Persistent =
         {
-            Config, CoreArt, Font, BootUi
+            Config, CoreArt, Font, BootUi, Reporter
         };
 
         private static string[] _all;

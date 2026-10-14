@@ -157,6 +157,47 @@ namespace FTProject
             { "UI_TowerIcon_Laser",  new ResAddress(ResBundle.UiHud, "UI_TowerIcon_Laser",  "Assets/_UIAssets/UI/UI_TowerIcon_Laser.png") },
 
             // ------------------------------------------------------------------
+            // Reporter 调试控制台图标（Assets/Reporter/Images，收集器 ReporterData 组）
+            //
+            // 【为什么运行时才加载】Reporter 组件是**运行时动态挂载**的
+            // （HybridCLR 限制，见 GameSceneLauncher.EnsureReporter），原版"菜单创建
+            // 时序列化图片引用"的路径不成立；图片在 Reporter.Initialize 时经
+            // ImageLoader 按逻辑名加载：编辑器走本表 EditorPath 直读（AssetDatabase），
+            // 真机走 YooAsset（收集器 ReporterData 组 → AB）。
+            // 逻辑名 = Reporter_<文件名（去扩展名）>，与 Reporter.CreateRuntimeImages
+            // 的加载名逐一对应 —— 三处（本表 / 收集器目录 / Images 文件）改名必须同步。
+            // ------------------------------------------------------------------
+            { "Reporter_clear",              new ResAddress(ResBundle.Reporter, "clear",              "Assets/Reporter/Images/clear.png") },
+            { "Reporter_collapse",           new ResAddress(ResBundle.Reporter, "collapse",           "Assets/Reporter/Images/collapse.png") },
+            { "Reporter_clearOnSceneLoaded", new ResAddress(ResBundle.Reporter, "clearOnSceneLoaded", "Assets/Reporter/Images/clearOnSceneLoaded.png") },
+            { "Reporter_timer_1",            new ResAddress(ResBundle.Reporter, "timer_1",            "Assets/Reporter/Images/timer_1.png") },
+            { "Reporter_UnityIcon",          new ResAddress(ResBundle.Reporter, "UnityIcon",          "Assets/Reporter/Images/UnityIcon.png") },
+            { "Reporter_user",               new ResAddress(ResBundle.Reporter, "user",               "Assets/Reporter/Images/user.png") },
+            { "Reporter_memory",             new ResAddress(ResBundle.Reporter, "memory",             "Assets/Reporter/Images/memory.png") },
+            { "Reporter_software",           new ResAddress(ResBundle.Reporter, "software",           "Assets/Reporter/Images/software.png") },
+            { "Reporter_date",               new ResAddress(ResBundle.Reporter, "date",               "Assets/Reporter/Images/date.png") },
+            { "Reporter_fps",                new ResAddress(ResBundle.Reporter, "fps",                "Assets/Reporter/Images/fps.png") },
+            { "Reporter_info",               new ResAddress(ResBundle.Reporter, "info",               "Assets/Reporter/Images/info.png") },
+            { "Reporter_Save",               new ResAddress(ResBundle.Reporter, "Save",               "Assets/Reporter/Images/Save.png") },
+            { "Reporter_search",             new ResAddress(ResBundle.Reporter, "search",             "Assets/Reporter/Images/search.png") },
+            { "Reporter_copy",               new ResAddress(ResBundle.Reporter, "copy",               "Assets/Reporter/Images/copy.png") },
+            { "Reporter_copyAll",            new ResAddress(ResBundle.Reporter, "copyAll",            "Assets/Reporter/Images/copyAll.png") },
+            { "Reporter_close",              new ResAddress(ResBundle.Reporter, "close",              "Assets/Reporter/Images/close.png") },
+            { "Reporter_buildFrom",          new ResAddress(ResBundle.Reporter, "buildFrom",          "Assets/Reporter/Images/buildFrom.png") },
+            { "Reporter_ComputerIcon",       new ResAddress(ResBundle.Reporter, "ComputerIcon",       "Assets/Reporter/Images/ComputerIcon.png") },
+            { "Reporter_graphicCard",        new ResAddress(ResBundle.Reporter, "graphicCard",        "Assets/Reporter/Images/graphicCard.png") },
+            { "Reporter_back",               new ResAddress(ResBundle.Reporter, "back",               "Assets/Reporter/Images/back.png") },
+            { "Reporter_log_icon",           new ResAddress(ResBundle.Reporter, "log_icon",           "Assets/Reporter/Images/log_icon.png") },
+            { "Reporter_warning_icon",       new ResAddress(ResBundle.Reporter, "warning_icon",       "Assets/Reporter/Images/warning_icon.png") },
+            { "Reporter_error_icon",         new ResAddress(ResBundle.Reporter, "error_icon",         "Assets/Reporter/Images/error_icon.png") },
+            { "Reporter_bar",                new ResAddress(ResBundle.Reporter, "bar",                "Assets/Reporter/Images/bar.png") },
+            { "Reporter_button_active",      new ResAddress(ResBundle.Reporter, "button_active",      "Assets/Reporter/Images/button_active.png") },
+            { "Reporter_even_log",           new ResAddress(ResBundle.Reporter, "even_log",           "Assets/Reporter/Images/even_log.png") },
+            { "Reporter_odd_log",            new ResAddress(ResBundle.Reporter, "odd_log",            "Assets/Reporter/Images/odd_log.png") },
+            { "Reporter_selected",           new ResAddress(ResBundle.Reporter, "selected",           "Assets/Reporter/Images/selected.png") },
+            { "Reporter_scrollerSkin",       new ResAddress(ResBundle.Reporter, "reporterScrollerSkin", "Assets/Reporter/Images/reporterScrollerSkin.guiskin") },
+
+            // ------------------------------------------------------------------
             // 字体（TextMeshPro）
             //
             // 【为什么必须登记】全工程 UI 文本统一用 TMP，其字体资产是 ui_hud 各 prefab 的

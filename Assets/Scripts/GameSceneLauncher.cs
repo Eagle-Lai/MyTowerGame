@@ -50,13 +50,21 @@ namespace FTProject
         }
 
         /// <summary>
-        /// 挂上 Reporter 调试控制台（真机上**画圈**手势调出，看日志/内存/FPS）。
+        /// 挂上 Reporter 调试控制台（真机上**画圈或双击**调出，看日志/内存/FPS）。
         ///
         /// 【为什么动态挂而不是进场景】Reporter 脚本在热更程序集
         /// （FTProject.ThirdParty.Reporter）里 —— 挂进 Build Settings 场景会在打包时
         /// 被烘焙成空壳（HybridCLR 限制，见 BootLoader 注释）；放 prefab 里也没人
         /// 实例化它。动态 AddComponent 时热更 dll 已加载（main 场景加载的前提），
         /// 组件能正常工作。Reporter 的 Awake 会自建 UI（Initialized 默认 false）。
+        ///
+        /// 【为什么要注入图片加载器】Reporter 的 images 字段原本靠编辑器菜单
+        /// 「Reporter/Create」填充并随场景序列化；动态挂载没有这一步，images 为空会
+        /// 让 Initialize 抛 NullReferenceException、初始化中断，面板永远打不开
+        /// （2026-10-14 模拟器实测定位）。这里把图片接到工程统一资源链路
+        /// （ResTable Reporter_* → 编辑器 AssetDatabase / 真机 YooAsset AB，
+        /// 收集器 ReporterData 组），加载失败时 Reporter 内部退化为占位图，不崩。
+        /// **必须在 AddComponent 之前注入**：AddComponent 会同步触发 Awake。
         /// </summary>
         private void EnsureReporter()
         {
@@ -67,8 +75,31 @@ namespace FTProject
             {
                 return;
             }
+            // 跨场景守卫：main 场景若被重载，旧 Reporter 已 DontDestroyOnLoad 常驻，
+            // 不要再挂第二个（重复注册日志回调会让每条日志记两遍；且 Reporter 的
+            // "第二实例自删"逻辑会连本物体一起 Destroy，必须在这里拦住）。
+            if (Reporter.Instance != null)
+            {
+                return;
+            }
+
+            Reporter.ImageLoader = LoadReporterIcon;
+            Reporter.ScrollerSkinLoader = LoadReporterScrollerSkin;
+
             gameObject.AddComponent<Reporter>();
-            Debug.Log("[Scene] Reporter 调试控制台已挂载（真机上画圈调出）");
+            Debug.Log("[Scene] Reporter 调试控制台已挂载（画圈或双击调出）");
+        }
+
+        /// <summary>Reporter 图标（逻辑名见 ResTable 的 Reporter_* 段；失败返回 null，由 Reporter 兜底占位）</summary>
+        private static Texture2D LoadReporterIcon(string name)
+        {
+            return ResLoader.Instance.Load<Texture2D>("Reporter_" + name);
+        }
+
+        /// <summary>Reporter 滚动条皮肤（失败返回 null，由 Reporter 兜底为空 GUISkin）</summary>
+        private static GUISkin LoadReporterScrollerSkin()
+        {
+            return ResLoader.Instance.Load<GUISkin>("Reporter_scrollerSkin");
         }
 
         private bool Validate()

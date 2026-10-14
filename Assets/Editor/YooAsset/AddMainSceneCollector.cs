@@ -27,18 +27,34 @@ namespace FTProject.EditorTools
         {
             new[] { ScenePath, "Scene" },
             new[] { "Assets/Resources/BootUI", "BootUI" },
+            // 【2026-10-14】Reporter 运行时图标：Reporter 为运行时动态挂载，
+            // Initialize 时经 ResTable Reporter_* 逻辑名动态加载图片，必须被 AB 覆盖
+            // （真机从热更服务器下发；见 GameSceneLauncher.EnsureReporter 说明）。
+            new[] { "Assets/Reporter/Images", "ReporterData" },
         };
 
         [MenuItem("Tools/塔防/YooAsset 接入/5. 把 Main.unity 加入收集器（真机场景 AB）", false, 214)]
         public static void Run()
         {
+            string error;
+            Ensure(out error);   // 成败日志均在 Ensure 内输出
+        }
+
+        /// <summary>
+        /// 幂等登记全部计划项；返回 false 时 error 为可读原因。
+        /// 菜单入口只是外壳 —— 无人值守流水线（ReporterHotfixBuild）靠返回值判断成败。
+        /// </summary>
+        public static bool Ensure(out string error)
+        {
+            error = string.Empty;
             try
             {
                 BundleCollectorPackage package = FindFreeTowerPackage();
                 if (package == null)
                 {
-                    Debug.LogError("[YooAsset] 找不到 FreeTower 包裹 —— 请先跑接入向导生成收集器配置。");
-                    return;
+                    error = "找不到 FreeTower 包裹 —— 请先跑接入向导生成收集器配置。";
+                    Debug.LogError("[YooAsset] " + error);
+                    return false;
                 }
 
                 int added = 0;
@@ -92,12 +108,15 @@ namespace FTProject.EditorTools
                 }
 
                 Debug.Log(string.Format(
-                    "[YooAsset] 收集器更新完成：新增 {0} 个，已有 {1} 个。场景与引导期 UI 均从 AB 加载（HybridCLR 真机要求）。",
+                    "[YooAsset] 收集器更新完成：新增 {0} 个，已有 {1} 个。场景、引导期 UI 与 Reporter 图标均从 AB 加载（HybridCLR 真机要求）。",
                     added, skipped));
+                return true;
             }
             catch (System.Exception e)
             {
+                error = e.ToString();
                 Debug.LogError("[YooAsset] 收集器更新失败：" + e);
+                return false;
             }
         }
 

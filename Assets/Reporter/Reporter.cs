@@ -236,6 +236,27 @@ public class Reporter : MonoBehaviour
 	//public event OnLogHandler OnLog ;
 
 	public Images images;
+
+	// ------------------------------------------------------------------
+	// 【运行时图片加载钩子 —— 动态挂载专用】
+	//
+	// 原版工作流：编辑器菜单「Reporter/Create」创建物体时把 Assets/Reporter/Images/*
+	// 填进 images 并随场景序列化。本工程改为**运行时 AddComponent**（HybridCLR 限制：
+	// 挂热更脚本的物体不能进场景/Resources），序列化路径完全不经过 → images 为 null，
+	// Initialize 里一取 images.xxx 就 NullReferenceException：初始化中断（Initialized
+	// 停在 false）、GUI 资源全空，表现就是"画圈/双击都没反应、面板永远打不开"。
+	//
+	// 由调用方（GameSceneLauncher.EnsureReporter）注入加载器：图片走工程统一资源链路
+	// （编辑器 AssetDatabase / 真机 YooAsset AB，ResTable 逻辑名 Reporter_<文件>）；
+	// 未注入或加载失败时自动退化为程序化占位贴图与空 GUISkin ——
+	// **保证 Initialize 在任何路径上都不崩**。
+	// ------------------------------------------------------------------
+	public static System.Func<string, Texture2D> ImageLoader;
+	public static System.Func<GUISkin> ScrollerSkinLoader;
+
+	/// <summary>当前存活实例（跨场景重载守卫用；Unity 伪 null 语义下销毁后自动为空）。</summary>
+	public static Reporter Instance;
+
 	// gui
 	GUIContent clearContent;
 	GUIContent collapseContent;
@@ -346,6 +367,128 @@ public class Reporter : MonoBehaviour
 		graphMemUsage = (samples.Count * Sample.MemSize()) / 1024 / 1024;
 	}
 
+	// ------------------------------------------------------------------
+	// 【运行时图片装配】动态挂载路径专用（见 ImageLoader 字段区说明）。
+	//
+	// 加载顺序：注入的 ImageLoader（真机=YooAsset / 编辑器=AssetDatabase 直读）
+	//   → Resources 兜底（历史兼容路径，正常不命中）
+	//   → 程序化占位贴图（半透明灰，保证 GUIContent / GUIStyle 引用非空）。
+	// GUISkin 同理；加载失败时退化为空 GUISkin（滚动条无皮肤但功能正常）。
+	// 映射名与 Assets/Reporter/Images/ 下文件名逐一对应，同时对齐 ResTable 的
+	// Reporter_* 逻辑名与收集器目录 —— 三处改名必须同步。
+	// ------------------------------------------------------------------
+	private static Texture2D _placeholderTexture;
+
+	private static Texture2D PlaceholderTexture
+	{
+		get
+		{
+			if (_placeholderTexture == null)
+			{
+				_placeholderTexture = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+				Color c = new Color(0.6f, 0.6f, 0.6f, 0.35f);
+				_placeholderTexture.SetPixels(new[] { c, c, c, c });
+				_placeholderTexture.Apply();
+				_placeholderTexture.hideFlags = HideFlags.HideAndDontSave;
+			}
+			return _placeholderTexture;
+		}
+	}
+
+	private static Texture2D LoadTextureSafe(string name)
+	{
+		Texture2D tex = null;
+		if (ImageLoader != null)
+		{
+			try
+			{
+				tex = ImageLoader(name);
+			}
+			catch (System.Exception e)
+			{
+				Debug.LogWarning("[Reporter] 图片加载器异常（" + name + "）：" + e.Message);
+			}
+		}
+		if (tex == null)
+		{
+			try
+			{
+				tex = Resources.Load<Texture2D>("Reporter/" + name);
+			}
+			catch (System.Exception)
+			{
+				// Resources 目录通常没有这些图，失败静默走占位 —— 不刷屏
+			}
+		}
+		if (tex == null)
+		{
+			tex = PlaceholderTexture;
+		}
+		return tex;
+	}
+
+	private static GUISkin LoadSkinSafe()
+	{
+		GUISkin skin = null;
+		if (ScrollerSkinLoader != null)
+		{
+			try
+			{
+				skin = ScrollerSkinLoader();
+			}
+			catch (System.Exception e)
+			{
+				Debug.LogWarning("[Reporter] GUISkin 加载器异常：" + e.Message);
+			}
+		}
+		if (skin == null)
+		{
+			// 空 GUISkin：滚动条样式取默认值，功能不缺失。
+			// 用非泛型 CreateInstance（HybridCLR 下泛型重载可能缺 AOT 实例化）。
+			skin = ScriptableObject.CreateInstance(typeof(GUISkin)) as GUISkin;
+			if (skin != null)
+			{
+				skin.hideFlags = HideFlags.HideAndDontSave;
+			}
+		}
+		return skin;
+	}
+
+	private static Images CreateRuntimeImages()
+	{
+		Images img = new Images();
+		img.clearImage = LoadTextureSafe("clear");
+		img.collapseImage = LoadTextureSafe("collapse");
+		img.clearOnNewSceneImage = LoadTextureSafe("clearOnSceneLoaded");
+		img.showTimeImage = LoadTextureSafe("timer_1");
+		img.showSceneImage = LoadTextureSafe("UnityIcon");
+		img.userImage = LoadTextureSafe("user");
+		img.showMemoryImage = LoadTextureSafe("memory");
+		img.softwareImage = LoadTextureSafe("software");
+		img.dateImage = LoadTextureSafe("date");
+		img.showFpsImage = LoadTextureSafe("fps");
+		img.infoImage = LoadTextureSafe("info");
+		img.saveLogsImage = LoadTextureSafe("Save");
+		img.searchImage = LoadTextureSafe("search");
+		img.copyImage = LoadTextureSafe("copy");
+		img.copyAllImage = LoadTextureSafe("copyAll");
+		img.closeImage = LoadTextureSafe("close");
+		img.buildFromImage = LoadTextureSafe("buildFrom");
+		img.systemInfoImage = LoadTextureSafe("ComputerIcon");
+		img.graphicsInfoImage = LoadTextureSafe("graphicCard");
+		img.backImage = LoadTextureSafe("back");
+		img.logImage = LoadTextureSafe("log_icon");
+		img.warningImage = LoadTextureSafe("warning_icon");
+		img.errorImage = LoadTextureSafe("error_icon");
+		img.barImage = LoadTextureSafe("bar");
+		img.button_activeImage = LoadTextureSafe("button_active");
+		img.even_logImage = LoadTextureSafe("even_log");
+		img.odd_logImage = LoadTextureSafe("odd_log");
+		img.selectedImage = LoadTextureSafe("selected");
+		img.reporterScrollerSkin = LoadSkinSafe();
+		return img;
+	}
+
 	public bool Initialized = false;
 	public void Initialize()
 	{
@@ -372,6 +515,7 @@ public class Reporter : MonoBehaviour
 			Application.logMessageReceivedThreaded += CaptureLogThread;
 #endif
 			created = true;
+			Instance = this;
 			//addSample();
 		}
 		else {
@@ -382,6 +526,13 @@ public class Reporter : MonoBehaviour
 
 
 		//initialize gui and styles for gui purpose
+
+		// 【运行时兜底装配】动态 AddComponent 路径没有序列化的 images（见字段区说明），
+		// 这里现场装配；不清空直接复用（编辑器菜单创建过的资产路径保留原引用）。
+		if (images == null || images.clearImage == null)
+		{
+			images = CreateRuntimeImages();
+		}
 
 		clearContent = new GUIContent("", images.clearImage, "Clear logs");
 		collapseContent = new GUIContent("", images.collapseImage, "Collapse logs");
@@ -1755,38 +1906,49 @@ public class Reporter : MonoBehaviour
 	}
 
 	float lastClickTime = -1;
+
+	// 【双击调出】两次"按下"间隔 < DoubleClickInterval 视为双击。
+	// 原版阈值 0.2s 在鼠标/模拟器上偏紧，放宽到 0.35s（仍属标准双击区间）；
+	// 画圈在模拟器里较难完成，双击是主要的备用调起方式（见 Update）。
+	const float DoubleClickInterval = 0.35f;
+
+	bool RegisterClickForDoubleClick()
+	{
+		if (lastClickTime == -1) {
+			lastClickTime = Time.realtimeSinceStartup;
+			return false;
+		}
+		if (Time.realtimeSinceStartup - lastClickTime < DoubleClickInterval) {
+			lastClickTime = -1;
+			return true;
+		}
+		lastClickTime = Time.realtimeSinceStartup;
+		return false;
+	}
+
 	bool isDoubleClickDone()
 	{
+		// 【MuMu/模拟器适配】与 isGestureDone 同款双轨：有一根手指走触摸；
+		// 没有手指但鼠标按下（模拟器鼠标未映射成触摸的场景）走鼠标。
 		if (Application.platform == RuntimePlatform.Android ||
 		   Application.platform == RuntimePlatform.IPhonePlayer) {
-			if (Input.touches.Length != 1) {
-				lastClickTime = -1;
+			if (Input.touchCount == 1) {
+				if (Input.touches[0].phase == TouchPhase.Began) {
+					return RegisterClickForDoubleClick();
+				}
+			}
+			else if (Input.touchCount == 0) {
+				if (Input.GetMouseButtonDown(0)) {
+					return RegisterClickForDoubleClick();
+				}
 			}
 			else {
-				if (Input.touches[0].phase == TouchPhase.Began) {
-					if (lastClickTime == -1)
-						lastClickTime = Time.realtimeSinceStartup;
-					else if (Time.realtimeSinceStartup - lastClickTime < 0.2f) {
-						lastClickTime = -1;
-						return true;
-					}
-					else {
-						lastClickTime = Time.realtimeSinceStartup;
-					}
-				}
+				lastClickTime = -1;   // 多指同时按下不算点击
 			}
 		}
 		else {
 			if (Input.GetMouseButtonDown(0)) {
-				if (lastClickTime == -1)
-					lastClickTime = Time.realtimeSinceStartup;
-				else if (Time.realtimeSinceStartup - lastClickTime < 0.2f) {
-					lastClickTime = -1;
-					return true;
-				}
-				else {
-					lastClickTime = Time.realtimeSinceStartup;
-				}
+				return RegisterClickForDoubleClick();
 			}
 		}
 		return false;
@@ -1863,6 +2025,7 @@ public class Reporter : MonoBehaviour
 		show = true;
 		currentView = ReportView.Logs;
 		gameObject.AddComponent<ReporterGUI>();
+		Debug.Log("[Reporter] 调试面板已打开");
 
 
 		try {
@@ -1890,7 +2053,7 @@ public class Reporter : MonoBehaviour
 #endif
 
 		calculateStartIndex();
-		if (!show && isGestureDone()) {
+		if (!show && (isGestureDone() || isDoubleClickDone())) {
 			doShow();
 		}
 

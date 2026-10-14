@@ -1335,37 +1335,53 @@ namespace FTProject
             if (onPhase != null) onPhase("正在比对资源版本...");
             yield return null;   // 让 PhaseText 至少显示一帧，否则"比对"会被瞬间跳过看不见
 
-            if (string.IsNullOrEmpty(latestVersion) || latestVersion == currentVersion)
+            bool versionChanged = !string.IsNullOrEmpty(latestVersion) && latestVersion != currentVersion;
+            if (versionChanged)
             {
-                if (onPhase != null) onPhase("资源已是最新");
-                if (onDone != null) onDone(false);
-                yield break;
+                Debug.Log(string.Format("[Res] 发现新资源版本：{0} → {1}，开始更新。",
+                    string.IsNullOrEmpty(currentVersion) ? "(未知)" : currentVersion, latestVersion));
+
+                // ---- ③ 加载（必要时下载）新清单并激活 ----------------------------
+                // ⚠️ 这一步等价于 2.x 的 UpdatePackageManifest，**必须**做：
+                //    只下 bundle 不换清单，之后所有加载都会按旧清单去找 → 找不到新资源。
+                if (onPhase != null) onPhase("正在加载资源清单...");
+
+                LoadPackageManifestOperation manifestOp = StartLoadManifest(latestVersion, out startError);
+                if (manifestOp == null)
+                {
+                    if (onError != null) onError("加载资源清单失败：" + startError);
+                    yield break;
+                }
+
+                yield return WaitOpCo(manifestOp, "检查更新-加载清单");
+
+                if (manifestOp.Status != EOperationStatus.Succeeded)
+                {
+                    if (onError != null) onError("加载资源清单失败：" + manifestOp.Error);
+                    yield break;
+                }
+            }
+            else
+            {
+                // 【2026-10-14 修复】版本号相同 ≠ 文件齐全，必须继续走 ④ 校验缺失。
+                //
+                // 反例（本次踩坑）：HostPlayMode 下"同步加载一个既不在沙盒、也不在内置包
+                // 里的 bundle"会**立即失败**——SandboxFileSystem 无法在同步上下文里等待
+                // 远端下载，只能把下载转后台继续（见 SFSDownloadBundleOperation 的
+                // continueDownloadInBackground 分支），本次加载返回错误。
+                // 典型受害者：**本次热更新增、而 APK 内置包没有的资源** —— 首次启动时
+                // 用同步接口去加载它们必然失败一次（要等下一轮加载才命中缓存）。
+                // 旧逻辑"版本相同 → 资源已是最新 → 直接返回"会让这些文件永远补不上：
+                // 启动时没人负责把差异下载进沙盒（场景走异步加载能自愈，普通同步加载不能）。
+                //
+                // 所以版本相同时也继续走到 ④：用下载器把"清单 vs 沙盒缓存"的缺失差异
+                // 补齐。**内置包已有的文件会被自动识别并走本地导入，不产生网络流量**；
+                // 真正的下载量只有"新增资源"那部分（通常很小）。
+                if (onPhase != null) onPhase("正在校验资源完整性...");
+                yield return null;   // 让 PhaseText 至少显示一帧
             }
 
-            Debug.Log(string.Format("[Res] 发现新资源版本：{0} → {1}，开始更新。",
-                string.IsNullOrEmpty(currentVersion) ? "(未知)" : currentVersion, latestVersion));
-
-            // ---- ③ 加载（必要时下载）新清单并激活 --------------------------------
-            // ⚠️ 这一步等价于 2.x 的 UpdatePackageManifest，**必须**做：
-            //    只下 bundle 不换清单，之后所有加载都会按旧清单去找 → 找不到新资源。
-            if (onPhase != null) onPhase("正在加载资源清单...");
-
-            LoadPackageManifestOperation manifestOp = StartLoadManifest(latestVersion, out startError);
-            if (manifestOp == null)
-            {
-                if (onError != null) onError("加载资源清单失败：" + startError);
-                yield break;
-            }
-
-            yield return WaitOpCo(manifestOp, "检查更新-加载清单");
-
-            if (manifestOp.Status != EOperationStatus.Succeeded)
-            {
-                if (onError != null) onError("加载资源清单失败：" + manifestOp.Error);
-                yield break;
-            }
-
-            // ---- ④ 差异下载 -----------------------------------------------------
+            // ---- ④ 差异下载（版本相同也执行；无缺失时 TotalDownloadCount == 0 自然短路）----
             ResourceDownloaderOperation downloader;
             try
             {
