@@ -105,6 +105,10 @@ namespace FTProject
         /// <summary>请求退出当前对局、回到关卡选择</summary>
         public const string QuitToSelectRequestEvent = "QuitToSelectRequestEvent";
 
+        /// <summary>请求打开游戏介绍弹窗（HUD 右上角按钮，2026-10-14）。
+        /// GameFlowManager 据此打开 GameIntroView（弹窗内含「回到选关」按钮）。</summary>
+        public const string OpenGameIntroRequestEvent = "OpenGameIntroRequestEvent";
+
         /// <summary>请求打开设置界面</summary>
         public const string OpenSettingsRequestEvent = "OpenSettingsRequestEvent";
 
@@ -119,6 +123,15 @@ namespace FTProject
 
         /// <summary>退出放置模式（右键 / ESC）</summary>
         public const string CancelBuildRequestEvent = "CancelBuildRequestEvent";
+
+        /// <summary>
+        /// 长按/拖动塔按钮触发"拖拽建造"（Fieldrunners 式），参数：(int type, int level)。
+        /// 【与 BuildTowerRequestEvent 的区别】后者 = 快速点按（经典放置态：ghost 跟鼠标、点击落子）；
+        /// 本事件 = 按住不放（或按住后移动）→ 立即生成拖拽实例跟手、松手落子。
+        /// 手势判定在 HudView（长按阈值/位移阈值），两个事件二选一发出；
+        /// TowerPlacement 消费本事件进入拖拽放置态（松手校验，不通过则取消并提示）。
+        /// </summary>
+        public const string TowerDragBeginEvent = "TowerDragBeginEvent";
 
         // ------------------------------------------------------------------
         // 波次与流程

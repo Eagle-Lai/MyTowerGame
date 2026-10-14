@@ -105,6 +105,8 @@ namespace FTProject
             EventDispatcher.AddEventListener(EventName.ResumeRequestEvent, OnResumeRequest);
             EventDispatcher.AddEventListener(EventName.RestartLevelRequestEvent, OnRestartRequest);
             EventDispatcher.AddEventListener(EventName.QuitToSelectRequestEvent, OnQuitToSelectRequest);
+            // 2026-10-14：游戏介绍弹窗（HUD 右上角按钮）
+            EventDispatcher.AddEventListener(EventName.OpenGameIntroRequestEvent, OnOpenGameIntroRequest);
             EventDispatcher.AddEventListener(EventName.OpenSettingsRequestEvent, OnOpenSettingsRequest);
             EventDispatcher.AddEventListener(EventName.CloseSettingsRequestEvent, OnCloseSettingsRequest);
             // P2b：倍速请求（HudView 发，这里校验后再写 GameClock）
@@ -128,6 +130,7 @@ namespace FTProject
             EventDispatcher.RemoveEventListener(EventName.ResumeRequestEvent, OnResumeRequest);
             EventDispatcher.RemoveEventListener(EventName.RestartLevelRequestEvent, OnRestartRequest);
             EventDispatcher.RemoveEventListener(EventName.QuitToSelectRequestEvent, OnQuitToSelectRequest);
+            EventDispatcher.RemoveEventListener(EventName.OpenGameIntroRequestEvent, OnOpenGameIntroRequest);
             EventDispatcher.RemoveEventListener(EventName.OpenSettingsRequestEvent, OnOpenSettingsRequest);
             EventDispatcher.RemoveEventListener(EventName.CloseSettingsRequestEvent, OnCloseSettingsRequest);
             EventDispatcher.RemoveEventListener<float>(EventName.GameSpeedChangeRequestEvent, OnGameSpeedChangeRequest);
@@ -937,6 +940,9 @@ namespace FTProject
             UIManager.Instance.Close(TowerInfoView.LogicalName);
             UIManager.Instance.Close(PauseView.LogicalName);
             UIManager.Instance.Close(SettingView.LogicalName);
+            // 游戏介绍弹窗（2026-10-14）也归这里关：点弹窗里的「回到选关」同样走
+            // TeardownLevel，不在这里关的话弹窗会跟着进到新关卡里盖住画面。
+            UIManager.Instance.Close(GameIntroView.LogicalName);
             // 结算弹窗也归这里关：点「下一关 / 重玩 / 返回选关」都会走到 StartLevel/QuitToSelect，
             // 两者第一步都是 TeardownLevel —— 不在这里关，弹窗会跟着进到新关卡里盖住画面。
             UIManager.Instance.Close(LevelClearView.LogicalName);
@@ -1080,6 +1086,21 @@ namespace FTProject
         private void OnQuitToSelectRequest()
         {
             QuitToSelect();
+        }
+
+        /// <summary>
+        /// 打开游戏介绍弹窗（HUD 右上角「游戏介绍」按钮，2026-10-14）。
+        /// 【为什么不暂停】弹窗是查阅型界面，打开期间战斗照常（想暂停用暂停按钮）；
+        /// 弹窗内的「回到选关」走 QuitToSelectRequestEvent，与本方法无关（见 GameIntroView）。
+        /// </summary>
+        private void OnOpenGameIntroRequest()
+        {
+            GameIntroView view = UIManager.Instance.Open<GameIntroView>(
+                GameIntroView.LogicalName, UILayout.NormalPanel);
+            if (view == null)
+            {
+                Debug.LogWarning("[Flow] GameIntroView 打开失败（prefab 可能还没生成）");
+            }
         }
 
         private void OnOpenSettingsRequest()

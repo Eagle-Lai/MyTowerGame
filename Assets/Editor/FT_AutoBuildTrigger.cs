@@ -1,6 +1,9 @@
 // 触发记录：2026-10-14 17:07 借道构建（资产变更 → 域重载 → 消费 trigger）
 // 触发记录：2026-10-14 17:46 主菜单版本行重建（mode=uimainmenu；本注释行的修改本身就是
 //           触发域重载的资产变更 —— 上一次重载先于 trigger 写入，未消费到标志文件）
+// 触发记录：2026-10-14 19:21 需求流水线首跑（mode=feature）：Luban（8 条新词条）▸
+//           GameIntroView.prefab ▸ HudView 补挂 Btn_Pause/Btn_Intro ▸ TextLocalizer ▸
+//           热更 dll+AB v1.0.17 ▸ deploy 到 HotUpdateServer，全程无人工干预
 using System.IO;
 using UnityEditor;
 using UnityEngine;
@@ -55,6 +58,13 @@ namespace FTProject.EditorTools
                     // 【为什么不能跑 full】全量重建会覆盖 HudView 等手工改造过的 prefab，
                     // 自动化里绝不允许；主菜单 prefab 完全由生成器维护，单独重建安全。
                     UIPrefabBuilder.RebuildMainMenuOnly();
+                }
+                else if (mode == "feature")
+                {
+                    // 2026-10-14 需求流水线：Luban ▸ GameIntroView.prefab ▸ HUD 右上角按钮
+                    // ▸ TextLocalizer ▸ 交接 ReporterHotfixBuild（dll+AB）。
+                    // 全程幂等、不弹窗、不重建手工 prefab，见 FT_FeatureBuild。
+                    FT_FeatureBuild.Start();
                 }
                 else
                 {

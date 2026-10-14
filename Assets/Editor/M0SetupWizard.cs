@@ -333,7 +333,8 @@ namespace FTProject.EditorTools
             CheckUiPrefab(report, UIPrefabBuilder.HudPath, "HudView",
                 new[] { "Bg_Gold/GoldText", "Bg_Hp/HpText", "Bg_Round/RoundText",
                         "StartButton", "SpeedButton",
-                        "Btn_Tower_Normal", "Btn_Tower_Power", "Btn_Tower_Retard" });
+                        "Btn_Tower_Normal", "Btn_Tower_Power", "Btn_Tower_Retard",
+                        "Btn_Pause", "Btn_Intro" });
             CheckUiPrefab(report, UIPrefabBuilder.TipsPath, "TipsView", new[] { "TipText" });
             CheckUiPrefab(report, UIPrefabBuilder.TowerInfoPath, "TowerInfoView", new[] { "Bg", "Panel" });
             CheckUiPrefab(report, UIPrefabBuilder.SelectPath, "SelectView", new[] { "Bg", "Panel" });
@@ -342,6 +343,8 @@ namespace FTProject.EditorTools
             // 关卡结算弹窗：没有它，通关后玩家看不到任何结算界面
             // （深一层的节点契约由 .workbuddy/tools/check_ui_contract.py 校验）
             CheckUiPrefab(report, UIPrefabBuilder.LevelClearPath, "LevelClearView", new[] { "Bg", "Panel" });
+            // 游戏介绍弹窗（2026-10-14）
+            CheckUiPrefab(report, UIPrefabBuilder.GameIntroPath, "GameIntroView", new[] { "Bg", "Panel" });
         }
 
         /// <summary>

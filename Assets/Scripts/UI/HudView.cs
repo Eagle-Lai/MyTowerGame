@@ -20,6 +20,13 @@ namespace FTProject
     ///   ★ 命名映射：节点里的 "Retard" ⇄ 枚举 TowerType.Slow(3)，同一件事的两种叫法，
     ///     映射只在本文件的 TowerTypeOf 与美术目录两处，别处不要各写一份。
     ///
+    /// 【2026-10-14 新增】右上角两颗按钮 + 塔按钮长按拖拽建造：
+    ///   · Btn_Pause  → PauseRequestEvent（GameFlowManager 打开 PauseView，timeScale=0 可恢复）
+    ///   · Btn_Intro  → OpenGameIntroRequestEvent（打开 GameIntroView，内含「回到选关」）
+    ///   · 塔按钮手势两分：快速点按 = 经典放置态（点击落子）；长按/按住后移动 =
+    ///     拖拽建造（TowerDragBeginEvent，ghost 跟手、松手校验落子）——对标《坚守阵地》。
+    ///     判定细节见 TowerHoldSec / TowerDragStartPixels 与 OnTowerButtonPressed/Released。
+    ///
     /// 【节点层级：文本内嵌在芯片底下】
     ///   GoldText / HpText / RoundText 是 Bg_Gold / Bg_Hp / Bg_Round 的**子节点**
     ///   （不再是 HudView 的直接子节点），所以取值路径是 "Bg_Gold/GoldText" 这种两段式。
@@ -42,6 +49,10 @@ namespace FTProject
         // ---- 倍速按钮（P2b）----
         private Button _speedButton;
         private TMP_Text _speedLabel;
+
+        // ---- 右上角：暂停 / 游戏介绍（2026-10-14）----
+        private Button _pauseButton;
+        private Button _introButton;
 
         /// <summary>
         /// 塔按钮：节点名 → (按钮, 塔型, 价格文本)。
@@ -155,7 +166,32 @@ namespace FTProject
                 {
                     int captured = type;
                     _towerButtons[i].onClick.AddListener(delegate { OnClickTower(captured); });
+
+                    // 长按拖拽建造：给每个塔按钮挂按压中继（运行时 AddComponent，不进 prefab，
+                    // 避免 prefab 与程序集版本错位产生 missing-script）。手势判定集中在 Update。
+                    TowerDragButton drag = _towerButtons[i].GetComponent<TowerDragButton>();
+                    if (drag == null)
+                    {
+                        drag = _towerButtons[i].gameObject.AddComponent<TowerDragButton>();
+                    }
+                    int capturedIdx = i;
+                    drag.OnPressed = delegate { OnTowerButtonPressed(capturedIdx); };
+                    drag.OnReleased = delegate { OnTowerButtonReleased(capturedIdx); };
                 }
+            }
+
+            // 右上角：暂停 / 游戏介绍（2026-10-14）
+            // 【文案不在这里 SetText】两颗按钮的 Label 是静态文案（英文原文写死在 prefab），
+            //   由 LocalizationPrefabBinder 批量挂 TextLocalizer 自动切语言 —— 与其它界面按钮同口径。
+            _pauseButton = FindButton("Btn_Pause");
+            if (_pauseButton != null)
+            {
+                _pauseButton.onClick.AddListener(OnClickPause);
+            }
+            _introButton = FindButton("Btn_Intro");
+            if (_introButton != null)
+            {
+                _introButton.onClick.AddListener(OnClickIntro);
             }
         }
 
@@ -234,6 +270,13 @@ namespace FTProject
 
         private void OnClickTower(int type)
         {
+            // 拖拽刚触发过的这一帧，Button 的 onClick 也会跟着来（松手仍在按钮上时），
+            // 必须吞掉，否则会把刚进入的拖拽放置态当成"再点一次"给切出去。
+            if (_suppressTowerClick)
+            {
+                Debug.Log("[HUD] 吞掉拖拽残留的 onClick（防误切放置态）");
+                return;
+            }
             // 不在这里判断"是否已在放置态"——那是 TowerPlacement 的职责。
             // 统一发同一个请求事件，由它决定是进入还是退出（单一状态源，避免两边状态不一致）。
             _towerType = type;
@@ -241,6 +284,118 @@ namespace FTProject
             // 后续链路看 [Place] EnterPlacement（进入放置）或 [Place] ExitPlacement（切换/取消）。
             Debug.Log(string.Format("[HUD] 点击塔按钮 type={0} level={1}", type, _towerLevel));
             EventDispatcher.TriggerEvent<int, int>(EventName.BuildTowerRequestEvent, _towerType, _towerLevel);
+        }
+
+        // ------------------------------------------------------------------
+        // 塔按钮手势判定：快速点按 = 经典放置态；长按/按住后移动 = 拖拽建造
+        // （2026-10-14，对标《坚守阵地》Fieldrunners 的拖拽建造）
+        // ------------------------------------------------------------------
+
+        /// <summary>按住多久判定为"长按拖拽"（秒）。取 0.25：比系统长按（0.5）跟手，又不会把普通点按误判成拖拽。</summary>
+        private const float TowerHoldSec = 0.25f;
+
+        /// <summary>按住期间位移超过该像素数也直接进入拖拽（对标原作"按住就拖"，不等长按计时走完）。</summary>
+        private const float TowerDragStartPixels = 30f;
+        private const float TowerDragStartPixelsSq = TowerDragStartPixels * TowerDragStartPixels;
+
+        /// <summary>当前按住中的塔按钮下标；-1 = 没有按住。</summary>
+        private int _towerPressIndex = -1;
+        private float _towerPressTime;
+        private Vector2 _towerPressPos;
+        /// <summary>本次按压是否已经触发过拖拽（一次按压最多触发一次）。</summary>
+        private bool _towerDragFiredForPress;
+        /// <summary>
+        /// 拖拽触发后的一帧窗口：吞掉 Button 的 onClick。
+        /// 【为什么只保留一帧】click 在松手当帧由 EventSystem 派发；拖拽已触发后
+        /// （无论长按触发还是松手触发），同帧的 click 都属于"拖拽手势的收尾"而非新意图。
+        /// 下一帧 Update 清零，不影响之后的正常点按。
+        /// </summary>
+        private bool _suppressTowerClick;
+
+        private void OnTowerButtonPressed(int index)
+        {
+            // 已有按住中的按钮 → 忽略第二根手指（同一时刻只认一根，防多点同时开拖）
+            if (_towerPressIndex >= 0)
+            {
+                return;
+            }
+            _towerPressIndex = index;
+            // 用 unscaled 时间：即便有界面把 timeScale 压成 0，手势判定也不能停摆
+            _towerPressTime = Time.unscaledTime;
+            _towerPressPos = Input.mousePosition;
+            _towerDragFiredForPress = false;
+        }
+
+        private void OnTowerButtonReleased(int index)
+        {
+            if (index != _towerPressIndex)
+            {
+                return;
+            }
+            _towerPressIndex = -1;
+
+            if (_suppressTowerClick || _towerDragFiredForPress)
+            {
+                return;   // 拖拽已在按住期间触发过，松手交给 TowerPlacement 的松手分支
+            }
+
+            // 兜底判定：长按阈值恰好在"松手这一帧"才满足（Update 先于/后于事件系统都可能），
+            // 在这里补一次判定，保证"按住足够久再松"必然走拖拽而不是点按。
+            float held = Time.unscaledTime - _towerPressTime;
+            Vector2 move = (Vector2)Input.mousePosition - _towerPressPos;
+            if (held >= TowerHoldSec || move.sqrMagnitude >= TowerDragStartPixelsSq)
+            {
+                FireTowerDrag(index);
+            }
+            // 否则是快速点按：什么都不做，让 Button.onClick 走经典放置态（原交互保留）
+        }
+
+        private void FireTowerDrag(int index)
+        {
+            _towerDragFiredForPress = true;
+            _suppressTowerClick = true;
+            int type = _towerButtonTypes[index];
+            // 【真机诊断埋点】长按拖拽触发点；后续链路看 [Place] EnterPlacement（drag 模式）
+            Debug.Log(string.Format("[HUD] 塔按钮长按/拖动 → 拖拽建造 type={0} level={1}", type, _towerLevel));
+            EventDispatcher.TriggerEvent<int, int>(EventName.TowerDragBeginEvent, type, _towerLevel);
+        }
+
+        private void Update()
+        {
+            // 吞 click 的窗口只保留一帧：click 永远发生在松手当帧，下一帧必然已处理完
+            _suppressTowerClick = false;
+
+            // 按住期间的长按/位移监测（拖拽实例由 TowerPlacement 创建并跟手）
+            if (_towerPressIndex >= 0 && !_towerDragFiredForPress)
+            {
+                float held = Time.unscaledTime - _towerPressTime;
+                Vector2 move = (Vector2)Input.mousePosition - _towerPressPos;
+                if (held >= TowerHoldSec || move.sqrMagnitude >= TowerDragStartPixelsSq)
+                {
+                    FireTowerDrag(_towerPressIndex);
+                }
+            }
+        }
+
+        // ------------------------------------------------------------------
+        // 右上角：暂停 / 游戏介绍（2026-10-14）
+        // ------------------------------------------------------------------
+
+        private void OnClickPause()
+        {
+            // 【真机诊断埋点】"点暂停没反应"排查链第一环；
+            // 后续链路：PauseRequestEvent → GameFlowManager.OnPauseRequest → PauseView（timeScale=0）。
+            Debug.Log("[HUD] 点击暂停按钮");
+            // GameOver 时 GameFlowManager 会拒开暂停界面，这里不用重复判状态
+            EventDispatcher.TriggerEvent(EventName.PauseRequestEvent);
+        }
+
+        private void OnClickIntro()
+        {
+            // 【真机诊断埋点】"点介绍没反应"排查链第一环；
+            // 后续链路：OpenGameIntroRequestEvent → GameFlowManager.OnOpenGameIntroRequest。
+            Debug.Log("[HUD] 点击游戏介绍按钮");
+            EventDispatcher.TriggerEvent(EventName.OpenGameIntroRequestEvent);
         }
 
         // ------------------------------------------------------------------

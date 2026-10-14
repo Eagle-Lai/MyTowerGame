@@ -13,7 +13,7 @@
 - Unity 2022.3.62f3c1 + Built-in RP；screenshot 偶发丢 Overlay 层。
 
 ## 程序集/HybridCLR（细节 Docs/HybridCLR_Integration.md）
-- 12 程序集；热更6=Assembly-CSharp/LubanLib/Gen/SuperScrollView/Reporter/Runtime。Assembly-CSharp=兜底集（增删 Assets/ 根脚本须重跑 Generate▸All+拷贝）。
+- 12 程序集；热更6=Assembly-CSharp/LubanLib/Gen/SuperScrollView/Reporter/Runtime。Assembly-CSharp=兜底集（增删 Assets/ 根脚本须重跑 Generate▸All+拷贝）。★Assets/Scripts 全部归 **FTProject.Runtime**（asmdef）→ 验证 dll 是否含新代码要字节搜 `HotUpdateDlls/Android/FTProject.Runtime.dll`；Assembly-CSharp.dll 恒 5KB 空壳、mtime 旧属正常，别误判"没编译"（2026-10-14 踩过）。
 - ★ AOT 不得引用热更类型；Boot.unity 先 Assembly.Load 再进 main（BuildSettings Boot0/main1）。入口契约 `IHotUpdateEntry←HotUpdateEntry`。
 - dll 名单两处同步：HotUpdateAssembler ↔ HybridCLRSettings.asset（改 YAML）；AOTMetaAssemblies 6 项三处同步（AOTGenericReferences↔HotUpdateAssembler↔HybridCLRDllCopier）；包版本=libil2cpp-version.txt(8.14.1)。
 - ★ YooAsset 初始化三步：InitializePackageAsync→RequestPackageVersion→LoadPackageManifestAsync 才 SetActiveManifest；漏步报 manifest not found。EnableAddressable=false；同版本二次构建 ErrorCode115。
@@ -26,7 +26,7 @@
 
 ## 配置/多语言/UI
 - Luban：改 xlsx 必重导（菜单3，DOTNET_ROLL_FORWARD=LatestMajor）；新表登记 __tables__.xlsx；字段从B列起；导出会删 Assets/Gen 陌生文件→KeepFilesInCodeDir 保护。ResTable.cs=唯一寻址源。
-- 多语言：代码在 Assets/Scripts/Localization；主键=英文原文；表权威源=`.workbuddy/tools/gen_localization_table.py` ROWS→xlsx；TextLocalizer key 留空自动取（Text 用 _originalText，绝不用 _text.text）；回退 当前→英文→原文；切语言 SetLanguage+LanguageChangedEvent(Action<int>)；菜单308挂/309清理。
+- 多语言：代码在 Assets/Scripts/Localization；主键=英文原文；表权威源=`.workbuddy/tools/gen_localization_table.py` ROWS→xlsx；向已有 xlsx 幂等追加词条用 `append_localization_rows_20261014.py`（自动备份 .bak；跑完必走菜单3重导）；TextLocalizer key 留空自动取（Text 用 _originalText，绝不用 _text.text）；回退 当前→英文→原文；切语言 SetLanguage+LanguageChangedEvent(Action<int>)；菜单308挂/309清理。
 - UI 生成器 UIPrefabBuilder（改文案=改它+重编译+重生成）；TMP；SiYuanSongTi SDF 动态+多图集。
 
 ## SuperScrollView（★最坑）
@@ -41,7 +41,7 @@
 ## Unity MCP [公司E 2026-10-13]
 - MyTowerGame=官方包 com.coplaydev.unity-mcp v10.3.0（manifest 钉死）；HTTP 127.0.0.1:8082/mcp；CatchFish=自研 ws8080 桥，严禁混用（曾误加跨工程路由已全撤）。
 - mcp.json 条目 UnityMCP-MyTowerGame；服务器随 Unity 开关；换条目后须重启用连接器；调用前核 dataPath。
-- 无 MCP / batchmode 替代通道：`ReporterHotfixBuild.Start`（全流水线）/`StartDllOnly`（仅重编 dll+md5）；状态文件 Library/FTReporterBuildStatus.txt 轮询；编辑器开着时用同功能菜单 `Tools/塔防/9 与 9a`。注意 batchmode 与编辑器互斥（工程锁会拒绝启动）；**★启动必须用任务机制（shell `&` 会被会话收割，进程不存活）**；GUI 编辑器场景备用 `FT_AutoBuildTrigger`（写 `Library/FT_AUTOBUILD.trigger`=full/dll/uimainmenu → 域重载自动构建；uimainmenu=只重建 MainMenuView.prefab 即 UIPrefabBuilder.RebuildMainMenuOnly，防全量覆盖手工 prefab）。
+- 无 MCP / batchmode 替代通道：`ReporterHotfixBuild.Start`（全流水线）/`StartDllOnly`（仅重编 dll+md5）；状态文件 Library/FTReporterBuildStatus.txt 轮询；编辑器开着时用同功能菜单 `Tools/塔防/9 与 9a`。注意 batchmode 与编辑器互斥（工程锁会拒绝启动）；**★启动必须用任务机制（shell `&` 会被会话收割，进程不存活）**；GUI 编辑器场景备用 `FT_AutoBuildTrigger`（写 `Library/FT_AUTOBUILD.trigger`=full/dll/uimainmenu/**feature** → 域重载自动构建；uimainmenu=只重建 MainMenuView.prefab 即 UIPrefabBuilder.RebuildMainMenuOnly，防全量覆盖手工 prefab；**feature=FT_FeatureBuild 一键流水线**：Luban▸GameIntroView.prefab▸HudView 幂等补挂 Btn_Pause/Btn_Intro▸TextLocalizer▸交接 ReporterHotfixBuild，状态文件 Library/FTFeatureBuildStatus.txt）。MCP 直连兜底：WorkBuddy 会话 ToolSearch 搜不到 unity 工具时，用 `.workbuddy/tools/mcp_unity.py`（MCP streamable HTTP 客户端，server=**mcp-for-unity-server 3.4.8**，`call execute_code '{"action":"execute","code":"...return ..."}'` 可跑 C#、read_console 查错误）。
 
 ## MuMu 真机调试 [公司E 2026-10-13]
 - adb：**优先 SDK 版 `C:\Users\Administrator\AppData\Local\Android\Sdk\platform-tools\adb.exe`**（比 MuMu 内置稳定）；其 server 常被重置→**每条命令开头先 `connect 127.0.0.1:16384` 自愈**；设备名在 `emulator-5554`/`127.0.0.1:16384` 间漂移，动态识别。游戏包 `com.lzyfreedomtower.freedomtower`；模拟器可由 `MuMuManager.exe control -v 0 launch` 拉起。触摸注入：`input motionevent` 连发序列能合成画圈手势（已实测调起 Reporter）；双击因命令间隔>0.35s 无法用 adb 模拟（人工双击应正常）。
@@ -50,6 +50,7 @@
 ## 工具/其他
 - ★缺失脚本排查：`scan_missing_script_refs.py`（静态扫 m_Script 失联 GUID）——必须同时收集 Assets+Packages+Library/PackageCache 的 .cs.meta，否则 uGUI/TMP 包脚本全误报。素材包 29 个怪物 controller 的 2 个 never-existed StateMachineBehaviour（特征=m_GameObject:0 → 报 Game Object '<null>'）已用 Compat 占位脚本修复（Assets/Scripts/Compat/，手写 meta 恢复原 GUID，空实现≡原行为）。
 - 点塔交互：放置态点"已有塔格子"=退出放置并选中（TowerPlacement）；诊断日志前缀：[Place]/[HUD]/[TowerInfoView]/[Audit]（RuntimeMissingScriptAudit 进关延时 1s 扫场景 missing 汇总一条）。
+- ★建造交互 v3 [2026-10-14]：塔按钮手势两分（HudView 判定，TowerDragButton 中继组件运行时 AddComponent 不进 prefab）——快速点按=经典放置态（BuildTowerRequestEvent，点击落子）；长按0.25s/位移30px=**拖拽建造**（TowerDragBeginEvent→TowerPlacement._dragMode，ghost 跟手+悬停高亮，**松手**校验：可建→TryPlace；不可建→Tips 原因+取消；拖回按钮/棋盘外=静默取消）。拖拽触发后一帧窗口 `_suppressTowerClick` 吞 Button.onClick 防误切放置态。HUD 右上角 Btn_Pause（→PauseRequestEvent→PauseView timeScale=0 可恢复）/Btn_Intro（→OpenGameIntroRequestEvent→GameIntroView，弹窗含「回到选关」BackBtn→QuitToSelectRequestEvent + CloseBtn 自关，Info1..4 动态文本 Awake 查表）。拖拽模式 IsPointerOverUI 已升级触摸感知（fingerId 逐一查，真机修复）。
 - 地图链路：棋盘→levelmap_export.json→LevelMap.xlsx→tblevelmap.json→SceneInfo.xlsx。静态校验9个（.workbuddy/tools）改完全跑。
 - TowerType=Normal1/Aoe2/Slow3/Pierce4/Laser5；目录 Power=Aoe、Retard=Slow；云端资料库镜像 Docs/（md 用 space.importer、svg 用 drive/upload）。
 - 热更服务器（公司E）：python http.server 8000 常驻于 HotUpdateServer/（根=**平铺 AB 部署区**；Android/HybridCLR、Android/FreeTower 两 junction 供 dll 下载与查看）；模拟器 ServerUrl=10.0.2.2:8000（TUN 劫持详见 2026-10-14 日志）；真机=局域网 IP 且须与 BootLoader.ServerUrlForAOT 同步改。发版=构建后跑 deploy_free_tower_cdn.py。

@@ -42,6 +42,8 @@ VIEWS = [
     'SplashView', 'LoadingView', 'HotUpdateView',
     'MainMenuView', 'LevelDetailView', 'SellConfirmView', 'ConfirmView',
     'TowerCodexView', 'TowerCodexItem',
+    # 游戏介绍弹窗（2026-10-14）
+    'GameIntroView',
 ]
 
 # 生成器里"容器变量名 -> 路径前缀"（CreateDialogShell 的产出）
@@ -115,7 +117,7 @@ def builder_nodes(section, has_shell):
             section):
         events.append((m.start(), 1, ('parent', m.group(1), m.group(2))))
     for m in re.finditer(
-            r'(CreatePanelButton|CreateText|CreateTextStretched|CreateButton|CreateImageAt|CreateChip|CreateStretchedBar|CreateChipText)'
+            r'(CreatePanelButton|CreateText|CreateTextStretched|CreateButton|CreateHudCornerButton|CreateImageAt|CreateChip|CreateStretchedBar|CreateChipText)'
             r'\(\s*([A-Za-z_]\w*)(?:\s*\.\s*transform)?\s*,\s*"([^"]+)"',
             section):
         events.append((m.start(), 2, ('create', m.group(1), m.group(2), m.group(3))))

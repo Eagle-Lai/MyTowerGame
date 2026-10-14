@@ -181,6 +181,30 @@ ROWS = [
     # ---- 品牌副标题（语言相关，入表） ----
     ('FREEDOM TOWER · Tower Defense', 'FREEDOM TOWER · Tower Defense',
      '自由人塔防 · 单机塔防', '自由人塔防 · 單機塔防', '主菜单/开屏副标题'),
+
+    # ---------------- 2026-10-14：暂停/介绍按钮 + 拖拽建造 + 介绍弹窗正文 ----------------
+    ('Pause', 'Pause', '暂停', '暫停', 'HUD 右上角暂停按钮'),
+    ('Game Intro', 'Game Intro', '游戏介绍', '遊戲介紹', 'HUD 右上角介绍按钮/弹窗标题'),
+    ('Back to Level Select', 'Back to Level Select', '回到选关', '回到選關', '介绍弹窗「回到选关」按钮'),
+    ('{0}: drag onto a buildable tile and release to place',
+     '{0}: drag onto a buildable tile and release to place',
+     '{0}：拖到可建造格上松手放置，拖回按钮取消', '{0}：拖到可建造格上鬆手放置，拖回按鈕取消',
+     '拖拽建造提示（占位符 {0} 保留）'),
+    ('Stop the monsters before they reach your base: build towers on the open tiles beside the path.',
+     'Stop the monsters before they reach your base: build towers on the open tiles beside the path.',
+     '在怪物途经的路边空地建造防御塔，阻止它们抵达你的基地。',
+     '在怪物途經的路邊空地建造防禦塔，阻止它們抵達你的基地。', '介绍弹窗正文 1'),
+    ('Long-press a tower button, drag it onto the board, then release to build.',
+     'Long-press a tower button, drag it onto the board, then release to build.',
+     '长按建造栏的塔按钮，拖到棋盘格子上松手即可建造（金币在落地成功后扣除）。',
+     '長按建造欄的塔按鈕，拖到棋盤格子上鬆手即可建造（金幣在落地成功後扣除）。', '介绍弹窗正文 2'),
+    ('You may slow the monsters down, but never fully block their path.',
+     'You may slow the monsters down, but never fully block their path.',
+     '你可以拖慢怪物的脚步，但不能把它们的路完全堵死。',
+     '你可以拖慢怪物的腳步，但不能把它們的路完全堵死。', '介绍弹窗正文 3'),
+    ('Survive every round to win the level.',
+     'Survive every round to win the level.',
+     '撑过全部回合即通关。', '撐過全部回合即通關。', '介绍弹窗正文 4'),
 ]
 
 HEAD = ['id', 'en', 'zhHans', 'zhHant', 'comment']

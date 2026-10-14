@@ -17,6 +17,14 @@ namespace FTProject
     /// 【校验顺序（与 TowerManager.TryBuild 一致）】
     ///   格子在棋盘内 → 可建造（非障碍/空洞/装饰） → 无塔 → 金币够 → 不会堵死路径
     ///   前 4 项是廉价判断，A* 探测只在"悬停格变化"时做一次（16×9 网格下开销可忽略）。
+    ///
+    /// 【2026-10-14：两种放置态（对标《坚守阵地》Fieldrunners）】
+    ///   · 经典（_dragMode=false）：快速点塔按钮进入，ghost 跟鼠标、点击落子 —— 原交互全保留；
+    ///   · 拖拽（_dragMode=true）：长按/按住塔按钮移动触发（HudView 发 TowerDragBeginEvent），
+    ///     ghost 跟手 + 悬停格高亮（绿可建/红不可建），**松手**才校验落子：
+    ///     可建格 → TryPlace（内部扣钱）；不可建格 → 提示具体原因并取消；
+    ///     拖回建造栏/棋盘外松手 → 静默取消（原作"拖回原处收回"的语义）。
+    ///   两种模式的"移动/悬停高亮/校验"完全共用，只有"落子时机"不同。
     /// </summary>
     public class TowerPlacement : MonoBehaviour
     {
@@ -31,6 +39,11 @@ namespace FTProject
         private int _type;
         private int _level;
         private TowerConfig _cfg;
+        /// <summary>
+        /// 拖拽建造模式（2026-10-14）：true = 长按拖拽（松手落子/取消）；
+        /// false = 经典放置态（点击落子）。两种模式共用移动/高亮/校验逻辑。
+        /// </summary>
+        private bool _dragMode;
         private GameObject _ghost;
         private readonly List<SpriteRenderer> _ghostRenderers = new List<SpriteRenderer>(8);
 
@@ -59,12 +72,15 @@ namespace FTProject
         {
             EventDispatcher.AddEventListener<int, int>(EventName.BuildTowerRequestEvent, OnBuildRequest);
             EventDispatcher.AddEventListener(EventName.CancelBuildRequestEvent, OnCancelRequest);
+            // 拖拽建造（2026-10-14）：HudView 长按塔按钮触发
+            EventDispatcher.AddEventListener<int, int>(EventName.TowerDragBeginEvent, OnDragBegin);
         }
 
         private void OnDisable()
         {
             EventDispatcher.RemoveEventListener<int, int>(EventName.BuildTowerRequestEvent, OnBuildRequest);
             EventDispatcher.RemoveEventListener(EventName.CancelBuildRequestEvent, OnCancelRequest);
+            EventDispatcher.RemoveEventListener<int, int>(EventName.TowerDragBeginEvent, OnDragBegin);
         }
 
         private void OnDestroy()
@@ -91,7 +107,27 @@ namespace FTProject
                 ExitPlacement(false);
                 return;
             }
-            EnterPlacement(type, level);
+            EnterPlacement(type, level, false);
+        }
+
+        /// <summary>
+        /// 拖拽建造入口（HudView 长按/拖动塔按钮时触发）。
+        /// 【与 OnBuildRequest 的关键差别】放置态已激活时**不再退出**，而是"换塔"：
+        ///   玩家按住 A 塔拖到一半又按住 B 塔的按钮（interactable=false 不拦截指针事件），
+        ///   语义显然是"我要建 B"，直接切过去；同塔同等级则视为重复触发，忽略。
+        /// </summary>
+        private void OnDragBegin(int type, int level)
+        {
+            if (_active)
+            {
+                if (_dragMode && _type == type && _level == level)
+                {
+                    return;   // 已经在拖同一座塔
+                }
+                Debug.Log(string.Format("[Place] 拖拽切塔 {0}Lv{1} → {2}Lv{3}", _type, _level, type, level));
+                ExitPlacement(false);
+            }
+            EnterPlacement(type, level, true);
         }
 
         private void OnCancelRequest()
@@ -99,7 +135,13 @@ namespace FTProject
             ExitPlacement(false);
         }
 
+        /// <summary>经典放置态入口（快速点塔按钮）：保留原交互 —— ghost 跟鼠标、点击落子。</summary>
         public void EnterPlacement(int type, int level)
+        {
+            EnterPlacement(type, level, false);
+        }
+
+        private void EnterPlacement(int type, int level, bool dragMode)
         {
             TowerConfig cfg = Configs.GetTowerByTypeAndLevel(type, level);
             if (cfg == null)
@@ -124,8 +166,10 @@ namespace FTProject
             _level = level;
             _cfg = cfg;
             _active = true;
+            _dragMode = dragMode;
             // 【真机诊断埋点】放置态进入成功（按钮→配置→金币检查全通过）
-            Debug.Log(string.Format("[Place] EnterPlacement {0} Lv.{1} price={2}", cfg.Name, cfg.Level, cfg.Prices));
+            Debug.Log(string.Format("[Place] EnterPlacement {0} Lv.{1} price={2} drag={3}",
+                cfg.Name, cfg.Level, cfg.Prices, dragMode));
             _hoverRow = -1;
             _hoverCol = -1;
             _hoverState = CellHighlight.None;
@@ -134,9 +178,24 @@ namespace FTProject
             Deselect();
 
             CreateGhost(cfg);
+            if (_ghost != null && _dragMode)
+            {
+                // 拖拽模式：ghost 立即落到手指/鼠标位置 —— 否则从按下到下一帧 Update
+                // 之间 ghost 会闪现在世界原点（视觉上"塔凭空出现又跳走"）。
+                Vector3 w = ScreenToWorld(Input.mousePosition);
+                _ghost.transform.position = new Vector3(w.x, w.y, 0f);
+            }
             EventDispatcher.TriggerEvent(EventName.BuildingTower);
-            Tips(Localization.Get("{0}: move to a buildable tile and click to place, right-click/ESC to cancel", cfg.Name)
-                ?? string.Format("{0}：移动到可建造格上点击放置，右键/ESC 取消", cfg.Name));
+            if (_dragMode)
+            {
+                Tips(Localization.Get("{0}: drag onto a buildable tile and release to place", cfg.Name)
+                    ?? string.Format("{0}：拖到可建造格上松手放置，拖回按钮取消", cfg.Name));
+            }
+            else
+            {
+                Tips(Localization.Get("{0}: move to a buildable tile and click to place, right-click/ESC to cancel", cfg.Name)
+                    ?? string.Format("{0}：移动到可建造格上点击放置，右键/ESC 取消", cfg.Name));
+            }
         }
 
         /// <summary>
@@ -493,6 +552,14 @@ namespace FTProject
                 _ghost.transform.position = new Vector3(world.x, world.y, 0f);
             }
 
+            // 拖拽建造（2026-10-14）：按住期间只做"跟手 + 悬停高亮"（上面已共用完成），
+            // 落子/取消只在松手瞬间判定 —— 见 UpdateDragPlacement。
+            if (_dragMode)
+            {
+                UpdateDragPlacement(board);
+                return;
+            }
+
             // 点击放置（避开 UI，否则点 HUD 按钮也会顺手把塔放下去）。
             //
             // 【交互 v2 —— 双手势兼容】
@@ -559,6 +626,57 @@ namespace FTProject
                     TryPlace(board, rUp, cUp);
                 }
             }
+        }
+
+        /// <summary>
+        /// 拖拽建造的"松手判定"（2026-10-14，需求：松开时执行放置前合法性检测）。
+        ///
+        /// 【四条出路，语义对标《坚守阵地》】
+        ///   ① 松在可建格上 → TryPlace（成功扣钱、失败给原因，见 TryPlace/TowerManager）；
+        ///   ② 松在不可建格上 → Tips 具体原因（格子有塔/不可建/金币不足/会堵死路径…）并取消；
+        ///   ③ 松在已有塔的格子上 → 提示"该位置已有防御塔"并取消 ——
+        ///      拖拽语义是"放下"，与经典模式"点已建塔转选中"不同（那个分支在 down 才有意义）；
+        ///   ④ 松在 UI 上（拖回建造栏）或棋盘外 → 静默取消 —— 玩家意图就是"不建了"，
+        ///      对标原作"拖回原处收回"，此时再弹提示反而像报错。
+        /// </summary>
+        private void UpdateDragPlacement(BoardView board)
+        {
+            if (!Input.GetMouseButtonUp(0))
+            {
+                return;   // 还按着：跟手/高亮已由共用逻辑处理完
+            }
+
+            bool overUiUp = IsPointerOverUI();
+            bool insideUp = board.ScreenToCell(Input.mousePosition, out int rUp, out int cUp);
+            Debug.Log(string.Format("[Place] drag up overUi={0} inside={1} canBuild={2}", overUiUp, insideUp, _canBuild));
+
+            if (overUiUp)
+            {
+                ExitPlacement(false);
+                return;
+            }
+            if (!insideUp)
+            {
+                ExitPlacement(false);
+                return;
+            }
+            if (_canBuild)
+            {
+                TryPlace(board, rUp, cUp);   // 成功 → 内部 ExitPlacement(true)
+                return;
+            }
+
+            // 松手在不可建格：给出具体原因并取消（需求：不通过则取消放置并给出提示）
+            CellData hitCell = board.GetCell(rUp, cUp);
+            if (hitCell != null && hitCell.Tower != null)
+            {
+                Tips(Localization.Get("Tower already there") ?? "该位置已有防御塔");
+            }
+            else
+            {
+                Tips(BlockReasonText());
+            }
+            ExitPlacement(false);
         }
 
         /// <summary>校验某个格子能否建塔。只做廉价判断 + 一次 A* 探测。</summary>
@@ -667,9 +785,32 @@ namespace FTProject
             return cam.ScreenToWorldPoint(new Vector3(screenPos.x, screenPos.y, -cam.transform.position.z));
         }
 
+        /// <summary>
+        /// 指针是否悬在 UI 上。
+        /// 【2026-10-14 升级：触摸感知】原版只查 IsPointerOverGameObject()（无参 = 鼠标指针 -1），
+        /// 真机触摸的 pointerId ≥ 0，会恒返回 false —— 经典模式下"点 HUD 按钮顺手落塔"、
+        /// 拖拽模式下"松手误判成棋盘内"都可能出现。现在：有任何活动触摸时逐一查
+        /// IsPointerOverGameObject(fingerId)，两者任一命中即算 overUi。
+        /// 编辑器（鼠标）行为不变。
+        /// </summary>
         private static bool IsPointerOverUI()
         {
-            return EventSystem.current != null && EventSystem.current.IsPointerOverGameObject();
+            EventSystem es = EventSystem.current;
+            if (es == null)
+            {
+                return false;
+            }
+            if (Input.touchCount > 0)
+            {
+                for (int i = 0; i < Input.touchCount; i++)
+                {
+                    if (es.IsPointerOverGameObject(Input.GetTouch(i).fingerId))
+                    {
+                        return true;
+                    }
+                }
+            }
+            return es.IsPointerOverGameObject();
         }
 
         private static void Tips(string msg)

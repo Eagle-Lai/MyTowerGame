@@ -25,7 +25,18 @@ namespace FTProject.EditorTools
     ///   ├── Btn_Tower_Power  建塔·范围（type=2）→ PriceText
     ///   ├── Btn_Tower_Retard 建塔·减速（type=3）→ PriceText ★ 名字 Retard ↔ 枚举 Slow，映射见 HudView
     ///   ├── SpeedButton     倍速（→ SpeedButton/Label）
-    ///   └── StartButton     开始 / 下一回合（→ StartButton/Label）
+    ///   ├── StartButton     开始 / 下一回合（→ StartButton/Label）
+    ///   ├── Btn_Pause       暂停（右上角，2026-10-14）→ PauseRequestEvent
+    ///   └── Btn_Intro       游戏介绍（右上角）→ OpenGameIntroRequestEvent
+    ///
+    /// GameIntroView 节点（游戏介绍弹窗，2026-10-14）：
+    ///   GameIntroView
+    ///   ├── Bg
+    ///   └── Panel（980×660）
+    ///       ├── Title         Game Intro
+    ///       ├── Info1..4      正文四行（动态文本，GameIntroView.Awake 按语言回填）
+    ///       ├── BackBtn       「回到选关」→ QuitToSelectRequestEvent（需求强制）
+    ///       └── CloseBtn      Close
     ///
     ///   ★ 文本节点挂在其芯片底之下（不是与 Bg_* 平级）—— 芯片底移动时文本跟着走，
     ///     且文本用全拉伸锚点铺满芯片，不另外定位。改层级必须与 HudView.cs 的 Find 路径成对改。
@@ -111,6 +122,9 @@ namespace FTProject.EditorTools
         public const string SellConfirmPath = "Assets/Prefabs/UI/SellConfirmView.prefab";
         public const string ConfirmPath = "Assets/Prefabs/UI/ConfirmView.prefab";
         public const string TowerCodexPath = "Assets/Prefabs/UI/TowerCodexView.prefab";
+
+        // ---- 2026-10-14：游戏介绍弹窗（HUD 右上角按钮打开，内含「回到选关」）----
+        public const string GameIntroPath = "Assets/Prefabs/UI/GameIntroView.prefab";
 
         /// <summary>塔图鉴的卡片（独立 prefab，被 LoopListView2 池化克隆；**不登记 ResTable**，靠引用进包）。</summary>
         public const string TowerCodexItemPath = "Assets/Prefabs/UI/TowerCodexItem.prefab";
@@ -219,6 +233,9 @@ namespace FTProject.EditorTools
         private static readonly string[] ConfirmChildren = { "Bg", "Panel" };
         private static readonly string[] TowerCodexChildren = { "Bg", "Panel" };
 
+        // 游戏介绍弹窗（2026-10-14）
+        private static readonly string[] GameIntroChildren = { "Bg", "Panel" };
+
         // TowerInfoView 由本生成器管理的直接子节点集合（用于重建前的安全护栏）
         private static readonly string[] TowerInfoChildren = { "Bg", "Panel" };
 
@@ -231,6 +248,8 @@ namespace FTProject.EditorTools
             "Bg_Gold", "Bg_Hp", "Bg_Round",
             "Btn_Tower_Normal", "Btn_Tower_Power", "Btn_Tower_Retard",
             "StartButton", "SpeedButton",
+            // 右上角（2026-10-14）：暂停 / 游戏介绍
+            "Btn_Pause", "Btn_Intro",
         };
 
         // 塔按钮：节点名 / 塔型枚举 / 参考位置（锚点=画布中心）。
@@ -421,6 +440,7 @@ namespace FTProject.EditorTools
             BuildSellConfirm(report);
             BuildConfirm(report);
             BuildTowerCodex(report);
+            BuildGameIntro(report);
         }
 
         /// <summary>
@@ -458,6 +478,7 @@ namespace FTProject.EditorTools
             EnsureOne(SellConfirmPath, "SellConfirmView", report);
             EnsureOne(ConfirmPath, "ConfirmView", report);
             EnsureOne(TowerCodexPath, "TowerCodexView", report);
+            EnsureOne(GameIntroPath, "GameIntroView", report);
         }
 
         /// <summary>
@@ -492,6 +513,7 @@ namespace FTProject.EditorTools
             else if (path == SellConfirmPath) BuildSellConfirm(report);
             else if (path == ConfirmPath) BuildConfirm(report);
             else if (path == TowerCodexPath) BuildTowerCodex(report);
+            else if (path == GameIntroPath) BuildGameIntro(report);
             else report.Error("EnsureOne 没有为 " + path + " 登记生成方法（新增界面时忘了在 EnsureOne 里加分支）");
         }
 
@@ -544,6 +566,10 @@ namespace FTProject.EditorTools
             CreateButton(root.transform, "SpeedButton", "×1", new Vector2(-SideBtnX, SideBtnY));
             CreateButton(root.transform, "StartButton", "Start", new Vector2(SideBtnX, SideBtnY), true);
 
+            // 右上角：暂停 / 游戏介绍（2026-10-14，与 EnsureHudTopRightButtons 同一套几何）
+            CreateHudCornerButton(root.transform, "Btn_Pause", "Pause", HudPausePos, HudCornerBtnSize);
+            CreateHudCornerButton(root.transform, "Btn_Intro", "Game Intro", HudIntroPos, HudCornerBtnSize);
+
             GameObject saved = PrefabUtility.SaveAsPrefabAsset(root, HudPath);
             Object.DestroyImmediate(root);
 
@@ -553,7 +579,7 @@ namespace FTProject.EditorTools
                 return;
             }
             report.Ok("HudView.prefab（Bg_Gold+GoldText / Bg_Hp+HpText / Bg_Round+RoundText / " +
-                      "Btn_Tower_Normal·Power·Retard / StartButton / SpeedButton）");
+                      "Btn_Tower_Normal·Power·Retard / StartButton / SpeedButton / Btn_Pause / Btn_Intro）");
         }
 
         /// <summary>HUD 上的"芯片底"（金币/生命/回合），不吃点击。返回其 Transform 供挂子文本。</summary>
@@ -573,6 +599,13 @@ namespace FTProject.EditorTools
             ApplySlicedSkin(img, spriteName, new Color(0.12f, 0.16f, 0.24f, 0.85f));
             return go.transform;
         }
+
+        // ---- HUD 右上角工具按钮（暂停 / 游戏介绍，2026-10-14）----
+        // 锚点 = 画布右上角 (1,1)、轴心 (1,1)，anchoredPosition 取负值向内缩。
+        // 右边距 40 与左上角三颗芯片的左边距 40 对齐；两颗上下排、间距 14。
+        private static readonly Vector2 HudCornerBtnSize = new Vector2(180f, 56f);
+        private static readonly Vector2 HudPausePos = new Vector2(-40f, -30f);
+        private static readonly Vector2 HudIntroPos = new Vector2(-40f, -100f);
 
         /// <summary>
         /// 芯片底内嵌的文本：**全拉伸铺满父芯片**，不单独定位。
@@ -1141,6 +1174,155 @@ namespace FTProject.EditorTools
                 return;
             }
             report.Ok("PauseView.prefab（Bg / Panel( Title / ResumeBtn / RestartBtn / SettingsBtn / QuitBtn )）");
+        }
+
+        /// <summary>供自动化调用：GameIntroView.prefab 缺失才生成（幂等；已存在一律不动）。</summary>
+        public static void EnsureGameIntroView(EditorUtil.Report report)
+        {
+            if (AssetDatabase.LoadAssetAtPath<GameObject>(GameIntroPath) != null)
+            {
+                report.Skip("GameIntroView.prefab 已存在，跳过");
+                return;
+            }
+            BuildGameIntro(report);
+        }
+
+        /// <summary>
+        /// 游戏介绍弹窗（2026-10-14，HUD 右上角「Btn_Intro」打开）。
+        ///
+        /// 需求契约：弹窗中必须包含一个「回到选关」按钮（BackBtn），点击后
+        /// QuitToSelectRequestEvent → GameFlowManager.QuitToSelect 回到关卡选择；
+        /// 另给一颗 CloseBtn 方便"只看看介绍、继续打"。
+        ///
+        /// 【Info1..Info4 是动态文本】GameIntroView.Awake 按当前语言查表回填
+        /// （LocalizationPrefabBinder.DynamicNames 排除了运行时赋值节点），
+        /// 生成器只留空占位。BackBtn/CloseBtn 的 Label 是静态文案，会被批量挂 TextLocalizer。
+        /// </summary>
+        private static void BuildGameIntro(EditorUtil.Report report)
+        {
+            report.Head("生成游戏介绍弹窗 → " + GameIntroPath);
+            string extra;
+            if (!EditorUtil.IsSafeToRebuild(GameIntroPath, GameIntroChildren, out extra))
+            {
+                report.Error("GameIntroView.prefab 检测到生成器不识别的节点：" + extra + "　→ 已中止");
+                return;
+            }
+            AssetDatabase.DeleteAsset(GameIntroPath);
+            EditorUtil.EnsureFolderOfFile(GameIntroPath);
+
+            GameObject panel;
+            GameObject root = CreateDialogShell("GameIntroView", "Game Intro",
+                new Vector2(980f, 660f), report, out panel);
+            root.AddComponent<GameIntroView>();
+
+            // 正文四行：等间距纵排，开自动换行（中文文案 20~30 字，860 宽 30 号够一行，超了折行）
+            for (int i = 0; i < 4; i++)
+            {
+                TextMeshProUGUI info = CreateText(panel.transform, "Info" + (i + 1), string.Empty,
+                    new Vector2(0.5f, 0.5f), new Vector2(0f, 105f - 92f * i), new Vector2(860f, 84f),
+                    TextAnchor.MiddleCenter, 30);
+                info.enableWordWrapping = true;
+                info.overflowMode = TextOverflowModes.Overflow;
+            }
+
+            // BackBtn 主按钮（需求强制），CloseBtn 次按钮；左右排布留 20px 缝
+            CreatePanelButton(panel.transform, "BackBtn", "Back to Level Select",
+                new Vector2(-140f, -245f), 460f, true);
+            CreatePanelButton(panel.transform, "CloseBtn", "Close",
+                new Vector2(255f, -245f), 290f, false);
+
+            GameObject saved = PrefabUtility.SaveAsPrefabAsset(root, GameIntroPath);
+            Object.DestroyImmediate(root);
+            if (saved == null)
+            {
+                report.Error("保存失败：" + GameIntroPath);
+                return;
+            }
+            report.Ok("GameIntroView.prefab（Bg / Panel( Title / Info1..4 / BackBtn / CloseBtn )）");
+        }
+
+        /// <summary>
+        /// 给**已存在**的 HudView.prefab 幂等补挂右上角两颗按钮（Btn_Pause / Btn_Intro）。
+        ///
+        /// 【为什么单独开这个入口而不用全量重建】HudView.prefab 是手工改造过的资产
+        /// （塔按钮槽位、芯片布局都按手工版对齐），BuildHud 的 DeleteAsset+重建会把
+        /// 手工成果整份覆盖 —— 自动化里绝不允许（与 RebuildMainMenuOnly 同一教训）。
+        /// 本方法只做"缺则补"：LoadPrefabContents → 缺哪个补哪个 → Save，其余节点不碰。
+        /// </summary>
+        public static void EnsureHudTopRightButtons(EditorUtil.Report report)
+        {
+            report.Head("HudView 右上角补挂 暂停/介绍 按钮（幂等，不重建）");
+            if (AssetDatabase.LoadAssetAtPath<GameObject>(HudPath) == null)
+            {
+                report.Error("HudView.prefab 不存在，请先跑「补缺 UI 预制体」");
+                return;
+            }
+
+            GameObject root = PrefabUtility.LoadPrefabContents(HudPath);
+            bool changed = false;
+            if (root.transform.Find("Btn_Pause") == null)
+            {
+                CreateHudCornerButton(root.transform, "Btn_Pause", "Pause", HudPausePos, HudCornerBtnSize);
+                report.Ok("补挂 Btn_Pause（Pause）");
+                changed = true;
+            }
+            if (root.transform.Find("Btn_Intro") == null)
+            {
+                CreateHudCornerButton(root.transform, "Btn_Intro", "Game Intro", HudIntroPos, HudCornerBtnSize);
+                report.Ok("补挂 Btn_Intro（Game Intro）");
+                changed = true;
+            }
+
+            if (changed)
+            {
+                PrefabUtility.SaveAsPrefabAsset(root, HudPath);
+            }
+            else
+            {
+                report.Skip("两颗按钮都已存在，跳过");
+            }
+            PrefabUtility.UnloadPrefabContents(root);
+        }
+
+        /// <summary>
+        /// HUD 右上角的工具按钮（暂停 / 游戏介绍）：锚点=画布右上角 (1,1)、轴心 (1,1)。
+        /// 样式与 CreateButton 同源（九宫格皮肤 + Label 铺满），只是锚定方式不同。
+        /// 【Label 用英文原文】 prefab 存英文（= 多语言表主键），运行时 TextLocalizer 切语言。
+        /// </summary>
+        private static void CreateHudCornerButton(Transform parent, string name, string label,
+            Vector2 anchoredPos, Vector2 size)
+        {
+            GameObject go = new GameObject(name, typeof(RectTransform));
+            go.transform.SetParent(parent, false);
+
+            RectTransform rt = (RectTransform)go.transform;
+            rt.anchorMin = new Vector2(1f, 1f);
+            rt.anchorMax = new Vector2(1f, 1f);
+            rt.pivot = new Vector2(1f, 1f);
+            rt.anchoredPosition = anchoredPos;
+            rt.sizeDelta = size;
+
+            Image img = go.AddComponent<Image>();
+            ApplySlicedSkin(img, "UI_Btn_Secondary", ButtonColor);
+
+            Button btn = go.AddComponent<Button>();
+            btn.targetGraphic = img;    // ★ 必须显式指定，否则按钮没有按下反馈
+            ColorBlock cb = btn.colors;
+            cb.normalColor = Color.white;
+            cb.highlightedColor = new Color(1.15f, 1.15f, 1.15f, 1f);
+            cb.pressedColor = new Color(0.8f, 0.8f, 0.8f, 1f);
+            cb.disabledColor = new Color(0.5f, 0.5f, 0.5f, 0.6f);
+            btn.colors = cb;
+
+            TextMeshProUGUI t = CreateText(go.transform, "Label", label,
+                new Vector2(0.5f, 0.5f), Vector2.zero, size, TextAnchor.MiddleCenter, 30);
+            // Label 铺满按钮
+            RectTransform lrt = (RectTransform)t.transform;
+            lrt.anchorMin = Vector2.zero;
+            lrt.anchorMax = Vector2.one;
+            lrt.pivot = new Vector2(0.5f, 0.5f);
+            lrt.anchoredPosition = Vector2.zero;
+            lrt.sizeDelta = Vector2.zero;
         }
 
         private static void BuildSetting(EditorUtil.Report report)
