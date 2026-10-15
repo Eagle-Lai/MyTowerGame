@@ -1,2 +1,5 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+
+# 热更服务器启停脚本必须以 CRLF 检出（cmd 解析错误即乱码报错），不依赖各机 core.autocrlf
+*.bat text eol=crlf

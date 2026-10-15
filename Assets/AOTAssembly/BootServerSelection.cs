@@ -17,7 +17,7 @@ namespace FTProject.AOT
     ///       与局域网 IP 无关，**永不变**）；
     ///     · 家＝手机真机 → 需要电脑的局域网 IP，但 DHCP 下 **IP 会变**。
     ///   以前单常量地址换环境就得改代码重打包，漏改即"热更静默失效"
-    ///   （探测 4s 超时 → 跳过热更 → 玩本地旧版本，不报错）。
+    ///   （探测超时 → 跳过热更 → 玩本地旧版本，不报错）。
     ///
     /// 【自动发现怎么工作】
     ///   电脑上跑 `.workbuddy/tools/hotupdate_server.py`（HTTP 8000 + UDP 广播），
@@ -31,6 +31,10 @@ namespace FTProject.AOT
     ///   ① persistentDataPath/server.txt 第一行（手工覆盖，诊断用）
     ///   ② <see cref="SelectedUrl"/>（UDP 发现 / 常量候选中**探测可达**者）
     ///   ③ ResServerConfig.ServerUrl 常量（兜底）
+    ///
+    /// 【可达性结论（2026-10-15 新增）】探测段结束后 BootLoader 无条件调用
+    ///   <see cref="MarkReachabilityChecked"/>；<see cref="RemoteHotUpdateAllowed"/>
+    ///   是 AB 资源与 dll 两条链路共用的闸门 —— 服务器不可达时全部改用本地资源。
     ///
     /// 【为什么放 AOT 侧】dll 下载发生在热更程序集加载**之前**，只能由 AOT 驱动；
     ///   热更侧允许引用 AOT，ResServerConfig 经本类读胜出地址，两链路同源。
@@ -58,8 +62,15 @@ namespace FTProject.AOT
         /// <summary>广播包魔数前缀。**必须与 hotupdate_server.py 的 MAGIC 一致**。</summary>
         private const string UdpMagic = "FTHOTUPD1|";
 
-        /// <summary>未收到任何广播时的监听窗口（秒）。期间常量候选探测在并行跑，不白等。</summary>
-        private const float UdpWindowSeconds = 2.5f;
+        /// <summary>
+        /// 未收到任何广播时的监听窗口（秒）。期间常量候选探测在并行跑，不白等。
+        ///
+        /// 【2026-10-15 起 1.5s（原 2.5s）】取值依据：hotupdate_server.py 默认
+        /// --interval 1.0s，即广播间隔 ≈1s —— 任何长度 ≥1s 的窗口都**必然**收到
+        /// 至少一轮广播（间隔 1s + 网络抖动余量）。窗口缩短的直接收益：
+        /// "服务器不在场"时最多只多等 1.5s 就回退本地资源（与 1s 探测并存）。
+        /// </summary>
+        private const float UdpWindowSeconds = 1.5f;
 
         /// <summary>收到首个广播后的收尾窗口（秒）：多网卡会重复广播，留时间汇总去重。</summary>
         private const float UdpTailSeconds = 0.6f;
@@ -267,6 +278,45 @@ namespace FTProject.AOT
             SelectedUrl = string.IsNullOrEmpty(url) ? null : url.TrimEnd('/');
             SelectedSource = source;
             Debug.Log(string.Format("[Boot] 热更服务器选定：{0}（{1}）", SelectedUrl, source));
+        }
+
+        // ---------------- 可达性结论（AB 与 dll 两条链路的共用闸门） ----------------
+
+        /// <summary>
+        /// 本次启动是否已完成服务器可达性探测
+        /// （BootLoader 探测段跑完后经 <see cref="MarkReachabilityChecked"/> 置位）。
+        /// </summary>
+        public static bool ReachabilityChecked { get; private set; }
+
+        /// <summary>
+        /// 远端热更（AB 资源 + dll）是否应当启用 —— 两条链路共用的总闸门：
+        ///   · 尚未探测（编辑器直跑 main、工具脚本等特殊入口）
+        ///     → true（维持旧行为，由配置层把关）；
+        ///   · 已探测且选出可达地址 → true（走远端，地址见 <see cref="SelectedUrl"/>）；
+        ///   · 已探测但无胜出 → false（**服务器不可达 → 全部用本地资源与本地 dll**）。
+        /// 消费方：ResServerConfig.IsRemoteHotUpdateAllowed（热更侧据此决定
+        /// YooAsset 走离线模式、并跳过热更新检查）。
+        /// </summary>
+        public static bool RemoteHotUpdateAllowed
+        {
+            get { return ReachabilityChecked == false || HasSelection; }
+        }
+
+        /// <summary>
+        /// 记录"可达性探测已完成"。BootLoader 在探测段（server.txt 覆盖 / 常量候选 /
+        /// UDP 发现三个分支）结束后**无条件**调用一次 —— 无论结论是可达还是不可达。
+        ///
+        /// 【为什么必须有这个标记】没有它时，"未探测"与"探测过且不可达"无法区分：
+        /// 热更侧见到 SelectedUrl=null 会退回常量地址继续发网络请求 —— 服务器不在场时
+        /// 请求要等到超时（YooAsset 版本请求默认 60s 且硬失败），表现为"启动一直等待、
+        /// 最终进不去游戏"。置位后下游即可在"不可达"时直接改用本地资源启动。
+        /// </summary>
+        public static void MarkReachabilityChecked()
+        {
+            ReachabilityChecked = true;
+            Debug.Log("[Boot] 可达性探测完成 → " + (HasSelection
+                ? ("服务器可达：" + SelectedUrl)
+                : "服务器不可达：本次启动使用本地资源与本地 dll"));
         }
     }
 }

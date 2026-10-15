@@ -90,4 +90,16 @@ if __name__ == "__main__":
         list_tools()
     elif cmd == "call":
         args = json.loads(sys.argv[3]) if len(sys.argv) > 3 else {}
-        call(sys.argv[2], args)
+        tool = sys.argv[2]
+        if tool == "execute_code":
+            # 【会话级激活】scripting_ext 工具集每次新连接都要先 activate，且必须
+            # 在同一进程（=同一 MCP 会话）内完成，否则 execute_code 会报未启用。
+            try:
+                _next_id[0] += 1
+                _post({"jsonrpc": "2.0", "id": _next_id[0], "method": "tools/call",
+                       "params": {"name": "manage_tools",
+                                  "arguments": {"action": "activate", "tool": "scripting_ext"}}})
+                print("# scripting_ext activated")
+            except Exception as e:
+                print("# activate scripting_ext skipped: %s" % e)
+        call(tool, args)
