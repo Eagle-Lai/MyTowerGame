@@ -48,7 +48,7 @@ UICanvas                 UIManager 三层
 │   ├── LubanLib/                    Bright.Serialization + SimpleJSON（第三方）
 │   ├── ConfigJson/                  Luban 导出产物 9 个 json（编辑器直读 + 进 config 包）
 │   ├── Prefabs/
-│   │   ├── Tower/{Normal,Power,Retard}/   3 塔型 × 3 级 = 9 个（Pierce/Laser 暂复用 Normal，P6 换皮）
+│   │   ├── Tower/{Normal,Power,Retard}/   3 塔型 × 3 级 = 9 个（2026-10-14 三塔型收敛，Pierce/Laser 已删）
 │   │   ├── Enemy/                   119 个怪物 prefab（16 族系）
 │   │   ├── Bullet/Bullet_Normal.prefab
 │   │   └── UI/                      HudView/SelectView/PauseView/SettingView/LevelClearView/TipsView/TowerInfoView
@@ -93,7 +93,7 @@ UICanvas                 UIManager 三层
 | Round（1） | `WaveManager` | 回合→(时刻,怪id) 扁平时间轴，单计时器推进 |
 | Enemy（3） | `BaseEnemy/EnemyManager/MonsterAnimEventReceiver` | 怪物基类（血条/受击/四态动画）；生成与池化；动画事件接收 |
 | Tower（7） | `BaseTower(含 TowerManager 内嵌@561行)/NormalTower/PowerTower/RetardTower/TowerPlacement/RangeIndicatorView/SlowAuraView` | 塔基类与建/升/售管理（含 A\* 堵路校验+扣费+回滚）；放置拾取；射程圈/减速光环表现 |
-| Bullet（2） | `BaseBullet/LaserBeamView` | 子弹（穿透/AOE/减速/持续伤害）；激光纯表现（hitscan 结算在 BaseTower.Fire） |
+| Bullet（1） | `BaseBullet` | 子弹（AOE/减速/持续伤害；2026-10-14 三塔型收敛后穿透机制与 LaserBeamView 已移除） |
 | Camera（1） | `CameraController` | 2D 正交平移/缩放/自适应 |
 | UI（9） | `HudView/TipsView/SelectView/PauseView/SettingView/LevelClearView/LevelClearInfo/TowerInfoView/FloatingTextManager` | 见策划案 §6.1 |
 | 对象池 | `Core/ObjectPool.cs` | 通用池（工厂+reset 委托） |
@@ -125,7 +125,7 @@ UICanvas                 UIManager 三层
 | 表 | json | 行数 | 关键字段 |
 |---|---|---|---|
 | 塔 | tbtowerinfo | 15 | id/type/name/resName/level/radius/power/CD/prices/bulletId/targetMode/searchIntervalMs/rotateSpeed/upgradeTo/sellPrice/effectType/effectValue/canAttackAir |
-| 子弹 | tbbulletdata | 5 | id/speed/hitRadius/lifeTimeMs/pierce/aoeRadius/effectType/effectValue/scale |
+| 子弹 | tbbulletdata | 4 | id/speed/hitRadius/lifeTimeMs/aoeRadius/effectType/effectValue/scale（pierce 列已随穿透塔删除） |
 | 敌人 | tbenemydata | 132 | id/speed/hp/name/type/resName/armor/reward/damageToPlayer/scale/bodyRadius/isFlying |
 | 波次编组 | tbenemylist | 40 | id/EnemyIndexs[]/interval/enemyInterval |
 | 回合 | tbrounddata | 40 | id/EnemyIndexs[]/interval/rewardGold |
@@ -303,7 +303,7 @@ UICanvas                 UIManager 三层
 **前置条件**：美术资源到位（策划案 §8 清单）；P5 完成（先保证"能上线"，再迭代"更好看"）。
 
 **操作步骤（命令级）**
-1. Pierce/Laser 塔皮：美术放入 `Assets/_UIAssets/Tower/Pierce|Laser/`，【Unity】`Tools▸塔防▸高级▸转换防御塔预制体` 生成 6 个 prefab，改 `TowerInfo.xlsx` resName 指向新 prefab → §4.3 SOP 导出；
+1. ~~Pierce/Laser 塔皮~~【2026-10-14 已随三塔型收敛移除，此条作废】；
 2. 8 关背景：替换 `Assets/_UIAssets/Backgrounds/`，按 mapId 挂接（BoardView/BackgroundParallax 配置点）；
 3. 打击粒子：命中/死亡/AOE 爆炸 3 组 prefab 挂到 Bullet/Enemy 表现层已抛出的事件点；
 4. 怪物帧动画：接入 `MonsterAnimEventReceiver` 既有挂点；

@@ -87,6 +87,12 @@ namespace FTProject
             Reporter.ScrollerSkinLoader = LoadReporterScrollerSkin;
 
             gameObject.AddComponent<Reporter>();
+            // 原版 Reporter prefab 同一物体上自带 ReporterMessageReceiver
+            // （OnPreStart 按分辨率调面板尺寸 + OnShow/OnHide/OnLog 用户钩子）。
+            // 动态挂载时漏掉它，SendMessage("OnPreStart") 等会报 "no receiver" 警告
+            // （恢复原版契约；OnLog 一侧的死循环隐患另在 Reporter.cs 用
+            // DontRequireReceiver 釜底抽薪）。
+            gameObject.AddComponent<ReporterMessageReceiver>();
             Debug.Log("[Scene] Reporter 调试控制台已挂载（画圈或双击调出）");
         }
 

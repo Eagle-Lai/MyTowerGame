@@ -13,7 +13,7 @@ import sys
 import urllib.request
 import urllib.error
 
-URL = "http://127.0.0.1:8082/mcp"
+URL = __import__("os").environ.get("UNITY_MCP_URL", "http://127.0.0.1:8082/mcp")
 SESSION = None
 _next_id = [100]
 

@@ -36,18 +36,25 @@ namespace FTProject
         ///
         /// 【格式】http://<主机>:<端口>/<资源根目录>
         ///
-        ///   本机测试（推荐先用这个）：
-        ///     http://192.168.43.100:8000       ← 本机 WLAN 网卡的局域网 IP（换网络会自动变）
+        /// 【多环境支持（公司 / 家 / 模拟器）】
+        ///   本常量只是**兜底地址**（优先级最低）。多环境自动切换靠
+        ///   BootLoader 启动时对 BootServerSelection.Candidates 的并发探测：
+        ///   第一个可达的候选会经 FTProject.AOT.BootServerSelection.SelectedUrl
+        ///   传回本类（见 <see cref="GetServerUrl"/> 优先级），改 IP 只动
+        ///   BootServerSelection.Candidates 一个地方。
+        ///
+        ///   本机测试（模拟器内 10.0.2.2 = 宿主机 127.0.0.1）：
+        ///     http://10.0.2.2:8000
         ///
         ///   ⚠️ 别写 localhost / 127.0.0.1 —— 那是"手机自己"，手机访问不到你电脑。
-        ///   ⚠️ 真机必须和电脑在**同一个 WiFi / 局域网**下。
+        ///   ⚠️ 真机与电脑必须在**同一个 WiFi / 局域网**下。
         ///   ⚠️ 不确定当前 IP 时：电脑上开 cmd 敲 `ipconfig`，看**无线局域网适配器 WLAN**
-        ///      下面那行 "IPv4 地址"。手机与电脑连同一个热点时，这个地址通常形如 192.168.x.x。
+        ///      下面那行 "IPv4 地址"。
         ///
         /// 【平台段是自动拼的，不要手写】
         ///   YooAsset 会在本地址后面自动追加 `/<平台名>/<包裹名>/<版本>/`，
         ///   例如 Android 上最终会请求：
-        ///     http://192.168.43.100:8000/Android/FreeTower/1.0.0/FreeTower.version
+        ///     http://10.0.2.2:8000/Android/FreeTower/1.0.0/FreeTower.version
         ///   所以这里**只写到平台之前**。多写一段就是 404。
         /// </summary>
         public const string ServerUrl = "http://10.0.2.2:8000";
@@ -72,15 +79,26 @@ namespace FTProject
         public const bool VerboseLog = true;
 
         /// <summary>
-        /// 取最终生效的服务器地址。优先级：
-        ///   ① persistentDataPath/server.txt 的第一行（仅当 <see cref="AllowRuntimeOverride"/>）
-        ///   ② <see cref="ServerUrl"/> 常量
+        /// 取最终生效的服务器地址。优先级（从高到低）：
+        ///   ① persistentDataPath/server.txt 的第一行（仅当 <see cref="AllowRuntimeOverride"/>；
+        ///      手工覆盖，诊断用，写了就只认它）
+        ///   ② Boot 阶段并发探测选中的可达地址（FTProject.AOT.BootServerSelection.SelectedUrl，
+        ///      公司/家/模拟器多环境自动切换的产物；dll 热更与 AB 热更因此同源）
+        ///   ③ <see cref="ServerUrl"/> 常量（兜底：编辑器直接跑 main 场景、或探测链未执行时）
         /// 返回值保证不含结尾斜杠。
         /// </summary>
         public static string GetServerUrl()
         {
             string url = ServerUrl;
 
+            // ② 启动探测的胜出地址（AOT 侧 Boot 链写入；null = 未探测 / 全部不可达）
+            string selected = FTProject.AOT.BootServerSelection.SelectedUrl;
+            if (string.IsNullOrEmpty(selected) == false)
+            {
+                url = selected;
+            }
+
+            // ① 手工覆盖文件：最高优先级，存在即生效（跳过空行与 # 注释行）
             if (AllowRuntimeOverride)
             {
                 try
@@ -109,7 +127,23 @@ namespace FTProject
                 }
             }
 
-            return TrimTrailingSlash(url);
+            string finalUrl = TrimTrailingSlash(url);
+
+            if (VerboseLog)
+            {
+                string source = "常量 ServerUrl";
+                if (selected != null && selected == url)
+                {
+                    source = "启动探测（BootServerSelection）";
+                }
+                if (AllowRuntimeOverride && System.IO.File.Exists(OverrideFilePath))
+                {
+                    source = "server.txt 覆盖";
+                }
+                Debug.Log("[Res] 生效服务器地址：" + finalUrl + "（来源：" + source + "）");
+            }
+
+            return finalUrl;
         }
 
         /// <summary>地址是否是一个可用的远端地址（用于把"没配服务器"和"配错了"区分开）</summary>

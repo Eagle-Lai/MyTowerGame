@@ -5,27 +5,26 @@ using UnityEngine;
 namespace FTProject
 {
     /// <summary>
-    /// 塔型。编号与 TBTowerInfo.type 一一对应（设计文档 §8 M2 定案的五类）。
+    /// 塔型。编号与 TBTowerInfo.type 一一对应（2026-10-14 收敛定案的**三类**）。
     ///
     /// 【命名与行为的偏差，只在这里解释一次】
-    ///   · Power(2) 是美术名「强力塔」，其**行为**是范围伤害（AOE）—— 见 TBTowerInfo.effectType=3；
+    ///   · Aoe(2) 是美术名「Power/强力塔」（火力塔），其**行为**是范围伤害 —— 见 TBTowerInfo.effectType=3；
     ///   · Slow(3) 的行为是**范围减速光环**（进入射程的怪持续被减速，不发射子弹），
     ///     而美术、节点名、资源目录一律叫 "Retard"
     ///     （映射表在 HudView.TowerTypeOf，别处不要再推导一遍）。
+    ///
+    /// 【2026-10-14 三塔型收敛】原 Pierce(4)/Laser(5) 已整体删除
+    /// （表行、子弹、音效、图标、文档同步清理）；塔型若要扩展，从配置表加行开始。
     /// </summary>
     public enum TowerType
     {
         None = 0,
-        /// <summary>单体：普通塔</summary>
+        /// <summary>单体：普通塔。可攻击**飞行与行走**两类怪物（canAttackAir=1）</summary>
         Normal = 1,
-        /// <summary>范围伤害：强力塔（美术名 Power，行为是 AOE）</summary>
+        /// <summary>范围伤害：火力塔（美术名 Power，行为是 AOE）。**仅能攻击行走怪物**（canAttackAir=0）</summary>
         Aoe = 2,
-        /// <summary>减速：美术名 Retard。**行为是范围光环**（见 SlowAuraView），不发射子弹</summary>
+        /// <summary>减速：美术名 Retard。**行为是范围光环**（见 SlowAuraView），不发射子弹；飞行与行走都覆盖（canAttackAir=1）</summary>
         Slow = 3,
-        /// <summary>穿透：一发子弹可连续命中多个敌人</summary>
-        Pierce = 4,
-        /// <summary>激光：瞬发命中（hitscan），不发射弹体</summary>
-        Laser = 5,
     }
 
     /// <summary>
@@ -242,8 +241,11 @@ namespace FTProject
         /// 【为什么不做目标列表缓存】减速塔射程内的怪随时进出，缓存要维护增删，
         /// 而空间哈希查询本身就是常数级 —— 直接查更简单也更不容易出错。
         ///
-        /// 【为什么不过滤 canAttackAir / 目标模式】那是"选哪个目标打"的概念，
-        /// 光环没有选择行为，射程内一律减速（飞行单位也吃减速，符合塔防直觉）。
+        /// 【对空规则与普通塔同一口径（2026-10-14 三塔型收敛）】
+        /// 飞行单位是否吃光环，同样由塔表 canAttackAir 决定（减速塔填 1，行为不变）。
+        /// 这样"这座塔能不能打到飞行怪"在代码里**只有一条判定**（FindTarget 与此处相同），
+        /// 不会出现塔型分支各说各话。目标模式不在此过滤 —— 那是"选哪个目标打"的概念，
+        /// 光环没有选择行为，范围内一律结算。
         /// </summary>
         private void TickSlowAura(float dt)
         {
@@ -277,6 +279,11 @@ namespace FTProject
             {
                 BaseEnemy e = _candidates[i];
                 if (e == null || !e.IsAlive)
+                {
+                    continue;
+                }
+                // 对空过滤：与 FindTarget 同一条口径 —— 本塔打不到飞行单位时直接跳过
+                if (e.Config != null && e.Config.IsFlying && !Config.CanAttackAir)
                 {
                     continue;
                 }
@@ -464,27 +471,6 @@ namespace FTProject
             {
                 CameraController.Instance.Shake(
                     Configs.Global.ShakeAmplitude * 0.15f, Configs.Global.ShakeDurationSec);
-            }
-
-            // ---- 激光：瞬发命中（hitscan），不生成弹体 ----
-            // 【为什么不做成"速度极高的子弹"】那会引入高速穿透漏判
-            // （BulletConfig.IsSpeedSafeAtFps 就是为这个坑准备的自检），
-            // 而且激光本来就该是"立即结算"，用弹体反而要额外处理寿命与回收。
-            if (Config.IsLaser)
-            {
-                if (target == null || !target.IsAlive)
-                {
-                    return;   // ★ 无目标绝不开火（与普通塔同一条不变量）
-                }
-                Vector2 muzzle = MuzzlePosition;
-                target.Hurt(Config.Power);
-                LaserBeamView.Fire(muzzle, target.Position);
-                if (AudioManager.Instance != null)
-                {
-                    AudioManager.Instance.PlayAt(AudioName.TowerFire(Config.Type), muzzle);
-                }
-                FireCount++;
-                return;
             }
 
             if (!Config.FiresBullet)

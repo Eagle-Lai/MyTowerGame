@@ -30,7 +30,7 @@ namespace FTProject
 
         public int Id { get { return _t.Id; } }
 
-        /// <summary>塔类型（1 单体 / 2 AOE / 3 减速 / 4 穿透 / 5 激光）</summary>
+        /// <summary>塔类型（1 普通单体 / 2 火力范围 AOE / 3 减速光环；2026-10-14 起定案三类）</summary>
         public int Type { get { return _t.Type; } }
 
         public string Name { get { return _t.Name; } }
@@ -83,18 +83,15 @@ namespace FTProject
         /// <summary>
         /// 塔的招牌效果（与子弹共用 EffectType 编号，见该枚举注释）。
         /// 【为什么这里没有 int EffectType 属性】同名属性会**遮蔽枚举类型名**，
-        /// 于是在本类内部写 EffectType.Laser 会被解析成"int 的成员"，报 CS1061。
+        /// 于是在本类内部写 EffectType.Slow 会被解析成"int 的成员"，报 CS1061。
         /// 与其到处写全限定名，不如只留一个语义明确的枚举属性。
         /// </summary>
         public EffectType Effect { get { return (EffectType)_t.EffectType; } }
 
         public float EffectValue { get { return _t.EffectValue; } }
 
-        /// <summary>激光塔：瞬发命中（hitscan），不发射弹体</summary>
-        public bool IsLaser { get { return Effect == EffectType.Laser; } }
-
         /// <summary>
-        /// 范围攻击塔（强力塔，TowerType.Aoe）：弹体飞向"发射瞬间锁定的落点"，
+        /// 范围攻击塔（火力塔，TowerType.Aoe）：弹体飞向"发射瞬间锁定的落点"，
         /// 到达即引爆，对落点半径内的**全部**敌人造成伤害 —— 不是单体攻击。
         ///
         /// 【判定依据】用 TowerType.Aoe，与 IsSlowAura 同一口径：这是**塔型级别**
@@ -114,17 +111,21 @@ namespace FTProject
         public bool IsSlowAura { get { return Type == (int)TowerType.Slow; } }
 
         /// <summary>
-        /// 本塔是否会生成弹体。激光塔与减速光环塔都不会。
+        /// 本塔是否会生成弹体。减速光环塔不会（它不索敌、不开火）。
         /// </summary>
-        public bool FiresBullet { get { return !IsLaser && !IsSlowAura && _t.BulletId > 0; } }
+        public bool FiresBullet { get { return !IsSlowAura && _t.BulletId > 0; } }
 
         /// <summary>
         /// 是否可攻击飞行单位（TBTowerInfo.canAttackAir，1=可 / 0=不可）。
         ///
+        /// 【三塔型的定案口径（2026-10-14）】普通塔=1（飞行+行走）、
+        /// 火力塔 Aoe=0（**仅行走**）、减速塔=1（光环覆盖飞行与行走）。
+        /// 索敌（FindTarget）与减速光环（TickSlowAura）都只认这一列 ——
+        /// "这座塔能不能打到飞行怪"在代码里只有一处判定，全表一处说了算。
+        ///
         /// 【为什么不是"缺省即可攻空"】这一列在表里是**每行都必须填**的：
         /// Luban 对空单元格给的是 0，与"显式填 0"无法区分。
         /// 与其在代码里猜，不如把它定义清楚 —— 表里的说明行已同步写明"留空视为 0"。
-        /// 当前 15 行全部填 1；将来若要设计"对空专用塔"，把对应行改成 0 即可。
         /// </summary>
         public bool CanAttackAir { get { return _t.CanAttackAir != 0; } }
 

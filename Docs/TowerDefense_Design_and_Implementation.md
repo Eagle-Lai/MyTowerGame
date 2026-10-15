@@ -529,7 +529,7 @@ TBGlobal（全局参数表，单行）
 | 字段 | 类型 | 说明 | 状态 |
 |---|---|---|---|
 | id | int | 主键 | 已有 |
-| type | **int** | 塔类型枚举（1 单体 / 2 AOE / 3 减速 / 4 穿透 / 5 激光） | ★改造（原 string，改枚举更严谨） |
+| type | **int** | 塔类型枚举（1 普通单体 / 2 火力 AOE / 3 减速光环；2026-10-14 三塔型收敛，原 4 穿透 / 5 激光已删） | ★改造（原 string，改枚举更严谨） |
 | name | string | 展示名 | 已有 |
 | **resName** | string | AB 资源名 | ★新增（原 `path` 是 `Resources` 路径，AB 化后重命名） |
 | level | int | 等级 1–3 | 已有 |
@@ -561,7 +561,7 @@ TBGlobal（全局参数表，单行）
 | speed | float | 飞行速度（**像素/秒**） |
 | hitRadius | float | 命中判定半径（**像素**，供 §5.4 距离判定） |
 | lifeTimeMs | int | 最大存活时间（超时回收，防子弹追不上目标时无限飞） |
-| pierce | int | 穿透数量（0 = 命中即消失，>0 = 可继续穿透，M2） |
+| ~~pierce~~ | ~~int~~ | ~~穿透数量~~（**2026-10-14 列已随穿透塔删除**） |
 | aoeRadius | float | 爆炸半径（0 = 单体，M2） |
 | effectType | int | 效果类型（0 无 / 1 减速 / 2 持续伤害，M2） |
 | effectValue | float | 效果参数 |
@@ -682,7 +682,7 @@ M0 不需要独立经济表：初始金币/生命来自 `TBLevel`，击杀奖励
 |---|---|---|
 | **怪物** | 血量、速度、类型、护甲、受击半径、击杀奖励、漏怪伤害、显示缩放、资源名、动画前缀 | `TBEnemy` |
 | **防御塔** | 类型、等级、攻击力、攻击半径、攻击间隔、建造/升级价格、出售价、子弹 id、索敌策略、转向速度、效果参数、资源名 | `TBTower` |
-| **子弹** | 速度、命中半径、存活时间、穿透、爆炸半径、效果、资源名 | `TBBullet` |
+| **子弹** | 速度、命中半径、存活时间、爆炸半径、效果、资源名 | `TBBullet`（pierce 已删） |
 | **波次** | 敌人编组、波内间隔、开始延迟、回合奖励 | `TBWave` / `TBRound` |
 | **关卡** | 初始金币、初始生命、回合列表、棋盘布局、背景资源、难度、准备时间 | `TBLevel` / `TBLevelMap` |
 | **经济** | 初始金币、击杀奖励、建塔花费、出售返还、回合奖励 | 分散在上述各表 |
@@ -3073,3 +3073,53 @@ UGUI Text 的问题：① 官方已不再演进（TMP 是其继任）② 中文�
 - **`TowerPrefabConverter` 不重跑**：prefab 已由用户提供且结构正确，重跑反而可能覆盖手工调整。
 - **mkii/mkiii 贴图的 AB 名暂留空**：与 Power/Retard 现状一致（靠 prefab 依赖隐式打包或
   由 ResTable→ABNameSetter 统一赋名），不手改 meta 以免与唯一权威源分叉。
+
+## Z.13　三塔型收敛：删除穿透/激光塔（2026-10-14）
+
+### Z.13.1 需求
+
+防御塔只保留三种：**普通防御塔（Normal,1）、火力防御塔（Aoe/美术名 Power,2）、减速防御塔（Slow/美术名 Retard,3）**；
+删除穿透塔（Pierce,4）与激光塔（Laser,5）及其全部相关逻辑（表行、子弹、枚举值、分支、音效、图标、文档）。
+同时定案三塔的攻击目标规则并统一判定：
+
+| 塔型 | canAttackAir | 目标规则 |
+|------|--------------|----------|
+| 普通 Normal(1) | 1 | 飞行 + 行走 |
+| 火力 Aoe(2) | **0** | **仅行走** |
+| 减速 Slow(3) | 1 | 飞行 + 行走（附加减速光环） |
+
+### Z.13.2 关键决策
+
+| 编号 | 决策 | 理由 |
+|------|------|------|
+| J-A | TowerType 枚举删 Pierce=4/Laser=5；EffectType 枚举删 Laser=4，编号不回收不复用 | 枚举残留值是"隐性复活入口"；表图例同步改 |
+| J-B | BaseTower.Fire 删激光 hitscan 分支；LaserBeamView.cs 整文件删除 | 无引用即无分支；表现类随唯一消费者一起删 |
+| J-C | **"能否打到飞行怪"只认塔表 canAttackAir 一列**：FindTarget（索敌）与 TickSlowAura（光环）用同一条过滤 | 目标规则统一口径，避免塔型分支各说各话；减速塔填 1，光环行为不变 |
+| J-D | 火力塔(type=2) 三行 canAttackAir 1→0（TowerInfo.xlsx） | 落实"火力塔仅能攻击行走怪物"；索敌过滤自动生效，无需新代码 |
+| J-E | 穿透弹（TBBulletData id=3）删行、**pierce 列整列删除**、BaseBullet 删 _pierce 连穿逻辑（_hitSet 保留作防重复命中防御） | pierce 机制唯一消费者就是穿透塔；配置列与代码字段一起消失才叫"无残留" |
+| J-F | 音效（sfx_tower_fire_pierce/laser：mp3+AudioData 行+AudioName 常量）与图标（UI_TowerIcon_Pierce/Laser：png+ResTable+生成器）全链路删除 | 图标/音效资源引用属需求明示的清理范围；AudioCatalog 由 gen_audio_catalog.py 重生成 |
+| J-G | 存档不做数据迁移：旧快照中的 type=4/5 塔恢复时被**跳过**（GetTowerByTypeAndLevel 报错返回 null → RestoreTower 返回 null） | 快照表结构未变（type 仍是 int），跳过即安全降级；不崩溃、不返还金币，其余塔照常恢复（见 GameFlowManager.TryRestoreSnapshot 注释） |
+
+### Z.13.3 改动清单
+
+1. **配置**：TowerInfo.xlsx（删 id 10~15 共 6 行，id 4~6 canAttackAir→0，表头图例更新）；
+   BulletData.xlsx（删穿透弹行 + pierce 列）；AudioData.xlsx（删 2 行音效）；
+   Localization.xlsx（删 5 条词条，经 gen_localization_table.py 重建）；重导 Luban（Gen+ConfigJson 全量更新）。
+2. **代码**：BaseTower / TowerConfig / EnumFile / BaseBullet / BulletConfig / AudioName / ResTable /
+   GameFlowManager / HudView / SellConfirmView / TowerCodexItem / TowerCodexView / LoadingView /
+   SlowAuraView / NormalTower（注释）等 15 处；删除 LaserBeamView.cs。
+3. **编辑器**：UIPrefabBuilder.TowerIconSpriteName、UISkinArtGenerator（WriteTowerIcons + Purple 色）收敛为三塔。
+4. **资源**：删 UI_TowerIcon_Pierce/Laser.png(+meta)、sfx_tower_fire_pierce/laser.mp3(+meta)；AudioCatalog.cs 重生成（16 项）。
+5. **文档**：本节 + ProgramDesign_v3 / GameDesign_v3 / Unity_Editor_Operation_Guide / ArtDesign_补全策划案 /
+   Tower_Interaction_Dev_Plan 的当前态描述同步。
+
+### Z.13.4 校验
+
+- Unity 重编译 **0 error**（历史遗留 BaseManager CS0414 警告与本改动无关）。
+- 全库 grep：代码仅剩 4 处刻意保留的"已删除"注记；ConfigJson/Gen/xlsx 无 pierce/laser 残留；
+  被删脚本 GUID 无任何 prefab/scene 引用。
+- ⚠️ 踩坑记录：直接跑 `Luban/gen_code_json.bat` 会把 `Assets/Gen/FTProject.Gen.asmdef`
+  当"陌生文件"删掉（KeepFilesInCodeDir 保护只在 Unity 菜单 3 路径生效），
+  导致 Gen 程序集消失、全项目级联 CS0246。已从 git 恢复 asmdef；
+  **今后在编辑器外跑导出后，必须核对 `Assets/Gen/FTProject.Gen.asmdef` 是否还在。**
+

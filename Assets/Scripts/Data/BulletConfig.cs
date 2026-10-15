@@ -5,7 +5,8 @@ namespace FTProject
 {
     /// <summary>
     /// 子弹配置视图。
-    /// 2D 塔防下子弹行为完全配置化（速度/命中半径/存活时间/穿透/爆炸）。
+    /// 2D 塔防下子弹行为完全配置化（速度/命中半径/存活时间/爆炸）。
+    /// 【2026-10-14 三塔型收敛】穿透（pierce 字段）随穿透塔一并移除。
     /// </summary>
     public class BulletConfig
     {
@@ -34,15 +35,12 @@ namespace FTProject
             get { return (_b.LifeTimeMs > 0 ? _b.LifeTimeMs : 3000) / 1000f; }
         }
 
-        /// <summary>穿透数量，0 = 命中即消失</summary>
-        public int Pierce { get { return _b.Pierce; } }
-
         /// <summary>爆炸半径（格），0 = 单体伤害</summary>
         public float AoeRadius { get { return _b.AoeRadius; } }
 
         /// <summary>
         /// 命中时施加的效果（与塔表共用一套编号，见 EffectType 枚举注释）。
-        /// **子弹的 effectType 是命中效果的权威来源**；塔的 effectType 只用于分类与激光判定。
+        /// **子弹的 effectType 是命中效果的权威来源**；塔的 effectType 只用于分类展示。
         /// </summary>
         public EffectType Effect { get { return (EffectType)_b.EffectType; } }
 

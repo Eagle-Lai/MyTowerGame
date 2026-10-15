@@ -87,7 +87,7 @@
 ### 3.1 设计原则
 
 1. **DPS/金币效率随升级递增**（鼓励升级优于铺量，但铺量有堵路塑形价值）；
-2. **5 塔型定位互补**：Normal 性价比基准、Power 范围清群、Retard 控制增益全队、Pierce 直线穿透、Laser 高单伤对重甲/Boss；
+2. **3 塔型定位互补**（2026-10-14 收敛定案）：Normal 性价比基准（飞行+行走均可打）、Power/火力塔 范围清群（**仅行走**）、Retard 控制增益全队（飞行+行走）；
 3. 售价 = **累计投入 × 0.7**（四舍五入），与现规则一致；
 4. 所有数值**不改表结构**，仅改字段值（字段含义见程序案 §4.3）。
 
@@ -117,7 +117,8 @@
 | L2 | 8  | 5      | 12    | 450    | 50     | 9         | 56        | 40% |
 | L3 | 9  | 6      | 20    | 400    | 75     | 0         | 109       | 50% |
 
-**PierceTower（type=4，直线穿透，子弹 id=3，pierce=3 共穿 4 目标）**
+**~~PierceTower（type=4，直线穿透，子弹 id=3，pierce=3 共穿 4 目标）~~**
+> 【2026-10-14 三塔型收敛】穿透塔已整体移除（表行/子弹/音效/图标同步删除），下表仅作历史存档。
 
 | 等级 | id | radius | power | CD(ms) | prices | upgradeTo | sellPrice | 单目标DPS |
 | -- | -- | ------ | ----- | ------ | ------ | --------- | --------- | ------ |
@@ -125,7 +126,8 @@
 | L2 | 11 | 5      | 13    | 300    | 55     | 12        | 63        | 43.3   |
 | L3 | 12 | 6      | 20    | 250    | 80     | 0         | 119       | 80.0   |
 
-**LaserTower（type=5，hitscan 瞬发，无弹体 bulletId=0，effectType=4）**
+**~~LaserTower（type=5，hitscan 瞬发，无弹体 bulletId=0，effectType=4）~~**
+> 【2026-10-14 三塔型收敛】激光塔已整体移除（表行/音效/图标同步删除），下表仅作历史存档。
 
 | 等级 | id | radius | power | CD(ms) | prices | upgradeTo | sellPrice | DPS   |
 | -- | -- | ------ | ----- | ------ | ------ | --------- | --------- | ----- |
@@ -135,9 +137,9 @@
 
 \* DPS/累计金第二列为按累计投入（含本级）计算的效率。
 
-公共字段（全塔通用）：`targetMode=0`（最先接近终点者优先）、`searchIntervalMs=100`、`rotateSpeed=360`、`canAttackAir=1`（全塔可对空）。
+公共字段（全塔通用）：`targetMode=0`（最先接近终点者优先）、`searchIntervalMs=100`、`rotateSpeed=360`、`canAttackAir` 按三塔型定案（普通=1 / 火力=0 / 减速=1）。
 
-### 3.3 与现配置差异对照（tbtowerinfo 15 行）
+### 3.3 与现配置差异对照（tbtowerinfo，2026-10-14 收敛后 9 行）
 
 | 塔            | 项              | 现值 → 新值                                                                                  |
 | ------------ | -------------- | ---------------------------------------------------------------------------------------- |
@@ -150,9 +152,9 @@
 | Retard L1–L3 | 减速 effectValue | 0.5/0.6/0.7 → **0.30/0.40/0.50**（原 70% 减速过强）                                             |
 | Retard L1–L3 | power          | 8/17/27 → **6/12/20**；prices 30/45/70 → **30/50/75**                                     |
 | Retard L1–L3 | bulletId       | 0 → **4**（挂减速弹，修复 L1 无弹体不发减速的问题）                                                         |
-| Pierce L1–L3 | power          | 6/10/14 → **8/13/20**；CD 200/170/140 → **350/300/250**                                   |
-| Laser L1–L3  | power          | 24/50/78 → **30/55/90**；CD 500/450/400 → **800/700/600**；prices 40/60/80 → **50/80/120** |
-| 全部           | resName        | Pierce/Laser 现复用 `Tower_Normal0`（占位），**保持不变**，新美术在 P6 阶段接入                               |
+| ~~Pierce L1–L3~~ | — | **2026-10-14 塔型已删除**（下述数值调整作废） |
+| ~~Laser L1–L3~~ | — | **2026-10-14 塔型已删除**（下述数值调整作废） |
+| 全部 | resName | 三塔型各有独立 prefab；原 Pierce/Laser 占位复用 `Tower_Normal0` 的方案随塔型移除作废 |
 
 **子弹表（tbbulletdata）差异**：仅 id=2 爆炸弹 `aoeRadius 1.2 → 1.5`；其余不变。
 
@@ -204,7 +206,7 @@
 
 > 效果图目录：`Docs/ui_mockups/`（**14 张 SVG 正式版·深色科幻风**，1920×1080 高保真，几何与 prefab 实测数值一致）。
 > 若文档查看器不显示图片，请直接打开对应 SVG 文件。
-> **深色科幻视觉令牌**（正式版效果图统一规范）：底色 `#0B0E14` / 战场 `#10141D`；面板 `#2A3444→#1B2330→#222C3B` 渐变 + 45° 切角（大件 16px / 按钮 10~12px）+ 描边 `#3A4A63`；功能色——主青 `#35E0FF`（主按钮/路径/射程/传送门）、金 `#FFC94D`（货币/星级/普通伤害飘字）、红 `#FF4D5E`（危险/致命/敌方瞳光/失败主题）、绿 `#3DFFA8`（可建格/满血条）、橙火 `#FF7A29`（Power 火焰）、冰 `#7DE8FF`（Retard 控场）、紫 `#7C5CFF`/`#B18CFF`（Pierce/Laser 新形态）；发光=DropShadow 霓虹 + Bloom 模糊叠加，世界层加暗角 vignette。塔形依据 `Assets/_UIAssets/Tower` 真实美术（四联炮/火焰箱/八边基座蓝水晶），怪物=钢骨红瞳 faction；五塔总览见 [14 塔图鉴](ui_mockups/14_TowerCodex.svg)。
+> **深色科幻视觉令牌**（正式版效果图统一规范）：底色 `#0B0E14` / 战场 `#10141D`；面板 `#2A3444→#1B2330→#222C3B` 渐变 + 45° 切角（大件 16px / 按钮 10~12px）+ 描边 `#3A4A63`；功能色——主青 `#35E0FF`（主按钮/路径/射程/传送门）、金 `#FFC94D`（货币/星级/普通伤害飘字）、红 `#FF4D5E`（危险/致命/敌方瞳光/失败主题）、绿 `#3DFFA8`（可建格/满血条）、橙火 `#FF7A29`（Power 火焰）、冰 `#7DE8FF`（Retard 控场）、紫 `#7C5CFF`/`#B18CFF`（备用点缀色，原 Pierce/Laser 标识已随三塔型收敛退役）；发光=DropShadow 霓虹 + Bloom 模糊叠加，世界层加暗角 vignette。塔形依据 `Assets/_UIAssets/Tower` 真实美术（四联炮/火焰箱/八边基座蓝水晶），怪物=钢骨红瞳 faction；三塔总览见 [14 塔图鉴](ui_mockups/14_TowerCodex.svg)。
 > **UGUI 布局常量**（实现依据，与视觉风格解耦）：弹窗遮罩纯黑 55%（TowerInfoView 特例 35%）；按钮统一 320×72（LevelClearView 主按钮 420×72），Label 32 号居中；界面标题 38 号；星级行 76 号；禁用态 (0.5,0.5,0.5,0.6)。主 Canvas：Overlay、参考分辨率 1920×1080、Match=0.5，SafeAreaFitter 收刘海屏安全区。
 
 ### 6.1 界面清单（7 个已存在 prefab + 1 个新增元素）
@@ -219,7 +221,7 @@
 | 设置 | `SettingView` | Normal | 音量 ±10%、静音开关、重置存档、关闭 | [04](ui_mockups/04_SettingView.svg) |
 | 结算 | `LevelClearView`(+`LevelClearInfo`) | Normal | 胜/败标题；星级（1–3）与"新纪录"标记；剩余生命/击杀/漏怪；下一关/重打/回选关 | [05 胜利](ui_mockups/05_LevelClearView_Win.svg) / [05b 失败](ui_mockups/05b_LevelClearView_Lose.svg) |
 | 浮动提示 | `TipsView` | Tips | 队列式浮字（金币不足/禁堵路/回合倒计时等） | [06](ui_mockups/06_TipsView.svg) |
-| 塔图鉴（美术参考，无 prefab） | `Assets/_UIAssets/Tower` | — | 五塔竖卡：塔形大图 220×220 / 定位 / Lv.1 数值；Pierce/Laser 标注新形态设计稿 | [14](ui_mockups/14_TowerCodex.svg) |
+| 塔图鉴（美术参考，无 prefab） | `Assets/_UIAssets/Tower` | — | 三塔竖卡（2026-10-14 收敛）：塔形大图 220×220 / 定位 / Lv.1 数值 | [14](ui_mockups/14_TowerCodex.svg) |
 
 ### 6.2 逐界面规格（元素级）
 
@@ -245,7 +247,7 @@
 | GoldText | 左上锚 (40,-30)，520×52 | "金币 {n}"，32 号左对齐 |
 | HpText | 左上锚 (40,-84)，520×52 | "生命 {hp}/{maxHp}" |
 | RoundText | 顶中 (0,-30)，700×56 | "准备中"/"回合 {n}/5"/"第 {n} 波"/"回合 {n} 完成"，38 号居中 |
-| Btn_Tower_{Normal,Power,Retard,Pierce,Laser} | 中心锚，128×128，间距 274，y=-427 | 底图+炮管子图（Retard 水晶偏移 (0,31)）；type 缺配置则隐藏；买不起/放置模式置灰；PriceText 子节点（预留） |
+| Btn_Tower_{Normal,Power,Retard} | 中心锚，128×128，间距 274，y=-427 | 底图+炮管子图（Retard 水晶偏移 (0,31)）；type 缺配置则隐藏；买不起/放置模式置灰；PriceText 子节点（预留）（原 Pierce/Laser 两颗已随三塔型收敛删除） |
 | StartButton | 底中 (140,60)，220×72 | 文案流："开始"→"进行中"(置灰)→"下一回合"→"下一回合({倒计时})"→"已通关/已失败" |
 | 倍速按钮（**新增**） | 底中 (-140,60)，220×72（P2b 落地） | "×1/×2/×3"循环，见 §7.3；速度经 `GameClock.Speed` 参数驱动（非 timeScale） |
 
@@ -330,7 +332,7 @@ TipText：anchor(0.5,0.3)，1100×60，38 号居中；队列最多 3 条（超�
 | 路径 | `PathArrowView` | A* 最短路径逐格渲染 Path_Arrow；建塔即重算、全怪立即改道（§1.2 灵魂机制） |
 | 塔 | 基座+炮管双件 Sprite | 炮管朝目标旋转（rotateSpeed=360）；选中显示射程圈 `RangeIndicatorView`；减速塔常驻光环 `SlowAuraView` |
 | 怪物 | 8 部件骨骼式 SpriteRenderer + Animator | 四态动画 Ready/Walk/Attack/Death；血条 HP_Bar_Bg+Fill（满绿/低血橙）；飞行怪直线 S→E 不受地面堵路约束 |
-| 子弹 | `BaseBullet` + `LaserBeamView` | 追踪弹/AOE 落点爆/穿透/减速/持续伤害五型；激光 hitscan 无弹体 |
+| 子弹 | `BaseBullet` | 追踪弹/AOE 落点爆/减速/持续伤害；2026-10-14 起穿透与激光（LaserBeamView）已随三塔型收敛移除 |
 | 伤害飘字 | `FloatingTextManager` | 世界空间 Canvas，池化 24 个 TMP：普通淡黄 (1,0.95,0.6)/致命红 (1,0.42,0.32)，0.7s 上浮 1.4 单位淡出，按怪节流 120ms |
 | 背景 | Paper.png + `BackgroundParallax` | 视差滚动；P6 替换为 8 关专属背景 |
 | 相机 | `CameraController` | 2D 正交，平移/缩放/自适应取景（按关卡 CameraPosition/Rotration 配置） |
@@ -411,7 +413,7 @@ TipText：anchor(0.5,0.3)，1100×60，38 号居中；队列最多 3 条（超�
 |---|---|---|---|
 | 音效 | 16 项（tbaudio 已配好逻辑名） | wav/ogg，≤1.5s（UI 与开火类 ≤0.5s），44.1kHz | `Assets/Audio/` → 跑 gen_audio_catalog → AudioManager 三段式查找自动生效 |
 | BGM | 2 首（战斗/选关，循环） | ogg，码率 ≤128kbps | tbaudio 增 2 行（loop=1） |
-| 塔美术 | Pierce/Laser 两型 ×3 级 | 128px PNG，基座+炮管分件，风格对齐现有 Normal/Power/Retard | `Assets/_UIAssets/Tower/` → prefab 转换工具 |
+| 塔美术 | ~~Pierce/Laser 两型 ×3 级~~ | 已作废（2026-10-14 三塔型收敛，无需新美术）；三塔各自 128px PNG，基座+炮管分件 | `Assets/_UIAssets/Tower/` → prefab 转换工具 |
 | 战斗背景 | 8 张（每关 1 张） | 2048×1152 PNG，替换 Paper.png 复用现状 | `Assets/_UIAssets/Backgrounds/` |
 | 打击粒子 | 命中/死亡/AOE 爆炸 3 组 | ParticleSystem prefab，MaxParticles ≤50 | 事件已抛出，挂到 Bullet/Enemy 表现层 |
 | 怪物帧动画 | 119 怪的 Ready/Walk/Attack/Death | 沿用分部件骨骼式 Animator 方案 | `MonsterAnimEventReceiver` 已挂接 |

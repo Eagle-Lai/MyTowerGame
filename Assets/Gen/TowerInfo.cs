@@ -71,7 +71,7 @@ public sealed partial class TowerInfo :  Bright.Config.BeanBase
 
     public int Id { get; private set; }
     /// <summary>
-    /// 类型
+    /// 类型 1普通/2火力(AOE)/3减速光环
     /// </summary>
     public int Type { get; private set; }
     /// <summary>
@@ -127,7 +127,7 @@ public sealed partial class TowerInfo :  Bright.Config.BeanBase
     /// </summary>
     public int SellPrice { get; private set; }
     /// <summary>
-    /// 特殊效果类型 0无/1减速(光环)/2持续伤害/3范围伤害/4激光
+    /// 特殊效果类型 0无/1减速(光环)/2持续伤害/3范围伤害
     /// </summary>
     public int EffectType { get; private set; }
     /// <summary>
@@ -139,7 +139,7 @@ public sealed partial class TowerInfo :  Bright.Config.BeanBase
     /// </summary>
     public string Desc { get; private set; }
     /// <summary>
-    /// 是否可攻击飞行单位 0否/1是（缺省视为 1，兼容旧表）
+    /// 是否可攻击飞行单位 0否/1是（留空视为 0。三塔型定案：普通1/火力0/减速1）
     /// </summary>
     public int CanAttackAir { get; private set; }
 

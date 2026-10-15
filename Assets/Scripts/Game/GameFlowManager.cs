@@ -833,6 +833,10 @@ namespace FTProject
         ///
         /// 【为什么 roundCursor &lt;= 0 就跳过】还没打完第一回合时，"继续"和"重开"没有区别，
         /// 而重开的状态更干净（不会有半截的塔）。这种时候宁可让玩家从头开始。
+        ///
+        /// 【旧存档兼容（2026-10-14 三塔型收敛）】快照里若存有已被删除的塔型
+        /// （旧穿透 4 / 激光 5），GetTowerByTypeAndLevel 会报一条错误并返回 null，
+        /// 对应的塔被**跳过**：不崩溃、不返还金币，其余塔与回合进度照常恢复。
         /// </summary>
         private void TryRestoreSnapshot(int levelId)
         {
@@ -930,11 +934,10 @@ namespace FTProject
             //      完全没碰 BoardView 建出来的那一堆格子。
             if (boardView != null) boardView.Clear();
             if (pathArrowView != null) pathArrowView.Clear();
-            // 飘字 / 激光束都是"一次性表现"，寿命很短、自己也会消失，但它们同样是
+            // 飘字是"一次性表现"，寿命很短、自己也会消失，但它同样是
             // "上一关的画面"。一起收掉，让 TeardownLevel 成为一个完整的闭环 ——
             // 以后新增这类短命特效时，也照这个模式在这里登记一笔。
             FloatingTextManager.ClearAll();
-            LaserBeamView.ClearAll();
 
             // ④ 界面
             UIManager.Instance.Close(TowerInfoView.LogicalName);

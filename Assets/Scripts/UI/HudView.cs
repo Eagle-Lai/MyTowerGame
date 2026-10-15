@@ -70,17 +70,12 @@ namespace FTProject
         private bool _placing;
 
         /// <summary>
-        /// 建造栏的塔按钮（当前三类：单体/范围/减速）。
+        /// 建造栏的塔按钮（三类：普通 / 火力 / 减速 —— 2026-10-14 三塔型收敛定案）。
         ///
         /// 【为什么节点名必须显式映射，不能由配置推导】
         ///   Slow(3) 在美术/节点/资源目录里叫 "Retard" —— 这处不一致无法用字符串规则还原。
         ///   所以塔型 ↔ 节点名 的对应关系**只在这里写一次**，
         ///   UIPrefabBuilder 与 prefab 三处保持同名即可（契约见 Docs/HudView_Sync_and_TowerUI_Plan.md §2）。
-        ///
-        /// 【为什么只有三颗】穿透(4)/激光(5) 的美术仍是占位（Tower_Normal0），
-        ///   手工版已把这两颗从 HUD 撤下。配置表 type=4/5 的行保留，
-        ///   将来恢复：这里加回两个名字 + TowerNodeTypes 加 4/5，
-        ///   并在 UIPrefabBuilder.TowerButtons 与 M0SetupWizard 检查名单同步补回。
         ///
         /// 【为什么在 Awake 里按固定名单绑定，而不是读配置表动态生成】
         ///   HUD 的 Awake 可能早于 Configs 加载完成；靠配置决定"绑哪几个节点"会在时序上翻车。

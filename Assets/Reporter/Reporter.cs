@@ -2196,7 +2196,12 @@ public class Reporter : MonoBehaviour
 		}
 
 		try {
-			gameObject.SendMessage("OnLog", log);
+			// OnLog 是可选用户钩子（见 ReporterMessageReceiver，本身为空实现）。
+			// 必须 DontRequireReceiver：默认 RequireReceiver 在接收者缺失时会对
+			// 【每条日志】发一条 "no receiver" 警告，该警告又被本类日志回调捕获入队、
+			// 下帧 flush 再触发警告……一次缺失即自我永动死循环（2026-10-14 把
+			// 编辑器主线程刷死、Editor.log 膨胀 700MB+ 实测）。
+			gameObject.SendMessage("OnLog", log, SendMessageOptions.DontRequireReceiver);
 		}
 		catch (System.Exception e) {
 			Debug.LogException(e);

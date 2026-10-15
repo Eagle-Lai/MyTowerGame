@@ -269,7 +269,7 @@ Console 报告里全是 ✔（以 `[M0] 自检报告（通过，警告 0）：` 
 - [ ] 4. 打开 `Luban/Config/Datas/EnemyData.xlsx`，把 id=1 的 `hp` 从 `100` 改成 `50` → 保存 → 重跑 `gen_code_json.bat` → 回 Unity 等导入 → Play：怪物明显更快被打死
 
 **【棋盘与建造】**
-- [ ] 5. 点底部**塔按钮之一**（M2 起共 5 颗：普通/强力/减速/穿透/激光）→ 鼠标移动时有半透明的塔跟随，并显示**射程圈**
+- [ ] 5. 点底部**塔按钮之一**（共 3 颗：普通/火力/减速，2026-10-14 起三塔型收敛）→ 鼠标移动时有半透明的塔跟随，并显示**射程圈**
 - [ ] 6. 移到可建造格 → 该格**变绿**；移到障碍格 → 该格**变红**
 - [ ] 7. 点「普通」按钮后在绿格上左键 → 塔落位，金币从 100 减到 **80**（＝ `TBTowerInfo.id=1` 的 `prices`）
 - [ ] 8. 在已有塔的格上尝试 → 变红 + 提示「该位置已有防御塔」，不扣钱
@@ -304,17 +304,15 @@ Console 报告里全是 ✔（以 `[M0] 自检报告（通过，警告 0）：` 
 > 覆盖 M2 的 8 个目标（多塔型 / 升级出售 / 子弹特性 / 怪物扩展 / 飞行 / 音效 / 打击感 / 平衡）。
 > 上面 23 项仍然要全过 —— M2 不应让 M0 的任何一条回退。
 
-**【多塔型 5 类】**
-- [ ] M1. 底部有 **5 颗塔按钮**（普通 / 强力 / 减速 / 穿透 / 激光），金币不足的那颗**自动置灰**
-- [ ] M2. 5 种塔都能建出来；每种的伤害/射程/攻速与 `TowerInfo.xlsx` 对应行一致
+**【多塔型 3 类】**（2026-10-14 三塔型收敛，原穿透/激光检查项作废）
+- [ ] M1. 底部有 **3 颗塔按钮**（普通 / 火力 / 减速），金币不足的那颗**自动置灰**
+- [ ] M2. 3 种塔都能建出来；每种的伤害/射程/攻速与 `TowerInfo.xlsx` 对应行一致
 - [ ] M3. 点不同按钮能**切换**塔型；已有塔的格子不能再建
 
 **【子弹特性】**
-- [ ] M4. **AOE（强力塔）**：一次开火能同时打到相邻的多只怪（子弹 `aoeRadius=1.2`）
-- [ ] M5. **穿透（穿透塔）**：一发子弹能连续命中 ≥2 只怪（`pierce=3`）
-- [ ] M6. **减速（减速塔）**：被命中的怪明显变慢，约 2 秒后恢复原速
-- [ ] M7. **激光（激光塔）**：瞬发命中，**看不到弹体**，只有一条一闪而过的光束
-- [ ] M8. 腐蚀弹（`effectType=2`）的持续伤害生效，且**能靠 DOT 打死怪**并正常给金币
+- [ ] M4. **AOE（火力塔）**：一次开火能同时打到相邻的多只怪（子弹 `aoeRadius=1.2`）
+- [ ] M5. **减速（减速塔）**：被命中的怪明显变慢，约 2 秒后恢复原速
+- [ ] M6. 腐蚀弹（`effectType=2`）的持续伤害生效，且**能靠 DOT 打死怪**并正常给金币
 
 **【升级与出售】**
 - [ ] M9. **左键点已建塔** → 该格变**暖黄**、塔身提亮、显示**射程圈**，并弹出塔信息面板
@@ -404,7 +402,7 @@ Console 报告里全是 ✔（以 `[M0] 自检报告（通过，警告 0）：` 
 |---|---|
 | 怪物血量/速度/护甲/奖励/漏怪伤害/显示大小 | `EnemyData.xlsx` 的 `hp` / `speed` / `armor` / `reward` / `damageToPlayer` / `scale` |
 | 塔的攻击力/射程/冷却/价格/索敌策略 | `TowerInfo.xlsx` 的 `power` / `radius` / `CD` / `prices` / `targetMode` |
-| 子弹速度/命中半径/存活时间/穿透/爆炸 | `BulletData.xlsx` 的 `speed` / `hitRadius` / `lifeTimeMs` / `pierce` / `aoeRadius` |
+| 子弹速度/命中半径/存活时间/爆炸 | `BulletData.xlsx` 的 `speed` / `hitRadius` / `lifeTimeMs` / `aoeRadius`（pierce 列已随穿透塔删除） |
 | 关卡初始金币与生命、回合数量 | `SceneInfo.xlsx` 的 `initialGold` / `initialHp` / `RoundList` |
 | 每波出什么怪、间隔多久 | `EnemyList.xlsx` 的 `EnemyIndexs`（怪物 id 列表）/ `interval` / `enemyInterval` |
 | 每个回合包含哪些波次 | `RoundData.xlsx` 的 `EnemyIndexs` |
@@ -576,7 +574,7 @@ Console 首行变为：
 │       ├── Data\                       配置读取层（Configs + 包装类 + 生成清单 + **SaveData**）
 │       ├── Game\                       棋盘 / 关卡流程 / 路径渲染 / **背景视差**
 │       ├── Round\WaveManager.cs        波次时间轴
-│       ├── Enemy\  Tower\  Bullet\     战斗实体（含 RangeIndicatorView / LaserBeamView）
+│       ├── Enemy\  Tower\  Bullet\     战斗实体（含 RangeIndicatorView；LaserBeamView 已删）
 │       ├── UI\  Core\UI\               HUD / 提示 / 塔面板 / 伤害飘字 / **选关 / 暂停 / 设置 / 安全区 / 淡入**
 │       ├── Camera\CameraController.cs  2D 正交相机（震动 + **平移/边缘拖拽/边界夹取**）
 │       └── AStarWrapper\               A* 寻路（只建数据，不生成物件）
@@ -617,7 +615,7 @@ Console 首行变为：
 | **局内快照** | `GameFlowManager.SaveSnapshotNow` / `TryRestoreSnapshot` |
 | **地图数据** | `Luban/Config/Datas/LevelMap.xlsx`；用菜单「地图编辑器」画，别手写字符串 |
 | **性能度量** | `Core/Manager/PerfProbe.cs`（F3 打印报告） |
-| 子弹行为（穿透/爆炸/减速/DOT） | `Bullet/BaseBullet.cs`；参数全在 `BulletData.xlsx` |
+| 子弹行为（爆炸/减速/DOT） | `Bullet/BaseBullet.cs`；参数全在 `BulletData.xlsx` |
 | 状态效果（减速/持续伤害） | `Enemy/BaseEnemy.cs` 的 `ApplySlow` / `ApplyDot` |
 | 飞行单位 | `Enemy/BaseEnemy.cs` 的 `SetupFlyingPath` / `MoveStraight`；开关是 `EnemyData.isFlying` |
 | 射程圈 | `Tower/RangeIndicatorView.cs`（贴图由占位生成器产出） |
@@ -677,7 +675,7 @@ M0 的 HUD 使用 Unity **内置动态字体**（`LegacyRuntime.ttf`）。
 | 跑完一键向导后手工改的 HudView / 塔 prefab 被覆盖了 | 用了「全量重建」入口 | M2 起向导已改调 `EnsureMissing`（只补缺失）。重建类入口都在「高级（单步重建）」下，用前请先备份 |
 | **升级之后塔不见了 / 格子空了** | 旧版本 `TryUpgrade` 会先拆旧塔再建新塔，新塔加载失败就什么都没了 | M2 已改为**先建后拆**：失败时退还金币且原塔保持不变。若仍复现请反馈 |
 | Console 刷 `[Audio] 「sfx_xxx」找不到音频资源` | 工程内没有音频文件（预期） | 属静默降级，不影响玩法。要消除：把音频丢进 `Assets/Audio/` 并跑 `gen_audio_catalog.py`（见 `.workbuddy/tools/`） |
-| **穿透塔打不到第二只怪** | 旧版本穿透逻辑失效 | M2 已修；若复现请反馈（命中判定改用空间哈希找"最近且未打过"的敌人） |
+| ~~**穿透塔打不到第二只怪**~~ | 旧版本穿透逻辑失效（M2 已修） | 历史条目；穿透塔已于 2026-10-14 随三塔型收敛整体移除 |
 | 伤害数字不显示 | 配置表开关关了 | `Global.xlsx` 的 `showDamageText` 置 1（同时确认 `damageTextThrottleMs` 不过大） |
 | 屏幕震动停不下来 / 相机偏了 | 震动期间调用了 `FitBoard` | 已在 `FitBoard` 与空格归位里清 `_shakeOffset`；若仍复现请反馈 |
 | **飞行怪还是沿着地面路径走** | `EnemyData.isFlying` 为 0 | 该怪的行改成 1 → 重跑 Luban 导出。飞行单位走"起点→终点"直线，不参与 A* 与堵路判定 |
@@ -701,10 +699,10 @@ M0 的 HUD 使用 Unity **内置动态字体**（`LegacyRuntime.ttf`）。
 | ~~选关界面~~ | ✅ **M3 已完成**（`SelectView`，含解锁/星级/难度标签）。开机先进选关；调试可填 `GameFlowManager.startLevelId` 跳过 |
 | ~~塔升级 / 出售 UI~~ | ✅ **M2 已完成**（`TowerInfoView` + 换实例升级 + 两段式出售确认） |
 | ~~伤害飘字 / 击杀特效 / 音效~~ | ✅ **M2 已完成**（飘字/闪白/消散/震动；音效为"系统先行"，等音频文件） |
-| ~~多塔型 / AOE / 减速~~ | ✅ **M2 已完成**（5 类齐备；穿透/激光外观待美术） |
+| ~~多塔型 / AOE / 减速~~ | ✅ **M2 已完成**；2026-10-14 起收敛为 3 类（穿透/激光整体移除） |
 | 结算界面 | 仍用 `TipsView` 文本代替（原计划 M3） |
 | 切关时的 AB 整包释放 | `ReleaseBundle` 已实现，但只有一关，未接入流程 |
-| 塔面板 / 穿透 / 激光的正式美术 | 目前：面板是纯色占位、穿透与激光复用普通塔外观。换皮 = 改 `resName` + `ResTable`，零代码 |
+| 塔面板的正式美术 | 目前：面板是纯色占位。换皮 = 改 `resName` + `ResTable`，零代码（原穿透/激光美术待办已随塔型移除作废） |
 | 音频文件 | 工程内 0 个。丢进 `Assets/Audio/` + 跑生成器即生效 |
 | 后期难度曲线 | 顶演显示第 6~8 回合余量 8~9 倍偏宽裕；整体经济调优属 M3 |
 | 其余 118 个怪物 prefab 的战斗接入 | M0 只接了 `Enemy_Rat`；`ResTable` 加条目 + `EnemyData.resName` 指向即可扩展 |
@@ -778,7 +776,7 @@ M0 的 HUD 使用 Unity **内置动态字体**（`LegacyRuntime.ttf`）。
 
 | 改了什么 | 必须额外验证 |
 |---|---|
-| `TowerInfo.xlsx` / `BulletData.xlsx` | 5 种塔都能建出来；AOE 一次打多只；穿透连打 ≥2 只；减速怪变慢；激光无弹体 |
+| `TowerInfo.xlsx` / `BulletData.xlsx` | 3 种塔都能建出来；AOE 一次打多只；减速怪变慢；普通塔飞行/行走都能打、火力塔只打行走（2026-10-14 三塔型收敛） |
 | `EnemyData.xlsx` | 改过的那只怪属性在游戏里生效；`isFlying=1` 的怪走直线且不挡建塔 |
 | `LevelMap.xlsx` | 每张图 S→E 可达；`cells` 每行长度 = `cols`（否则 Console 报 `[Flow] 棋盘配置校验未通过`） |
 | `EventName.cs` | 跑 `python .workbuddy/tools/check_events.py`（校验 Trigger/Add 的 arity 一致） |

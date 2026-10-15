@@ -35,15 +35,16 @@ namespace FTProject
     /// 共用一个枚举 + 一份图例，是这个项目里成本最低的一致性保障。
     ///
     /// 【谁说了算】真正的**命中效果**以子弹的 effectType 为准；
-    /// 塔的 effectType 用于①分类展示 ②判定激光（Laser 走 hitscan，不发射弹体）。
-    /// 效果**强度**：塔的 effectValue > 0 时覆盖子弹的 effectValue，否则用子弹自己的 ——
-    /// 这样 AOE / 穿透塔不必重复填。
+    /// 塔的 effectType 目前只用于①分类展示（塔型级的行为差异改由 TowerType 判定）。
+    /// 效果**强度**：塔的 effectValue > 0 时覆盖子弹的 effectValue，否则用子弹自己的。
     ///
     /// 【减速塔（TowerType.Slow / 美术名 Retard）是例外】它不走"命中"这条路：
     ///   M3 起改为**范围光环**——射程内所有敌人持续减速，不发射子弹、不索敌。
     ///   其 effectValue 直接就是减速比例（0.5/0.6/0.7），由 BaseTower.TickSlowAura 使用；
     ///   塔表里保留 effectType=1 只为让 UI 分类与图例口径一致，**不参与运行时判定**
     ///   （判定用 TowerConfig.IsSlowAura，即 Type==3）。
+    ///
+    /// 【2026-10-14 三塔型收敛】原 Laser(4) 已随激光塔一并删除，编号不回收不复用。
     /// </summary>
     public enum EffectType
     {
@@ -55,7 +56,5 @@ namespace FTProject
         Dot = 2,
         /// <summary>范围伤害：半径由子弹的 aoeRadius 决定</summary>
         Aoe = 3,
-        /// <summary>激光：瞬发命中，不生成弹体</summary>
-        Laser = 4,
     }
 }
