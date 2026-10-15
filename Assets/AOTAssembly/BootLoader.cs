@@ -53,9 +53,12 @@ namespace FTProject.AOT
         /// <summary>
         /// 服务器可达性探测的超时（秒）。**刻意远小于下载超时** ——
         /// 探测的目的是"快速判断能不能连上"，连不上就不该让玩家多等。
-        /// 需求第 2 条："设置合理超时；不可达则直接使用本地资源正常运行，不得阻塞启动或导致崩溃"。
+        ///
+        /// 【2026-10-15 起 1 秒（原 4 秒）】需求：无网络 / 服务器未启动时，启动被
+        /// "等待连接资源服务器"长时间阻塞 —— 现在探测 1 秒内必须给结论，超时即视为
+        /// 不可达，立刻回退本地资源与本地 dll（与 UDP 监听窗口并行，互不叠加）。
         /// </summary>
-        private const int ProbeTimeoutSeconds = 4;
+        private const int ProbeTimeoutSeconds = 1;
 
         private void Awake()
         {
@@ -80,6 +83,12 @@ namespace FTProject.AOT
             // ⓪-b 服务探测 → 可达才做 dll 热更；不可达直接跳过，用本地资源继续。
             //      需求第 2 条：探测必须有超时，且失败**绝不能阻塞启动**。
             yield return StartCoroutine(ProbeAndDownloadDllsCo());
+
+            // ⓪-c 【2026-10-15】探测已结束（无论结论）→ 打上"已探测"标记。
+            //      AB 侧（ResServerConfig.IsRemoteHotUpdateAllowed）据此在"服务器不可达"时
+            //      直接走离线模式；没有这一步，YooAsset 会向不可达地址请求包裹版本
+            //      （默认 60s 超时且硬失败），真机表现为"启动一直等待、最终进不去游戏"。
+            BootServerSelection.MarkReachabilityChecked();
 
             // ① 加载 dll（这一步在真机上稍慢，逐帧让出避免卡死界面）
             bool loaded = false;
@@ -194,10 +203,11 @@ namespace FTProject.AOT
         ///   探测的**结果**顺带被复用：可达时下载器马上会再拉一次，
         ///   代价是一次很小的请求，换来逻辑上的强保证。
         ///
-        /// 【不可达时的行为 —— 需求第 2 条的核心】
+        /// 【不可达时的行为 —— 需求核心】
         ///   什么都不做，直接返回。后续 LoadAssembliesCo 会从
         ///   persistentDataPath / StreamingAssets 读到本地已有的 dll，
-        ///   游戏**完全正常启动**。整个过程只多花最多 4 秒（一次探测超时）。
+        ///   游戏**完全正常启动**。整个过程只多花最多 1 秒（一次探测超时，
+        ///   与后台 UDP 监听窗口并行，总等待不超过 ~1.5 秒）。
         /// ==================================================================
         /// </summary>
         private IEnumerator ProbeAndDownloadDllsCo()
@@ -207,12 +217,13 @@ namespace FTProject.AOT
 
             // 候选地址来源（优先级从高到低）：
             //   ① persistentDataPath/server.txt 第一行 —— 手工覆盖，只试这一个（诊断用）；
-            //   ② UDP 自动发现 —— 电脑上 hotupdate_server.py 每秒广播，真机监听 2.5s 拿当前 IP
+            //   ② UDP 自动发现 —— 电脑上 hotupdate_server.py 每秒广播，真机监听 1.5s 拿当前 IP
             //     （家里 DHCP IP 会变，靠这个免改代码）；
             //   ③ BootServerSelection.Candidates 常量 —— 模拟器 10.0.2.2（永不变）等固定地址。
             // 执行顺序：②与③**并行**（UDP 后台监听 + 常量并发探测，谁先出结果用谁）；
-            // ③先成功（模拟器 ~0.1s）立即停 UDP；③失败（真机 4s 超时）时 UDP 多半已收完，
-            // 其结果进入第二阶段探测。server.txt 存在则跳过 UDP，语义与旧版完全一致。
+            // ③先成功（模拟器 ~0.1s）立即停 UDP；③失败（超时 1s）后进入第二阶段 ——
+            // 等 UDP 窗口收完（≤1.5s，可能已收完），其结果再进探测。server.txt 存在则
+            // 跳过 UDP，语义与旧版完全一致。
             string manualOverride = ReadServerOverride();
             if (string.IsNullOrEmpty(manualOverride) == false)
             {
@@ -357,7 +368,7 @@ namespace FTProject.AOT
         /// ==================================================================
         /// 【为什么并发而不是串行】
         ///   候选来自不同环境（公司/家/模拟器），同一时刻通常只有一个可达，
-        ///   但**无法预知是哪个**。串行逐个试，最坏 4s×N 全超时；并发后
+        ///   但**无法预知是哪个**。串行逐个试，最坏 1s×N 全超时；并发后
         ///   总耗时 = 最慢一发（<see cref="ProbeTimeoutSeconds"/> 封顶），
         ///   可达者按真实网络快慢自然胜出，与书写顺序无关。
         ///

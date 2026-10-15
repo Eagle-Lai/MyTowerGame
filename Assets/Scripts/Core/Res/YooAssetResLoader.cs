@@ -524,15 +524,36 @@ namespace FTProject
             // YooAsset 会优先用沙盒（新版本），没有才回落到内置（首包版本）。
             string serverUrl = ResServerConfig.GetServerUrl();
 
-            if (ResServerConfig.EnableHotUpdate == false || ResServerConfig.IsValidServerUrl(serverUrl) == false)
+            // 【2026-10-15 修复】总闸门：服务器可达性由启动链在 1 秒内探测（见 BootLoader）。
+            // 不可达时**绝不进入联机模式** —— 否则版本请求会对不可达地址空等
+            // （默认 60s 超时且硬失败），真机表现为"启动一直等待、最终进不去游戏"。
+            // （hotEnabled 落局部是为了避开 const 比较的 CS0162，语义不变）
+            bool hotEnabled = ResServerConfig.EnableHotUpdate;
+            bool bootReachable = FTProject.AOT.BootServerSelection.RemoteHotUpdateAllowed;
+            if (hotEnabled == false
+                || ResServerConfig.IsValidServerUrl(serverUrl) == false
+                || bootReachable == false)
             {
-                // 【降级而不是报错】地址没配好时退回离线模式，至少让游戏能进得去。
-                // 这比"启动直接失败"友好得多：玩家玩到的是首包版本，而不是黑屏。
+                // 【降级而不是报错】退回离线模式，至少让游戏能进得去 ——
+                // 玩家玩到的是随包版本，而不是黑屏或无限等待。
+                string reason;
+                if (hotEnabled == false)
+                {
+                    reason = "EnableHotUpdate 总开关为 false";
+                }
+                else if (ResServerConfig.IsValidServerUrl(serverUrl) == false)
+                {
+                    reason = "服务器地址非法（\"" + serverUrl + "\"）";
+                }
+                else
+                {
+                    reason = "启动探测已判定服务器不可达（1 秒超时内 md5.txt 无响应，且无 UDP 广播来源）";
+                }
+
                 Debug.LogWarning(string.Format(
-                    "[Res] 热更已跳过：EnableHotUpdate={0}，服务器地址=\"{1}\"。\n" +
-                    "  将使用离线模式（只读随包资源）。\n" +
-                    "  要启用热更，请在 ResServerConfig.cs 里把地址改成形如 http://192.168.x.x:8000 的可用地址。",
-                    ResServerConfig.EnableHotUpdate, serverUrl));
+                    "[Res] 远端热更跳过（{0}）→ 使用离线模式：只读随包资源，不产生任何网络请求，游戏照常启动。\n" +
+                    "  若这是预期外的降级：请确认热更服务器已启动、设备与电脑同网段，然后重启应用重试。",
+                    reason));
 
                 OfflinePlayModeOptions offlineOptions = new OfflinePlayModeOptions();
                 offlineOptions.BuiltinFileSystemParameters =
@@ -1306,6 +1327,20 @@ namespace FTProject
                 {
                     onError("资源系统尚未初始化完成，无法检查更新");
                 }
+                yield break;
+            }
+
+            // ---- ⓪ 前置闸门（2026-10-15）：服务器不可达 / 热更未配置时，
+            //      **不发起任何远端请求**，直接按"无需更新"放行，用本地资源继续启动。
+            //      与 CreateInitOptions 的离线降级同源（那边保证包按离线模式初始化，
+            //      这边连"检查"都跳过）—— 双保险：任何路径都不会再出现
+            //      "检查更新"长时间等待（此前版本请求默认 60s 超时且硬失败）。
+            if (ResServerConfig.IsRemoteHotUpdateAllowed() == false)
+            {
+                if (onPhase != null) onPhase("当前模式：无需更新资源");
+                Debug.Log("[Res] 跳过资源更新检查：远端热更未启用（服务器不可达 / 未配置），直接使用本地资源。");
+                yield return null;   // 让阶段文案至少显示一帧，避免界面一闪而过看不出原因
+                if (onDone != null) onDone(false);
                 yield break;
             }
 

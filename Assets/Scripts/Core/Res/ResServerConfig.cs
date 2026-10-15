@@ -157,6 +157,43 @@ namespace FTProject
                 || url.StartsWith("https://", System.StringComparison.OrdinalIgnoreCase);
         }
 
+        /// <summary>
+        /// 远端热更（AB 资源 + dll 两条链路共用的总闸门）当前是否应当启用。
+        ///
+        /// 【为什么需要这个判定 — 2026-10-15 修复】
+        ///   真机曾出现"服务器不可用 → 启动一直等待 → 最终进不去游戏"：
+        ///   dll 侧有探测兜底，但 AB 侧此前**无条件**走 HostPlayMode，
+        ///   会对不可达地址请求包裹版本（默认 60s 超时且硬失败），把启动拖死。
+        ///   修复后两条链路共用同一判定：启动最早期由 BootLoader 以 1 秒超时探测服务器
+        ///   （BootServerSelection），结论"不可达"时本方法返回 false，此时：
+        ///     · AB 侧 → YooAsset 直接走离线模式（只读随包资源，不发任何网络请求）；
+        ///     · 更新检查 → 跳过版本比对与下载，立刻用本地资源继续启动（onDone(false)）。
+        ///
+        /// 判定 = ①总开关开启 ∧ ②地址是合法 http(s) 地址 ∧
+        ///        ③启动链未判定"服务器不可达"（未探测过的环境不做第③条，维持旧行为）。
+        /// </summary>
+        public static bool IsRemoteHotUpdateAllowed()
+        {
+            // 【为什么先落到局部变量】EnableHotUpdate 是 const，直接与 false 比较会被
+            // 编译器折叠成"永不执行的分支"并报 CS0162（Unreachable code）；落到局部
+            // 变量后语义不变且无警告 —— 该开关本就是"改源码切换"的配置项，
+            // 两种取值的代码路径都要保留。
+            bool hotEnabled = EnableHotUpdate;
+            if (hotEnabled == false)
+            {
+                return false;
+            }
+
+            // ③ 启动探测结论：已探测且无胜出 → 服务器不可达（跳过地址读取，最快返回）
+            if (FTProject.AOT.BootServerSelection.RemoteHotUpdateAllowed == false)
+            {
+                return false;
+            }
+
+            // ② 地址合法性（GetServerUrl 内部按 优先级 决定最终地址）
+            return IsValidServerUrl(GetServerUrl());
+        }
+
         private static string TrimTrailingSlash(string url)
         {
             if (string.IsNullOrEmpty(url))
