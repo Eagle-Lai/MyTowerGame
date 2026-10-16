@@ -16,7 +16,11 @@
 """
 import io, os, collections
 
-ASSETS = r'D:\FreedomTower\Assets'
+# 工程根 = 本脚本所在 .workbuddy/tools/ 的上两级；避免硬编码盘符（曾因写死 D:\FreedomTower
+# 在工程改名/搬迁后静默指向错误目录）。可用环境变量 FT_PROJECT_ROOT 覆盖。
+_HERE = os.path.dirname(os.path.abspath(__file__))
+_ROOT = os.environ.get('FT_PROJECT_ROOT') or os.path.dirname(os.path.dirname(_HERE))
+ASSETS = os.path.join(_ROOT, 'Assets')
 SRC_ROOT = os.path.join(ASSETS, '_UIAssets', 'Monsters')
 OUT = os.path.join(ASSETS, 'Scripts', 'Data', 'MonsterCatalog.cs')
 
