@@ -1,0 +1,11 @@
+扫描 174 个 .cs 文件
+==============================================================================
+命名空间引用校验（缺失 → CS0246）
+  FAIL  Editor\BuildApk.cs
+        使用了 YooAsset.Editor 里的类型，但未 import 该命名空间：
+          BuildResult
+        修复：在文件顶部加 `using YooAsset.Editor;`
+
+RESULT: FAIL
+
+STDERR:

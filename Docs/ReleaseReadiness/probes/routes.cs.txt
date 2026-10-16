@@ -1,0 +1,40 @@
+// Edit-mode fixture: no scene objects, no persistence, no writes to Assets.
+if (UnityEditor.EditorApplication.isPlaying) return "Refused: run in edit mode";
+var flags = System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic;
+var baseType = typeof(FTProject.BaseManager<FTProject.AStarManager>);
+var creating = baseType.GetField("s_creatingSingleton", flags);
+var created = baseType.GetField("s_singletonCreated", flags);
+var wasCreating = creating.GetValue(null);
+var wasCreated = created.GetValue(null);
+FTProject.AStarManager a;
+creating.SetValue(null, true);
+try { a = new FTProject.AStarManager(); }
+finally { creating.SetValue(null, wasCreating); created.SetValue(null, wasCreated); }
+var cells = new System.Collections.Generic.List<string> { "...........", "...........", "S.........E", "...........", "..........." };
+var map = new FTProject.LevelMapConfig(new cfg.LevelMap(991, 991, 11, 5, cells, "audit fixture: same cells as current level 1"));
+System.Func<System.Collections.Generic.List<AStar.Point>, string> describe = path => string.Join(" ", path.Select(p => p.Y + "," + p.X).ToArray());
+a.BuildGrid(map, 1f, UnityEngine.Vector2.zero);
+var mainBefore = describe(a.GetPath());
+var localBefore = a.GetAStarPath(a.GetPoint(0, 5), a.GetEndPoint());
+var mainCells = a.GetPath().Select(p => p.Y + "," + p.X).ToArray();
+var candidate = localBefore.Skip(1).First(p => !mainCells.Contains(p.Y + "," + p.X));
+int notifications = 0;
+// Keep the exact delegate for cleanup.
+System.Action callback = () => { notifications++; };
+FTProject.EventDispatcher.AddEventListener(FTProject.EventName.RefreshPathEvent, callback);
+object branchResult;
+try {
+    a.SetWall(candidate.Y, candidate.X, true);
+    bool spawnReachable = a.IsFindPath();
+    a.RequestRefresh();
+    a.ProcessRefresh();
+    var localAfter = a.GetAStarPath(a.GetPoint(0,5), a.GetEndPoint());
+    branchResult = new { wall = candidate.Y + "," + candidate.X, mainUnchanged = mainBefore == describe(a.GetPath()), spawnReachable, localBefore = describe(localBefore), localAfter = describe(localAfter), refreshNotifications = notifications, oldLocalPathIncludesNewWall = localBefore.Contains(candidate) };
+} finally { FTProject.EventDispatcher.RemoveEventListener(FTProject.EventName.RefreshPathEvent, callback); }
+a.BuildGrid(map, 1f, UnityEngine.Vector2.zero);
+a.SetWall(0,4,true);
+a.SetWall(1,5,true);
+bool beforeEnemyReachable = a.IsFindPath(a.GetPoint(0,5),a.GetEndPoint());
+a.SetWall(0,6,true);
+var trapResult = new { closingWall = "0,6", enemyCell = "0,5", beforeEnemyReachable, spawnStillReachable = a.IsFindPath(), enemyStillReachable = a.IsFindPath(a.GetPoint(0,5),a.GetEndPoint()), distanceToClosingWall = UnityEngine.Vector2.Distance(a.GetPoint(0,5).Center,a.GetPoint(0,6).Center) };
+return new { environment = "Unity edit-mode execution of current AStarManager, isolated 11x5 grid", branch = branchResult, trap = trapResult };

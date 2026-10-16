@@ -1,0 +1,80 @@
+[
+  {
+    "script": "check_code.py",
+    "exit_code": 0,
+    "log": "check_code.py.log",
+    "tail": [
+      "  重名问题   : 0",
+      "  文件名问题 : 0",
+      "  事件名问题 : 0",
+      "  逻辑名问题 : 0",
+      "",
+      "RESULT: PASS"
+    ]
+  },
+  {
+    "script": "check_events.py",
+    "exit_code": 0,
+    "log": "check_events.py.log",
+    "tail": [
+      "  TowerUpgradeSuccess          trigger=[1]  add=[1]",
+      "  UpdateEvent                  trigger=[0]  add=[0]",
+      "  WaveClearEvent               trigger=[1]  add=-",
+      "  WaveStartEvent               trigger=[1]  add=[1]",
+      "",
+      "RESULT: PASS"
+    ]
+  },
+  {
+    "script": "check_usings.py",
+    "exit_code": 1,
+    "log": "check_usings.py.log",
+    "tail": [
+      "  FAIL  Editor\\BuildApk.cs",
+      "        使用了 YooAsset.Editor 里的类型，但未 import 该命名空间：",
+      "          BuildResult",
+      "        修复：在文件顶部加 `using YooAsset.Editor;`",
+      "",
+      "RESULT: FAIL"
+    ]
+  },
+  {
+    "script": "check_native_symbols.py",
+    "exit_code": 0,
+    "log": "check_native_symbols.py.log",
+    "tail": [
+      "    ✓ softfp（EF_ARM_ABI_FLOAT_SOFT），符合 armeabi-v7a ABI",
+      "    导出 sqlite3_* 符号 271 个",
+      "    ✓ 所需 26 个符号全部导出",
+      "    meta: Android=1 CPU=ARMv7  Any=0 Editor=0  guid=78681d4cfefd4773928c45a688fe8f59",
+      "",
+      "PASS 原生库符号 / ABI / .meta 全部正确"
+    ]
+  },
+  {
+    "script": "verify_save_roundtrip.py",
+    "exit_code": 0,
+    "log": "verify_save_roundtrip.py.log",
+    "tail": [
+      "  [OK]   enc 子密钥标签 = FT.Persistence/enc/v1",
+      "  [OK]   mac 子密钥标签 = FT.Persistence/mac/v1",
+      "",
+      "==============================================================================",
+      "通过 19 项，失败 0 项",
+      "RESULT: PASS"
+    ]
+  },
+  {
+    "script": "check_ui_contract.py",
+    "exit_code": 0,
+    "log": "check_ui_contract.py.log",
+    "tail": [
+      "==============================================================================",
+      "UI 节点契约校验（View 的 Find 路径 vs 生成器产出的节点）",
+      "  已比对视图：16 个",
+      "  PASS  所有视图引用的节点都能在生成器里找到",
+      "",
+      "RESULT: PASS"
+    ]
+  }
+]

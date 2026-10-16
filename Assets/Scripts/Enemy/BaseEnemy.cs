@@ -107,6 +107,8 @@ namespace FTProject
         private Transform _hpBarFill;
         private Transform _hpBarRoot;
         private Animator _anim;
+        private EnemyDirectionalVisual _directionalVisual;
+        private bool _directionalSearched;
         private SpriteRenderer _hpFillSr;
         private bool _pendingRecycle;
         private float _recycleTimer;
@@ -190,6 +192,18 @@ namespace FTProject
             }
 
             CacheRefs();
+            if (_directionalVisual != null && _directionalVisual.IsConfigured)
+            {
+                // Reused instances must not retain a death expression, trigger or animated pose.
+                if (_anim != null)
+                {
+                    _anim.Rebind();
+                    SyncAnimSpeed();
+                }
+                _directionalVisual.ResetForSpawn();
+                _lastDir = Vector2.zero;
+                CompensateHpBarFlip(transform.localScale.x);
+            }
             // 飞行标记必须在 SetPath 之前定型：SetPath 会据此决定"逐格走"还是"走直线"
             _flying = cfg.IsFlying;
             SetPath(path);
@@ -200,11 +214,21 @@ namespace FTProject
             _recycleTimer = 0f;
             GameObjSetActive(true);
             SetAnimState(EnemyAnimState.Walk);
+            if (_directionalVisual != null && _directionalVisual.IsConfigured && _anim != null && gameObject.activeInHierarchy)
+            {
+                // Init is called before a pooled instance is activated. Sample only after activation.
+                _anim.Update(0f);
+            }
             UpdateHpBar();
         }
 
         private void CacheRefs()
         {
+            if (!_directionalSearched)
+            {
+                _directionalVisual = GetComponent<EnemyDirectionalVisual>();
+                _directionalSearched = true;
+            }
             // 【注意 includeInactive=true 不能省】对象池归还时会 SetActive(false)，
             // 而 Init 是在"取出后、激活前"调用的 —— 此时整棵子树都是未激活状态。
             // GetComponentInChildren 默认跳过未激活的子物体，动画可能挂在子节点上
@@ -302,6 +326,11 @@ namespace FTProject
             _deathFade = 1f;
             ApplyBodyAlpha(1f);
             transform.localScale = _spawnScale;
+            if (_directionalVisual != null && _directionalVisual.IsConfigured)
+            {
+                _directionalVisual.ResetForSpawn();
+                CompensateHpBarFlip(transform.localScale.x);
+            }
             NextDamageTextTime = 0f;
 
             // P2b：动画机速度还原 1，防止"×3 时死亡回收、×1 时复用"带着旧档位出场。
@@ -482,6 +511,20 @@ namespace FTProject
             {
                 return;
             }
+            if (_directionalVisual != null && _directionalVisual.Face(_lastDir))
+            {
+                EnemyFacing facing = _directionalVisual.Facing;
+                bool horizontal = facing == EnemyFacing.Left || facing == EnemyFacing.Right;
+                bool mirrored = horizontal && (_artFaceLeft
+                    ? facing == EnemyFacing.Right : facing == EnemyFacing.Left);
+                Vector3 scale = transform.localScale;
+                scale.x = mirrored ? -absX : absX;
+                transform.localScale = scale;
+                CompensateHpBarFlip(scale.x);
+                // Death shrink must preserve the most recent facing, including a right turn.
+                _spawnScale = scale;
+                return;
+            }
             // 纯纵向移动时保持当前朝向，避免上下来回抖
             bool movingLeft = _lastDir.x < -0.01f;
             bool movingRight = _lastDir.x > 0.01f;
@@ -561,6 +604,23 @@ namespace FTProject
             {
                 _pathIndex = 1;
             }
+        }
+
+        if (_directionalVisual != null && _directionalVisual.IsConfigured)
+        {
+            // Use the next actual displacement, including a purely vertical first segment.
+            if (_path != null)
+            {
+                for (int i = _pathIndex; i < _path.Count; i++)
+                {
+                    Vector2 direction = _path[i].Center - Position;
+                    if (direction.sqrMagnitude < 0.000001f) continue;
+                    _lastDir = direction;
+                    FaceMoveDirection();
+                    break;
+                }
+            }
+            return;
         }
 
         // ------------------------------------------------------------------

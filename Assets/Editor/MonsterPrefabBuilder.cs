@@ -161,9 +161,11 @@ namespace FTProject.EditorTools
                     {
                         headOk++;
                     }
+                    bool hasDirections = EnemyDirectionPrefabBuilder.ApplyIfConfigured(clone, MonsterCatalog.AtlasPaths[i]);
                     MeasureBodyBounds(clone, out bounds);
 
-                    AssetDatabase.DeleteAsset(dst);
+                    // Preserve the installed directional prefab's GUID when regenerating from source.
+                    if (!hasDirections) AssetDatabase.DeleteAsset(dst);
                     GameObject saved = PrefabUtility.SaveAsPrefabAsset(clone, dst);
                     if (saved == null)
                     {

@@ -1,0 +1,78 @@
+// Isolated edit-mode fixtures, with all singleton/config references restored in finally.
+if (UnityEditor.EditorApplication.isPlaying) return "Refused: run in edit mode";
+var sf = System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic;
+var pf = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public;
+var savedFields = new System.Collections.Generic.List<System.Tuple<System.Reflection.FieldInfo, object>>();
+var createdObjects = new System.Collections.Generic.List<UnityEngine.GameObject>();
+System.Func<System.Type, object> isolate = type => {
+    var bt = typeof(FTProject.BaseManager<>).MakeGenericType(type);
+    foreach (var name in new [] { "instance", "s_creatingSingleton", "s_singletonCreated" }) {
+        var f = bt.GetField(name,sf); savedFields.Add(System.Tuple.Create(f,f.GetValue(null)));
+    }
+    bt.GetField("s_creatingSingleton",sf).SetValue(null,true);
+    object obj = System.Activator.CreateInstance(type);
+    bt.GetField("s_creatingSingleton",sf).SetValue(null,false);
+    bt.GetField("instance",sf).SetValue(null,obj);
+    return obj;
+};
+System.Action<string,object> config = (name,value) => {
+    var f = typeof(FTProject.Configs).GetField("<"+name+">k__BackingField",sf);
+    savedFields.Add(System.Tuple.Create(f,f.GetValue(null))); f.SetValue(null,value);
+};
+System.Func<string,FTProject.BaseEnemy> makeEnemy = name => {
+    var go = new UnityEngine.GameObject("Audit_"+name); go.hideFlags = UnityEngine.HideFlags.HideAndDontSave;
+    createdObjects.Add(go); return go.AddComponent<FTProject.BaseEnemy>();
+};
+try {
+    var cs = (FTProject.CombatSystem)isolate(typeof(FTProject.CombatSystem));
+    var bm = (FTProject.BulletManager)isolate(typeof(FTProject.BulletManager));
+    var em = (FTProject.EnemyManager)isolate(typeof(FTProject.EnemyManager));
+    var a = (FTProject.AStarManager)isolate(typeof(FTProject.AStarManager));
+    config("Global",null);
+    var grid = new FTProject.EnemyGrid(2f,256);
+    typeof(FTProject.CombatSystem).GetField("<Grid>k__BackingField",pf).SetValue(cs,grid);
+    var bulletPools = (System.Collections.Generic.Dictionary<string, FTProject.ObjectPool<FTProject.BaseBullet>>)typeof(FTProject.BulletManager).GetField("_pools",pf).GetValue(bm);
+    bulletPools["Bullet_Normal"] = new FTProject.ObjectPool<FTProject.BaseBullet>(() => null, b => b.OnRecycle());
+    var enemyJson = SimpleJSON.JSONNode.Parse(System.IO.File.ReadAllText("Assets/ConfigJson/tbenemydata.json"));
+    config("EnemyTable",new cfg.TBEnemyData(enemyJson));
+    var groundCfg = new FTProject.EnemyConfig(new cfg.EnemyData(enemyJson[0]));
+    var airCfg = new FTProject.EnemyConfig(new cfg.EnemyData(enemyJson[1]));
+    var path = new System.Collections.Generic.List<AStar.Point> { new AStar.Point(0,0),new AStar.Point(1,0) };
+    path[0].Center=UnityEngine.Vector2.zero; path[1].Center=new UnityEngine.Vector2(10,0);
+    var ground=makeEnemy("ground"); ground.Init(groundCfg,path);
+    var air=makeEnemy("air"); air.transform.position=new UnityEngine.Vector3(0.2f,0,0); air.Init(airCfg,path);
+    grid.Update(ground,ground.Position); grid.Update(air,air.Position);
+    var bulletRows=SimpleJSON.JSONNode.Parse(System.IO.File.ReadAllText("Assets/ConfigJson/tbbulletdata.json"));
+    var power=new FTProject.BulletConfig(new cfg.BulletData(bulletRows[1]));
+    var aoeGo=new UnityEngine.GameObject("Audit_aoe"); aoeGo.hideFlags=UnityEngine.HideFlags.HideAndDontSave; createdObjects.Add(aoeGo);
+    var aoe=aoeGo.AddComponent<FTProject.BaseBullet>(); aoe.Init(ground,0.5f,power,0f);
+    float hpBefore=air.CurrentHp;
+    typeof(FTProject.BaseBullet).GetMethod("Explode",pf).Invoke(aoe,new object[] { UnityEngine.Vector2.zero });
+    object aoeResult=new { air=airCfg.IsFlying, hpBefore, hpAfter=air.CurrentHp, damageToAir=hpBefore-air.CurrentHp, note="current Power tower has canAttackAir=0; projectile has no target-layer mask" };
+    grid.Clear(); ground.GridKey=0; air.GridKey=0;
+    ground.transform.position=new UnityEngine.Vector3(1.2f,0,0); grid.Update(ground,ground.Position);
+    var normalGo=new UnityEngine.GameObject("Audit_discrete_bullet"); normalGo.hideFlags=UnityEngine.HideFlags.HideAndDontSave; createdObjects.Add(normalGo);
+    var normal=normalGo.AddComponent<FTProject.BaseBullet>(); normal.Init(ground,0.5f,new FTProject.BulletConfig(new cfg.BulletData(bulletRows[0])),0f);
+    float targetBefore=ground.CurrentHp;
+    normal.Tick(0.2f); var posOne=normal.Position.x;
+    normal.Tick(0.2f); var posTwo=normal.Position.x;
+    object tunnelResult=new { equivalent="3x at 15 rendered FPS", simulatedDelta=0.2f, speed=12f, targetX=1.2f, firstX=posOne, secondX=posTwo, hpBefore=targetBefore, hpAfter=ground.CurrentHp, stillFlying=normal.State.ToString() };
+    typeof(FTProject.CombatSystem).GetMethod("UnregisterAll",pf).Invoke(cs,new object[0]); grid.Clear();
+    a.BuildGrid(new FTProject.LevelMapConfig(new cfg.LevelMap(991,991,11,5,new System.Collections.Generic.List<string>{"...........","...........","S.........E","...........","..........."},"audit")),1f,UnityEngine.Vector2.zero);
+    var pools = (System.Collections.Generic.Dictionary<string, FTProject.ObjectPool<FTProject.BaseEnemy>>)typeof(FTProject.EnemyManager).GetField("_pools",pf).GetValue(em);
+    pools[groundCfg.ResName] = new FTProject.ObjectPool<FTProject.BaseEnemy>(() => makeEnemy("spawn"), e => e.OnRecycle());
+    var waveJson=SimpleJSON.JSONNode.Parse("[{\"id\":991,\"EnemyIndexs\":[1],\"interval\":0,\"enemyInterval\":100,\"desc\":\"audit\"}]");
+    config("WaveTable",new cfg.TBEnemyList(waveJson));
+    var roundJson=SimpleJSON.JSONNode.Parse("{\"id\":991,\"EnemyIndexs\":[991],\"interval\":0,\"name\":\"audit\",\"rewardGold\":0}");
+    var wave=new FTProject.WaveManager(); wave.BeginRound(new FTProject.RoundConfig(new cfg.RoundData(roundJson)));
+    wave.Tick(1f);
+    int staleAlive=cs.AliveEnemyCount;
+    bool prematurelyFinished=wave.IsRoundFinished(staleAlive);
+    int registered=cs.EnemyCount;
+    typeof(FTProject.CombatSystem).GetMethod("TickEnemies",pf).Invoke(cs,new object[]{0f});
+    object waveResult=new { registeredEnemies=registered, aliveAtSameFrame=staleAlive, allSpawned=wave.AllSpawned, prematurelyFinished, aliveAfterRecount=cs.AliveEnemyCount, finishedAfterRecount=wave.IsRoundFinished(cs.AliveEnemyCount) };
+    return new { environment="Unity edit-mode execution of current BaseBullet/WaveManager/EnemyManager/CombatSystem; isolated objects/configs; no save access", aoe=aoeResult, discreteCollision=tunnelResult, waveCompletion=waveResult };
+} finally {
+    for(int i=createdObjects.Count-1;i>=0;i--) if(createdObjects[i]!=null) UnityEngine.Object.DestroyImmediate(createdObjects[i]);
+    for(int i=savedFields.Count-1;i>=0;i--) savedFields[i].Item1.SetValue(null,savedFields[i].Item2);
+}

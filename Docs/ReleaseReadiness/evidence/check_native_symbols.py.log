@@ -1,0 +1,44 @@
+SqliteNative.cs 中的 DllImport 入口点：26 个
+    sqlite3_open_v2
+    sqlite3_close_v2
+    sqlite3_errmsg
+    sqlite3_extended_errcode
+    sqlite3_busy_timeout
+    sqlite3_libversion
+    sqlite3_prepare_v2
+    sqlite3_step
+    sqlite3_reset
+    sqlite3_finalize
+    sqlite3_clear_bindings
+    sqlite3_changes
+    sqlite3_last_insert_rowid
+    sqlite3_bind_null
+    sqlite3_bind_int64
+    sqlite3_bind_double
+    sqlite3_bind_text
+    sqlite3_bind_blob
+    sqlite3_column_count
+    sqlite3_column_name
+    sqlite3_column_type
+    sqlite3_column_int64
+    sqlite3_column_double
+    sqlite3_column_text
+    sqlite3_column_blob
+    sqlite3_column_bytes
+
+--- Assets\Plugins\Android\libs\arm64-v8a\libsqlite3.so
+    ELF64 / AArch64 / DYN
+    导出 sqlite3_* 符号 271 个
+    ✓ 所需 26 个符号全部导出
+    meta: Android=1 CPU=ARM64  Any=0 Editor=0  guid=4141aed6ac3043caa4106aa6d9fd8304
+
+--- Assets\Plugins\Android\libs\armeabi-v7a\libsqlite3.so
+    ELF32 / ARM / DYN
+    ✓ softfp（EF_ARM_ABI_FLOAT_SOFT），符合 armeabi-v7a ABI
+    导出 sqlite3_* 符号 271 个
+    ✓ 所需 26 个符号全部导出
+    meta: Android=1 CPU=ARMv7  Any=0 Editor=0  guid=78681d4cfefd4773928c45a688fe8f59
+
+PASS 原生库符号 / ABI / .meta 全部正确
+
+STDERR:

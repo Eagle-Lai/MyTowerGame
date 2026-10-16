@@ -1,0 +1,25 @@
+// Read-only AssetDatabase inspection. Prefab assets are never instantiated/saved.
+var entries = FTProject.ResTable.All.ToArray();
+var missing = entries.Where(kv => UnityEditor.AssetDatabase.LoadMainAssetAtPath(kv.Value.EditorPath)==null).Select(kv => new { key=kv.Key, path=kv.Value.EditorPath }).ToArray();
+var prefabResults = new System.Collections.Generic.List<object>();
+foreach(var guid in UnityEditor.AssetDatabase.FindAssets("t:Prefab",new [] { "Assets/Prefabs" })) {
+    string path=UnityEditor.AssetDatabase.GUIDToAssetPath(guid);
+    var prefab=UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEngine.GameObject>(path);
+    int missingScripts=prefab.GetComponentsInChildren<UnityEngine.Transform>(true).Sum(t => UnityEditor.GameObjectUtility.GetMonoBehavioursWithMissingScriptCount(t.gameObject));
+    var badMaterials=prefab.GetComponentsInChildren<UnityEngine.Renderer>(true).Where(r => r.sharedMaterials.Any(m => m==null)).Select(r => r.name).ToArray();
+    if(missingScripts>0 || badMaterials.Length>0) prefabResults.Add(new { path, missingScripts, badMaterials });
+}
+var badUI = new System.Collections.Generic.List<object>();
+foreach(var guid in UnityEditor.AssetDatabase.FindAssets("t:Prefab",new [] { "Assets/Prefabs/UI" })) {
+    string path=UnityEditor.AssetDatabase.GUIDToAssetPath(guid);
+    var prefab=UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEngine.GameObject>(path);
+    foreach(var component in prefab.GetComponents<UnityEngine.MonoBehaviour>()) {
+        if(component==null || component.GetType().Namespace!="FTProject") continue;
+        string source="Assets/Scripts/UI/"+component.GetType().Name+".cs";
+        if(!System.IO.File.Exists(source)) continue;
+        var found=System.Text.RegularExpressions.Regex.Matches(System.IO.File.ReadAllText(source),"(?:FindText|FindButton|FindRect|transform\\.Find)\\(\"([^\"]+)\"\\)");
+        var absent=found.Cast<System.Text.RegularExpressions.Match>().Select(m=>m.Groups[1].Value).Distinct().Where(p=>prefab.transform.Find(p)==null).ToArray();
+        if(absent.Length>0) badUI.Add(new { path, component=component.GetType().Name, absent });
+    }
+}
+return new { entries=entries.Length, missingResTableAssets=missing, prefabProblems=prefabResults, literalUIPathCandidates=badUI, resources=entries.Select(kv=>new {key=kv.Key,path=kv.Value.EditorPath,bundle=kv.Value.Bundle}).ToArray() };
