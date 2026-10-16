@@ -201,8 +201,33 @@ namespace FTProject.EditorTools
         }
 
         // ------------------------------------------------------------------
-        // 塔图标（96×96，非九宫格）
+        // 塔图标（96×96，非九宫格）—— 仅占位图，正式美术优先
         // ------------------------------------------------------------------
+        //
+        // 【手工美术保护】这三张塔图标已由美术提供正式资源（96×96 透明底 PNG）：
+        //   UI_TowerIcon_Normal / UI_TowerIcon_Power / UI_TowerIcon_Retard
+        //   生成脚本：.workbuddy/tools/tower_icon_bg_remove.py（截图抠背景 → 裁边补方 → 统一 96）
+        // 【为什么必须加这道闸】WriteSprite 是无条件覆盖的（幂等设计），
+        //   不加判断的话重跑本菜单会把美术图默默打回程序化占位图 —— 静默视觉回退，最难查。
+        // ★换塔图标请改美术源后跑上面的抠图脚本，不要指望跑本菜单。
+        private static readonly string[] ManualArtIconNames =
+        {
+            "UI_TowerIcon_Normal",
+            "UI_TowerIcon_Power",
+            "UI_TowerIcon_Retard",
+        };
+
+        private static bool IsManualArtIcon(string name)
+        {
+            for (int i = 0; i < ManualArtIconNames.Length; i++)
+            {
+                if (ManualArtIconNames[i] == name)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
 
         private static void WriteTowerIcons(EditorUtil.Report report)
         {
@@ -214,11 +239,31 @@ namespace FTProject.EditorTools
         private static void WriteIcon(string name, System.Action<Texture2D> draw, Color halo, EditorUtil.Report report)
         {
             const int S = 96;
+            string path = UiArtDir + "/" + name + ".png";
+
+            // 【为什么按"名单"判而不是按"尺寸"判】
+            //   正式美术本身就是 96×96，和占位图同尺寸 —— 用尺寸判定会当场失效（静默失去保护）。
+            // 【为什么文件不存在时**不**跳过】
+            //   美术源被误删时应能退回占位图，保证工程仍可运行；名单只在"已有文件"时生效。
+            if (System.IO.File.Exists(path))
+            {
+                Texture2D existing = AssetDatabase.LoadAssetAtPath<Texture2D>(path);
+                bool manual = IsManualArtIcon(name)
+                              || (existing != null && (existing.width != S || existing.height != S));
+                if (manual)
+                {
+                    report.Skip(name + ".png  属手工美术（"
+                        + (existing != null ? existing.width + "×" + existing.height : "已存在")
+                        + "），跳过占位图生成");
+                    return;
+                }
+            }
+
             Texture2D tex = EditorUtil.NewTexture(S, S);
             // 统一底晕：让图标在深色按钮上"浮"起来
             SoftGlow(tex, S * 0.5f, S * 0.5f, S * 0.44f, halo, 0.16f);
             draw(tex);
-            EditorUtil.WriteSprite(UiArtDir + "/" + name + ".png", tex);
+            EditorUtil.WriteSprite(path, tex);
             report.Ok(name + ".png  (" + S + "×" + S + " 塔图标)");
         }
 
