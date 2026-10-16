@@ -335,7 +335,8 @@ namespace FTProject.EditorTools
                         "StartButton", "SpeedButton",
                         "Btn_Tower_Normal", "Btn_Tower_Power", "Btn_Tower_Retard",
                         "Btn_Pause", "Btn_Intro" });
-            CheckUiPrefab(report, UIPrefabBuilder.TipsPath, "TipsView", new[] { "TipText" });
+            // ★ TipText 是底条 TipBar 的子节点（两段式路径），2026-10-15 手工版移入。
+            CheckUiPrefab(report, UIPrefabBuilder.TipsPath, "TipsView", new[] { "TipBar/TipText" });
             CheckUiPrefab(report, UIPrefabBuilder.TowerInfoPath, "TowerInfoView", new[] { "Bg", "Panel" });
             CheckUiPrefab(report, UIPrefabBuilder.SelectPath, "SelectView", new[] { "Bg", "Panel" });
             CheckUiPrefab(report, UIPrefabBuilder.PausePath, "PauseView", new[] { "Bg", "Panel" });

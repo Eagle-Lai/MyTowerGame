@@ -9,7 +9,8 @@ namespace FTProject
     /// 监听 ShowTipEvent，把消息排队显示，避免短时间内多条提示互相覆盖
     ///（塔防里"金币不足"很容易在一秒内被触发好几次）。
     ///
-    /// 节点：根 TipsView（CanvasGroup + 本脚本）→ 子节点 TipText(TMP)
+    /// 节点：根 TipsView（CanvasGroup + 本脚本）→ 子节点 TipBar（底条）→ 其下 TipText(TMP)
+    /// （★ 2026-10-15 手工版把 TipText 从 root 直挂改为挂在 TipBar 之下，随条一起动）
     /// </summary>
     public class TipsView : MonoBehaviour
     {
@@ -43,17 +44,17 @@ namespace FTProject
             _alpha = 0f;
             _group.alpha = 0f;
 
-            Transform tr = transform.Find("TipText");
+            Transform tr = transform.Find("TipBar/TipText");
             if (tr == null)
             {
-                Debug.LogError("[Tips] 缺少子节点「TipText」（prefab 与 TipsView.cs 不一致）");
+                Debug.LogError("[Tips] 缺少子节点「TipBar/TipText」（prefab 与 TipsView.cs 不一致）");
             }
             else
             {
                 _text = tr.GetComponent<TMP_Text>();
                 if (_text == null)
                 {
-                    Debug.LogError("[Tips] 节点「TipText」上没有 TMP 文本组件");
+                    Debug.LogError("[Tips] 节点「TipBar/TipText」上没有 TMP 文本组件");
                 }
             }
 

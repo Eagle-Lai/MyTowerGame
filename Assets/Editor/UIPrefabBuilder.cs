@@ -46,7 +46,8 @@ namespace FTProject.EditorTools
     ///
     /// TipsView 节点：
     ///   TipsView（CanvasGroup）
-    ///   └── TipText
+    ///   └── TipBar（提示底条，居中 1160×84）
+    ///       └── TipText（四边拉伸，随底条一起动）
     ///
     /// LevelClearView 节点（通关 / 失败结算弹窗）：
     ///   LevelClearView
@@ -170,14 +171,15 @@ namespace FTProject.EditorTools
         ///     于是这里刻意让 **视口比可视区窄**：视口只负责"居中/吸附的参照"，
         ///     可视区（List 上的 RectMask2D）才负责裁切。两者中心对齐，因此
         ///     "在视口里居中" == "在可视区里居中"。
-        ///   ★ 2026-10 手工版微调：卡片 **1250×550**（原 1500×650）。视口宽恒等卡片宽
-        ///     （= 1250），可视区（List）仍是整页 1920 宽 → 步长 1306 落在
-        ///     `[1250, 1920)` 区间内，上面两条约束同时成立，左右邻卡各露约 279px。
+        ///   ★ 2026-10-15 手工版微调：卡片 **1150×550**
+        ///     （历史：1500×650 → 1250×550 → 1150×550）。视口宽恒等卡片宽
+        ///     （= 1150），可视区（List）仍是整页 1920 宽 → 步长 1206 落在
+        ///     `[1150, 1920)` 区间内，上面两条约束同时成立，左右邻卡各露约 329px。
         ///   ★ 改这些数必须**成套改**：SelectViewportW 会自动跟随（`= SelectItemW`），
         ///     但 SelectView.cs 的 ItemWidth 是另一份拷贝，**必须手工同步** ——
         ///     那边用它估算"尚未实例化的条目"的位置，写岔会让初始化定位被 clamp 回 0。
         /// </summary>
-        private const float SelectItemW = 1250f;
+        private const float SelectItemW = 1150f;
         private const float SelectItemH = 550f;
         private const float SelectItemGap = 56f;
 
@@ -551,9 +553,11 @@ namespace FTProject.EditorTools
 
             // 文本内嵌在芯片底之下：全拉伸锚点铺满芯片，不再单独定位/定尺寸
             // （芯片挪位置，文本自然跟随；也不会因分辨率变化而漂移）
-            CreateChipText(goldChip, "GoldText", "Gold 0", TextAnchor.MiddleLeft, SmallFontSize);
-            CreateChipText(hpChip, "HpText", "HP 0/0", TextAnchor.MiddleLeft, SmallFontSize);
-            CreateChipText(roundChip, "RoundText", "In Progress", TextAnchor.MiddleCenter, BigFontSize);
+            // ★ 2026-10-15 手工版口径：三个芯片文本统一**居中对齐 + 开自动字号**
+            //   （Gold/Hp 原为左对齐；中英日文案长度差异大，靠自动字号在 18~72 内收放）。
+            SetAutoSize(CreateChipText(goldChip, "GoldText", "Gold 0", TextAnchor.MiddleCenter, SmallFontSize));
+            SetAutoSize(CreateChipText(hpChip, "HpText", "HP 0/0", TextAnchor.MiddleCenter, SmallFontSize));
+            SetAutoSize(CreateChipText(roundChip, "RoundText", "In Progress", TextAnchor.MiddleCenter, BigFontSize));
 
             // 底部：三颗塔按钮 + 倍速 + 开始
             for (int i = 0; i < TowerButtons.Length; i++)
@@ -612,7 +616,7 @@ namespace FTProject.EditorTools
         ///   适合自由摆放；芯片文本必须严丝合缝地填满芯片（且芯片一动就跟着动），
         ///   用固定 pos/size 反而会漂。所以这里单开一个"填满父节点"的版本。
         /// </summary>
-        private static void CreateChipText(Transform chip, string name, string content,
+        private static TextMeshProUGUI CreateChipText(Transform chip, string name, string content,
             TextAnchor align, int fontSize)
         {
             GameObject go = new GameObject(name, typeof(RectTransform));
@@ -643,6 +647,21 @@ namespace FTProject.EditorTools
             }
             t.enableWordWrapping = false;
             t.overflowMode = TextOverflowModes.Overflow;
+            return t;
+        }
+
+        /// <summary>
+        /// 打开 TMP 自动字号（手工版 2026-10-15 定下的排版口径）。
+        /// 【为什么】中 / 英 / 日文案长度差别很大：固定字号下长文案溢出、短文案留白；
+        ///   开自动字号后由 TMP 在 [fontSizeMin, fontSizeMax] 内自行收放。
+        ///   落盘到 prefab 的 m_fontSize 只是"当下算出来的那个值"（会带小数），
+        ///   生成器只需把"开"与区间写对，具体数值由 TMP 重算。
+        /// </summary>
+        private static void SetAutoSize(TextMeshProUGUI t, float min = 18f, float max = 72f)
+        {
+            t.enableAutoSizing = true;
+            t.fontSizeMin = min;
+            t.fontSizeMax = max;
         }
 
         /// <summary>
@@ -702,23 +721,25 @@ namespace FTProject.EditorTools
             cg.interactable = false;
             root.AddComponent<TipsView>();
 
-            // 提示条底（在文字之下；与 TipText 的 pivot(0.5,0.3) 对齐到同一中心）
+            // 提示条底（居中：锚点与支点都在屏幕中心，位置 0；TipText 挂在其下，随条一起动）
             GameObject bar = new GameObject("TipBar", typeof(RectTransform));
             bar.transform.SetParent(root.transform, false);
             RectTransform brt = (RectTransform)bar.transform;
-            brt.anchorMin = new Vector2(0.5f, 0.30f);
-            brt.anchorMax = new Vector2(0.5f, 0.30f);
+            brt.anchorMin = new Vector2(0.5f, 0.5f);
+            brt.anchorMax = new Vector2(0.5f, 0.5f);
             brt.pivot = new Vector2(0.5f, 0.5f);
-            brt.anchoredPosition = new Vector2(0f, 18f);
+            brt.anchoredPosition = new Vector2(0f, 0f);
             brt.sizeDelta = new Vector2(1160f, 84f);
             Image barImg = bar.AddComponent<Image>();
             barImg.raycastTarget = false;
             ApplySlicedSkin(barImg, "UI_Tip_Bar", new Color(0.06f, 0.09f, 0.13f, 0.72f));
 
-            // 提示文字：**横向拉伸**跟随屏宽（锚点 x 0..1），高度 100、中心略高于 TipBar 中心。
-            //   手工版把固定 1100×60 改成随屏宽自适应，两侧留白交给 Stretch 后的框。
-            TextMeshProUGUI tip = CreateTextStretched(root.transform, "TipText", string.Empty,
-                new Vector2(0f, 0.5f), new Vector2(1f, 0.5f), new Vector2(0f, -12f), new Vector2(0f, 100f),
+            // ★ 2026-10-15 手工版微调：TipText 由「root 直挂 + 横向拉伸（高 100、中心略高）」改为
+            //   **挂到 TipBar 之下并四边拉伸**（锚点 0,0/1,1、位置 0、尺寸 0）——
+            //   于是文字恒随提示条居中/位移，条与文字不再各自定位。改层级必须与 TipsView.cs 的
+            //   Find 路径成对改（现为 "TipBar/TipText"）。
+            TextMeshProUGUI tip = CreateTextStretched(bar.transform, "TipText", string.Empty,
+                Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero,
                 TextAnchor.MiddleCenter, BigFontSize);
             tip.enableWordWrapping = true;
             tip.overflowMode = TextOverflowModes.Overflow;
@@ -731,7 +752,7 @@ namespace FTProject.EditorTools
                 report.Error("保存失败：" + TipsPath);
                 return;
             }
-            report.Ok("TipsView.prefab（CanvasGroup + TipText，初始 alpha=0）");
+            report.Ok("TipsView.prefab（CanvasGroup + TipBar/TipText，初始 alpha=0）");
         }
 
         // ------------------------------------------------------------------
@@ -1314,6 +1335,9 @@ namespace FTProject.EditorTools
 
             TextMeshProUGUI t = CreateText(go.transform, "Label", label,
                 new Vector2(0.5f, 0.5f), Vector2.zero, size, TextAnchor.MiddleCenter, 30);
+            // ★ 2026-10-15 手工版口径：右上角这两颗（Pause / Game Intro）的 Label 开自动字号
+            //   （"Game Intro" 这类较长的英文按钮文案靠自动收放塞进 180×56）。
+            SetAutoSize(t);
             // Label 铺满按钮
             RectTransform lrt = (RectTransform)t.transform;
             lrt.anchorMin = Vector2.zero;
@@ -1345,9 +1369,9 @@ namespace FTProject.EditorTools
                 TextAnchor.MiddleCenter, BigFontSize);
 
             // 音量用滑动条拖拽调节（SettingView.OnVolumeChanged）；VolumeText 同步显示百分比。
-            // 【为什么是 y=55 / 高 55】手工版把滑块下移并加高（原 40/40 → 55/55），与上方 VolumeText
-            //   拉开一点呼吸空间，同时加粗拖拽热区（高 55 更好点）。
-            CreateSlider(panel.transform, "VolumeSlider", new Vector2(0f, 55f), new Vector2(480f, 55f), 0.8f);
+            // 【为什么是 y=55 / 高 65】手工版两次微调：滑块下移并加高（40/40 → 55/55 → 高 65），
+            //   与上方 VolumeText 拉开一点呼吸空间，同时进一步加粗拖拽热区（高 65 更好点）。
+            CreateSlider(panel.transform, "VolumeSlider", new Vector2(0f, 55f), new Vector2(480f, 65f), 0.8f);
             CreatePanelButton(panel.transform, "MuteBtn", "Mute", new Vector2(0f, -50f));
             CreatePanelButton(panel.transform, "ResetBtn", "Reset Save", new Vector2(0f, -140f));
             CreatePanelButton(panel.transform, "CloseBtn", "Close", new Vector2(0f, -230f));
@@ -2002,13 +2026,15 @@ namespace FTProject.EditorTools
 
             TextMeshProUGUI star = CreateText(statBg, "StarText", "0/0",
                 new Vector2(0f, 1f), new Vector2(24f, -18.5f), new Vector2(368f, 40f),
-                TextAnchor.MiddleLeft, 30);
+                TextAnchor.MiddleCenter, 30);      // ★ 2026-10-15 手工版：左对齐 → 居中 + 自动字号
             star.color = Gold;
+            SetAutoSize(star);
 
             TextMeshProUGUI clear = CreateText(statBg, "ClearText", "Cleared 0/0",
                 new Vector2(0f, 1f), new Vector2(24f, -64.1f), new Vector2(368f, 40f),
-                TextAnchor.MiddleLeft, 28);
+                TextAnchor.MiddleCenter, 28);      // ★ 2026-10-15 手工版：左对齐 → 居中 + 自动字号
             clear.color = TextSecondary;
+            SetAutoSize(clear);
 
             // 四颗入口按钮：中心 Y 依次 −66 / −184 / −302 / −420（对应 y_svg 606/724/842/960）
             CreatePanelButton(panel.transform, "StartBtn", "Start Game", new Vector2(0f, -66f), 480f, true, 92f, 34);
@@ -2221,6 +2247,9 @@ namespace FTProject.EditorTools
                 Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero,
                 TextAnchor.MiddleCenter, 48);
             title.color = TextPrimary;
+            // ★ 2026-10-15 手工版口径：正文标题开自动字号（48 只是基准，长标题自动收放）。
+            //   注意 SellConfirmView 的同名标题（SellTitle）本次**未**改，勿顺手一起加。
+            SetAutoSize(title);
 
             TextMeshProUGUI body = CreateText(panel.transform, "BodyText", string.Empty,
                 new Vector2(0.5f, 0.5f), new Vector2(0f, 60f), new Vector2(660f, 120f),
@@ -2396,6 +2425,13 @@ namespace FTProject.EditorTools
                 new Vector2(380f, 36f), TextAnchor.MiddleCenter, 26);
             CreateText(body.transform, "DescText", string.Empty, new Vector2(0.5f, 0.5f), new Vector2(0f, -272f),
                 new Vector2(380f, 80f), TextAnchor.MiddleCenter, 24);
+
+            // ★ 与 SelectLevelItem 同款：卡片根节点存为 **禁用状态**（磁盘事实为准，2026-10-15 全量重建时
+            //   发现生成器产 True ≠ 磁盘 False，补上）。LoopListView2 的 ItemPool 实例化后会
+            //   **无条件** SetActive(true)，所以根节点 active 值不影响运行结果；
+            //   保留 false 只为"生成器产出 == 磁盘事实"，避免下次重建把手工状态冲掉。
+            //   ⚠️ 若日后改用不强制激活的池化实现，卡片会整片不可见 —— 到那时删掉这一行。
+            go.SetActive(false);
 
             GameObject saved = PrefabUtility.SaveAsPrefabAsset(go, TowerCodexItemPath);
             Object.DestroyImmediate(go);
@@ -2611,7 +2647,11 @@ namespace FTProject.EditorTools
             irt.anchorMax = new Vector2(0.5f, 1f);
             irt.pivot = new Vector2(0.5f, 1f);
             irt.anchoredPosition = new Vector2(0f, -4f);
-            irt.sizeDelta = new Vector2(84f, 84f);   // 128 - 4 - 84 = 40 > 价格签顶边 36，留 4px 缝
+            // ★ 2026-10-15 手工版微调：84 → 96，与正式美术 96×96 塔图标同尺寸。
+            //   代价：图标底边 (top −4 −96 = −100，即中心坐标 −36) 会压过价格签顶边
+            //   (底 128−34 −2 = 92，即中心坐标 −28) —— 下缘重叠 8px。价格芯片绘制在图标之上、
+            //   两者都 raycastTarget=false，不影响点击，视觉上图标更大更醒目。
+            irt.sizeDelta = new Vector2(96f, 96f);
             Image iconImg = icon.AddComponent<Image>();
             iconImg.color = new Color(1f, 1f, 1f, 0.85f);
             iconImg.raycastTarget = false;  // 不吃点击，点击交给父级 Button

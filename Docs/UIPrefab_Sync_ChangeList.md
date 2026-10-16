@@ -273,3 +273,108 @@ python .workbuddy/tools/diff_ui_prefabs.py --base <手改版备份目录>
   - 左右箭头双向切换居中关（2 → 3 → 2）；`MovePanelToItemIndex(6)` 内容可横向平移
   - 点非居中卡片 → `target=1 / pendingEnter=2`（"先滑到正中、再进关"链路正常）
   - 运行期无任何 `[Select]` 相关错误或警告
+
+---
+
+## 6. 第三轮同步（2026-10-15）：卡片收窄 / 塔图标 96 / Tips 改挂 / TMP 排版口径
+
+### 6.1 比对方法
+
+先用 `git diff` 看原始差异，再用本目录的结构 / 几何比对器把"真实手改"从"重序列化噪声"里择出来：
+
+```bash
+# 1) 导出 HEAD 版做基准
+for f in ConfirmView HudView LevelClearView LevelDetailView MainMenuView PauseView \
+         SelectLevelItem SelectView SellConfirmView TipsView TowerInfoView \
+         SettingView TowerCodexItem TowerCodexView; do
+  git show HEAD:Assets/Prefabs/UI/$f.prefab > .workbuddy/tmp/ui_base/$f.prefab
+done
+# 2) 结构 + 几何逐节点比对
+python .workbuddy/tools/diff_ui_prefabs.py --base .workbuddy/tmp/ui_base
+```
+
+原始 diff 是 **19 个文件 / 90 插入 / 90 删除**，但结构 / 几何改动**只有 4 处**；
+其余是 TMP 重序列化字段（全部 37 个文本的 `m_TextStyleHashCode: 0 → -1183493901`、
+`m_fontColor32.rgba` 按 `m_fontColor` 浮点重算）与 `.meta` 上的 AB 标记。
+
+### 6.2 真实手改（4 处）与落地位置
+
+| # | 预制体 | 节点 | 旧 → 新 | 同步到 |
+|---|---|---|---|---|
+| 1 | HudView | `Btn_Tower_Normal·Power·Retard/Image` | `84×84` → `96×96` | `UIPrefabBuilder.CreateTowerButton` |
+| 2 | SelectLevelItem | 根 | `1250×550` → `1150×550` | `UIPrefabBuilder.SelectItemW` + `SelectView.ItemWidth` |
+| 3 | TipsView | `TipText` | root 直挂 → `TipBar` 子节点、四边拉伸；`TipBar` 由 `(0.5,0.3)@(0,18)` 改 `(0.5,0.5)@(0,0)` | `UIPrefabBuilder.BuildTips` + `TipsView.cs` |
+| 4 | SettingView | `Panel/VolumeSlider` | `480×55` → `480×65` | `UIPrefabBuilder.BuildSetting` |
+
+> ② 连带触发**吸附硬约束**「Viewport 宽 ≡ 卡片宽」：手改版只改了卡片、没改视口（视口仍是
+> 1250×500@-625），所以这次同步顺带把视口修回 `1150×500@-575`（`SelectViewportW = SelectItemW`
+> 自动跟随）。这是本次唯一一处"生成器产出 ≠ 手改版"的地方，属**有意修正**。
+> ① 的代价：图标底边会压过价格签顶边 8px（96 比 84 高 12），价格芯片绘制在图标之上，
+> 两者都 `raycastTarget=false`，不影响点击 —— 与正式美术 96×96 同尺寸是用户要的效果。
+
+### 6.3 TMP 排版口径（用户确认属手改 → 固化进生成器）
+
+| 节点 | 变化 |
+|---|---|
+| `HudView/Bg_Gold/GoldText`、`Bg_Hp/HpText` | 左对齐 → **居中** + 开自动字号 |
+| `HudView/Bg_Round/RoundText` | 开自动字号 |
+| `HudView/Btn_Pause/Label`、`Btn_Intro/Label` | 开自动字号 |
+| `MainMenuView/Panel/StatBg/StarText`、`ClearText` | 左对齐 → **居中** + 开自动字号 |
+| `ConfirmView/Panel/TopBar/BodyTitle` | 开自动字号 |
+
+新增生成器助手 `SetAutoSize(t, min = 18f, max = 72f)`；`CreateChipText(...)` 改为**返回** TMP
+以便链式调用；`CreateHudCornerButton` 内的 Label 就地开自动字号。
+
+> 落盘到 prefab 的 `m_fontSize` 是 TMP 算出来的分数号（36.15 / 38.95 / 27.65 …），
+> 生成器只需把"开"与区间 (18~72) 写对，具体数值由 TMP 重算 —— 不要再手工往生成器里抄小数。
+> ⚠️ `SellConfirmView/Panel/TopBar/SellTitle` 虽与 `BodyTitle` 同款几何，但**本次没改**，
+> 生成器里刻意没有给它加自动字号。
+
+### 6.4 连带修复（重建 / 比对过程中暴露出来的）
+
+| 文件 | 问题 | 修法 |
+|---|---|---|
+| `Assets/Scripts/UI/TipsView.cs` | `Find("TipText")` 在 6.2-③ 之后**永远找不到节点** → 运行期整块提示空白（只打一句 error 日志，不崩） | 改为 `Find("TipBar/TipText")`，错误文案同步 |
+| `Assets/Editor/M0SetupWizard.cs` | TipsView 自检契约串还是单段 `TipText` | 改为 `TipBar/TipText` |
+| `Assets/Editor/UIPrefabBuilder.cs` | `BuildTowerCodexItemPrefab` 产出根节点 `active=True`，与磁盘（`False`）不符 —— **全量重建才暴露** | 保存前 `go.SetActive(false)`，与 SelectLevelItem 同款并留注释 |
+| `.workbuddy/tools/check_arity.py` | 清单里残留已删除的 `Assets/Scripts/Bullet/LaserBeamView.cs`（塔型收敛时删的）→ 整套校验直接判"清单失效" | 移除该条 |
+| `Assets/Scripts/Core/Res/ResTable.cs` | **`GameIntroView` 漏登记** → `UIManager.Open("GameIntroView")` 在 ResTable 里 `TryGet` 失败，真机 / AB 模式下 `Btn_Intro` 打不开介绍弹窗（只有一句"打开失败"警告） | 补一行 `ResBundle.UiHud` 登记 |
+
+### 6.5 ★ 全量重建的三条副作用与正确顺序
+
+**全量重建（菜单 `Tools/塔防/自动化（无弹窗）/生成 UI 预制体（全量重建）`）会：**
+
+1. **重排全部 fileID** → prefab 文件 diff 看起来很大（语义等价，用结构比对器验）；
+2. **清掉 `.meta` 上的 `assetBundleName`**（DeleteAsset 会连 meta 一起删）→ AB 标记没了；
+3. **抹掉 `TextLocalizer` 组件**（生成器不管多语言挂载）。
+
+所以顺序**必须**是：
+
+```
+1. 生成 UI 预制体（全量重建）              → 内容以生成器为准
+2. 批量挂多语言组件（TextLocalizer）  [308]   → 补回多语言组件
+3. 按 ResTable 打 AssetBundle 标记    [ 4 ]   → 补回 AB 标记（含 GameIntroView）
+```
+
+> 顺序颠倒（先打标再重建）会让第 3 步白做。本轮实测：重建后 15 个 UI meta 全为空标记，
+> 跑完第 3 步后 13 个（12 个登记界面 + GameIntroView）恢复 `ui_hud`；
+> `SelectLevelItem` / `TowerCodexItem` 依 ResTable 注释**刻意不登记**（作为已登记视图的
+> 依赖随目录树自然进同包）。
+
+### 6.6 验证结论
+
+| 验证 | 手段 | 结果 |
+|---|---|---|
+| 结构 / 几何 | `diff_ui_prefabs.py --base <手改版快照>` | 14 个预制体**全 OK**，唯一差异 `SelectView/Panel/List/Viewport`（= 6.2 有意修正） |
+| TMP 口径 | 逐节点比 `m_enableAutoSizing` / `m_fontSizeMin|Max` / `m_HorizontalAlignment` | 8 处 autosize + 4 处居中，与手改版**逐节点一致** |
+| 组件完整性 | 同上比对器（组件级） | `Mono(b90c1e)`（TextLocalizer）在 308 后**全部复原**，无遗漏 |
+| 列表手卡引用 | 在 SelectView / TowerCodexView 里 grep 手卡 GUID | 重建前后**都命中 1 处**，引用未丢 |
+| 结构缓存 | `gen_ui_prefab_cache.py --check` | OK（14 prefab / 202 节点） |
+| 静态校验 | 9 个 check | 8 PASS；`check_usings` 为 `BuildApk.cs` 既有误报 |
+
+### 6.7 遗留与后续
+
+- **ResTable 登记了 `MonsterCodexView` 但 `Assets/Prefabs/UI/MonsterCodexView.prefab` 不存在** →
+  打标菜单每次都以 `✘ 资源不存在` 结尾（本轮日志里那行 error 就是它）。待定：补 prefab 或删登记。
+- 本轮改动横跨 **prefab 内容 + AB 标记 + 热更脚本（TipsView.cs / SelectView.cs）**，
+  真机要看到效果必须**重打 AB（ui_hud 等）+ 出新热更 dll 后重部署**；仅提交 git 不会生效。

@@ -49,7 +49,7 @@ namespace FTProject
         ///   估算"还没实例化出来的条目"的位置。用它的默认值 20 会让内容总宽度被严重低估，
         ///   初始化定位时会被 clamp 回 0（表现为"要定位到第 N 关却永远停在第 1 关"）。
         /// </summary>
-        private const float ItemWidth = 1250f;
+        private const float ItemWidth = 1150f;
         private const float ItemGap = 56f;
 
         /// <summary>
@@ -77,7 +77,7 @@ namespace FTProject
         /// <summary>
         /// 判定"已经停在正中"的距离阈值（像素）。
         /// 【为什么不是 0.01】插件收尾是指数逼近，等它走完要 2 秒，玩家会觉得"点了半天没反应"。
-        ///   4px 在 1250 宽的卡片上肉眼不可辨，到了就直接进关，手感才跟得上。
+        ///   4px 在 1150 宽的卡片上肉眼不可辨，到了就直接进关，手感才跟得上。
         /// </summary>
         private const float CenteredEpsilon = 4f;
 

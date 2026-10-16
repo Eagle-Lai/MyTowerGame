@@ -74,7 +74,7 @@ _CHANGED = [
     'Assets/Scripts/UI/SelectView.cs',
     'Assets/Scripts/Enemy/BaseEnemy.cs',
     'Assets/Scripts/Core/Combat/CombatSystem.cs',
-    'Assets/Scripts/Bullet/LaserBeamView.cs',
+    # （2026-10 塔型收敛删除了穿透/激光，LaserBeamView.cs 已随之下线，故从清单移除）
     'Assets/Scripts/UI/FloatingTextManager.cs',
     # —— UI 补全 P0/P1：启动链（资源进度契约 + 热更新 + 启动阶段机 + 三界面）——
     'Assets/Scripts/Launcher.cs',

@@ -143,6 +143,11 @@ namespace FTProject
             { "LevelDetailView", new ResAddress(ResBundle.UiHud, "LevelDetailView", "Assets/Prefabs/UI/LevelDetailView.prefab") },
             { "SellConfirmView", new ResAddress(ResBundle.UiHud, "SellConfirmView", "Assets/Prefabs/UI/SellConfirmView.prefab") },
             { "ConfirmView",     new ResAddress(ResBundle.UiHud, "ConfirmView",     "Assets/Prefabs/UI/ConfirmView.prefab") },
+            // 游戏介绍弹窗（2026-10-14 新增，2026-10-15 补登记）。
+            // 【为什么必须补】漏登记 → UIManager.Open("GameIntroView") 在 ResTable 里 TryGet 失败，
+            //   真机 / AB 模式下 Btn_Intro 打不开弹窗（GameFlowManager 只会打一句"打开失败"警告）。
+            //   它不在 Assets/Resources/BootUI 里，走不到引导期兜底，所以必须登记。
+            { "GameIntroView",   new ResAddress(ResBundle.UiHud, "GameIntroView",   "Assets/Prefabs/UI/GameIntroView.prefab") },
 
             // 塔图鉴图标（UI 补全 B2；2026-10-14 三塔型收敛后仅 Normal/Power/Retard 三张）
             // 【为什么必须登记】图鉴卡片是**池化复用**的同一个模板，3 种塔共用一张卡，
