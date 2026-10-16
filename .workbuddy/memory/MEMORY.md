@@ -2,7 +2,7 @@
 
 ## 双版本（开工先读）
 - 家用D=`D:\FreedomTower_1`；公司E=`E:\MyTowerGame`。按路径定版本、记录标 [家用D]/[公司E]，严禁跨版；经 Eagle-Lai/MyTowerGame(main) 同步。
-- ★`HotUpdateServer/`、`Bundles/`、`Builds/`(.apk) 被 git 忽略→拉完必须重打 AB+重部署，否则"新 dll+旧 AB"混搭。
+- ★`HotUpdateServer/`、`Bundles/` 被 git 忽略→AB 各机拉完必须重打+重部署（否则"新 dll+旧 AB"混搭）；★`Builds/` 为 APK 反忽略例外：唯一放行 `Builds/Android/freedomtower.apk`，**家用D 出包后提交、公司E 直接 pull，各机不再各自出包**（旧包 123freedomtower.apk、Burst 调试目录与 Builds 下其余内容仍忽略）。规则见 Docs/提交与工作记录规范.md §3。
 - Unity 2022.3.62f3c1 + Built-in RP。
 
 ## 铁律

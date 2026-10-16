@@ -20,7 +20,7 @@
 [Tt]emp/
 [Oo]bj/
 [Bb]uild/
-[Bb]uilds/
+[Bb]uilds/*
 [Ll]ogs/
 [Uu]ser[Ss]ettings/
 [Mm]emoryCaptures/
@@ -40,6 +40,15 @@ crashlytics-build.properties
 *.aab
 *.ipa
 *.unitypackage
+
+# ---------------------------------------------------------------------------
+# 例外：共享 APK 入库（家用D 出包后提交，公司E 直接 pull，各机不再各自出包）
+# Builds/Android 下其余内容一律忽略，仅放行 freedomtower.apk。
+# 规则按"最后匹配者胜"，故顺序必须是：反忽略目录 → 忽略目录内容 → 反忽略该文件。
+# ---------------------------------------------------------------------------
+!Builds/Android/
+[Bb]uilds/Android/*
+!Builds/Android/freedomtower.apk
 
 # 构建时生成的标记文件（每次打包都会变化）
 /Assets/StreamingAssets/build_info
