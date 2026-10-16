@@ -12,7 +12,11 @@
   指向 HotUpdateServer/ 这个真目录）。
   因此部署 = 把构建输出 Bundles/Android/FreeTower/{版本}/ 里的
     FreeTower.version、FreeTower_{版本}.hash、FreeTower_{版本}.bytes、*.bundle
-  全部拷到 HotUpdateServer/ 根。
+    **以及无后缀的 32 位哈希文件**（YooAsset 内置特殊包 unitymonos / unityshaders
+      的文件名就是裸哈希、不带 .bundle 后缀）全部拷到 HotUpdateServer/ 根。
+  ★ 2026-10-16 实测教训：漏掉无后缀特殊包 → 跨版本热更时客户端请求
+    {ServerUrl}/{哈希} 得到 404 → **main 场景加载失败**（unitymonos 是脚本资源包，
+      凡组件类型集合有变化（如新增 TMP_Dropdown 引用）它的哈希就会变、必须重下）。
 
 ⚠️ 与此无关的旧结构：HotUpdateServer/Android/FreeTower（junction 到构建输出）只是
    "把构建目录挂出来看看"用的，HostPlayMode 运行时不请求它；dll 的
@@ -23,6 +27,7 @@
   python deploy_free_tower_cdn.py            # 自动取 Bundles 下最大版本
   python deploy_free_tower_cdn.py 1.0.13     # 指定版本
 """
+import re
 import shutil
 import sys
 from pathlib import Path
@@ -59,6 +64,13 @@ def main() -> int:
     # 2) 清单 hash + 清单本体 + 全量 bundle（平铺；哈希命名天然不冲突，重复覆盖即可）
     for pattern in (f"FreeTower_{version}.hash", f"FreeTower_{version}.bytes", "*.bundle"):
         for f in sorted(src.glob(pattern)):
+            shutil.copy2(f, SERVER_ROOT / f.name)
+            copied += 1
+
+    # 2b) 无后缀特殊包（unitymonos / unityshaders：文件名 = 裸 32 位小写哈希）。
+    #     ★ 必须拷 —— 漏掉时跨版本热更会在加载场景时 404（2026-10-16 实测）。
+    for f in sorted(src.iterdir()):
+        if f.is_file() and re.fullmatch(r"[0-9a-f]{32}", f.name):
             shutil.copy2(f, SERVER_ROOT / f.name)
             copied += 1
 

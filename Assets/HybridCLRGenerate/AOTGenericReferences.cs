@@ -213,9 +213,12 @@ public class AOTGenericReferences : UnityEngine.MonoBehaviour
 	// System.Predicate<int>
 	// System.Predicate<object>
 	// UnityEngine.Events.InvokableCall<float>
+	// UnityEngine.Events.InvokableCall<int>
 	// UnityEngine.Events.UnityAction<UnityEngine.SceneManagement.Scene,int>
 	// UnityEngine.Events.UnityAction<float>
+	// UnityEngine.Events.UnityAction<int>
 	// UnityEngine.Events.UnityEvent<float>
+	// UnityEngine.Events.UnityEvent<int>
 	// }}
 
 	public void RefMethods()

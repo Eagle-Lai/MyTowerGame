@@ -72,9 +72,8 @@ namespace FTProject
             if (_topBar != null) _topBar.color = theme;
             if (_typeName != null)
             {
-                _typeName.text = string.IsNullOrEmpty(cfg.Name)
-                    ? (Localization.Get("Tower {0}", cfg.Type) ?? ("塔 " + cfg.Type))
-                    : cfg.Name;
+                // DisplayName：过多语言表（"普通塔"），缺条目回退英文原文（"Normal Tower"）
+                _typeName.text = cfg.DisplayName;
                 _typeName.color = theme;
             }
             if (_role != null) _role.text = roleText;

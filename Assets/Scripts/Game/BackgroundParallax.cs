@@ -13,8 +13,10 @@ namespace FTProject
     ///   背景会相对"落后"，露出后面的空白。放大一个系数把这点余量吃进去即可。
     ///   系数不需要精确 —— 只要够覆盖"相机可移动范围 × (1 - parallax)"。
     ///
-    /// 【谁挂它】SceneMainBuilder 在生成 Background 时挂上；
-    ///   若场景是老的（没这个组件），GameFlowManager 会在初始化时补挂（见 EnsureParallax）。
+    /// 【谁挂它】SceneMainBuilder 在生成 Background 时挂上并调用 Init（编辑期烘焙一次）；
+    ///   运行时由 Awake 自举补调一次。
+    ///   ★ 2026-10-16 修复：原先只有编辑期会调 Init，而 _ready 不参与序列化，
+    ///   运行时恒为 false → 视差与 oversize 实际上从未生效。Awake 自举后恢复设计行为。
     /// </summary>
     public class BackgroundParallax : MonoBehaviour
     {
@@ -28,20 +30,33 @@ namespace FTProject
         /// <summary>背景基础透明度（与 SceneMainBuilder 里设的值保持一致）</summary>
         public float alpha = 0.55f;
 
+        /// <summary>
+        /// 背景基准缩放（与 SceneMainBuilder.BackgroundScale 同值，编辑期会覆盖写入）。
+        /// ★ 2026-10-16：1.6 → 2.2 —— 相机取景改"底边 2 格留白"后最大缩小档视野更大，
+        ///   旧值 1.6×1.4=2.24× 在 19.5:9 起会露出黑边；2.2×1.4=3.08× 可覆盖
+        ///   16:9 全缩放档、19.5:9 至约 2.3× 缩档（21:9 全档需 ≈2.35，超出部分露深空底色）。
+        /// </summary>
+        public float baseScale = 2.2f;
+
         private Vector3 _basePos;
         private Vector3 _camStart;
         private Transform _cam;
-        private Vector3 _baseScale;
         private bool _ready;
 
-        /// <summary>由创建方调用一次完成初始化（不依赖 Awake 顺序）。</summary>
+        /// <summary>由创建方调用一次完成初始化（不依赖 Awake 顺序）。可重复调用（幂等）。</summary>
         public void Init()
         {
             _basePos = transform.position;
-            _baseScale = transform.localScale;
             _cam = Camera.main != null ? Camera.main.transform : null;
             _camStart = _cam != null ? _cam.position : Vector3.zero;
-            transform.localScale = _baseScale * Mathf.Max(1f, oversize);
+
+            // 【为什么要"绝对值"而不是"乘当前值"】Init 会被调用两次
+            //   （编辑期 SceneMainBuilder 一次 + 运行时 Awake 自举一次）；
+            //   若按当前 scale 再乘一次 oversize 会双重放大（1.6→2.24→3.14 事故）。
+            //   绝对值写法幂等：无论场景里存的是什么，结果恒为 baseScale × oversize。
+            float s = Mathf.Max(0.01f, baseScale) * Mathf.Max(1f, oversize);
+            Vector3 sc = transform.localScale;
+            transform.localScale = new Vector3(s, s, sc.z);
 
             SpriteRenderer sr = GetComponent<SpriteRenderer>();
             if (sr != null)
@@ -51,6 +66,15 @@ namespace FTProject
                 sr.color = c;
             }
             _ready = true;
+        }
+
+        private void Awake()
+        {
+            // 运行时自举（原因见类注释：_ready 不序列化，场景里的实例进运行时是 false）。
+            if (!_ready)
+            {
+                Init();
+            }
         }
 
         private void Update()

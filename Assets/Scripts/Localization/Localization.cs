@@ -29,5 +29,17 @@ namespace FTProject
         {
             get { return LanguageManager.Current; }
         }
+
+        /// <summary>
+        /// 关卡显示名（2026-10-16 多语言审计新增）。
+        /// 【背景】SceneInfo 表里的 name 是"关卡 N"形态的**中文单一语言数据** ——
+        ///   英文/繁体界面下直接透传会出现"中文关卡名"。界面统一改用词条
+        ///   "Level {0}" 按 id 格式化（Level 2 / 关卡 2 / 關卡 2）。
+        /// 【将来若把关卡名升级为专名】把这里演进为"查表 name"即可，调用点不用动。
+        /// </summary>
+        public static string LevelName(int levelId, string fallback)
+        {
+            return LanguageManager.GetText("Level {0}", levelId) ?? fallback;
+        }
     }
 }

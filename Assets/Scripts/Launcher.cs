@@ -204,6 +204,17 @@ namespace FTProject
         /// <summary>阶段③：热更新（独立界面与进度条）。无需更新时立刻回到 Loading。</summary>
         private void BeginHotUpdate()
         {
+            // 【2026-10-16】Boot 阶段已完成"热更完整性闸门"（版本检查 + 全部差异下载
+            // 完成才放行到这里，见 BootHotUpdateGate）——main 场景无需再检查/下载：
+            // 既省一次网络往返，也彻底消除"两次检查间隔内服务器恰好发布新版本"的
+            // 极小窗口。编辑器下 Gate 不跑（本地直读无下载语义），走下方原流程。
+            if (BootHotUpdateGate.Completed)
+            {
+                Debug.Log("[Launcher] Boot 阶段已完成热更闸门（资源完整），本轮跳过检查更新。");
+                BeginLoadingConfig();
+                return;
+            }
+
             IHotUpdateLoader hot = ResLoader.HotUpdate;
             if (hot == null)
             {

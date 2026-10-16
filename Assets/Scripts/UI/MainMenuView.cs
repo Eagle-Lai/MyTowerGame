@@ -68,6 +68,46 @@ namespace FTProject
         private void OnEnable()
         {
             RefreshStats();
+            Subscribe();
+        }
+
+        private void OnDisable()
+        {
+            Unsubscribe();
+        }
+
+        // ------------------------------------------------------------------
+        // 语言切换（2026-10-16）
+        // 【为什么主菜单要听这个】设置界面就从主菜单的「SettingsBtn」进 —— 打开设置时
+        //   主菜单在全屏遮罩背后；切完语言关闭设置，立刻会看到它。静态文案由 TextLocalizer
+        //   自动刷新，这里补的是"代码手动拼出来的动态文本"（通关进度行）。
+        // ------------------------------------------------------------------
+
+        private bool _subscribed;
+
+        private void Subscribe()
+        {
+            if (_subscribed)
+            {
+                return;
+            }
+            EventDispatcher.AddEventListener<int>(EventName.LanguageChangedEvent, OnLanguageChanged);
+            _subscribed = true;
+        }
+
+        private void Unsubscribe()
+        {
+            if (!_subscribed)
+            {
+                return;
+            }
+            EventDispatcher.RemoveEventListener<int>(EventName.LanguageChangedEvent, OnLanguageChanged);
+            _subscribed = false;
+        }
+
+        private void OnLanguageChanged(int lang)
+        {
+            RefreshStats();
         }
 
         /// <summary>
@@ -92,6 +132,10 @@ namespace FTProject
                 SetText(_clearText, Localization.Get("Cleared {0}/{1}", 0, totalLevels)
                     ?? string.Format("已通关 0/{0}", totalLevels));
             }
+
+            // 字体跟随语言（这两行是手动拼写的文本，不在 TextLocalizer 管辖内）
+            LanguageManager.ApplyFont(_starText);
+            LanguageManager.ApplyFont(_clearText);
         }
 
         // ------------------------------------------------------------------

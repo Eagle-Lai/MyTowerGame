@@ -69,6 +69,13 @@ namespace FTProject.AOT
 
         private IEnumerator BootRoutine()
         {
+            // 【2026-10-16】预热 Boot 更新界面的字体与 UI 符号（AOT 侧"防裁剪锚"）：
+            // 热更侧 BootHotUpdateUI 会用到它们；此处在本协程里真实执行一次，保证
+            // IL2CPP 链接后这些 API 仍然存在（HybridCLR 要求热更代码只调用
+            // "AOT 链接后存在"的方法，否则真机 MissingMethodException —— 已实测踩坑）。
+            BootUiFontProvider.Ensure();
+            BootUiSymbolKeeper.Ensure();
+
             SetStatus("正在加载热更程序集…");
             SetProgress(0f);
 

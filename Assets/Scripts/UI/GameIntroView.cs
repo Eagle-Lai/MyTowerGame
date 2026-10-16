@@ -30,6 +30,7 @@ namespace FTProject
         private Button _backBtn;
         private Button _closeBtn;
         private TMP_Text _title;
+        private TMP_Text[] _infos;
 
         /// <summary>正文四行的多语言 key（key = 英文原文，表的主键口径）。</summary>
         private static readonly string[] InfoKeys =
@@ -52,18 +53,10 @@ namespace FTProject
         private void Awake()
         {
             _title = FindText("Panel/Title");
-            if (_title != null)
-            {
-                _title.text = Localization.Get("Game Intro") ?? "游戏介绍";
-            }
-
+            _infos = new TMP_Text[InfoKeys.Length];
             for (int i = 0; i < InfoKeys.Length; i++)
             {
-                TMP_Text info = FindText("Panel/Info" + (i + 1));
-                if (info != null)
-                {
-                    info.text = Localization.Get(InfoKeys[i]) ?? InfoFallbacks[i];
-                }
+                _infos[i] = FindText("Panel/Info" + (i + 1));
             }
 
             _backBtn = FindButton("Panel/BackBtn");
@@ -75,6 +68,37 @@ namespace FTProject
             if (_closeBtn != null)
             {
                 _closeBtn.onClick.AddListener(OnClickClose);
+            }
+        }
+
+        /// <summary>
+        /// 每次打开按当前语言重建标题与正文四行。
+        /// 【为什么必须在 OnEnable 重建】UIManager 池化复用实例（Awake 只跑一次），
+        /// 而语言可以在暂停界面随时切换 —— 若只在 Awake 赋值，二次打开会显示上一次
+        /// 语言的残留（2026-10-16 多语言审计修复）。
+        /// </summary>
+        private void OnEnable()
+        {
+            Refresh();
+        }
+
+        private void Refresh()
+        {
+            if (_title != null)
+            {
+                _title.text = Localization.Get("Game Intro") ?? "游戏介绍";
+                LanguageManager.ApplyFont(_title);
+            }
+            if (_infos != null)
+            {
+                for (int i = 0; i < _infos.Length; i++)
+                {
+                    if (_infos[i] != null)
+                    {
+                        _infos[i].text = Localization.Get(InfoKeys[i]) ?? InfoFallbacks[i];
+                        LanguageManager.ApplyFont(_infos[i]);
+                    }
+                }
             }
         }
 

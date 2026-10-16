@@ -331,7 +331,7 @@ namespace FTProject
                 "[Flow] 关卡 {0}「{1}」就绪：棋盘 {2}×{3}，格子 {4} 世界单位，回合 {5} 个\n{6}",
                 Level.Id, Level.Name, Map.Cols, Map.Rows, cellSize, _roundIds.Count,
                 AStarManager.Instance.DescribeCurrentPath()));
-            Tips(Localization.Get("Level ready: {0}, click Start to fight", Level.Name) ?? string.Format("关卡就绪：{0}，点击「开始」迎战", Level.Name));
+            Tips(Localization.Get("Level ready: {0}, click Start to fight", Localization.LevelName(Level.Id, Level.Name)) ?? string.Format("关卡就绪：{0}，点击「开始」迎战", Localization.LevelName(Level.Id, Level.Name)));
 
             // ⑪ 【真机诊断】缺失脚本扫描：延时 1 秒，覆盖 HUD / 资源预加载 / 快照恢复
             //    全部就位后的对象树。无缺失打一行 OK；有缺失则列出"对象路径 + 槽位数"
@@ -744,7 +744,7 @@ namespace FTProject
             LevelClearInfo info = new LevelClearInfo();
             info.victory = victory;
             info.levelId = Level != null ? Level.Id : 0;
-            info.levelName = Level != null ? Level.Name : null;
+            info.levelName = Level != null ? Localization.LevelName(Level.Id, Level.Name) : null;
             info.stars = Mathf.Clamp(stars, 0, 3);
             info.previousBest = Mathf.Clamp(previousBest, 0, 3);
             // 只有"打得比历史最好还好"才算刷新记录；平了不算
@@ -784,7 +784,7 @@ namespace FTProject
                 if (info.nextLevelId == 0 || s.Id < info.nextLevelId)
                 {
                     info.nextLevelId = s.Id;
-                    info.nextLevelName = s.Name;
+                    info.nextLevelName = Localization.LevelName(s.Id, s.Name);
                 }
             }
             info.hasNext = info.nextLevelId > 0;

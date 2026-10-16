@@ -104,9 +104,8 @@ namespace FTProject
 
             if (_towerName != null)
             {
-                _towerName.text = string.IsNullOrEmpty(cfg.Name)
-                    ? (Localization.Get("Tower") ?? "塔")
-                    : cfg.Name;
+                // DisplayName：过多语言表（"普通塔"），缺条目回退英文原文
+                _towerName.text = cfg.DisplayName;
             }
 
             float rate = Configs.Global != null ? Configs.Global.SellRefundRate : 1f;

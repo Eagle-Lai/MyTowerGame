@@ -1615,9 +1615,73 @@ namespace FTProject
             }
         }
 
+        /// <summary>
+        /// 最近一次初始化/加载失败的完整原因（2026-10-16 新增）。
+        /// Boot 阶段的"初始化失败自动重试"界面会展示它（见 HotUpdateEntry.EnterMainCo）；
+        /// 成功不清零，仅作诊断参考。
+        /// </summary>
+        public string LastInitError { get; private set; }
+
+        /// <summary>
+        /// 初始化失败后的"重试准备"——第一步：发起包裹的**异步销毁**（2026-10-16）。
+        ///
+        /// 【正确的重建流程】YooAsset 3.x 要求：`DestroyPackageAsync()` 完成之后
+        ///   才能 `YooAssets.RemovePackage()`（否则会抛 "has not been destroyed.
+        ///   Call DestroyPackageAsync before removing it."——实测教训）。
+        ///   由于销毁是异步操作，拆成两步以便调用方（协程）在中间让帧推进：
+        ///     ① BeginRetryDestroy() → 等操作 IsDone
+        ///     ② CompleteRetryRebuild()
+        ///
+        /// 【为什么需要重建】失败后 package 停留在"已创建但未完成初始化"的状态；
+        ///   在更深的失败态（如清单阶段失败）直接重跑 InitializePackageAsync 有撞
+        ///   重复初始化检测的风险 —— 销毁重建是最确定的复位方式。
+        /// </summary>
+        /// <returns>异步销毁操作（无需销毁时返回 null）</returns>
+        public DestroyPackageOperation BeginRetryDestroy()
+        {
+            if (_package == null)
+            {
+                return null;
+            }
+            try
+            {
+                return _package.DestroyPackageAsync();
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning("[Res] 重建前发起包裹销毁异常（忽略，将直接重建）：" + ex.Message);
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// 初始化失败后的"重试准备"——第二步：从全局移除已销毁的包裹（2026-10-16）。
+        /// 与 <see cref="BeginRetryDestroy"/> 配对使用；全程容错（失败降级为
+        /// "旧包裹存在时直接重跑 Init"——实测该降级路径也可工作）。
+        /// </summary>
+        public void CompleteRetryRebuild()
+        {
+            try
+            {
+                if (_package != null)
+                {
+                    // YooAsset 3.x 的 API 名是 RemovePackage（2.x 的 DestroyPackage 已移除）
+                    YooAssets.RemovePackage(PackageName);
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning("[Res] 重建前的包裹移除异常（忽略）：" + ex.Message);
+            }
+            _package = null;
+            _initProgress = null;
+            _ready = false;
+        }
+
         private void Fail(string message)
         {
             Debug.LogError(message);
+            LastInitError = message;
             if (OnLoadError != null)
             {
                 OnLoadError(message);

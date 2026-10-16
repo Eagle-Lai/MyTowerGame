@@ -50,14 +50,12 @@ namespace FTProject
                     }
                     _uiCanvas = go.GetComponent<RectTransform>();
 
-                    // M4-1：安全区适配。
-                    // 【为什么在这里自动补挂而不是要求重建场景】UICanvas 是按 Tag 在运行时找到的，
-                    // 在这里补挂不需要改场景，老场景也能立刻生效 ——
-                    // 否则每个已有工程都得重跑一次「搭建 main 场景」才不挡刘海。
-                    if (_uiCanvas != null && _uiCanvas.GetComponent<SafeAreaFitter>() == null)
-                    {
-                        _uiCanvas.gameObject.AddComponent<SafeAreaFitter>();
-                    }
+                    // M4-1 安全区适配（2026-10-16 修正挂载点）。
+                    // 【为什么不再挂在 UICanvas 根上】根画布的 RectTransform 完全由 Canvas 驱动：
+                    //   实测向根写入锚点后会被覆盖——先瞬间塌成 0×0，随后锚点被复位、rect 回全屏
+                    //   → 挂根上等于"写了个不起作用的组件"。改为在 GetLayer 里挂到三个层节点
+                    //   （BgPanel/NormalPanel/TipsPanel）：层节点是普通 RectTransform，锚点写入生效；
+                    //   界面按层铺满时自动继承安全区（全屏遮罩如需覆盖刘海区，另见界面 Bg 外扩方案）。
                 }
                 return _uiCanvas;
             }
@@ -68,6 +66,7 @@ namespace FTProject
             RectTransform rect;
             if (_layers.TryGetValue(type, out rect) && rect != null)
             {
+                EnsureSafeArea(rect);
                 return rect;
             }
 
@@ -85,7 +84,20 @@ namespace FTProject
             }
             rect = child as RectTransform;
             _layers[type] = rect;
+            EnsureSafeArea(rect);
             return rect;
+        }
+
+        /// <summary>
+        /// 给层节点补挂安全区适配（2026-10-16 从画布根迁移而来，原因见 UICanvas getter 注释）。
+        /// 挂载在这里而不是要求重建场景：层节点按名字查找，老场景同样立即生效。
+        /// </summary>
+        private static void EnsureSafeArea(RectTransform layer)
+        {
+            if (layer != null && layer.GetComponent<SafeAreaFitter>() == null)
+            {
+                layer.gameObject.AddComponent<SafeAreaFitter>();
+            }
         }
 
         // ------------------------------------------------------------------

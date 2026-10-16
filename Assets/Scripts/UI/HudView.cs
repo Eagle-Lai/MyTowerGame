@@ -69,6 +69,16 @@ namespace FTProject
         /// <summary>进入放置模式后按钮变灰，避免重复点</summary>
         private bool _placing;
 
+        // ---- 语言切换重放（2026-10-16）：见 OnLanguageChanged 的完整说明 ----
+        /// <summary>回合文本配方：key + 参数 + 中文兜底格式（null = 当前没有回合文本）。</summary>
+        private string _roundKey;
+        private int _roundArg;
+        private string _roundFallback;
+
+        /// <summary>开始按钮文本配方（null = 外部接管中，如自动回合倒计时每秒重写）。</summary>
+        private string _startKey;
+        private string _startFallback;
+
         /// <summary>
         /// 建造栏的塔按钮（三类：普通 / 火力 / 减速 —— 2026-10-14 三塔型收敛定案）。
         ///
@@ -111,6 +121,7 @@ namespace FTProject
             EventDispatcher.RemoveEventListener<BaseTower>(EventName.BuildTowerSuccess, OnBuildSuccess);
             EventDispatcher.RemoveEventListener(EventName.PlayerStateInitEvent, RefreshAll);
             EventDispatcher.RemoveEventListener<float>(EventName.GameSpeedChangedEvent, OnSpeedChanged);
+            EventDispatcher.RemoveEventListener<int>(EventName.LanguageChangedEvent, OnLanguageChanged);
         }
 
         // ------------------------------------------------------------------
@@ -132,7 +143,8 @@ namespace FTProject
             }
             if (_startLabel != null)
             {
-                _startLabel.text = Localization.Get("Start") ?? "开始";
+                // 记配方而非直接写死：切语言时由 OnLanguageChanged 按配方重算（见文件下方"语言切换重放"）
+                SetStartLabelLocalized("Start", "开始");
             }
 
             // 倍速按钮（P2b）：点击循环 ×1→×2→×3→×1
@@ -204,6 +216,8 @@ namespace FTProject
             EventDispatcher.AddEventListener<BaseTower>(EventName.BuildTowerSuccess, OnBuildSuccess);
             EventDispatcher.AddEventListener(EventName.PlayerStateInitEvent, RefreshAll);
             EventDispatcher.AddEventListener<float>(EventName.GameSpeedChangedEvent, OnSpeedChanged);
+            // 语言切换：重放回合文本与开始按钮文本（配方见 OnLanguageChanged）
+            EventDispatcher.AddEventListener<int>(EventName.LanguageChangedEvent, OnLanguageChanged);
         }
 
         private TMP_Text FindText(string path)
@@ -255,10 +269,7 @@ namespace FTProject
             if (_startButton != null)
             {
                 _startButton.interactable = false;
-                if (_startLabel != null)
-                {
-                    _startLabel.text = Localization.Get("In Progress") ?? "进行中";
-                }
+                SetStartLabelLocalized("In Progress", "进行中");
             }
             EventDispatcher.TriggerEvent(EventName.StartRoundRequestEvent);
         }
@@ -434,9 +445,55 @@ namespace FTProject
         /// </summary>
         public void SetStartButtonLabel(string text)
         {
+            // 外部接管（自动回合倒计时每秒重写）→ 清掉配方，语言事件不再重放旧文案；
+            // 倒计时每一拍都会用当前语言重新拼串，切换语言后最多一秒自然对齐。
+            _startKey = null;
             if (_startLabel != null)
             {
                 _startLabel.text = text;
+            }
+        }
+
+        // ------------------------------------------------------------------
+        // 语言切换重放（2026-10-16）
+        //
+        // 【为什么需要】回合文本与开始按钮文本是"事件驱动 + 手动拼词"的 —— 节点因此也没有
+        //   挂 TextLocalizer（挂了反而会在切语言时把"进行中 / 回合 3"这类状态文本冲成 prefab 原文）。
+        //   所以把"最近一次显示用的取词配方"记下来，收到 LanguageChangedEvent 时按同一配方重算：
+        //   **只重算文本、不重放副作用**（interactable 等交互状态由原事件路径负责，不能重跑）。
+        // ------------------------------------------------------------------
+
+        private void OnLanguageChanged(int lang)
+        {
+            if (_roundKey != null)
+            {
+                SetRoundTextLocalized(_roundKey, _roundArg, _roundFallback);
+            }
+            if (_startKey != null)
+            {
+                SetStartLabelLocalized(_startKey, _startFallback);
+            }
+        }
+
+        /// <summary>写回合文本并记住配方（语言切换时按配方重放）。</summary>
+        private void SetRoundTextLocalized(string key, int arg, string fallbackFormat)
+        {
+            _roundKey = key;
+            _roundArg = arg;
+            _roundFallback = fallbackFormat;
+            SetText(_roundText, Localization.Get(key, arg) ?? string.Format(fallbackFormat, arg));
+            LanguageManager.ApplyFont(_roundText);
+        }
+
+        /// <summary>写开始按钮文本并记住配方（语言切换时按配方重放）。</summary>
+        private void SetStartLabelLocalized(string key, string fallback)
+        {
+            _startKey = key;
+            _startFallback = fallback;
+            if (_startLabel != null)
+            {
+                _startLabel.text = Localization.Get(key) ?? fallback;
+                LanguageManager.ApplyFont(_startLabel);
             }
         }
 
@@ -516,26 +573,23 @@ namespace FTProject
 
         private void OnRoundStart(int roundIndex)
         {
-            SetText(_roundText, Localization.Get("Round {0}", roundIndex) ?? string.Format("回合 {0}", roundIndex));
+            SetRoundTextLocalized("Round {0}", roundIndex, "回合 {0}");
         }
 
         private void OnWaveStart(int waveIndex)
         {
-            SetText(_roundText, Localization.Get("Wave {0}", waveIndex) ?? string.Format("第 {0} 波", waveIndex));
+            SetRoundTextLocalized("Wave {0}", waveIndex, "第 {0} 波");
         }
 
         private void OnRoundClear(int roundIndex)
         {
-            SetText(_roundText, Localization.Get("Round {0} Clear", roundIndex) ?? string.Format("回合 {0} 完成", roundIndex));
+            SetRoundTextLocalized("Round {0} Clear", roundIndex, "回合 {0} 完成");
             // 恢复"开始"按钮，让玩家推进到下一回合
             if (_startButton != null)
             {
                 _startButton.interactable = true;
             }
-            if (_startLabel != null)
-            {
-                _startLabel.text = Localization.Get("Next Round") ?? "下一回合";
-            }
+            SetStartLabelLocalized("Next Round", "下一回合");
         }
 
         private void OnGameOver(bool victory)
@@ -546,9 +600,9 @@ namespace FTProject
             }
             if (_startLabel != null)
             {
-                _startLabel.text = victory
-                    ? (Localization.Get("Cleared") ?? "已通关")
-                    : (Localization.Get("Failed") ?? "已失败");
+                SetStartLabelLocalized(
+                    victory ? "Cleared" : "Failed",
+                    victory ? "已通关" : "已失败");
             }
             // 结算后倍速按钮不可用（策划案 §7.3：倍速档位在 GameOver 时复位且不再可切）
             if (_speedButton != null)

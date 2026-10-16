@@ -839,8 +839,8 @@ namespace FTProject
             {
                 AudioManager.Instance.PlayAt(AudioName.TowerUpgrade, tower.Position);
             }
-            Tips(Localization.Get("Upgraded to {0} Lv.{1}", nextCfg.Name, nextCfg.Level)
-                ?? string.Format("已升级为 {0} Lv.{1}", nextCfg.Name, nextCfg.Level));
+            Tips(Localization.Get("Upgraded to {0} Lv.{1}", nextCfg.DisplayName, nextCfg.Level)
+                ?? string.Format("已升级为 {0} Lv.{1}", nextCfg.DisplayName, nextCfg.Level));
 
             return tower;
         }

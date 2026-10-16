@@ -158,6 +158,13 @@ namespace FTProject
             { "UI_TowerIcon_Power",  new ResAddress(ResBundle.UiHud, "UI_TowerIcon_Power",  "Assets/_UIAssets/UI/UI_TowerIcon_Power.png") },
             { "UI_TowerIcon_Retard", new ResAddress(ResBundle.UiHud, "UI_TowerIcon_Retard", "Assets/_UIAssets/UI/UI_TowerIcon_Retard.png") },
 
+            // 品牌 Logo（2026-10-16；SplashView / LoadingView / MainMenuView 三处 Logo 节点引用）。
+            // 【为什么登记】同字体/塔贴图先例：不登记会被 YooAsset 按"未登记降级"处理
+            //   （无同树可跟随 → misc_art 兜底包）；登记（UiHud）后随 ui_hud 打包，
+            //   boot_ui 的两个界面经 bundle 依赖自动加载。运行时不通过 ResLoader 加载，
+            //   登记只为打包与自检。同目录其余尺寸图会"跟随同树已登记资源"一并归 ui_hud。
+            { "UI_AppLogo", new ResAddress(ResBundle.UiHud, "app_icon_512x512", "Assets/Art/Logo/app_icon_512x512.png") },
+
             // ------------------------------------------------------------------
             // Reporter 调试控制台图标（Assets/Reporter/Images，收集器 ReporterData 组）
             //

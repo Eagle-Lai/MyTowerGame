@@ -38,15 +38,15 @@ namespace FTProject
             if (_settingsBtn != null) _settingsBtn.onClick.AddListener(OnClickSettings);
             if (_quitBtn != null) _quitBtn.onClick.AddListener(OnClickQuit);
 
-            if (_title != null)
-            {
-                _title.text = Localization.Get("Game Paused") ?? "暂停";
-            }
+            // 标题文案不在这里写死：挪到 Refresh() —— UIManager 池化复用实例（Awake 只跑一次），
+            // 且语言随时可能被切，必须在每次打开时按当前语言重建（见 Refresh / OnLanguageChanged）。
         }
 
         private void OnEnable()
         {
             Time.timeScale = 0f;
+            Refresh();
+            Subscribe();
         }
 
         /// <summary>
@@ -56,6 +56,50 @@ namespace FTProject
         private void OnDisable()
         {
             Time.timeScale = 1f;
+            Unsubscribe();
+        }
+
+        // ------------------------------------------------------------------
+        // 语言切换（2026-10-16）
+        // 【为什么暂停界面要听这个】设置界面也可以从暂停界面的「SettingsBtn」进 ——
+        //   切完语言关闭设置，看到的就是暂停界面：标题必须已是新语言。
+        //   （标题走手动 Refresh：它在批量挂载工具的动态文本排除名单里，不挂 TextLocalizer。）
+        // ------------------------------------------------------------------
+
+        private bool _subscribed;
+
+        private void Refresh()
+        {
+            if (_title != null)
+            {
+                _title.text = Localization.Get("Game Paused") ?? "暂停";
+                LanguageManager.ApplyFont(_title);
+            }
+        }
+
+        private void Subscribe()
+        {
+            if (_subscribed)
+            {
+                return;
+            }
+            EventDispatcher.AddEventListener<int>(EventName.LanguageChangedEvent, OnLanguageChanged);
+            _subscribed = true;
+        }
+
+        private void Unsubscribe()
+        {
+            if (!_subscribed)
+            {
+                return;
+            }
+            EventDispatcher.RemoveEventListener<int>(EventName.LanguageChangedEvent, OnLanguageChanged);
+            _subscribed = false;
+        }
+
+        private void OnLanguageChanged(int lang)
+        {
+            Refresh();
         }
 
         private void OnClickResume()

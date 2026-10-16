@@ -13,6 +13,10 @@ import sys
 import urllib.request
 import urllib.error
 
+# 本机 MCP 请求必须绕过系统代理：Clash / FlyingBird 会把 127.0.0.1 的请求劫持到代理，
+# 返回 502 Bad Gateway（而不是 ConnectionRefused），曾导致连桥误判。
+urllib.request.install_opener(urllib.request.build_opener(urllib.request.ProxyHandler({})))
+
 URL = __import__("os").environ.get("UNITY_MCP_URL", "http://127.0.0.1:8082/mcp")
 SESSION = None
 _next_id = [100]

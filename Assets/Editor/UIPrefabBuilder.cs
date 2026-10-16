@@ -210,13 +210,26 @@ namespace FTProject.EditorTools
         private const int SelectArrowFontSize = 110;
 
         /// <summary>
-        /// 左右翻页按钮的尺寸与横向位置。
-        /// 【为什么放在 x = ±834】整页 1920 宽（±960）；箭头 132 宽 + 距屏幕边 60 → 中心 ±834，
-        ///   按钮占据 [768, 900]，而列表占据 [-650, 650]，中间留 118 的缝，互不遮挡。
+        /// 左右翻页按钮的尺寸与"距屏幕边缘"摆位（2026-10-16 多分辨率适配：改边缘锚定）。
+        /// 【为什么不再用"中心 ±834"】中心锚在窄比例屏（4:3 逻辑画布约 1663 宽）会被屏幕裁掉
+        ///   大半（外缘 -900 vs 边缘 -831，裁 69px）；改贴屏幕左右边缘后任意宽度都成立。
+        ///   16:9 换算：原外缘 = 960−834−66 = 60 → 像素级同款（基准零位移）。
         /// </summary>
         private const float SelectArrowW = 132f;
         private const float SelectArrowH = 160f;
-        private const float SelectArrowX = 834f;
+        private const float SelectArrowEdge = 60f;   // 箭头外缘距屏幕左/右边缘
+
+        /// <summary>
+        /// 塔图鉴翻页箭头的"距屏幕边缘"量（同上；16:9 换算：960−860−66 = 34）。
+        /// </summary>
+        private const float CodexArrowEdge = 34f;
+
+        /// <summary>
+        /// 选关/图鉴页关闭按钮：下缘距屏幕底边。
+        /// 2026-10-16 改底边锚（原中心锚 -430 在 ≥21.3:9 高屏会被屏幕裁到）；
+        /// 16:9 换算：540−430−42 = 68 → 像素级同款。
+        /// </summary>
+        private const float PanelCloseBtnBottomY = 68f;
 
 
         private static readonly string[] SelectChildren = { "Bg", "Panel" };
@@ -267,15 +280,17 @@ namespace FTProject.EditorTools
 
         // 三颗塔（Normal/Power/Retard）**沿用手工版保留的槽位坐标**：
         //   手工版把穿透(4)/激光(5) 撤下后，只删了这两颗、**没有重新居中**，
-        //   三颗仍占原来五槽里的左三格（-548/-274/0）。生成器必须与磁盘一致，
+        //   三颗仍占原来五槽里的左三格（x = -548/-274/0）。生成器必须与磁盘一致，
         //   否则「全量重建」会把整排按钮挪位（表现为与手工版对不上）。
-        // 【将来恢复穿透/激光】在这里按原槽位补回 (274, -427)/(548, -427) 两条，
+        // 【y 已废弃（2026-10-16）】原 y=-427 是"画布中心锚"的坐标；多分辨率适配后
+        //   改底边锚（见 CreateTowerButton / TowerBtnBottomY），此处的 y 不再被使用。
+        // 【将来恢复穿透/激光】在这里按原槽位补回 (274, 0)/(548, 0) 两条，
         //   并同步 HudView.cs 的 TowerNodeNames/TowerNodeTypes 与 M0SetupWizard 的检查名单。
         private static readonly TowerButtonSpec[] TowerButtons =
         {
-            new TowerButtonSpec { NodeName = "Btn_Tower_Normal", TowerType = 1, Pos = new Vector2(-548f, -427f) },
-            new TowerButtonSpec { NodeName = "Btn_Tower_Power",  TowerType = 2, Pos = new Vector2(-274f, -427f) },
-            new TowerButtonSpec { NodeName = "Btn_Tower_Retard", TowerType = 3, Pos = new Vector2(0f,    -427f) },
+            new TowerButtonSpec { NodeName = "Btn_Tower_Normal", TowerType = 1, Pos = new Vector2(-548f, 0f) },
+            new TowerButtonSpec { NodeName = "Btn_Tower_Power",  TowerType = 2, Pos = new Vector2(-274f, 0f) },
+            new TowerButtonSpec { NodeName = "Btn_Tower_Retard", TowerType = 3, Pos = new Vector2(0f,    0f) },
         };
 
         // 参考分辨率下的字号
@@ -286,17 +301,26 @@ namespace FTProject.EditorTools
         private const int StarFontSize = 76;
 
         /// <summary>
-        /// 倍速/开始两颗按钮（各 220×72）相对画布中心的横向偏移。
+        /// 倍速/开始两颗按钮（各 220×72）的"贴屏幕角落"摆位（2026-10-16 多分辨率适配）。
         ///
         /// 【为什么不放在"底中"】效果图 02 与策划案 §6.2.2 都把这两颗按钮放在底中 (∓140, 60)，
-        ///   但那一条 y=49..177 的底带**已被塔建造栏占满**（当前三颗 128×128 塔按钮 x 348..1148，
-        ///   将来恢复五颗会铺到 1572）：放在底中会盖住中间的塔按钮，点击被 StartButton 抢走
-        ///   —— 等于"减速塔点不了"，是实打实的功能缺陷（效果图本身的几何冲突）。
-        ///   因此把两颗按钮挪到塔栏**两侧的空白区**（各留 64px 间距），
-        ///   纵向与塔栏同一中心线，视觉上仍是"底部一排"，但互不遮挡。
+        ///   但那一条 y=49..177 的底带**已被塔建造栏占满**（当前三颗 128×128 塔按钮）：
+        ///   放在底中会盖住中间的塔按钮，点击被 StartButton 抢走 —— 等于"减速塔点不了"。
+        ///   因此把两颗按钮挪到塔栏**两侧的空白区**，纵向与塔栏同一基线。
+        /// 【为什么改角落锚定】原"中心 ±786"在窄比例屏（4:3 逻辑画布约 1663 宽）会被裁掉 ~65px；
+        ///   改贴屏幕左右边缘后任意宽度都成立，"避开塔栏"的意图依然成立；
+        ///   挂载层已收进安全区，角落锚定还会自动避开刘海。
+        ///   16:9 换算：原左缘 = 960−786−110 = 64、原下缘 = 77 → 像素级同款（基准零位移）。
         /// </summary>
-        private const float SideBtnX = 786f;   // 中心 x = 960 ± 786，避开塔栏的 348 / 1572
-        private const float SideBtnY = 77f;    // 与塔栏同中心线（距画布底边 113，按钮 72 高）
+        private const float SideBtnEdgeX = 64f;   // 按钮外缘距屏幕左/右边缘
+        private const float SideBtnEdgeY = 77f;   // 按钮下缘距屏幕底边（与塔栏同基线）
+
+        /// <summary>
+        /// 塔按钮底缘距屏幕底边的距离（2026-10-16 多分辨率适配：中心锚改底边锚）。
+        /// 中心锚在 19.2:9 以上的高屏会顶出屏幕下缘（19.5:9 裁 2px、21:9 裁 20px）；
+        /// 底边锚在任何高度都稳。16:9 换算：原底缘 = 540−427−64 = 49 → 像素级同款。
+        /// </summary>
+        private const float TowerBtnBottomY = 49f;
 
         private static readonly Color TextColor = new Color(1f, 1f, 1f, 1f);
         private static readonly Color ButtonColor = new Color(0.18f, 0.24f, 0.34f, 0.92f);
@@ -328,6 +352,20 @@ namespace FTProject.EditorTools
         private static Sprite LoadUiSprite(string name)
         {
             return AssetDatabase.LoadAssetAtPath<Sprite>(UiArtDir + "/" + name + ".png");
+        }
+
+        /// <summary>
+        /// 品牌 Logo 图（SplashView / LoadingView / MainMenuView 三处 Logo 节点共用一张）。
+        ///
+        /// 【为什么单独一条路径】它在 Assets/Art/Logo 下（不是 UiArtDir 的皮肤图），
+        ///   2026-10-16 起替换掉原来的塔图标占位；换正式 logo 时只改这一处。
+        ///   512 是 UI 显示尺寸（三处显示区最大 480），与 Google Play 图标规格同款。
+        /// </summary>
+        private const string LogoSpritePath = "Assets/Art/Logo/app_icon_512x512.png";
+
+        private static Sprite LoadLogoSprite()
+        {
+            return AssetDatabase.LoadAssetAtPath<Sprite>(LogoSpritePath);
         }
 
         /// <summary>给 Image 套九宫格皮肤；皮肤缺失时退化为 fallbackColor 纯色</summary>
@@ -416,6 +454,64 @@ namespace FTProject.EditorTools
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
             Debug.Log("[M0] MainMenuView 单独重建结果：\n" + report.Text);
+        }
+
+        /// <summary>
+        /// **只重建设置界面**（无弹窗、不碰其他 prefab）。2026-10-16 新增（语言下拉框）。
+        ///
+        /// 【为什么单开这个入口】全量重建（BuildInternal）会把 HudView 等手工改造过的
+        ///   prefab 一并覆盖 —— 自动化（batchmode / MCP）里绝不能跑全量。
+        ///   本方法只重建 SettingView.prefab（其内容完全由生成器维护，重建安全）。
+        /// ⚠️ 重建会**丢掉已挂在 prefab 上的 TextLocalizer**（组件不属于生成器输出）——
+        ///   重建后必须重跑「批量挂多语言组件 TextLocalizer」（菜单 308），顺序不能颠倒。
+        /// 也可走菜单：Tools ▸ 塔防 ▸ 高级（单步重建）▸ 仅重建设置界面（语言下拉框）。
+        /// </summary>
+        [MenuItem("Tools/塔防/高级（单步重建）/仅重建设置界面（语言下拉框）", false, 307)]
+        public static void RebuildSettingOnly()
+        {
+            EditorUtil.Report report = new EditorUtil.Report();
+            BuildSetting(report);
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+            Debug.Log("[M0] SettingView 单独重建结果：\n" + report.Text);
+        }
+
+        /// <summary>
+        /// **只重建 HudView**（2026-10-16 多分辨率适配：塔按钮/倍速/开始改边缘锚定）。
+        /// ⚠️ 与 SettingView 同类副作用：重建会丢挂在 prefab 上的 TextLocalizer ——
+        ///   重建后必须依次跑「批量挂多语言组件（TextLocalizer）」（菜单 308）与
+        ///   「按 ResTable 打 AssetBundle 标记」（菜单 4），顺序不能颠倒。
+        /// </summary>
+        [MenuItem("Tools/塔防/高级（单步重建）/仅重建 HudView（战斗 HUD·建造栏）", false, 310)]
+        public static void RebuildHudOnly()
+        {
+            EditorUtil.Report report = new EditorUtil.Report();
+            BuildHud(report);
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+            Debug.Log("[M0] HudView 单独重建结果：\n" + report.Text);
+        }
+
+        /// <summary>**只重建 SelectView**（多分辨率适配：翻页箭头/关闭钮改边缘锚）。⚠️ 同上层，需跑 308 + 菜单 4。</summary>
+        [MenuItem("Tools/塔防/高级（单步重建）/仅重建选关界面（SelectView·箭头）", false, 311)]
+        public static void RebuildSelectOnly()
+        {
+            EditorUtil.Report report = new EditorUtil.Report();
+            BuildSelect(report);
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+            Debug.Log("[M0] SelectView 单独重建结果：\n" + report.Text);
+        }
+
+        /// <summary>**只重建 TowerCodexView**（多分辨率适配：翻页箭头/关闭钮改边缘锚）。⚠️ 同上层，需跑 308 + 菜单 4。</summary>
+        [MenuItem("Tools/塔防/高级（单步重建）/仅重建塔图鉴界面（TowerCodexView·箭头）", false, 312)]
+        public static void RebuildTowerCodexOnly()
+        {
+            EditorUtil.Report report = new EditorUtil.Report();
+            BuildTowerCodex(report);
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+            Debug.Log("[M0] TowerCodexView 单独重建结果：\n" + report.Text);
         }
 
         /// <summary>供一键向导调用（不弹窗）。**全量重建**，会覆盖手工改过的 prefab。</summary>
@@ -564,9 +660,10 @@ namespace FTProject.EditorTools
             {
                 CreateTowerButton(root.transform, TowerButtons[i]);
             }
-            // 左=倍速（工具类，次要）、右=开始（主 CTA）—— 与"原设计里 倍速在左、开始在右"一致
-            CreateButton(root.transform, "SpeedButton", "×1", new Vector2(-SideBtnX, SideBtnY));
-            CreateButton(root.transform, "StartButton", "Start", new Vector2(SideBtnX, SideBtnY), true);
+            // 左=倍速（工具类，次要）、右=开始（主 CTA）—— 与"原设计里 倍速在左、开始在右"一致。
+            // 2026-10-16 多分辨率适配：改"贴屏幕左侧/右侧边缘"锚定（见 SideBtnEdgeX/Y 注释）。
+            CreateButton(root.transform, "SpeedButton", "×1", new Vector2(0f, 0f), new Vector2(SideBtnEdgeX, SideBtnEdgeY));
+            CreateButton(root.transform, "StartButton", "Start", new Vector2(1f, 0f), new Vector2(-SideBtnEdgeX, SideBtnEdgeY), true);
 
             // 右上角：暂停 / 游戏介绍（2026-10-14，与 EnsureHudTopRightButtons 同一套几何）
             CreateHudCornerButton(root.transform, "Btn_Pause", "Pause", HudPausePos, HudCornerBtnSize);
@@ -1014,12 +1111,17 @@ namespace FTProject.EditorTools
             // 【为什么用 ASCII 的 < >】中文 SDF 字体不保证有 ◀▶/‹› 这些码位，
             //   缺字形时 TMP 只会渲染成空白且**不报错**（本工程踩过这个坑）。
             //   "<" / ">" 是 ASCII 必含字形，放大到 72 号就是一副箭头。
+            // 2026-10-16 多分辨率适配：改"贴屏幕左右边缘"锚定（见 SelectArrowEdge 注释）。
             CreatePanelButton(panel.transform, "LeftBtn", "<",
-                new Vector2(-SelectArrowX, SelectListPos.y), SelectArrowW, false, SelectArrowH, SelectArrowFontSize);
+                new Vector2(SelectArrowEdge, SelectListPos.y), SelectArrowW, false, SelectArrowH, SelectArrowFontSize,
+                new Vector2(0f, 0.5f), new Vector2(0f, 0.5f));
             CreatePanelButton(panel.transform, "RightBtn", ">",
-                new Vector2(SelectArrowX, SelectListPos.y), SelectArrowW, false, SelectArrowH, SelectArrowFontSize);
+                new Vector2(-SelectArrowEdge, SelectListPos.y), SelectArrowW, false, SelectArrowH, SelectArrowFontSize,
+                new Vector2(1f, 0.5f), new Vector2(1f, 0.5f));
 
-            CreatePanelButton(panel.transform, "CloseBtn", "Back", new Vector2(0f, -430f), 340f, true, 84f);
+            // 关闭按钮改"贴屏幕底边"（原中心锚 -430 在 ≥21.3:9 高屏会被裁）
+            CreatePanelButton(panel.transform, "CloseBtn", "Back", new Vector2(0f, PanelCloseBtnBottomY), 340f, true, 84f,
+                0, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f));
 
             GameObject saved = PrefabUtility.SaveAsPrefabAsset(root, SelectPath);
             Object.DestroyImmediate(root);
@@ -1360,21 +1462,35 @@ namespace FTProject.EditorTools
             EditorUtil.EnsureFolderOfFile(SettingPath);
 
             GameObject panel;
+            // 【为什么面板从 600 加高到 720】2026-10-16 新增"语言选择"行（标签 + 下拉框）。
+            //   设置面板整体按"设置项（音量、语言）→ 操作按钮"重排：620 宽放不下新行的高，
+            //   加高后各元素间距与旧版节奏保持一致（文本贴滑动条 4.5px、按钮间 16px）。
             GameObject root = CreateDialogShell("SettingView", "Settings",
-                new Vector2(620f, 600f), report, out panel);
+                new Vector2(620f, 720f), report, out panel);
             root.AddComponent<SettingView>();
 
             CreateText(panel.transform, "VolumeText", "Volume 80%",
-                new Vector2(0.5f, 0.5f), new Vector2(0f, 120f), new Vector2(520f, 56f),
+                new Vector2(0.5f, 0.5f), new Vector2(0f, 210f), new Vector2(520f, 56f),
                 TextAnchor.MiddleCenter, BigFontSize);
 
             // 音量用滑动条拖拽调节（SettingView.OnVolumeChanged）；VolumeText 同步显示百分比。
-            // 【为什么是 y=55 / 高 65】手工版两次微调：滑块下移并加高（40/40 → 55/55 → 高 65），
+            // 【为什么高 65】手工版两次微调：滑块下移并加高（40/40 → 55/55 → 高 65），
             //   与上方 VolumeText 拉开一点呼吸空间，同时进一步加粗拖拽热区（高 65 更好点）。
-            CreateSlider(panel.transform, "VolumeSlider", new Vector2(0f, 55f), new Vector2(480f, 65f), 0.8f);
-            CreatePanelButton(panel.transform, "MuteBtn", "Mute", new Vector2(0f, -50f));
-            CreatePanelButton(panel.transform, "ResetBtn", "Reset Save", new Vector2(0f, -140f));
-            CreatePanelButton(panel.transform, "CloseBtn", "Close", new Vector2(0f, -230f));
+            CreateSlider(panel.transform, "VolumeSlider", new Vector2(0f, 145f), new Vector2(480f, 65f), 0.8f);
+
+            // ---- 语言选择行（2026-10-16）：静态标签 + TMP 下拉框 ----
+            // 标签文案 "Language"（key=英文原文）由 TextLocalizer 管（菜单 308 批量挂载）；
+            // 下拉框的选项（English / 简体中文 / 繁體中文）由 SettingView 运行时按
+            // LocalizationSettings.supportedLanguages 填充，选了立即生效（无需重启）。
+            CreateText(panel.transform, "LanguageText", "Language",
+                new Vector2(0.5f, 0.5f), new Vector2(0f, 45f), new Vector2(520f, 56f),
+                TextAnchor.MiddleCenter, BigFontSize);
+            CreateDropdown(panel.transform, "LanguageDropdown",
+                new Vector2(0f, -30f), new Vector2(320f, 72f), 56f, 3);
+
+            CreatePanelButton(panel.transform, "MuteBtn", "Mute", new Vector2(0f, -120f));
+            CreatePanelButton(panel.transform, "ResetBtn", "Reset Save", new Vector2(0f, -208f));
+            CreatePanelButton(panel.transform, "CloseBtn", "Close", new Vector2(0f, -296f));
 
             GameObject saved = PrefabUtility.SaveAsPrefabAsset(root, SettingPath);
             Object.DestroyImmediate(root);
@@ -1383,7 +1499,7 @@ namespace FTProject.EditorTools
                 report.Error("保存失败：" + SettingPath);
                 return;
             }
-            report.Ok("SettingView.prefab（Bg / Panel( Title / VolumeText / VolumeSlider / MuteBtn / ResetBtn / CloseBtn )）");
+            report.Ok("SettingView.prefab（Bg / Panel( Title / VolumeText / VolumeSlider / LanguageText / LanguageDropdown / MuteBtn / ResetBtn / CloseBtn )）");
         }
 
         // ------------------------------------------------------------------
@@ -1459,8 +1575,14 @@ namespace FTProject.EditorTools
         /// <paramref name="height"/> / <paramref name="fontSize"/> 默认是"标准按钮"口径（72 高 / 32 号），
         /// 关卡选择的左右翻页箭头会传更高、更大的值（132×160、72 号）。
         /// </summary>
+        /// <summary>
+        /// 面板内按钮（默认 320×72，画布中心锚）。
+        /// 2026-10-16：可选 anchor/pivot 参数支持"边缘锚定"（贴屏幕左/右/底边的箭头与关闭钮）；
+        ///   不传时行为与旧版完全一致（中心锚 (0.5,0.5)）。
+        /// </summary>
         private static void CreatePanelButton(Transform parent, string name, string label, Vector2 anchoredPos,
-            float width = 320f, bool primary = false, float height = 72f, int fontSize = 0)
+            float width = 320f, bool primary = false, float height = 72f, int fontSize = 0,
+            Vector2? anchor = null, Vector2? pivot = null)
         {
             if (fontSize <= 0)
             {
@@ -1471,9 +1593,10 @@ namespace FTProject.EditorTools
             go.transform.SetParent(parent, false);
 
             RectTransform rt = (RectTransform)go.transform;
-            rt.anchorMin = new Vector2(0.5f, 0.5f);
-            rt.anchorMax = new Vector2(0.5f, 0.5f);
-            rt.pivot = new Vector2(0.5f, 0.5f);
+            Vector2 a = anchor ?? new Vector2(0.5f, 0.5f);
+            rt.anchorMin = a;
+            rt.anchorMax = a;
+            rt.pivot = pivot ?? new Vector2(0.5f, 0.5f);
             rt.anchoredPosition = anchoredPos;
             rt.sizeDelta = new Vector2(width, height);
 
@@ -1556,6 +1679,181 @@ namespace FTProject.EditorTools
         }
 
         /// <summary>
+        /// 生成一个可直接使用的 TMP_Dropdown（对应 SettingView 的 Panel/LanguageDropdown）。
+        ///
+        /// 【结构对齐官方模板】与 TMP 内置的 `TMP_DefaultControls.CreateDropdown` 同构 ——
+        ///   运行时 TMP_Dropdown.Show() 会按这套层级找部件，换层级/改名会静默失效：
+        ///   LanguageDropdown                      Image + TMP_Dropdown（整块即点击面）
+        ///   ├── Label                             captionText：显示当前选项
+        ///   ├── Arrow                             下拉指示（ASCII "v"，同选关页 "< >" 口径）
+        ///   └── Template（★ 默认 SetActive(false)）  template：运行时被克隆成弹出的列表
+        ///       └── Viewport                      Mask 裁剪窗口
+        ///           └── Content                   ScrollRect 的内容容器（高度运行时重算）
+        ///               └── Item                  ★ 必须挂 Toggle —— TMP 靠"模板里的 Toggle"识别列表项
+        ///                   ├── Item Background   item 底色（Toggle 的 targetGraphic）
+        ///                   ├── Item Checkmark    选中标记（Toggle 的 graphic）
+        ///                   └── Item Label        itemText：列表项文本
+        ///
+        /// 【为什么不给 Item 挂 TMP_Dropdown.DropdownItem】它在运行时 Show()→SetupTemplate()
+        ///   里由 TMP 自己 AddComponent 补挂（官方同款路径），生成器不抢跑。
+        /// 【为什么所有文本留空】列表项与 caption 的文案由 SettingView 运行时按语言填；
+        ///   留空还能让「批量挂 TextLocalizer」（菜单 308）自然跳过这些节点（空文本跳过规则），
+        ///   免得本地化组件在切语言时把运行时填好的选项文案冲掉。
+        /// </summary>
+        /// <param name="itemHeight">列表项行高（与 32 号字匹配的 56）。</param>
+        /// <param name="templateRows">模板设计为几行高（3 = 三种语言恰好放下；更多语言会自动走滚动）。</param>
+        private static void CreateDropdown(Transform parent, string name, Vector2 anchoredPos,
+            Vector2 size, float itemHeight, int templateRows)
+        {
+            // ---- 根：点击面 + TMP_Dropdown ----
+            GameObject go = new GameObject(name, typeof(RectTransform));
+            go.transform.SetParent(parent, false);
+
+            RectTransform rt = (RectTransform)go.transform;
+            rt.anchorMin = new Vector2(0.5f, 0.5f);
+            rt.anchorMax = new Vector2(0.5f, 0.5f);
+            rt.pivot = new Vector2(0.5f, 0.5f);
+            rt.anchoredPosition = anchoredPos;
+            rt.sizeDelta = size;
+
+            Image bgImg = go.AddComponent<Image>();
+            ApplySlicedSkin(bgImg, "UI_Btn_Secondary", ButtonColor);
+
+            TMP_Dropdown dropdown = go.AddComponent<TMP_Dropdown>();
+            dropdown.targetGraphic = bgImg;
+            ColorBlock cb = dropdown.colors;
+            cb.normalColor = Color.white;
+            cb.highlightedColor = new Color(1.15f, 1.15f, 1.15f, 1f);
+            cb.pressedColor = new Color(0.8f, 0.8f, 0.8f, 1f);
+            cb.disabledColor = new Color(0.5f, 0.5f, 0.5f, 0.6f);
+            dropdown.colors = cb;
+
+            // ---- caption（当前选项）：横向拉伸、左对齐、右侧给箭头留位 ----
+            TextMeshProUGUI caption = CreateTextStretched(go.transform, "Label", "",
+                new Vector2(0f, 0f), new Vector2(1f, 1f), Vector2.zero, Vector2.zero,
+                TextAnchor.MiddleLeft, SmallFontSize);
+            RectTransform captionRT = (RectTransform)caption.transform;
+            captionRT.offsetMin = new Vector2(20f, 0f);
+            captionRT.offsetMax = new Vector2(-64f, 0f);
+
+            // ---- Arrow：下拉指示 ----
+            // 【为什么用 ASCII "v" 而不是 ▼】中文字体（思源宋体）不保证有几何箭头码位，
+            //   缺字形只会渲染成空白且不报错 —— 与选关页左右箭头选 "< >" 是同一个理由。
+            TextMeshProUGUI arrow = CreateText(go.transform, "Arrow", "v",
+                new Vector2(1f, 0.5f), new Vector2(-32f, 0f), new Vector2(40f, 50f),
+                TextAnchor.MiddleCenter, SmallFontSize);
+            arrow.color = TextSecondary;
+
+            // ---- Template：弹出的列表模板（默认隐藏）----
+            GameObject template = new GameObject("Template", typeof(RectTransform));
+            template.transform.SetParent(go.transform, false);
+            RectTransform trt = (RectTransform)template.transform;
+            // 官方口径：贴根节点底边、向下展开；运行时若越出画布会自动翻转到上方（TMP 内部处理）
+            trt.anchorMin = new Vector2(0f, 0f);
+            trt.anchorMax = new Vector2(1f, 0f);
+            trt.pivot = new Vector2(0.5f, 1f);
+            trt.anchoredPosition = new Vector2(0f, 2f);
+            trt.sizeDelta = new Vector2(0f, itemHeight * templateRows + 8f);
+
+            Image templateImg = template.AddComponent<Image>();
+            ApplySlicedSkin(templateImg, "UI_Panel_Cyan", new Color(0.12f, 0.16f, 0.24f, 0.98f));
+
+            // ---- Viewport：裁剪窗口（showMaskGraphic=false，只当裁剪框用）----
+            GameObject viewport = new GameObject("Viewport", typeof(RectTransform));
+            viewport.transform.SetParent(template.transform, false);
+            RectTransform vrt = (RectTransform)viewport.transform;
+            vrt.anchorMin = Vector2.zero;
+            vrt.anchorMax = Vector2.one;
+            vrt.pivot = new Vector2(0f, 1f);
+            vrt.anchoredPosition = Vector2.zero;
+            vrt.sizeDelta = Vector2.zero;
+            Image viewportImg = viewport.AddComponent<Image>();
+            viewportImg.color = Color.white;    // 不被渲染（showMaskGraphic=false），只是 Mask 的载体
+            Mask mask = viewport.AddComponent<Mask>();
+            mask.showMaskGraphic = false;
+
+            // ---- Content：ScrollRect 的内容容器（高度由 TMP 运行时按列表项数量重算）----
+            GameObject content = new GameObject("Content", typeof(RectTransform));
+            content.transform.SetParent(viewport.transform, false);
+            RectTransform crt = (RectTransform)content.transform;
+            crt.anchorMin = new Vector2(0f, 1f);
+            crt.anchorMax = new Vector2(1f, 1f);
+            crt.pivot = new Vector2(0.5f, 1f);
+            crt.anchoredPosition = Vector2.zero;
+            crt.sizeDelta = new Vector2(0f, itemHeight + 8f);
+
+            // ---- Item：★ 必须挂 Toggle（TMP 靠它识别列表项模板）----
+            GameObject item = new GameObject("Item", typeof(RectTransform));
+            item.transform.SetParent(content.transform, false);
+            RectTransform irt = (RectTransform)item.transform;
+            irt.anchorMin = new Vector2(0f, 0.5f);
+            irt.anchorMax = new Vector2(1f, 0.5f);
+            irt.pivot = new Vector2(0.5f, 0.5f);
+            irt.anchoredPosition = Vector2.zero;
+            irt.sizeDelta = new Vector2(0f, itemHeight);
+
+            // item 底色（Toggle 的 targetGraphic：悬停/按下靠它出反馈）
+            GameObject itemBg = new GameObject("Item Background", typeof(RectTransform));
+            itemBg.transform.SetParent(item.transform, false);
+            RectTransform itemBgRT = (RectTransform)itemBg.transform;
+            itemBgRT.anchorMin = Vector2.zero;
+            itemBgRT.anchorMax = Vector2.one;
+            itemBgRT.pivot = new Vector2(0.5f, 0.5f);
+            itemBgRT.anchoredPosition = Vector2.zero;
+            itemBgRT.sizeDelta = Vector2.zero;
+            Image itemBgImg = itemBg.AddComponent<Image>();
+            ApplySlicedSkin(itemBgImg, "UI_Btn_Secondary", new Color(1f, 1f, 1f, 0.06f));
+
+            // 选中标记：小菱形（45° 方块）—— 工程无 checkmark 素材，纯色几何不依赖字体码位
+            GameObject check = new GameObject("Item Checkmark", typeof(RectTransform));
+            check.transform.SetParent(item.transform, false);
+            RectTransform checkRT = (RectTransform)check.transform;
+            checkRT.anchorMin = new Vector2(0f, 0.5f);
+            checkRT.anchorMax = new Vector2(0f, 0.5f);
+            checkRT.pivot = new Vector2(0.5f, 0.5f);
+            checkRT.anchoredPosition = new Vector2(30f, 0f);
+            checkRT.sizeDelta = new Vector2(22f, 22f);
+            checkRT.localRotation = Quaternion.Euler(0f, 0f, 45f);
+            Image checkImg = check.AddComponent<Image>();
+            checkImg.color = Cyan;
+            checkImg.raycastTarget = false;     // 点击由整行 Toggle 处理
+
+            // 列表项文本：拉伸铺满（左侧给菱形留位），TMP 运行时按选项填
+            TextMeshProUGUI itemLabel = CreateTextStretched(item.transform, "Item Label", "",
+                Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero,
+                TextAnchor.MiddleLeft, SmallFontSize);
+            RectTransform itemLabelRT = (RectTransform)itemLabel.transform;
+            itemLabelRT.offsetMin = new Vector2(50f, 0f);
+            itemLabelRT.offsetMax = new Vector2(-10f, 0f);
+
+            Toggle toggle = item.AddComponent<Toggle>();
+            toggle.targetGraphic = itemBgImg;
+            toggle.graphic = checkImg;
+            toggle.isOn = true;     // 官方模板同款：模板态默认勾选（运行时由 TMP 逐项设 isOn）
+            ColorBlock tcb = toggle.colors;
+            tcb.normalColor = Color.white;
+            tcb.highlightedColor = new Color(1.3f, 1.3f, 1.3f, 1f);
+            tcb.pressedColor = new Color(0.8f, 0.8f, 0.8f, 1f);
+            tcb.selectedColor = new Color(1.15f, 1.15f, 1.15f, 1f);
+            toggle.colors = tcb;
+
+            // ---- ScrollRect：挂在 Template 上（官方口径），3 项以内无需滚动条 ----
+            ScrollRect scrollRect = template.AddComponent<ScrollRect>();
+            scrollRect.content = crt;
+            scrollRect.viewport = vrt;
+            scrollRect.horizontal = false;
+            scrollRect.movementType = ScrollRect.MovementType.Clamped;
+
+            // ---- 绑定 TMP_Dropdown 的部件引用（缺一个都会让运行时列表展开失败）----
+            dropdown.template = trt;
+            dropdown.captionText = caption;
+            dropdown.itemText = itemLabel;
+
+            // 模板默认隐藏：设置界面上只显示 caption，点开时 TMP 克隆它生成弹出列表
+            template.SetActive(false);
+        }
+
+        /// <summary>
         /// Slider 的两层子节点（Area 容器 + 内层 Image），返回内层 Image 供 Slider 引用。
         /// innerName 指定内层节点名（Fill / Handle / Background）；area 的锚点由调用方传。
         /// </summary>
@@ -1617,7 +1915,8 @@ namespace FTProject.EditorTools
             root.AddComponent<CanvasGroup>();
             root.AddComponent<SplashView>();
 
-            // Logo：工程里没有专门的品牌图，用已有塔图标占位（换正式 logo 时只改这一处 sprite 名）
+            // Logo：正式品牌图（Assets/Art/Logo/app_icon_512x512.png；
+            //   2026-10-16 起替换塔图标占位 —— 加载失败时仍退化为纯色，不阻断生成）
             GameObject logo = new GameObject("Logo", typeof(RectTransform));
             logo.transform.SetParent(panel.transform, false);
             RectTransform lrt = (RectTransform)logo.transform;
@@ -1627,7 +1926,7 @@ namespace FTProject.EditorTools
             lrt.anchoredPosition = new Vector2(0f, 60f);
             lrt.sizeDelta = new Vector2(480f, 480f);
             Image logoImg = logo.AddComponent<Image>();
-            Sprite logoSprite = LoadUiSprite("UI_TowerIcon_Normal");
+            Sprite logoSprite = LoadLogoSprite();
             if (logoSprite != null)
             {
                 logoImg.sprite = logoSprite;
@@ -1694,7 +1993,7 @@ namespace FTProject.EditorTools
             lrt.anchoredPosition = new Vector2(0f, 160f);
             lrt.sizeDelta = new Vector2(240f, 240f);
             Image logoImg = logo.AddComponent<Image>();
-            Sprite logoSprite = LoadUiSprite("UI_TowerIcon_Normal");
+            Sprite logoSprite = LoadLogoSprite();
             if (logoSprite != null)
             {
                 logoImg.sprite = logoSprite;
@@ -1904,9 +2203,12 @@ namespace FTProject.EditorTools
         /// ⚠️ `check_ui_contract.py` **认识**这个 helper（与 CreateText/CreatePanelButton 同列）——
         ///   新增类似的"建节点 helper"时必须同步把它加进那个脚本的正则，否则
         ///   View 里引用这些节点会被误报为"生成器不产出"。
+        ///
+        /// 【customSprite 用途】品牌 Logo 等"不在 UiArtDir 皮肤目录里的图"：直接传入 Sprite
+        ///   （此时 spriteName 传 null），走 Simple + preserveAspect，不做九宫格。
         /// </summary>
         private static Image CreateImageAt(Transform parent, string name, Vector2 anchor, Vector2 anchoredPos,
-            Vector2 size, string spriteName, Color fallback, bool sliced = true)
+            Vector2 size, string spriteName, Color fallback, bool sliced = true, Sprite customSprite = null)
         {
             GameObject go = new GameObject(name, typeof(RectTransform));
             go.transform.SetParent(parent, false);
@@ -1918,7 +2220,14 @@ namespace FTProject.EditorTools
             rt.sizeDelta = size;
 
             Image img = go.AddComponent<Image>();
-            if (!string.IsNullOrEmpty(spriteName))
+            if (customSprite != null)
+            {
+                img.sprite = customSprite;
+                img.type = Image.Type.Simple;
+                img.preserveAspect = true;
+                img.color = Color.white;
+            }
+            else if (!string.IsNullOrEmpty(spriteName))
             {
                 ApplySlicedSkin(img, spriteName, fallback);
                 if (!sliced)
@@ -2001,8 +2310,9 @@ namespace FTProject.EditorTools
             GameObject root = CreateDialogShell("MainMenuView", "", Vector2.zero, report, out panel, 0f);
             root.AddComponent<MainMenuView>();
 
+            // Logo：正式品牌图（与 SplashView / LoadingView 共用一张，见 LogoSpritePath）
             CreateImageAt(panel.transform, "Logo", new Vector2(0.5f, 0.5f), new Vector2(0f, 270f),
-                new Vector2(380f, 380f), "UI_TowerIcon_Normal", new Color(0.208f, 0.878f, 1f, 0.12f), false);
+                new Vector2(380f, 380f), null, new Color(0.208f, 0.878f, 1f, 0.12f), false, LoadLogoSprite());
 
             // 标题基线 y_svg 488 → Y=+52；88 号字的盒中心 ≈ +52−31 = +21
             TextMeshProUGUI title = CreateText(panel.transform, "GameTitle", "FREEDOM TOWER",
@@ -2040,7 +2350,10 @@ namespace FTProject.EditorTools
             CreatePanelButton(panel.transform, "StartBtn", "Start Game", new Vector2(0f, -66f), 480f, true, 92f, 34);
             CreatePanelButton(panel.transform, "CodexBtn", "Tower Codex", new Vector2(0f, -184f), 480f, false, 92f, 32);
             CreatePanelButton(panel.transform, "SettingBtn", "Settings", new Vector2(0f, -302f), 480f, false, 92f, 32);
-            CreatePanelButton(panel.transform, "QuitBtn", "Quit Game", new Vector2(0f, -420f), 480f, false, 92f, 32);
+            // 2026-10-16 多分辨率适配：退出键改"贴屏幕底边"（原中心锚 -420 在 ≥21.5:9 会碰底）；
+            // 16:9 换算：原下缘 = 540−420−46 = 74 → 像素级同款。
+            CreatePanelButton(panel.transform, "QuitBtn", "Quit Game", new Vector2(0f, 74f), 480f, false, 92f, 32,
+                new Vector2(0.5f, 0f), new Vector2(0.5f, 0f));
 
             // 版本行：**底部中间**（2026-10-14 需求："主界面底部中间显示当前版本号"）。
             // 原先在右下角（anchor(1,0) pos(-48,38) 右对齐），移到底边水平居中。
@@ -2353,16 +2666,21 @@ namespace FTProject.EditorTools
             ConfigureLoopListView(lv, itemPrefab, CodexItemGap, 2);
 
             // 左右箭头（ASCII < >，与选关界面同一理由：中文 SDF 不保证有 ◀▶ 码位）
+            // 2026-10-16 多分辨率适配：改"贴屏幕左右边缘"锚定（见 CodexArrowEdge 注释）。
             CreatePanelButton(panel.transform, "LeftBtn", "<",
-                new Vector2(-860f, -10f), SelectArrowW, false, SelectArrowH, CodexArrowFontSize);
+                new Vector2(CodexArrowEdge, -10f), SelectArrowW, false, SelectArrowH, CodexArrowFontSize,
+                new Vector2(0f, 0.5f), new Vector2(0f, 0.5f));
             CreatePanelButton(panel.transform, "RightBtn", ">",
-                new Vector2(860f, -10f), SelectArrowW, false, SelectArrowH, CodexArrowFontSize);
+                new Vector2(-CodexArrowEdge, -10f), SelectArrowW, false, SelectArrowH, CodexArrowFontSize,
+                new Vector2(1f, 0.5f), new Vector2(1f, 0.5f));
 
             CreateText(panel.transform, "PageText", "1 / 5",
                 new Vector2(0.5f, 0.5f), new Vector2(0f, -330f), new Vector2(600f, 44f),
                 TextAnchor.MiddleCenter, 28);
 
-            CreatePanelButton(panel.transform, "CloseBtn", "Back", new Vector2(0f, -430f), 340f, true, 84f, 32);
+            // 关闭按钮改"贴屏幕底边"（原中心锚 -430 在 ≥21.3:9 高屏会被裁）
+            CreatePanelButton(panel.transform, "CloseBtn", "Back", new Vector2(0f, PanelCloseBtnBottomY), 340f, true, 84f, 32,
+                new Vector2(0.5f, 0f), new Vector2(0.5f, 0f));
 
             GameObject saved = PrefabUtility.SaveAsPrefabAsset(root, TowerCodexPath);
             Object.DestroyImmediate(root);
@@ -2569,16 +2887,22 @@ namespace FTProject.EditorTools
             }
         }
 
-        private static void CreateButton(Transform parent, string name, string label, Vector2 anchoredPos,
-            bool primary = false)
+        /// <summary>
+        /// 220×72 的通用小按钮（SpeedButton/StartButton）。
+        /// 2026-10-16：支持"角落锚定"—— anchor 与 pivot 取同一角落，
+        ///   anchoredPos 即"该角落到屏幕边缘的距离"（如 (64,77) = 左缘 64 / 下缘 77），
+        ///   任意分辨率都不出画；旧调用点等价于原来的"底边中点锚"。
+        /// </summary>
+        private static void CreateButton(Transform parent, string name, string label,
+            Vector2 anchor, Vector2 anchoredPos, bool primary = false)
         {
             GameObject go = new GameObject(name, typeof(RectTransform));
             go.transform.SetParent(parent, false);
 
             RectTransform rt = (RectTransform)go.transform;
-            rt.anchorMin = new Vector2(0.5f, 0f);
-            rt.anchorMax = new Vector2(0.5f, 0f);
-            rt.pivot = new Vector2(0.5f, 0f);
+            rt.anchorMin = anchor;
+            rt.anchorMax = anchor;
+            rt.pivot = anchor;
             rt.anchoredPosition = anchoredPos;
             rt.sizeDelta = new Vector2(220f, 72f);
 
@@ -2616,14 +2940,16 @@ namespace FTProject.EditorTools
             go.transform.SetParent(parent, false);
 
             RectTransform rt = (RectTransform)go.transform;
-            // 【锚点必须是"屏幕中心"，不是左下角】spec.Pos 是按"画布中心为原点"量的
-            //   （效果图：五颗按钮的中心 x = -548/-274/0/274/548，y = -427）。
-            //   改成左下锚点会让整排按钮跑到画布外（表现为"塔建造栏整排消失、无法建塔"）——
-            //   这是 prefab 重建时真实发生过的回归，改动前请对照 Docs/ui_mockups/02b 的坐标。
-            rt.anchorMin = new Vector2(0.5f, 0.5f);
-            rt.anchorMax = new Vector2(0.5f, 0.5f);
-            rt.pivot = new Vector2(0.5f, 0.5f);
-            rt.anchoredPosition = spec.Pos;
+            // 【2026-10-16 多分辨率适配：中心锚（y=-427）→ 底边锚（下缘距底 49px）】
+            //   中心锚在 19.2:9 以上的高屏会顶出屏幕下缘（19.5:9 裁 2px、21:9 裁 20px）；
+            //   底边锚在任何高度都稳。x 仍按"画布中心坐标系"的槽位（-548/-274/0，见 TowerButtons）。
+            //   ★ 16:9 换算：原底缘 = 540−427−64 = 49 → 像素级同款（基准零位移）。
+            //   ★ 反例警告（历史回归）：曾把锚点搬去"画布左下角"导致整排飞到画布外、无法建塔——
+            //     改锚点务必保持 x 用中心系、只把 y 落到屏幕底边。
+            rt.anchorMin = new Vector2(0.5f, 0f);
+            rt.anchorMax = new Vector2(0.5f, 0f);
+            rt.pivot = new Vector2(0.5f, 0f);
+            rt.anchoredPosition = new Vector2(spec.Pos.x, TowerBtnBottomY);
             rt.sizeDelta = new Vector2(128f, 128f);
 
             Image img = go.AddComponent<Image>();

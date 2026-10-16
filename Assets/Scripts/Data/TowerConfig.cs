@@ -35,6 +35,24 @@ namespace FTProject
 
         public string Name { get { return _t.Name; } }
 
+        /// <summary>
+        /// 给玩家看的塔名（2026-10-16 多语言审计新增）。
+        /// 数据里的 Name 是英文原文（"Normal Tower"）→ 过滤多语言表（"普通塔"）；
+        /// 表缺条目时回退原文（零破坏）。**所有面向玩家的塔名显示都应走这里**；
+        /// 内部日志/排查仍可用 Name 原文。
+        /// </summary>
+        public string DisplayName
+        {
+            get
+            {
+                if (string.IsNullOrEmpty(Name))
+                {
+                    return Localization.Get("Tower {0}", Type) ?? ("塔 " + Type);
+                }
+                return Localization.Get(Name) ?? Name;
+            }
+        }
+
         /// <summary>AB 资源名（对应 ResTable 逻辑名）</summary>
         public string ResName { get { return _t.ResName; } }
 

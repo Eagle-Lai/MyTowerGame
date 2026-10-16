@@ -618,7 +618,7 @@ namespace FTProject
                     "<size=56><color=#E8F0FA>{0}</color></size>\n" +
                     "<size=56>{1}</size>\n" +
                     "<size=40>{2}</size>",
-                    raw.Name,
+                    Localization.LevelName(raw.Id, raw.Name),
                     StarRichText(stars),
                     unlocked
                         ? "<color=#7A8CA6>" + Difficulty(diff) + "</color>"

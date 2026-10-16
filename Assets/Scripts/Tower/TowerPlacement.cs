@@ -188,13 +188,13 @@ namespace FTProject
             EventDispatcher.TriggerEvent(EventName.BuildingTower);
             if (_dragMode)
             {
-                Tips(Localization.Get("{0}: drag onto a buildable tile and release to place", cfg.Name)
-                    ?? string.Format("{0}：拖到可建造格上松手放置，拖回按钮取消", cfg.Name));
+                Tips(Localization.Get("{0}: drag onto a buildable tile and release to place", cfg.DisplayName)
+                    ?? string.Format("{0}：拖到可建造格上松手放置，拖回按钮取消", cfg.DisplayName));
             }
             else
             {
-                Tips(Localization.Get("{0}: move to a buildable tile and click to place, right-click/ESC to cancel", cfg.Name)
-                    ?? string.Format("{0}：移动到可建造格上点击放置，右键/ESC 取消", cfg.Name));
+                Tips(Localization.Get("{0}: move to a buildable tile and click to place, right-click/ESC to cancel", cfg.DisplayName)
+                    ?? string.Format("{0}：移动到可建造格上点击放置，右键/ESC 取消", cfg.DisplayName));
             }
         }
 

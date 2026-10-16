@@ -111,7 +111,8 @@ namespace FTProject
             }
 
             SetText(_title, Localization.Get("Level {0} Detail", levelId) ?? string.Format("第 {0} 关", levelId));
-            SetText(_levelName, string.IsNullOrEmpty(lv.Name) ? string.Empty : lv.Name);
+            // 关卡名走 LevelName（词条 "Level {0}" 按 id 格式化；数据里的 name 是中文单一语言）
+            SetText(_levelName, string.IsNullOrEmpty(lv.Name) ? string.Empty : Localization.LevelName(levelId, lv.Name));
 
             SaveManager sm = SaveManager.Instance;
             int stars = sm != null ? sm.GetStars(levelId) : 0;
@@ -204,6 +205,8 @@ namespace FTProject
         /// 要做成图标行得先给每个怪生成一个 Image 节点并运行时按怪名取图集 ——
         /// 那是"图鉴界面（B2/B3）"的活。这里先用真实数据把"有哪些怪"讲清楚，
         /// 不编造图标，也不写死数量。
+        /// 【为什么按显示名去重】(2026-10-16) 多个 id 可能是"同名同形"的怪
+        ///   （如 NormalEnemy 的 id 1/4/7），不去重会连列好几个"普通怪"。
         /// </summary>
         private string BuildEnemySummary(HashSet<int> enemyIds)
         {
@@ -213,26 +216,40 @@ namespace FTProject
             }
             List<int> sorted = new List<int>(enemyIds);
             sorted.Sort();
-            System.Text.StringBuilder sb = new System.Text.StringBuilder();
-            int shown = 0;
-            for (int i = 0; i < sorted.Count && shown < MaxEnemyNames; i++)
+
+            // 先按"显示名"去重（同名怪只留首次出现），再按上限截断
+            List<string> names = new List<string>();
+            HashSet<string> seen = new HashSet<string>();
+            for (int i = 0; i < sorted.Count; i++)
             {
                 EnemyConfig cfg = Configs.GetEnemy(sorted[i]);
                 if (cfg == null)
                 {
                     continue;
                 }
-                if (shown > 0)
+                string display = string.IsNullOrEmpty(cfg.Name)
+                    ? ("#" + sorted[i])
+                    : (Localization.Get(cfg.Name) ?? cfg.Name);   // 怪物名过多语言表（缺条目回退英文原名）
+                if (seen.Add(display))
+                {
+                    names.Add(display);
+                }
+            }
+
+            System.Text.StringBuilder sb = new System.Text.StringBuilder();
+            int shown = Mathf.Min(names.Count, MaxEnemyNames);
+            for (int i = 0; i < shown; i++)
+            {
+                if (i > 0)
                 {
                     sb.Append("　");
                 }
-                sb.Append(string.IsNullOrEmpty(cfg.Name) ? ("#" + sorted[i]) : cfg.Name);
-                shown++;
+                sb.Append(names[i]);
             }
-            if (sorted.Count > shown)
+            if (names.Count > shown)
             {
-                sb.Append(Localization.Get("    {0} kinds", sorted.Count)
-                    ?? string.Format("　等 {0} 种", sorted.Count));
+                sb.Append(Localization.Get("    {0} kinds", names.Count)
+                    ?? string.Format("　等 {0} 种", names.Count));
             }
             return sb.ToString();
         }

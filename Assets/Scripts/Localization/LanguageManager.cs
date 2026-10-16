@@ -165,6 +165,26 @@ namespace FTProject
             return _settings != null ? _settings.GetFont(lang) : null;
         }
 
+        /// <summary>
+        /// 把"当前语言的字体"应用到一段文本 —— 给**不走 TextLocalizer 的手动拼词文本**用
+        /// （各 View 标题、HUD 状态行等；TextLocalizer.Refresh 内部做的就是同样的事）。
+        /// 【为什么集中在这里】避免每个 View 各抄一份"取字体 → 判空 → 赋值"，
+        ///   也让"以后加新语言要配字体"只需要改配置资产这一处。
+        /// 字体为 null（该语言没配字体）时静默跳过：宁可沿用旧字体，也不能设成 null 变方块。
+        /// </summary>
+        public static void ApplyFont(TMP_Text text)
+        {
+            if (text == null)
+            {
+                return;
+            }
+            TMP_FontAsset font = GetFont(Current);
+            if (font != null && text.font != font)
+            {
+                text.font = font;
+            }
+        }
+
         // ------------------------------------------------------------------
         // 诊断
         // ------------------------------------------------------------------

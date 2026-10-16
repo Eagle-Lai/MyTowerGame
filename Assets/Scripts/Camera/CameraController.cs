@@ -46,11 +46,32 @@ namespace FTProject
         [Tooltip("边缘触发带宽度（像素）")]
         public float edgeBandPx = 18f;
 
+        [Header("棋盘取景留白（单位：格，2026-10-16 多分辨率适配）")]
+        [Tooltip("棋盘底边留白（格）——为底部 HUD 建造栏/倍速按钮让位")]
+        public float bottomMarginCells = 2f;
+        [Tooltip("棋盘顶边留白（格）——为顶部 HUD 芯片让位")]
+        public float topMarginCells = 1f;
+        [Tooltip("棋盘左右留白（格）")]
+        public float sideMarginCells = 1f;
+        [Tooltip("是否把屏幕安全区（刘海/挖孔）内缩计入取景留白")]
+        public bool fitSafeArea = true;
+
         private Camera _cam;
         private float _fitSize = 5f;
         private Vector2 _boardCenter = Vector2.zero;
-        /// <summary>棋盘半尺寸（FitBoard 写入）。平移夹取用。</summary>
-        private Vector2 _boardHalf = Vector2.zero;
+
+        // ---- 多分辨率适配（2026-10-16）----
+        /// <summary>最近一次 FitBoard 的棋盘参数（分辨率/安全区变化时重算用）</summary>
+        private int _boardRows;
+        private int _boardCols;
+        private float _boardCellSize;
+        /// <summary>取景归位点（含底边留白偏移后的相机位置；空格键/重算回位用）</summary>
+        private Vector3 _homePos;
+        /// <summary>平移夹取框（棋盘 + 四周留白；视口大于框时锁定框中心）</summary>
+        private float _frameMinX, _frameMaxX, _frameMinY, _frameMaxY;
+        private bool _hasFit;
+        private int _lastPixW = -1, _lastPixH = -1;
+        private Rect _lastSafeArea;
 
         // ---- 屏幕震动（M2-W5）----
         private Vector3 _shakeOffset;
@@ -124,8 +145,18 @@ namespace FTProject
         }
 
         /// <summary>
-        /// 让整块棋盘完整落入视野（含留白）。
-        /// 由 GameFlowManager 在棋盘建成后调用。
+        /// 让整块棋盘完整落入视野（含 HUD 避让与安全区留白，2026-10-16 重写）。
+        ///
+        /// 留白策略（单位 = 格）：
+        ///   · 底边 bottomMarginCells（默认 2）——为底部 HUD（建造栏下缘 49 / 上缘 177 @1080 基准）让位；
+        ///   · 顶边 topMarginCells（默认 1）——为顶部 HUD 芯片让位；
+        ///   · 左右 sideMarginCells（默认 1）+（可选）屏幕安全区内缩。
+        /// 相机不再居中于棋盘，而是**下移**若干，使底边留白恰好等于 bottomMarginCells。
+        ///
+        /// 【为什么底边要比顶边大】按 16:9 的"屏幕像素预算"算平：
+        ///   顶部 HUD ≤86px、底部 HUD ≤177px（1080 设计基准）；
+        ///   棋盘高 9 格 + 底 2 格 + 顶 1 格 = 12 格 ≈ 1080px（每格 90px）→ 底 180 / 顶 90，
+        ///   正好包住两头 HUD 且不浪费视野（旧版四边各 1 格时，建造栏会压住棋盘底行约 80% 行高）。
         /// </summary>
         /// <param name="rows">行数</param>
         /// <param name="cols">列数</param>
@@ -137,18 +168,66 @@ namespace FTProject
             {
                 _cam = GetComponent<Camera>();
             }
+            _boardRows = rows;
+            _boardCols = cols;
+            _boardCellSize = cellSize;
+            _boardCenter = boardCenter;
+            _hasFit = true;
+            ApplyBoardFit();
+        }
 
-            float margin = cellSize;   // 四周各留一格
-            float halfH = rows * cellSize * 0.5f + margin;
-            float halfW = cols * cellSize * 0.5f + margin;
+        /// <summary>按当前屏幕比例/安全区重算取景（FitBoard 与运行期分辨率变化共用）。</summary>
+        private void ApplyBoardFit()
+        {
+            if (_cam == null || !_hasFit || _boardRows <= 0 || _boardCols <= 0)
+            {
+                return;
+            }
+
+            float halfHBoard = _boardRows * _boardCellSize * 0.5f;
+            float halfWBoard = _boardCols * _boardCellSize * 0.5f;
+
+            float padB = Mathf.Max(0f, bottomMarginCells) * _boardCellSize;
+            float padT = Mathf.Max(0f, topMarginCells) * _boardCellSize;
+            float padL = Mathf.Max(0f, sideMarginCells) * _boardCellSize;
+            float padR = padL;
 
             float aspect = _cam.aspect > 0.0001f ? _cam.aspect : (16f / 9f);
             // 正交尺寸是"半高"，所以要同时满足高度与宽度（宽度需按宽高比折算）
-            _fitSize = Mathf.Max(halfH, halfW / aspect);
+            float ortho = Mathf.Max(halfHBoard + 0.5f * (padB + padT),
+                                    (halfWBoard + Mathf.Max(padL, padR)) / aspect);
 
-            _boardCenter = boardCenter;
-            _boardHalf = new Vector2(cols * cellSize * 0.5f, rows * cellSize * 0.5f);
-            _cam.orthographicSize = _fitSize;
+            // 安全区（刘海/挖孔）内缩换算成世界单位。像素↔世界换算依赖 ortho，
+            // 先估一版再折算一次即可收敛（留白变化 → 视野变化很小，一遍足够）。
+            if (fitSafeArea && Screen.width > 0 && Screen.height > 0 && _cam.pixelHeight > 0)
+            {
+                Rect sa = Screen.safeArea;
+                float pxPerUnit = _cam.pixelHeight / (2f * ortho);
+                if (pxPerUnit > 0.0001f)
+                {
+                    padL += sa.xMin / pxPerUnit;
+                    padR += (Screen.width - sa.xMax) / pxPerUnit;
+                    padB += sa.yMin / pxPerUnit;
+                    padT += (Screen.height - sa.yMax) / pxPerUnit;
+                    ortho = Mathf.Max(halfHBoard + 0.5f * (padB + padT),
+                                      (halfWBoard + Mathf.Max(padL, padR)) / aspect);
+                }
+            }
+
+            _fitSize = ortho;
+            _cam.orthographicSize = ortho;
+
+            // 相机位置：底边留白精确 = padB（顶边余量 = 2·ortho − 棋盘高 − padB ≥ padT 恒成立）
+            float camY = (_boardCenter.y - halfHBoard) - padB + ortho;
+            _homePos = new Vector3(_boardCenter.x, camY, DefaultZ);
+
+            // 平移夹取框 = 棋盘 + 四周留白（取景归位时视口恰好贴合该框 → 锁定中心）
+            _frameMinX = _boardCenter.x - halfWBoard - padL;
+            _frameMaxX = _boardCenter.x + halfWBoard + padR;
+            _frameMinY = (_boardCenter.y - halfHBoard) - padB;
+            _frameMaxY = (_boardCenter.y + halfHBoard) + padT;
+
+            transform.position = _homePos;
             // 归位时清掉震动状态：否则上一关结束前触发的震动会带进新关卡，
             // 表现为"刚进关画面还在抖"。偏移必须清，计时与幅度也要清，
             // 不然 LateUpdate 会在下一帧按旧幅度重新生成偏移。
@@ -156,13 +235,39 @@ namespace FTProject
             _shakeTimer = 0f;
             _shakeAmplitude = 0f;
             _shakeDuration = 0f;
-            transform.position = new Vector3(boardCenter.x, boardCenter.y, DefaultZ);
+
+            _lastPixW = _cam.pixelWidth;
+            _lastPixH = _cam.pixelHeight;
+            _lastSafeArea = Screen.safeArea;
         }
 
         private void Update()
         {
+            RefitOnScreenChange();
             HandleZoom();
             HandlePan();
+        }
+
+        /// <summary>
+        /// 分辨率 / 安全区变化时重算取景（2026-10-16）：折叠屏展开、分屏、编辑器切 Game View
+        /// 比例等场景下，旧实现只在建关时算一次，比例变了不会重算（棋盘按旧比例取景）。
+        /// 只在数值变化时触发，常态零开销；重算会复位视图（缩放/平移回到自适应档）。
+        /// </summary>
+        private void RefitOnScreenChange()
+        {
+            if (_cam == null || !_hasFit)
+            {
+                return;
+            }
+            if (_cam.pixelWidth == _lastPixW && _cam.pixelHeight == _lastPixH
+                && Screen.safeArea == _lastSafeArea)
+            {
+                return;
+            }
+            ApplyBoardFit();
+            Debug.Log(string.Format(
+                "[Camera] 屏幕/安全区变化（{0}×{1}），重算棋盘取景 ortho={2:F2}",
+                _cam.pixelWidth, _cam.pixelHeight, _fitSize));
         }
 
         /// <summary>
@@ -231,27 +336,30 @@ namespace FTProject
         }
 
         /// <summary>
-        /// 把相机位置夹在棋盘范围内。
+        /// 把相机位置夹在"棋盘 + 留白"的取景框内（框由 FitBoard/ApplyBoardFit 预算）。
         ///
         /// 【为什么不是简单夹到棋盘矩形】正交相机看到的是一个矩形视口：
-        /// 当视野比棋盘还大（缩到最远）时，"把中心夹进棋盘"反而会导致画面抖动。
-        /// 正确做法是夹取半径 = 棋盘半尺寸 − 视野半尺寸；差值为负时直接锁死在棋盘中心
+        /// 当视野比取景框还大（缩到最远）时，"把中心夹进框内"反而会导致画面抖动。
+        /// 正确做法是夹取半径 = 框半尺寸 − 视野半尺寸；差值为负时直接锁死在框中心
         /// （Mathf.Clamp 在 min &gt; max 时行为未定义，必须显式处理）。
+        /// 2026-10-16：框取代了原来的"棋盘矩形"——含 HUD 避让与安全区留白。
         /// </summary>
         private Vector3 ClampToBoard(Vector3 pos)
         {
-            if (_cam == null || _boardHalf.x <= 0f || _boardHalf.y <= 0f)
+            if (_cam == null || !_hasFit)
             {
                 return pos;
             }
             float halfH = _cam.orthographicSize;
             float halfW = halfH * _cam.aspect;
-            float rx = Mathf.Max(0f, _boardHalf.x - halfW);
-            float ry = Mathf.Max(0f, _boardHalf.y - halfH);
-            return new Vector3(
-                Mathf.Clamp(pos.x, _boardCenter.x - rx, _boardCenter.x + rx),
-                Mathf.Clamp(pos.y, _boardCenter.y - ry, _boardCenter.y + ry),
-                DefaultZ);
+
+            float cx = (_frameMaxX - _frameMinX) > 2f * halfW
+                ? Mathf.Clamp(pos.x, _frameMinX + halfW, _frameMaxX - halfW)
+                : 0.5f * (_frameMinX + _frameMaxX);
+            float cy = (_frameMaxY - _frameMinY) > 2f * halfH
+                ? Mathf.Clamp(pos.y, _frameMinY + halfH, _frameMaxY - halfH)
+                : 0.5f * (_frameMinY + _frameMaxY);
+            return new Vector3(cx, cy, DefaultZ);
         }
 
         private void HandleZoom()
@@ -261,10 +369,10 @@ namespace FTProject
             {
                 if (Input.GetKeyDown(KeyCode.Space))
                 {
-                    // 一键回到自适应视野（同时把平移偏移也归零）
+                    // 一键回到自适应视野（归位点 = FitBoard 算出的 _homePos，含底边留白偏移）
                     _cam.orthographicSize = _fitSize;
                     _shakeOffset = Vector3.zero;
-                    transform.position = ClampToBoard(new Vector3(_boardCenter.x, _boardCenter.y, DefaultZ));
+                    transform.position = ClampToBoard(_homePos);
                 }
                 return;
             }

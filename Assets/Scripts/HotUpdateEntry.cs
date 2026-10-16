@@ -90,9 +90,17 @@ namespace FTProject
         /// 在这里 Init 一次后，main 场景的 Launcher 再做检查更新时 Init 会直接复用
         /// （YooAssetResLoader 有重复初始化防护），不会撞"重复初始化"异常。
         ///
+        /// 【真机上的两段式（2026-10-16 起）】Init 成功后先跑
+        /// <see cref="BootHotUpdateGate"/>：版本检查 + 全部差异下载完成才继续加载
+        /// main；失败留在 Boot 的自动重试界面（绝不带缺失进 main —— 修复"更新
+        /// 中断后残缺运行"的结构性问题）。编辑器下跳过闸门，保持原快速路径。
+        ///
         /// 【Init 失败怎么算】Init 的失败详情由 ResLoader 打印，这里把 IsReady 状态
         /// 汇总成回调结果 —— Boot 侧拿到 false 会在启动界面上展示错误。
         /// </summary>
+        /// <summary>Boot 阶段"初始化失败 → 自动重试"的间隔（秒）。</summary>
+        private const float EnterRetryDelaySeconds = 3f;
+
         public void EnterMainScene(Action<bool, string> onResult)
         {
             if (onResult == null)
@@ -100,18 +108,117 @@ namespace FTProject
                 return;
             }
 
-            ResLoader.Instance.Init(() =>
+            // 【2026-10-16】包成"带自动重试的进 main 流程"：
+            //   此前 Init 失败会直接 onResult(false) —— Boot 侧只有日志没有界面，
+            //   真机/模拟器表现为**黑屏卡死**（实测：服务器在跑但 version 文件 404
+            //   时，YooAsset 请求包裹版本会硬失败）。现在失败会显示重试界面并自动
+            //   重试（先安全重建包裹再重跑 Init），服务器恢复后自动继续 —— 不黑屏、
+            //   不静默，保持与"热更完整性闸门"一致的"宁可停在重试页"策略。
+            ResLoaderRunner.Start(EnterMainCo(onResult));
+        }
+
+        private System.Collections.IEnumerator EnterMainCo(Action<bool, string> onResult)
+        {
+            int attempt = 0;
+            BootHotUpdateUI ui = null;   // 仅"失败过"时才创建；正常路径零界面
+
+            while (true)
             {
-                if (ResLoader.Instance.IsReady == false)
+                attempt++;
+
+                bool initCalled = false;
+                ResLoader.Instance.Init(() => initCalled = true);
+                while (initCalled == false)
                 {
-                    Debug.LogError("[HotUpdate] 资源系统初始化失败，无法加载 main 场景（详情见上方 [Res] 日志）。");
-                    onResult(false, "资源系统初始化失败，无法加载 main 场景");
-                    return;
+                    yield return null;
                 }
 
-                Debug.Log("[HotUpdate] 资源系统就绪，开始加载 main 场景（地址 " + MainSceneAddress + "）…");
-                ResLoader.Instance.LoadSceneAsync(MainSceneAddress, onResult);
-            });
+                if (ResLoader.Instance.IsReady)
+                {
+                    break;   // 初始化成功 → 出循环（过闸门 / 进 main）
+                }
+
+                // ---- 初始化失败：显示原因 + 倒计时 + 自动重试（不黑屏卡死）----
+                // 接口不含"重建/最近错误"能力 → 用 as 转型（当前配置下恒为 YooAsset
+                // 实现）；转型失败时降级为原行为（直接上报失败）。
+                YooAssetResLoader yooLoader = ResLoader.Instance as YooAssetResLoader;
+                string reason = yooLoader != null ? yooLoader.LastInitError : null;
+
+                if (yooLoader == null)
+                {
+                    Debug.LogError("[HotUpdate] 资源系统初始化失败（无安全重建能力，直接上报）。");
+                    onResult(false, string.IsNullOrEmpty(reason) ? "资源系统初始化失败，无法加载 main 场景" : reason);
+                    yield break;
+                }
+
+                Debug.LogWarning(string.Format(
+                    "[HotUpdate] 资源系统初始化失败（第 {0} 次）：{1} —— {2} 秒后自动重试（含安全重建）。",
+                    attempt, reason, EnterRetryDelaySeconds));
+
+                if (ui == null)
+                {
+                    try
+                    {
+                        ui = BootHotUpdateUI.Create();
+                    }
+                    catch (System.Exception e)
+                    {
+                        ui = null;
+                        Debug.LogError("[HotUpdate] 初始化重试界面创建失败（降级为无界面重试）：" + e);
+                    }
+                }
+                if (ui != null)
+                {
+                    ui.Toast("资源服务器异常，正在自动重试…",
+                        string.IsNullOrEmpty(reason) ? "资源系统初始化失败" : reason);
+                }
+
+                float waitStart = Time.realtimeSinceStartup;
+                while (Time.realtimeSinceStartup - waitStart < EnterRetryDelaySeconds)
+                {
+                    if (ui != null)
+                    {
+                        ui.SetRetryCountdown(attempt, EnterRetryDelaySeconds - (Time.realtimeSinceStartup - waitStart));
+                    }
+                    yield return null;
+                }
+
+                // 重试前先销毁遗留包裹（YooAsset 要求先异步销毁、再从全局移除；
+                // 两步之间让帧推进。销毁很小（毫秒级），失败容忍：直接在旧包裹上重跑）
+                var destroyOp = yooLoader.BeginRetryDestroy();
+                while (destroyOp != null && destroyOp.IsDone == false)
+                {
+                    yield return null;
+                }
+                yooLoader.CompleteRetryRebuild();
+                if (ui != null) ui.ShowRetrying(attempt);
+            }
+
+            // ---- 初始化成功：收尾失败界面（如有）→ 过闸门 / 进 main ----
+            if (ui != null)
+            {
+                ui.ShowDone();
+                yield return new WaitForSecondsRealtime(0.35f);
+                ui.Destroy();
+            }
+
+#if UNITY_EDITOR
+            // 编辑器：直读 / 模拟清单，没有"下载"语义 —— 保持原行为（快速进 main）。
+            // 热更完整性闸门只在真机生效（见 BootHotUpdateGate 类注释）。
+            Debug.Log("[HotUpdate] 资源系统就绪（编辑器模式），开始加载 main 场景（地址 " + MainSceneAddress + "）…");
+            ResLoader.Instance.LoadSceneAsync(MainSceneAddress, onResult);
+#else
+            // 真机：先过"热更完整性闸门" —— 版本检查 + 全部差异下载完成才放行；
+            // 失败留在 Boot 的重试界面（断点续传），绝不带缺失进 main。
+            bool gateDone = false;
+            BootHotUpdateGate.Run(() => gateDone = true);
+            while (gateDone == false)
+            {
+                yield return null;
+            }
+            Debug.Log("[HotUpdate] 资源系统就绪，开始加载 main 场景（地址 " + MainSceneAddress + "）…");
+            ResLoader.Instance.LoadSceneAsync(MainSceneAddress, onResult);
+#endif
         }
     }
 }

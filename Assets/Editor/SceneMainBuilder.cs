@@ -44,8 +44,13 @@ namespace FTProject.EditorTools
         private const string BackupPath = "Assets/Scenes/_Backup/main_before_builder.unity";
         private const string BackgroundSpritePath = "Assets/_UIAssets/Backgrounds/Paper.png";
 
-        /// <summary>背景缩放：Paper.png 是 19.5×13 世界单位，放大后足以覆盖视野</summary>
-        private const float BackgroundScale = 1.6f;
+        /// <summary>
+        /// 背景基准缩放：Paper.png 是 19.5×13 世界单位。
+        /// 2026-10-16：1.6 → 2.2（×视差 oversize 1.4 = 3.08×）—— 适配相机最大缩小档：
+        ///   1.6 旧值在 19.5:9 起会露出黑边；2.2 覆盖 16:9 全缩放档、19.5:9 至约 2.3× 缩档。
+        /// 同值会写入 BackgroundParallax.baseScale（运行时自举也用它）。
+        /// </summary>
+        private const float BackgroundScale = 2.2f;
 
         /// <summary>
         /// 菜单入口：**危险**，会重建整个 main.unity（原文件先备份）。
@@ -286,6 +291,7 @@ namespace FTProject.EditorTools
             bgSr.color = new Color(1f, 1f, 1f, 0.55f);
             // M4-4：背景视差。Init 必须在设完缩放与颜色之后调用 —— 它要记住这两者的基准值。
             BackgroundParallax parallax = bgGo.AddComponent<BackgroundParallax>();
+            parallax.baseScale = BackgroundScale;   // 与场景缩放同源；Init 幂等（编辑/运行各调一次）
             parallax.Init();
             if (bg == null)
             {

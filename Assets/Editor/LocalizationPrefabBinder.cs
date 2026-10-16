@@ -19,10 +19,12 @@ namespace FTProject.EditorTools
     ///
     /// 【幂等】已有 TextLocalizer 的节点跳过，不会重复挂。
     ///
-    /// 【排除规则：运行时动态文本绝不挂】
-    ///   这类节点的内容由 View 代码用 Localization.Get(key, args) / SetText 主动赋值，
-    ///   挂了本地化组件反而会在切语言时把代码算好的内容冲掉。
-    ///   判据 = 见 <see cref="DynamicNames"/>（按节点名，宁少挂不多挂）。
+        /// 【排除规则：运行时动态文本绝不挂】
+        ///   这类节点的内容由 View 代码用 Localization.Get(key, args) / SetText 主动赋值，
+        ///   挂了本地化组件反而会在切语言时把代码算好的内容冲掉。
+        ///   判据 = 见 <see cref="DynamicNames"/>（按节点名，宁少挂不多挂）
+        ///     + BindOne 里的两处结构性特判：TMP_Dropdown 内部文本（语言下拉框）、
+        ///       MuteBtn/Label（"静音 / 取消静音"两态文本）。
     /// </summary>
     public static class LocalizationPrefabBinder
     {
@@ -142,6 +144,24 @@ namespace FTProject.EditorTools
 
                 // SpeedButton/Label 是倍速显示（HudView.SetSpeedLabel 运行时覆盖），不本地化
                 if (t.transform.parent != null && t.transform.parent.name == "SpeedButton")
+                {
+                    skipped++;
+                    continue;
+                }
+
+                // MuteBtn/Label 是"静音 / 取消静音"两态文本（SettingView.Refresh 按存档状态写），
+                // 挂了本地化组件会在切语言时被"按 prefab 原文 Mute"刷新、把 Unmute 状态冲掉。
+                if (t.transform.parent != null && t.transform.parent.name == "MuteBtn")
+                {
+                    skipped++;
+                    continue;
+                }
+
+                // TMP_Dropdown 内部的文本（设置界面的语言下拉框）一律跳过：
+                //   · caption 与列表项由 TMP_Dropdown 运行时按当前语言自显名填充；
+                //   · 挂了本地化组件后，切语言时会把它们按"占位原文"冲掉，表现为文案错乱。
+                //   含未激活的 Template（弹出的列表模板）在内 —— includeInactive=true 覆盖。
+                if (t.GetComponentInParent<TMP_Dropdown>(true) != null)
                 {
                     skipped++;
                     continue;

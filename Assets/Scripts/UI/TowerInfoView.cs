@@ -70,6 +70,9 @@ namespace FTProject
             EventDispatcher.AddEventListener<BaseTower>(EventName.TowerUpgradeSuccess, OnUpgradeSuccess);
             EventDispatcher.AddEventListener<BaseTower>(EventName.DestroyTower, OnTowerDestroyed);
             EventDispatcher.AddEventListener<int, int>(EventName.GoldChangeEvent, OnGoldChanged);
+            // 语言切换：本面板在游戏中可能与暂停/设置同屏（暂停不会关面板），
+            // 切语言后必须重刷标题/数值行/按钮文案（2026-10-16 多语言审计）
+            EventDispatcher.AddEventListener<int>(EventName.LanguageChangedEvent, OnLanguageChanged);
         }
 
         private void OnDisable()
@@ -79,6 +82,16 @@ namespace FTProject
             EventDispatcher.RemoveEventListener<BaseTower>(EventName.TowerUpgradeSuccess, OnUpgradeSuccess);
             EventDispatcher.RemoveEventListener<BaseTower>(EventName.DestroyTower, OnTowerDestroyed);
             EventDispatcher.RemoveEventListener<int, int>(EventName.GoldChangeEvent, OnGoldChanged);
+            EventDispatcher.RemoveEventListener<int>(EventName.LanguageChangedEvent, OnLanguageChanged);
+        }
+
+        /// <summary>语言已切换 → 重刷当前展示的塔（Refresh 内部同时刷按钮文案）。</summary>
+        private void OnLanguageChanged(int lang)
+        {
+            if (_tower != null && _tower.Config != null)
+            {
+                Refresh();
+            }
         }
 
         // ------------------------------------------------------------------
@@ -233,7 +246,8 @@ namespace FTProject
             }
 
             TowerConfig cfg = _tower.Config;
-            SetText(_title, string.Format("{0}  Lv.{1}", cfg.Name, cfg.Level));
+            // 塔名走 DisplayName（多语言表；缺条目回退英文原文）
+            SetText(_title, string.Format("{0}  Lv.{1}", cfg.DisplayName, cfg.Level));
             // 带上 DPS：升级值不值得，玩家看"攻击力"是看不出来的，
             // 而 power / CD 才是这条升级链真正在卖的东西。
             SetText(_stats, Localization.Get("ATK {0}  RNG {1}  SPD {2}s  DPS {3}",
