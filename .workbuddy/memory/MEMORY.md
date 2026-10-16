@@ -8,6 +8,7 @@
 - 名写法：自由人塔防=文档｜FREEDOM TOWER=副标题｜freedomtower=包名｜FreeTower=YooAsset包裹名(改了热更失效)｜FTProject=命名空间；菜单勿改"塔防"；文档不写盘符。
 - 跑生成/挂载菜单前 `isCompiling==false && !isPlaying`；改 `Assets/Editor/*.cs` 后必须等编译完成再跑（否则静默用旧程序集，最坑）。所有生成/挂载菜单前核 MCP 连的是本工程（Application.dataPath）。
 - 编辑器脚本不弹 DisplayDialog（走 Debug.Log；危险操作拆两档菜单；DOTweenPro 2 处弹窗不动）。
+- ★提交约定（用户 2026-10-16 明确要求）：**一律全部一起提交**——每次一笔提交、包含工作区全部改动（含未跟踪新文件/缓存/产物），不拆多笔、不挑拣、不自作主张排除。
 - git：① push 弹 credential helper → 用户级 `~/.gitconfig` `[credential]` 插空 `helper =`；失败重试一次，`ls-remote` 核 sha。② 本机 GitHub 只有 env 变量代理稳定：`http_proxy=http://127.0.0.1:7897 https_proxy=…`。③ 判断家用有无新提交看 `git log --format='%h %an %ci'`——Eagle-Lai + 清晨日期=家用提交，可能早已 merge 进本地。
 - Unity 2022.3.62f3c1 + Built-in RP；screenshot 偶发丢 Overlay 层。
 
