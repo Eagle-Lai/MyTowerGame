@@ -10,7 +10,7 @@
 - 跑生成/挂载菜单前 `isCompiling==false && !isPlaying`；改 `Assets/Editor/*.cs` 必须等编译完成再跑；先核 MCP 连的是本工程。
 - 编辑器脚本不弹 DisplayDialog（走 Debug.Log，危险操作拆两档菜单；DOTweenPro 2 处弹窗不动）。
 - ★提交：一律全部一起提交（一笔含未跟踪/缓存/产物，不拆不挑）；必须先写完记录再提交（当天日志+MEMORY.md 与代码同笔），提交后不再写盘。细则 Docs/提交与工作记录规范.md。
-- git：push 弹 credential helper→`~/.gitconfig` `[credential]` 插空 `helper =`，重试一次并 `ls-remote` 核 sha；GitHub 只能走 env 代理（端口随 Clash 变，7897/7892 均通）。
+- git：push 弹 credential helper→`~/.gitconfig` `[credential]` 插空 `helper =`，重试一次并 `ls-remote` 核 sha；GitHub 只能走 env 代理（端口随 Clash 变，7897/7892 均通）。★被拒 `cannot lock ref … is at X but expected Y` + 大文件 warning = 与并行/后台推送的竞态（旧值过期），先 `fetch`/`ls-remote` 确认远端是否已含本提交，**勿因此装 git-lfs**；同一分支勿并行推（各传 80MB、必有一拒）。
 
 ## 程序集/HybridCLR（Docs/HybridCLR_Integration.md）
 - 12 程序集，热更6=Assembly-CSharp/LubanLib/Gen/SuperScrollView/Reporter/Runtime；★Assets/Scripts 全归 FTProject.Runtime；Assembly-CSharp.dll 恒 5KB 空壳（增删 Assets/ 根脚本须重跑 Generate▸All+拷贝）。
