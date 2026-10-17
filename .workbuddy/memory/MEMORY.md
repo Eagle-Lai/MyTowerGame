@@ -52,6 +52,7 @@
 - LevelClearView 胜败共用 OnGameOver()；唯一拆卸 TeardownLevel()。存档只走 SaveManager（禁 SQL/PlayerPrefs）；改表三步 CreateStatements→CurrentVersion+1→RunMigrations。
 - 音频=丢文件+gen_audio_catalog.py；BGM 2源+AudioFadeDriver；倍速唯一源 Core/GameClock.cs（timeScale 只 0/1）。
 - ★塔型三类：Normal1(飞+走)/Aoe2 火力=仅走/Slow3 光环(飞+走)；Pierce4/Laser5 已删（编号不回收）；对空判定=塔表 canAttackAir。
+- ★塔攻击表现（2026-10-17）：普通/火力塔**不发真实子弹**（BulletManager 保留无调用方），开火=即时命中+序列帧（TowerFireFx：枪口焰挂炮管+落点爆炸池，帧=FireFx 散帧、生成器 gen_tower_fire_frames.py）；AOE 半径/效果仍取 TBBulletData，效果时长唯一权威=BaseBullet.SlowDurationSec/DotDurationSec(public)。
 - ★建造交互 v3：快速点按=放置态；长按0.25s/位移30px=拖拽建造（ghost 跟手、松手校验、拖回按钮/棋盘外静默取消）；HUD 右上 Btn_Pause/Btn_Intro。
 - 地图链路：棋盘→levelmap_export.json→LevelMap.xlsx→tblevelmap.json→SceneInfo.xlsx；日志前缀 [Place]/[HUD]/[TowerInfoView]/[Audit]。
 - ★新增一关=四表齐全：LevelMap(id) + SceneInfo(mapId=LevelMap.id、RoundList) + RoundData(回合) + EnemyList(波次)；LevelMap.levelId 只是备注，程序只按 SceneInfo.mapId 找图。现役 15 关（9~15 于 2026-10-17 补齐，波次/回合扩到 75）。

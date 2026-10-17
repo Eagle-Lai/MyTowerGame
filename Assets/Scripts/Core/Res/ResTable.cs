@@ -75,6 +75,25 @@ namespace FTProject
             { "Tower_Base_Lv3_Sprite",    new ResAddress(ResBundle.TowerNormal, "turret_mkiii_base_128",  "Assets/_UIAssets/Tower/Normal/turret_mkiii_base_128.png") },
             { "Tower_Barrel_Lv3_Sprite",  new ResAddress(ResBundle.TowerNormal, "turret_mkiii_barrel_128","Assets/_UIAssets/Tower/Normal/turret_mkiii_barrel_128.png") },
 
+            // 塔开火序列帧（2026-10-17 表现改版：移除真实子弹，开火只播序列帧）。
+            // 生成器：.workbuddy/tools/gen_tower_fire_frames.py；散帧走 Load<Sprite> 运行时播放。
+            // ⚠️ 逐帧登记：ResTable 是唯一寻址源，漏一帧 TowerFireFx 会告警"缺序列帧"。
+            { "Tower_Muzzle_Normal_0", new ResAddress(ResBundle.TowerNormal, "Tower_Muzzle_Normal_0", "Assets/_UIAssets/Tower/FireFx/Tower_Muzzle_Normal_0.png") },
+            { "Tower_Muzzle_Normal_1", new ResAddress(ResBundle.TowerNormal, "Tower_Muzzle_Normal_1", "Assets/_UIAssets/Tower/FireFx/Tower_Muzzle_Normal_1.png") },
+            { "Tower_Muzzle_Normal_2", new ResAddress(ResBundle.TowerNormal, "Tower_Muzzle_Normal_2", "Assets/_UIAssets/Tower/FireFx/Tower_Muzzle_Normal_2.png") },
+            { "Tower_Muzzle_Normal_3", new ResAddress(ResBundle.TowerNormal, "Tower_Muzzle_Normal_3", "Assets/_UIAssets/Tower/FireFx/Tower_Muzzle_Normal_3.png") },
+            { "Tower_Muzzle_Power_0",  new ResAddress(ResBundle.TowerPower, "Tower_Muzzle_Power_0",  "Assets/_UIAssets/Tower/FireFx/Tower_Muzzle_Power_0.png") },
+            { "Tower_Muzzle_Power_1",  new ResAddress(ResBundle.TowerPower, "Tower_Muzzle_Power_1",  "Assets/_UIAssets/Tower/FireFx/Tower_Muzzle_Power_1.png") },
+            { "Tower_Muzzle_Power_2",  new ResAddress(ResBundle.TowerPower, "Tower_Muzzle_Power_2",  "Assets/_UIAssets/Tower/FireFx/Tower_Muzzle_Power_2.png") },
+            { "Tower_Muzzle_Power_3",  new ResAddress(ResBundle.TowerPower, "Tower_Muzzle_Power_3",  "Assets/_UIAssets/Tower/FireFx/Tower_Muzzle_Power_3.png") },
+            { "Tower_Muzzle_Power_4",  new ResAddress(ResBundle.TowerPower, "Tower_Muzzle_Power_4",  "Assets/_UIAssets/Tower/FireFx/Tower_Muzzle_Power_4.png") },
+            { "Tower_Blast_0", new ResAddress(ResBundle.TowerPower, "Tower_Blast_0", "Assets/_UIAssets/Tower/FireFx/Tower_Blast_0.png") },
+            { "Tower_Blast_1", new ResAddress(ResBundle.TowerPower, "Tower_Blast_1", "Assets/_UIAssets/Tower/FireFx/Tower_Blast_1.png") },
+            { "Tower_Blast_2", new ResAddress(ResBundle.TowerPower, "Tower_Blast_2", "Assets/_UIAssets/Tower/FireFx/Tower_Blast_2.png") },
+            { "Tower_Blast_3", new ResAddress(ResBundle.TowerPower, "Tower_Blast_3", "Assets/_UIAssets/Tower/FireFx/Tower_Blast_3.png") },
+            { "Tower_Blast_4", new ResAddress(ResBundle.TowerPower, "Tower_Blast_4", "Assets/_UIAssets/Tower/FireFx/Tower_Blast_4.png") },
+            { "Tower_Blast_5", new ResAddress(ResBundle.TowerPower, "Tower_Blast_5", "Assets/_UIAssets/Tower/FireFx/Tower_Blast_5.png") },
+
             // 【M-3 分等级模型】强力塔 / 减速塔各有 3 个**独立 prefab**，每级一套美术：
             //   Tower_Power0|1|2  → Assets/Prefabs/Tower/Power/  （贴图 tower_base[_lv2|_lv3]）
             //   Tower_Retard0|1|2 → Assets/Prefabs/Tower/Retard/ （贴图 slowtower_base[_lv2|_lv3]）

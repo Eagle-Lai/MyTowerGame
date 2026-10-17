@@ -4,6 +4,8 @@
 // 触发记录：2026-10-14 19:21 需求流水线首跑（mode=feature）：Luban（8 条新词条）▸
 //           GameIntroView.prefab ▸ HudView 补挂 Btn_Pause/Btn_Intro ▸ TextLocalizer ▸
 //           热更 dll+AB v1.0.17 ▸ deploy 到 HotUpdateServer，全程无人工干预
+// 触发记录：2026-10-17 15:0x 塔攻击表现改版（mode=full）：移除真实子弹改即时命中+序列帧
+//           （TowerFireFx 新增、BaseTower.Fire 重写、FireFx 散帧 15 张入库）▸ 热更 dll+AB
 using System.IO;
 using UnityEditor;
 using UnityEngine;

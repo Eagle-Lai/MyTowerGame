@@ -33,12 +33,15 @@ namespace FTProject
         /// <summary>本发子弹所属的对象池 key（= 配置的 resName）。归还时用它找对池子。</summary>
         public string ResName { get; private set; }
 
-        /// <summary>减速持续时长（秒）。做成常数而不是配置列：当前只有一种减速弹，
-        /// 加一列只会让表更宽；真要做"不同时长"时再加列即可。</summary>
-        private const float SlowDurationSec = 2f;
+        /// <summary>
+        /// 减速持续时长（秒）。做成常数而不是配置列：当前只有一种减速弹，
+        /// 加一列只会让表更宽；真要做"不同时长"时再加列即可。
+        /// 【public】塔侧即时命中（BaseTower.ApplyHitEffect）共用同一时长，唯一权威在这里。
+        /// </summary>
+        public const float SlowDurationSec = 2f;
 
         /// <summary>持续伤害的持续时间（秒），同上。</summary>
-        private const float DotDurationSec = 3f;
+        public const float DotDurationSec = 3f;
 
         /// <summary>
         /// 空间哈希查询的额外半径余量，用来覆盖"怪物受击半径"。

@@ -80,6 +80,13 @@ namespace FTProject
         private Vector3 _barrelBasePos;
         private bool _barrelBaseCached;
 
+        // ---- 开火序列帧（2026-10-17 表现改版）----
+        /// <summary>
+        /// 枪口焰播放器（挂在炮管下的子物体，随炮管旋转）。
+        /// 普通塔/火力塔开火时重放一遍；减速光环塔不挂（永不开火）。
+        /// </summary>
+        private TowerFireFx _muzzleFx;
+
         /// <summary>
         /// 炮管贴图**自身画朝哪个方向**（Unity 角度，0°=右、90°=上）。
         ///
@@ -135,6 +142,12 @@ namespace FTProject
                 _muzzle = _barrel.Find("BarrelPoint");
             }
             SetTint(Color.white);
+
+            // 非光环塔挂枪口焰播放器（幂等：已挂则复用；光环塔不索敌不开火，不挂）
+            if (!cfg.IsSlowAura && _barrel != null)
+            {
+                _muzzleFx = TowerFireFx.AttachMuzzle(_barrel, _muzzle);
+            }
 
             // 减速塔：挂一个光环表现（射程圈 + 命中脉冲），并常亮显示射程
             if (cfg.IsSlowAura)
@@ -459,23 +472,35 @@ namespace FTProject
             }
         }
 
+        /// <summary>
+        /// 开火（冷却到点、有目标时由 TickAttack 调用）。
+        ///
+        /// 【2026-10-17 表现改版：移除真实子弹，《坚守阵地》式即时命中】
+        ///   开火瞬间直接结算伤害，塔上只重放一段枪口焰序列帧（TowerFireFx）；
+        ///   火力塔在落点补播爆炸序列帧。攻击节奏完全不变：
+        ///   冷却间隔（CooldownSec）、索敌/锁定、伤害值（Power）、音效、后坐、震动全部照旧。
+        ///   唯一的判定差异是"伤害不再等弹体飞行"——即时命中本来就是去掉真实子弹后的题中之义。
+        ///
+        /// 【为什么数值仍从子弹表取】aoeRadius / effectType / effectValue 的权威来源
+        ///   依旧是 TBBulletData（见 BulletConfig 注释），这里只是把"弹体飞到落点才结算"
+        ///   换成"开火瞬间在落点结算"，表驱动的方式没有变。
+        /// </summary>
         private void Fire(BaseEnemy target)
         {
             _recoilTimer = RecoilDurationSec;   // M4-3：开火即后坐，回位在 TickRecoil 里推进
 
             // 屏幕震动（UI 补全 C3）：满级塔开火给一点"重火力"的手感。
             // 系数 0.15 —— 满级塔攻速不低，震感必须轻到"感觉得到但不烦人"。
-            // 【为什么放在 Fire 而不是命中点】Fire 只在"真的打到目标"时被调用
-            // （无目标绝不会进来，见下面的不变量），所以这里等价于"命中"。
             if (Config.Level >= 2 && CameraController.Instance != null && Configs.Global != null)
             {
                 CameraController.Instance.Shake(
                     Configs.Global.ShakeAmplitude * 0.15f, Configs.Global.ShakeDurationSec);
             }
 
+            // 减速光环塔走 TickSlowAura，永远不会到这里（与原 FiresBullet 口径一致的防御分支）
             if (!Config.FiresBullet)
             {
-                return;   // 减速光环塔走 TickSlowAura，永远不会到这里
+                return;
             }
 
             BulletConfig bulletCfg = Configs.GetBullet(Config.BulletId);
@@ -483,14 +508,102 @@ namespace FTProject
             {
                 return;
             }
-            // 把塔的 effectValue 传下去：AOE / 穿透塔不必在表里重复填同样的强度
-            // （子弹自身 effectValue > 0 时会被塔的值覆盖，见 BaseBullet.Init）
-            BulletManager.Instance.Fire(target, Config.Power, MuzzlePosition, bulletCfg, Config.EffectValue);
+
+            if (Config.IsAoe)
+            {
+                // 火力塔：落点 = 发射瞬间锁定的目标位置（与原"落点弹"锁定时机一致），
+                // 对落点 aoeRadius（格）内全部存活敌人造成同等伤害 + 命中效果。
+                Vector2 center = target.Position;
+                DetonateAt(center, bulletCfg.AoeRadius, Config.Power, bulletCfg);
+                // 爆炸的分量感：与原 BaseBullet.Explode 同系数 0.3（爆炸很频繁，晃多了没法玩）
+                if (CameraController.Instance != null && Configs.Global != null)
+                {
+                    CameraController.Instance.Shake(
+                        Configs.Global.ShakeAmplitude * 0.3f, Configs.Global.ShakeDurationSec);
+                }
+                TowerFireFx.PlayBlastAt(center);
+            }
+            else
+            {
+                // 普通塔：单体即时命中（原为追踪弹命中才结算，此处只去掉飞行环节）
+                HurtEnemy(target, Config.Power, bulletCfg);
+            }
+
+            // 枪口焰序列帧（普通塔黄白细焰 / 火力塔橙红重焰）
+            if (_muzzleFx != null)
+            {
+                _muzzleFx.PlayMuzzle(TowerFireFx.GetMuzzleFrames(Config.IsAoe));
+            }
             if (AudioManager.Instance != null)
             {
                 AudioManager.Instance.PlayAt(AudioName.TowerFire(Config.Type), MuzzlePosition);
             }
             FireCount++;
+        }
+
+        /// <summary>
+        /// 对单个敌人结算一次伤害 + 命中效果（效果语义与 BaseBullet.ApplyEffect 同口径）。
+        /// </summary>
+        private void HurtEnemy(BaseEnemy e, float damage, BulletConfig bulletCfg)
+        {
+            if (e == null || !e.IsAlive)
+            {
+                return;
+            }
+            e.Hurt(damage);
+            CombatSystem.Instance.AddHitCount(1);
+            ApplyHitEffect(e, bulletCfg.Effect,
+                Config.EffectValue > 0f ? Config.EffectValue : bulletCfg.EffectValue);
+        }
+
+        /// <summary>
+        /// 在落点引爆：对半径 radius（格）内**全部**存活敌人造成伤害并施加效果。
+        /// 与原 BaseBullet.Explode 同口径：范围从落点算，与落点上是否站怪无关。
+        /// </summary>
+        private void DetonateAt(Vector2 center, float radius, float damage, BulletConfig bulletCfg)
+        {
+            if (radius <= 0f)
+            {
+                return;
+            }
+            CombatSystem cs = CombatSystem.Instance;
+            if (cs == null || cs.Grid == null)
+            {
+                return;
+            }
+            _candidates.Clear();
+            cs.Grid.QueryCircle(center, radius, _candidates);
+            float r2 = radius * radius;
+            for (int i = 0; i < _candidates.Count; i++)
+            {
+                BaseEnemy e = _candidates[i];
+                if (e == null || !e.IsAlive)
+                {
+                    continue;
+                }
+                // 网格查询会带出范围外元素，精确过滤成圆形落点范围（与原实现一致）
+                if ((e.Position - center).sqrMagnitude > r2)
+                {
+                    continue;
+                }
+                HurtEnemy(e, damage, bulletCfg);
+            }
+        }
+
+        /// <summary>命中效果。与 BaseBullet.ApplyEffect 共用同一组时长常数（那里是唯一权威）。</summary>
+        private void ApplyHitEffect(BaseEnemy e, EffectType effect, float effectValue)
+        {
+            switch (effect)
+            {
+                case EffectType.Slow:
+                    e.ApplySlow(effectValue, BaseBullet.SlowDurationSec);
+                    break;
+                case EffectType.Dot:
+                    e.ApplyDot(effectValue, BaseBullet.DotDurationSec);
+                    break;
+                default:
+                    break;
+            }
         }
 
         // ------------------------------------------------------------------
@@ -540,6 +653,8 @@ namespace FTProject
         {
             IsBuilt = false;
             _target = null;
+            // 枪口焰是挂在**炮管下**的子物体，随塔一起销毁；这里只清引用
+            _muzzleFx = null;
             // 光环表现是挂在**塔自己**的 transform 上的子物体，随塔一起销毁；
             // 这里只把引用清掉，避免持有已销毁对象
             _auraView = null;
@@ -921,6 +1036,8 @@ namespace FTProject
             }
             _towers.Clear();
             _clearBuf.Clear();
+            // 落点爆炸序列帧的池与帧缓存随关卡一起清（枪口焰随塔销毁，无需处理）
+            TowerFireFx.ClearPool();
         }
 
         private static void Tips(string msg)
