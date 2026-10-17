@@ -240,13 +240,36 @@ namespace FTProject
         // 关卡解锁与星级
         // ------------------------------------------------------------------
 
+#if UNITY_EDITOR
+        /// <summary>
+        /// 编辑器内是否**无视破关进度、全部关卡直接可进**。
+        ///
+        /// 【为什么需要】调新地图时不该为了看第 15 关先把中间每一关挨个通关；
+        ///   选关界面 / 关卡详情页 / 「下一关」都只看 IsUnlocked，所以一处开关就够。
+        ///
+        /// 【为什么不影响真机】整段包在 #if UNITY_EDITOR 里，玩家构建连这个字段都不存在，
+        ///   真机仍然走下面"前一关通关才解锁下一关"的正常逻辑。
+        /// 想在编辑器里验证锁定态（比如检查锁图标）时，把它改成 false 即可。
+        /// 【为什么不用 const】const true 会让编译器把后面的正常逻辑判成"不可达代码"并报 CS0162，
+        ///   static readonly 不参与常量折叠，编译干净。
+        /// </summary>
+        private static readonly bool UnlockAllLevelsInEditor = true;
+#endif
+
         /// <summary>
         /// 关卡是否已解锁。
         /// 【规则】第 1 关永远开放；其余关卡需要**前一关至少通关一次**。
         /// 用"关卡 id 排序后的前一个"而不是 id-1，这样以后中间插关卡也不会把解锁链弄断。
+        /// 【编辑器例外】见 UnlockAllLevelsInEditor：仅编辑器内全解锁，真机不受影响。
         /// </summary>
         public bool IsUnlocked(int levelId)
         {
+#if UNITY_EDITOR
+            if (UnlockAllLevelsInEditor)
+            {
+                return true;
+            }
+#endif
             EnsureLoaded();
             int prev = PreviousLevelId(levelId);
             if (prev <= 0)

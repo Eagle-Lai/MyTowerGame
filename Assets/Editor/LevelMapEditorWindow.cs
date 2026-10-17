@@ -68,15 +68,184 @@ namespace FTProject.EditorTools
         private static readonly string[] PythonPathCandidates = { "python", "python3", "py" };
 
         /// <summary>
-        /// 本机已知可用（已装 openpyxl）的解释器兜底。
-        /// 【为什么要留这个】openpyxl 不是标准库 —— PATH 上的 python 很可能没装它，
-        /// 探测全失败时这一条能让"一键写入"在开发机上开箱可用。
-        /// 换机器只需在窗口顶部改一次，之后会自动记住（EditorPrefs）。
+        /// 本机兜底候选的扫描深度上限。
+        /// 【为什么要上限】探测是同步的、会冻住编辑器，候选越多最坏耗时越长；
+        /// 常见的 Python 安装目录一层子目录就够（Python313 / 3.13.12-6 这种），
+        /// 给 3~4 个名额足以覆盖"用户装了不止一个版本"。
         /// </summary>
-        private static readonly string[] PythonAbsFallback =
+        private const int AbsFallbackPerRoot = 4;
+
+        /// <summary>
+        /// 本机已知可用（大概率装了 openpyxl）的解释器兜底列表，**运行期按当前用户目录生成**。
+        ///
+        /// 【为什么不能写死绝对路径】这里以前是一行
+        ///     "C:/Users/78296/.workbuddy/binaries/python/envs/default/Scripts/python.exe"
+        /// —— 用户名是别人机器上的，换台机器就必然 File.Exists=false，
+        /// 于是 PATH 上那个没装 openpyxl 的 python 成为唯一候选，最终报
+        /// "找不到可用（装了 openpyxl）的 Python 解释器"。
+        /// 现在改成 Environment.SpecialFolder.UserProfile + 目录扫描，跟着机器走。
+        ///
+        /// 【为什么要留这个】openpyxl 不是标准库 —— PATH 上的 python 很可能没装它，
+        /// 探测全失败时这一条能让「一键写入」在开发机上开箱可用。
+        /// </summary>
+        private static List<string> BuildAbsFallbackCandidates()
         {
-            "C:/Users/78296/.workbuddy/binaries/python/envs/default/Scripts/python.exe",
-        };
+            List<string> list = new List<string>();
+
+            // WorkBuddy 托管的 Python（venv 优先 —— 本机验证过 default venv 自带 openpyxl）
+            string home = SafeGetFolder(System.Environment.SpecialFolder.UserProfile);
+            if (!string.IsNullOrEmpty(home))
+            {
+                AddFallbackFile(list, Path.Combine(home, ".workbuddy/binaries/python/envs/default/Scripts/python.exe"));
+                AddFallbackChildren(list, Path.Combine(home, ".workbuddy/binaries/python/envs"), "Scripts/python.exe");
+                AddFallbackChildren(list, Path.Combine(home, ".workbuddy/binaries/python/versions"), "python.exe");
+            }
+
+            // python.org 官方安装器默认落点：%LOCALAPPDATA%\Programs\Python\Python3xx
+            string localApp = SafeGetEnvDir("LOCALAPPDATA");
+            if (!string.IsNullOrEmpty(localApp))
+            {
+                AddFallbackChildren(list, Path.Combine(localApp, "Programs/Python"), "python.exe");
+            }
+
+            // 全机安装：%ProgramFiles%\Python3xx
+            string progFiles = SafeGetEnvDir("ProgramFiles");
+            if (!string.IsNullOrEmpty(progFiles))
+            {
+                AddFallbackChildren(list, progFiles, "Python3*/python.exe");
+            }
+
+            // conda 系（Anaconda / Miniconda）默认装在用户目录或 ProgramData
+            if (!string.IsNullOrEmpty(home))
+            {
+                string[] condaRoots = { "anaconda3", "miniconda3", "AppData/Local/anaconda3", "AppData/Local/miniconda3" };
+                for (int i = 0; i < condaRoots.Length; i++)
+                {
+                    AddFallbackFile(list, Path.Combine(home, condaRoots[i].Replace('/', Path.DirectorySeparatorChar) + "/python.exe"));
+                }
+            }
+            string progData = SafeGetEnvDir("ProgramData");
+            if (!string.IsNullOrEmpty(progData))
+            {
+                AddFallbackFile(list, Path.Combine(progData, "anaconda3/python.exe"));
+                AddFallbackFile(list, Path.Combine(progData, "miniconda3/python.exe"));
+            }
+
+            return list;
+        }
+
+        /// <summary>读特殊文件夹（失败只返回空串，绝不让探测流程抛异常）。</summary>
+        private static string SafeGetFolder(System.Environment.SpecialFolder folder)
+        {
+            try { return System.Environment.GetFolderPath(folder); }
+            catch (System.Exception) { return null; }
+        }
+
+        /// <summary>读环境变量目录（去尾部斜杠；空值返回 null）。</summary>
+        private static string SafeGetEnvDir(string variable)
+        {
+            try
+            {
+                string v = System.Environment.GetEnvironmentVariable(variable);
+                if (string.IsNullOrEmpty(v))
+                {
+                    return null;
+                }
+                return v.TrimEnd('\\', '/');
+            }
+            catch (System.Exception) { return null; }
+        }
+
+        /// <summary>收一个绝对路径（必须真实存在，且去重）。</summary>
+        private static void AddFallbackFile(List<string> list, string path)
+        {
+            if (string.IsNullOrEmpty(path))
+            {
+                return;
+            }
+            string full;
+            try { full = Path.GetFullPath(path); }
+            catch (System.Exception) { return; }
+            if (!File.Exists(full))
+            {
+                return;
+            }
+            for (int i = 0; i < list.Count; i++)
+            {
+                if (string.Equals(list[i], full, System.StringComparison.OrdinalIgnoreCase))
+                {
+                    return;
+                }
+            }
+            list.Add(full);
+        }
+
+        /// <summary>
+        /// 扫 root 的子目录，收 "<子目录>/relative"。
+        /// relative 支持一层通配（如 "Python3*/python.exe"，通配只作用于子目录名）；
+        /// 子目录按名称**倒序**，让 Python313 排在 Python38 前面。
+        /// </summary>
+        private static void AddFallbackChildren(List<string> list, string root, string relative)
+        {
+            if (string.IsNullOrEmpty(root) || !Directory.Exists(root))
+            {
+                return;
+            }
+
+            string[] dirs;
+            try { dirs = Directory.GetDirectories(root); }
+            catch (System.Exception) { return; }
+
+            System.Array.Sort(dirs, System.StringComparer.OrdinalIgnoreCase);
+            System.Array.Reverse(dirs);
+
+            string[] parts = relative.Split('/');
+            string leaf = parts[parts.Length - 1];
+            string mid = parts.Length > 1 ? parts[0] : null;
+            bool midHasWildcard = mid != null && mid.IndexOf('*') >= 0;
+
+            int added = 0;
+            for (int i = 0; i < dirs.Length && added < AbsFallbackPerRoot; i++)
+            {
+                string name = Path.GetFileName(dirs[i]);
+                if (midHasWildcard && !WildcardMatch(name, mid))
+                {
+                    continue;
+                }
+
+                string dir = dirs[i];
+                if (mid != null && !midHasWildcard)
+                {
+                    dir = Path.Combine(dirs[i], mid);
+                }
+                string p = Path.Combine(dir, leaf);
+                if (!File.Exists(p))
+                {
+                    continue;
+                }
+                int before = list.Count;
+                AddFallbackFile(list, p);
+                if (list.Count > before)
+                {
+                    added++;
+                }
+            }
+        }
+
+        /// <summary>只支持 '*' 的最简通配匹配（够用于 Python3* 这种目录名）。</summary>
+        private static bool WildcardMatch(string text, string pattern)
+        {
+            int star = pattern.IndexOf('*');
+            if (star < 0)
+            {
+                return string.Equals(text, pattern, System.StringComparison.OrdinalIgnoreCase);
+            }
+            string head = pattern.Substring(0, star);
+            string tail = pattern.Substring(star + 1);
+            return text.Length >= head.Length + tail.Length
+                   && text.StartsWith(head, System.StringComparison.OrdinalIgnoreCase)
+                   && text.EndsWith(tail, System.StringComparison.OrdinalIgnoreCase);
+        }
 
         /// <summary>可绘制的字符与含义（顺序即工具栏顺序）</summary>
         private static readonly char[] Palette = { '.', '#', 'X', 'P', 'S', 'E' };
@@ -431,6 +600,15 @@ namespace FTProject.EditorTools
             if (!ResolvePython(out python, out pyNote))
             {
                 LogErr("找不到可用（装了 openpyxl）的 Python 解释器，已中止。");
+                if (!string.IsNullOrEmpty(pyNote))
+                {
+                    // note 里的换行是"探测轨迹"，逐行加上缩进再入日志，别让多行文本挤成一坨
+                    string[] trail = pyNote.Split('\n');
+                    for (int i = 0; i < trail.Length; i++)
+                    {
+                        _log.Add("      " + trail[i]);
+                    }
+                }
                 _log.Add("      · 在窗口顶部「Python」栏填入解释器完整路径，或执行：");
                 _log.Add("        <python> -m pip install openpyxl");
                 FlushStatus(true);
@@ -913,7 +1091,9 @@ namespace FTProject.EditorTools
         /// 【为什么必须探测而不是直接用 "python"】openpyxl 是第三方库，
         /// PATH 上的 python 大概率没装；直接调用会在写表那一步才失败，
         /// 报出来的还是一串 import 错误，远不如在这里就明确挡住。
-        /// 顺序：已记住 → 工程内 venv → PATH → 本机兜底。
+        /// 顺序：已记住 → 工程内 venv → 本机已装（venv/常见安装目录）→ PATH。
+        /// 【为什么"本机已装"要排在 PATH 前面】PATH 上的裸 python 命中"能跑但没装 openpyxl"
+        /// 的概率很高，把已知带 openpyxl 的绝对路径先试一遍，能少一次必然失败的进程启动。
         /// </summary>
         private bool ResolvePython(out string python, out string note)
         {
@@ -921,16 +1101,26 @@ namespace FTProject.EditorTools
             string saved = EditorPrefs.GetString(PythonPrefKey, "");
             if (!string.IsNullOrEmpty(saved))
             {
-                if (ProbePython(saved))
+                // 记住的是绝对路径但文件没了（换机器 / 工程跟 EditorPrefs 不同步）就别白跑一次进程
+                bool isAbsPath = saved.IndexOf('/') >= 0 || saved.IndexOf('\\') >= 0;
+                if (isAbsPath && !File.Exists(saved))
+                {
+                    note = "已记住的解释器不存在，重新探测";
+                }
+                else if (ProbePython(saved))
                 {
                     python = saved;
                     note = "已记住";
                     return true;
                 }
-                note = "已记住的解释器不可用，重新探测";
+                else
+                {
+                    note = "已记住的解释器不可用，重新探测";
+                }
             }
 
             string root = Directory.GetCurrentDirectory();
+            List<string> probeTrail = new List<string>();
 
             for (int i = 0; i < PythonRelCandidates.Length; i++)
             {
@@ -943,6 +1133,18 @@ namespace FTProject.EditorTools
                 {
                     return AcceptPython(p, out python);
                 }
+                probeTrail.Add(p);
+            }
+
+            List<string> absCandidates = BuildAbsFallbackCandidates();
+            for (int i = 0; i < absCandidates.Count; i++)
+            {
+                if (ProbePython(absCandidates[i]))
+                {
+                    note = "本机兜底";
+                    return AcceptPython(absCandidates[i], out python);
+                }
+                probeTrail.Add(absCandidates[i]);
             }
 
             for (int i = 0; i < PythonPathCandidates.Length; i++)
@@ -952,19 +1154,28 @@ namespace FTProject.EditorTools
                     note = "来自 PATH";
                     return AcceptPython(PythonPathCandidates[i], out python);
                 }
+                probeTrail.Add(PythonPathCandidates[i] + "（PATH）");
             }
 
-            for (int i = 0; i < PythonAbsFallback.Length; i++)
+            // 全失败时把试过的路都带上 —— 只报"找不到"用户不知道该填哪个路径进来
+            if (probeTrail.Count == 0)
             {
-                if (!File.Exists(PythonAbsFallback[i]))
+                note = "未发现任何 Python（工程内 venv / 本机安装 / PATH 都为空）";
+            }
+            else
+            {
+                StringBuilder sb = new StringBuilder();
+                sb.Append("已试 ").Append(probeTrail.Count).Append(" 个候选均无 openpyxl：");
+                int show = probeTrail.Count < 5 ? probeTrail.Count : 5;
+                for (int i = 0; i < show; i++)
                 {
-                    continue;
+                    sb.Append("\n  · ").Append(probeTrail[i]);
                 }
-                if (ProbePython(PythonAbsFallback[i]))
+                if (probeTrail.Count > show)
                 {
-                    note = "本机兜底";
-                    return AcceptPython(PythonAbsFallback[i], out python);
+                    sb.Append("\n  · …另有 ").Append(probeTrail.Count - show).Append(" 个");
                 }
+                note = sb.ToString();
             }
 
             python = null;

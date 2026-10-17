@@ -54,6 +54,8 @@
 - ★塔型三类：Normal1(飞+走)/Aoe2 火力=仅走/Slow3 光环(飞+走)；Pierce4/Laser5 已删（编号不回收）；对空判定=塔表 canAttackAir。
 - ★建造交互 v3：快速点按=放置态；长按0.25s/位移30px=拖拽建造（ghost 跟手、松手校验、拖回按钮/棋盘外静默取消）；HUD 右上 Btn_Pause/Btn_Intro。
 - 地图链路：棋盘→levelmap_export.json→LevelMap.xlsx→tblevelmap.json→SceneInfo.xlsx；日志前缀 [Place]/[HUD]/[TowerInfoView]/[Audit]。
+- ★新增一关=四表齐全：LevelMap(id) + SceneInfo(mapId=LevelMap.id、RoundList) + RoundData(回合) + EnemyList(波次)；LevelMap.levelId 只是备注，程序只按 SceneInfo.mapId 找图。现役 15 关（9~15 于 2026-10-17 补齐，波次/回合扩到 75）。
+- ★编辑器内全解锁开关=`SaveManager.UnlockAllLevelsInEditor`（#if UNITY_EDITOR，static readonly；真机仍逐关解锁）。
 
 ## 敌人四方向（2026-10-16 起；★仅 AdvancedHen 示例获准，其余 118 个须等用户明确审核）
 - EnemyDirectionalProfile(配置)/EnemyDirectionalVisual(表现) 显式启用，无配置敌人走原逻辑；BaseEnemy 负责实际首段方向、主轴滞回、镜像恢复、血条补偿、对象池 ResetForSpawn（★池化实例 Animator.Update(0) 须在 GameObjSetActive 之后）。
@@ -72,6 +74,7 @@
 - APK：菜单 6/7 或 `Unity.exe -batchmode -executeMethod FTProject.EditorTools.BuildApk.BuildNow -buildTarget Android -logFile Logs/batch_apk.log`（完建须手动杀）；★编辑器真实路径 `C:\Program Files\Unity 2022.3.62f3c1\`（Hub 下是空壳）；状态 Library/FTBuildApkStatus.txt。坑：Gradle 失败弹模态框卡死主线程／AndroidTargetSdkVersion:0 会选坏包／路径大小写敏感。
 
 ## 工具/其他
+- ★Unity 编辑器调外部 Python（Tools▸塔防▸地图编辑器「一键写入」）的解释器兜底**禁止硬编码 `C:/Users/<某人>/...`**（曾写死他人机 78296 → 恒 File.Exists=false，报"找不到装了 openpyxl 的 Python"）。现为 `LevelMapEditorWindow.BuildAbsFallbackCandidates()` 按 UserProfile 动态扫描，顺序 已记住→工程内 venv→本机已装(venv/versions/Python3*/conda)→PATH；本机命中 `~/.workbuddy/binaries/python/envs/default`（openpyxl 3.1.5）。
 - ★scan_missing_script_refs.py 须同时收集 Assets+Packages+Library/PackageCache 的 .cs.meta；2 个 never-existed StateMachineBehaviour 已 Compat 占位修复。
 - 怪物素材=侧视拆件图集（每怪 1 PNG 全朝左）+_Common/Animations/<家族>；朝向靠 BaseEnemy.FaceMoveDirection 翻 localScale；表情走动画事件 SetHead(int)；gen_monster_catalog.py 生成 MonsterCatalog.cs。
 - 发布就绪核查产物 Docs/ReleaseReadiness/（探针+evidence JSON）；云端资料库镜像 Docs/（md 用 space.importer、svg 用 drive/upload）。
