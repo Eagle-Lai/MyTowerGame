@@ -23,6 +23,8 @@ namespace FTProject
         public EnemyFacing Facing { get; private set; }
         public int HeadIndex { get; private set; }
         private bool _hasFacing;
+        private UnityEngine.Animator _animator;
+        private static readonly int DirHash = UnityEngine.Animator.StringToHash("Dir");
 
         public bool IsConfigured
         {
@@ -61,6 +63,7 @@ namespace FTProject
                 Facing = next;
                 _hasFacing = true;
                 ApplyView();
+                SetDir(VerticalView ? (Facing == EnemyFacing.Up ? 1 : 2) : 0);
             }
             return true;
         }
@@ -74,6 +77,7 @@ namespace FTProject
             var receiver = GetComponent<MonsterAnimEventReceiver>();
             if (receiver) receiver.SetHead(0);
             ApplyView();
+            SetDir(0);
         }
 
         /// <summary>Receives the same AnimationEvent as the original horizontal head receiver.</summary>
@@ -88,6 +92,23 @@ namespace FTProject
         private EnemyDirectionalProfile.Parts CurrentParts()
         {
             return Facing == EnemyFacing.Up ? Profile.Up : Profile.Down;
+        }
+
+        /// <summary>
+        /// Drives the "Dir" animator parameter (0 horizontal, 1 up, 2 down) so controllers with
+        /// WalkUp/WalkDown states switch automatically. Uses the same SetInteger(int,int) overload
+        /// BaseEnemy already uses (AOT-safe); controllers without a Dir parameter ignore it silently.
+        /// </summary>
+        private void SetDir(int value)
+        {
+            if (_animator == null) _animator = GetComponent<UnityEngine.Animator>();
+            if (_animator == null) return;
+            _animator.SetInteger(DirHash, value);
+        }
+
+        private bool VerticalView
+        {
+            get { return Facing == EnemyFacing.Up || Facing == EnemyFacing.Down; }
         }
 
         private void ApplyView()

@@ -58,13 +58,15 @@
 - ★新增一关=四表齐全：LevelMap(id) + SceneInfo(mapId=LevelMap.id、RoundList) + RoundData(回合) + EnemyList(波次)；LevelMap.levelId 只是备注，程序只按 SceneInfo.mapId 找图。现役 15 关（9~15 于 2026-10-17 补齐，波次/回合扩到 75）。
 - ★编辑器内全解锁开关=`SaveManager.UnlockAllLevelsInEditor`（#if UNITY_EDITOR，static readonly；真机仍逐关解锁）。
 
-## 敌人四方向（2026-10-16 起；★仅 AdvancedHen 示例获准，其余 118 个须等用户明确审核）
+## 敌人四方向（2026-10-16 起；★获准名单=AdvancedHen(override 示例) + Monkey(真实控制器 v2)，其余 117 个须等用户明确点名）
 - EnemyDirectionalProfile(配置)/EnemyDirectionalVisual(表现) 显式启用，无配置敌人走原逻辑；BaseEnemy 负责实际首段方向、主轴滞回、镜像恢复、血条补偿、对象池 ResetForSpawn（★池化实例 Animator.Update(0) 须在 GameObjSetActive 之后）。
-- 每怪独立 AnimatorOverrideController（保留原曲线/时长/事件+追加垂直姿态）；接入菜单 Tools>塔防>敌人方向示例>1（校验 12 张分件齐全）；MonsterPrefabBuilder 重建时重应用配置并保留 GUID。
-- 材料 Docs/EnemyDirectionReview/<怪名>/；真实美术需 OPENAI_API_KEY（imagegen CLI=image_gen.py，默认 gpt-image-2），密钥不入库、不写记录。
+- 方向动画资源两架构（每片段 9 条 DirectionVisual/Motion 曲线：根 z/y、Torso y、Head y/z、LegL y、LegR y、WingL/R z）；接入菜单 Tools>塔防>敌人方向示例>1/2；MonsterPrefabBuilder 重建时重应用配置并保留 GUID。①AdvancedHen=AnimatorOverrideController；②Monkey(v2，用户点名要控制器内可见垂直状态)=**真实 AnimatorController**（CopyAsset Bunny 后 API 改造，共享资源零动）：原 6 状态换 _Directions motion + 新增 WalkUp/WalkDown 状态（纯 DirectionVisual 曲线 clip）+ int 参数 **Dir**(0 水平/1 上/2 下)；AnyState→WalkUp/Down 条件 State==2&&!Action&&Dir，原 →Walk/→Run 追加 Dir==0 防抢（垂直奔跑留 WalkUp/Down 靠 Speed 提速）；EnemyDirectionalVisual.Face() 自动 SetInteger("Dir")（与 BaseEnemy 同款 API=AOT 安全，无 Dir 参数的控制器静默无效）。新怪接入=EnemyDirectionSpec 加条目（UseRealController 开关选架构）。
+- ★构建器已规格化：EnemyDirectionPrefabBuilder.EnemyDirectionSpec（ArtDir/PrefabPath/ControllerSource/UseRealController/布局高度/起伏幅度）；Monkey 布局 头2.2@1.95/躯干1.5@0.6/臂1.0@±0.80,0.80/腿0.8@±0.36,-0.20（PPU=100 实测），bob 0.04/0.05/0.13。BuildAndVerify 幂等+兜底写 Library/FT_<名>DIR_STATUS.txt（42 项校验含编辑器 clip 采样实测值）。★Verify 坑：clips 是 AnimationClipPair[]；双腿交替同一时刻比左右差；Death 倾斜读 Motion 节点按片段时长百分比定点采样；AnimatorCondition 属性名是 mode 不是 conditionMode。
+- ★运行时测试坑：直接 Instantiate 不走池 Init→BaseEnemy._anim 未缓存→SetAnimState 静默无效；运行时测试直接 animator.SetInteger("State",N) 或走 Init 流程。编辑器看真实效果=菜单 Tools>塔防>敌人方向示例>3 方向动画预览窗（EnemyDirectionPreviewWindow：真实 SetAnimState/Face 路径+Animator.Update 推进）。
+- ★AI 生成分件美术可用内置 ImageGen（无需 OPENAI_API_KEY；约 5-10 积分/张）：PIL 按预制体拼装侧视参考图+原 atlas 双图输入，提示词照 Docs/EnemyDirectionReview/AdvancedHen/generation_*.txt 模板；★生成品红底非纯色（各图不同），去底必须从角点采样实际背景色再距离阈值；★躯干格要"无尾完整椭圆+轮廓含底边完整可见"（带尾巴会拼装悬空/重心偏，v1 踩过）；Wing 槽位语义按怪适配（Monkey=手臂）。材料 Docs/EnemyDirectionReview/<怪名>/。
 
 ## Unity MCP（两版配置不同，严禁混用）
-- ★用户授权（2026-10-16）：本工程已接入 Unity MCP，可自行连接/刷新编译/进 Play/运行验证，无需再申请。
+- ★用户授权（2026-10-16）：本工程已接入 Unity MCP，可自行连接/刷新编译/进 Play/运行验证，无需再申请。★宿主工具表可能刷不出 unity-mcp 工具→自写 MCP streamable-HTTP 客户端直连（`.workbuddy/tmp_monkey_dir/mcp_unity.py`：initialize 取 mcp-session-id、SSE 解析、ProxyHandler({})）；execute_code 的 codedom 不认 C# 单引号字符串，一律双引号。
 - [公司E] com.coplaydev.unity-mcp v10.3.0，HTTP 127.0.0.1:8082/mcp（CatchFish=自研 ws8080 勿混）；★系统代理会劫持 127.0.0.1→502，脚本须内置 ProxyHandler({})；execute_code 需 `{"action":"execute","code":...}`。
 - [家用D] stdio uvx mcpforunityserver 3.4.8；Unity 未启动会卡"连接中"→兜底自起 stdio/mcp_unity.py；桥端口 6401→6400；execute_code 先 manage_tools activate scripting_ext。
 - ★长调用（GenerateAll/BuildNow）客户端超时但 Unity 继续→靠产物时间戳判定，勿重发；"菜单 6"可能延迟到编译后，勿据"未见 START"重发。

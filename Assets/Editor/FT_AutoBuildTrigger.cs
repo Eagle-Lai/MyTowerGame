@@ -61,6 +61,12 @@ namespace FTProject.EditorTools
                     // 自动化里绝不允许；主菜单 prefab 完全由生成器维护，单独重建安全。
                     UIPrefabBuilder.RebuildMainMenuOnly();
                 }
+                else if (mode == "monkeydir")
+                {
+                    // 2026-10-17 Monkey 上下方向接入：分件美术 ▸ Profile ▸ 覆盖控制器 ▸ 预制体，
+                    // 完成后写 Library/FT_MONKEYDIR_STATUS.txt（无人值守验证通道）。
+                    EnemyDirectionPrefabBuilder.BuildAndVerify(EnemyDirectionPrefabBuilder.Monkey);
+                }
                 else if (mode == "feature")
                 {
                     // 2026-10-14 需求流水线：Luban ▸ GameIntroView.prefab ▸ HUD 右上角按钮
