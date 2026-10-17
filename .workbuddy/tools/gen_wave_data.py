@@ -18,6 +18,7 @@
 生成后需要重跑 Luban/gen_code_json.bat 让改动生效。
 """
 import io, os, json, hashlib, collections
+raise SystemExit('LEGACY pre-20x20 generator is retired. Use balance_pipeline.py; do not overwrite the new campaign.')
 import openpyxl
 
 ASSETS = r'D:\FreedomTower\Assets'

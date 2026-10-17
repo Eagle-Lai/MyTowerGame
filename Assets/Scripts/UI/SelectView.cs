@@ -633,34 +633,39 @@ namespace FTProject
             int cleared = SaveManager.Instance.ClearedCount;
             int stars = SaveManager.Instance.TotalStars;
             // 数字提亮、星级用金色（效果图 01 的 Summary 配色）
-            SetText(_summary, Localization.Get("Cleared <color=#E8F0FA>{0}/{1}</color>　<color=#FFC94D>★ {2}/{3}</color>", cleared, levelCount, stars, levelCount * 3)
+            SetText(_summary, Localization.Get("Cleared <color=#E8F0FA>{0}/{1}</color>　<color=#FFC94D>★ {2}/{3}</color>", cleared, levelCount, stars, levelCount * LevelRatingEvaluator.MaxStars)
                 ?? string.Format(
                     "已通关 <color=#E8F0FA>{0}/{1}</color>　<color=#FFC94D>★ {2}/{3}</color>",
-                    cleared, levelCount, stars, levelCount * 3));
+                    cleared, levelCount, stars, levelCount * LevelRatingEvaluator.MaxStars));
             SetText(_title, Localization.Get("Select Level") ?? "选择关卡");
         }
 
         /// <summary>星级字符串。用实心/空心星而不是数字，一眼能扫完所有关卡。</summary>
         public static string Stars(int n)
         {
-            n = Mathf.Clamp(n, 0, 3);
-            return new string('★', n) + new string('☆', 3 - n);
+            n = Mathf.Clamp(n, 0, LevelRatingEvaluator.MaxStars);
+            return new string('★', n) + new string('☆', LevelRatingEvaluator.MaxStars - n);
         }
 
         /// <summary>星级富文本：已得星金色、未得星暗蓝灰（效果图 01）。**公开**给结算界面复用，
         /// 否则"同一个星级在两处长得不一样"（与 Stars() 同样的理由）。</summary>
         public static string StarRichText(int n)
         {
-            n = Mathf.Clamp(n, 0, 3);
+            n = Mathf.Clamp(n, 0, LevelRatingEvaluator.MaxStars);
             return "<color=#FFC94D>" + new string('★', n) + "</color>" +
-                   "<color=#3F4E63>" + new string('☆', 3 - n) + "</color>";
+                   "<color=#3F4E63>" + new string('☆', LevelRatingEvaluator.MaxStars - n) + "</color>";
         }
 
         public static string Difficulty(int d)
         {
-            if (d <= 1) return Localization.Get("Difficulty I") ?? "难度 Ⅰ";
-            if (d == 2) return Localization.Get("Difficulty II") ?? "难度 Ⅱ";
-            return Localization.Get("Difficulty III") ?? "难度 Ⅲ";
+            switch (Mathf.Clamp(d, 1, 5))
+            {
+                case 1: return Localization.Get("Campaign Stage I") ?? "战役阶段 I";
+                case 2: return Localization.Get("Campaign Stage II") ?? "战役阶段 II";
+                case 3: return Localization.Get("Campaign Stage III") ?? "战役阶段 III";
+                case 4: return Localization.Get("Campaign Stage IV") ?? "战役阶段 IV";
+                default: return Localization.Get("Campaign Stage V") ?? "战役阶段 V";
+            }
         }
 
         private void OnClickClose()

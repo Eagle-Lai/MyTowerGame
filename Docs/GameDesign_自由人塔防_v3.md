@@ -1,5 +1,7 @@
 # 《自由人塔防》策划案（v3.0）
 
+> **2026-10-17 数值版本说明**：本文保留为 v3.0 历史设计记录。关卡波数、八档难度、塔与经济、怪物变体、五星评价及存档兼容，以 [`LevelBalance_Redesign_Executable_Prompt.md`](LevelBalance_Redesign_Executable_Prompt.md) 和已落地的 [`LevelBalance_Data_Design_And_Evidence.md`](LevelBalance_Data_Design_And_Evidence.md) 为准；当前正式配置为 D04、20 关 × 每关 20 波。本文中的 5 回合、三星及旧数值表不再作为生成或修改配置的依据。运行时与存档说明见 [`LevelRating_Runtime_And_Save.md`](LevelRating_Runtime_And_Save.md)，编辑器操作见 [`LevelBalance_Workbench_Quickstart.md`](LevelBalance_Workbench_Quickstart.md)。
+
 > 项目：单机 2D 塔防手游（对标 Fieldrunners 核心机制）　|　平台：Android  
 > 工程：本工程（Unity 2022.3.62f3c1）　|　主场景：`Assets/Scenes/Main.unity`  
 > 配套文档：`Docs/ProgramDesign_自由人塔防_v3.md`（程序案）  

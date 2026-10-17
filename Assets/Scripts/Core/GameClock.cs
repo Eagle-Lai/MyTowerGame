@@ -42,7 +42,31 @@ namespace FTProject
         private static int _cachedFrame = -1;
 
         // 关卡计时（UI 补全 B4「最佳用时」的数据源）
-        private static float _levelElapsed;
+        private static double _levelElapsed;
+        private static double _combatElapsed;
+        private static bool _combatTimerRunning;
+        private static bool _background;
+#if UNITY_EDITOR
+        private static bool _manualSimulation;
+        public static bool IsManualSimulation { get { return _manualSimulation; } }
+        private sealed class ManualSimulationScope : System.IDisposable
+        {
+            public void Dispose() { _manualSimulation = false; _cachedFrame = -1; _cachedDelta = 0f; }
+        }
+        public static System.IDisposable BeginManualSimulation()
+        {
+            if (_manualSimulation) throw new System.InvalidOperationException("Manual simulation is already active");
+            _manualSimulation = true; _cachedDelta = 0f;
+            return new ManualSimulationScope();
+        }
+        public static void StepManualFrame(float unscaledDelta)
+        {
+            if (!_manualSimulation) throw new System.InvalidOperationException("BeginManualSimulation must be called first");
+            _cachedDelta = _background || Time.timeScale <= 0f ? 0f : Mathf.Max(0f, unscaledDelta) * _speed;
+            if (_levelTimerRunning) _levelElapsed += _cachedDelta;
+            if (_combatTimerRunning) _combatElapsed += _cachedDelta;
+        }
+#endif
         private static bool _levelTimerRunning;
 
         /// <summary>
@@ -64,21 +88,7 @@ namespace FTProject
         {
             get
             {
-                if (_cachedFrame != Time.frameCount)
-                {
-                    _cachedFrame = Time.frameCount;
-                    _cachedDelta = Time.deltaTime * _speed;
-
-                    // 关卡计时就挂在"每帧只算一次"的这个点上：
-                    //   - 用的是模拟步长（含倍速），所以记录的是**游戏内时间**而不是墙钟时间，
-                    //     跨倍速/跨设备性能可比，作为"最佳记录"才公平；
-                    //   - 暂停时 Time.timeScale=0 → deltaTime 为 0 → 计时自然冻结（挂机不会刷记录）；
-                    //   - 不额外开 Update，零调度开销，也不引入执行顺序依赖。
-                    if (_levelTimerRunning)
-                    {
-                        _levelElapsed += _cachedDelta;
-                    }
-                }
+                RefreshFrame(Time.frameCount, Time.deltaTime);
                 return _cachedDelta;
             }
         }
@@ -89,27 +99,56 @@ namespace FTProject
         /// </summary>
         public static float LevelElapsedSec
         {
-            get { return _levelElapsed; }
+            get { return (float)_levelElapsed; }
         }
+        public static double LevelElapsedSeconds { get { return _levelElapsed; } }
+        public static double CombatElapsedSeconds { get { return _combatElapsed; } }
+        public static bool IsLevelTimerRunning { get { return _levelTimerRunning; } }
+        public static long CombatElapsedMs { get { return LevelRunMetrics.ToMilliseconds(_combatElapsed); } }
+        public static long LevelElapsedMs { get { return LevelRunMetrics.ToMilliseconds(_levelElapsed); } }
 
         /// <summary>开始/重开一关：归零并启动计时（GameFlowManager.InitLevel 调用）。</summary>
         public static void ResetLevelTimer()
         {
-            _levelElapsed = 0f;
-            _levelTimerRunning = true;
+            _levelElapsed = 0d;
+            _combatElapsed = 0d;
+            _levelTimerRunning = false;
+            _combatTimerRunning = false;
+            _background = false;
+        }
+        public static void StartLevelTimer() { RefreshFrame(Time.frameCount, Time.deltaTime); _levelTimerRunning = true; }
+        public static void SetCombatRunning(bool running) { RefreshFrame(Time.frameCount, Time.deltaTime); _combatTimerRunning = running; }
+        public static void SetBackground(bool background) { _background = background; }
+        public static void RestoreTimers(double combatSeconds, double levelSeconds, bool levelStarted)
+        {
+            _combatElapsed = combatSeconds; _levelElapsed = levelSeconds;
+            _combatTimerRunning = false; _levelTimerRunning = levelStarted;
+            _cachedFrame = Time.frameCount;
         }
 
         /// <summary>停止计时（结算/退出对局时调用；停止后 LevelElapsedSec 保留最后值供结算读取）。</summary>
         public static void StopLevelTimer()
         {
             _levelTimerRunning = false;
+            _combatTimerRunning = false;
         }
 
         /// <summary>显式刷新本帧缓存值（调用时机不敏感，见类注释）。</summary>
         public static void Tick()
         {
-            _cachedFrame = Time.frameCount;
-            _cachedDelta = Time.deltaTime * _speed;
+            RefreshFrame(Time.frameCount, Time.deltaTime);
+        }
+        // Public deterministic frame seam also lets EditMode tests verify ordering and speed.
+        public static void RefreshFrame(int frame, float scaledDeltaSeconds)
+        {
+#if UNITY_EDITOR
+            if (_manualSimulation) return;
+#endif
+            if (_cachedFrame == frame) return;
+            _cachedFrame = frame;
+            _cachedDelta = _background ? 0f : Mathf.Max(0f, scaledDeltaSeconds) * _speed;
+            if (_levelTimerRunning) _levelElapsed += _cachedDelta;
+            if (_combatTimerRunning) _combatElapsed += _cachedDelta;
         }
 
         /// <summary>回到 ×1（GameOver / 重开 / 回选关 / 进 Loading 时必须调用）。</summary>

@@ -71,6 +71,13 @@ namespace FTProject
         ///   "本局**之前**的历史星级"就已经被 RecordClear 覆盖了，再也拿不回来。
         /// </summary>
         private LevelClearInfo _pendingResult;
+        private LevelRatingProfile _ratingProfile;
+        private LevelRunMetrics _run;
+        private readonly HashSet<BaseEnemy> _unresolvedEnemies = new HashSet<BaseEnemy>();
+        private bool _settled;
+        private LevelRatingResult _pendingSaveResult;
+        public LevelRunMetrics RunMetrics { get { return _run != null ? _run.Clone() : null; } }
+        public LevelRatingProfile RatingProfile { get { return _ratingProfile != null ? _ratingProfile.Clone() : null; } }
 
         /// <summary>塔升级/出售面板是否已打开（惰性打开，见 OnTowerSelected）</summary>
         private bool _towerPanelOpened;
@@ -90,6 +97,8 @@ namespace FTProject
         private void OnEnable()
         {
             EventDispatcher.AddEventListener<bool>(EventName.ConfigLoadedEvent, OnConfigLoaded);
+            EventDispatcher.AddEventListener<BaseEnemy, int>(EventName.EnemyKilledEvent, OnRatedEnemyKilled);
+            EventDispatcher.AddEventListener<BaseEnemy, int>(EventName.EnemyReachedEndEvent, OnRatedEnemyLeaked);
             EventDispatcher.AddEventListener(EventName.StartRoundRequestEvent, OnStartRequest);
             EventDispatcher.AddEventListener<bool>(EventName.GameOverEvent, OnGameOver);
             // M2：塔选中 → 打开升级/出售面板；升级/出售请求 → 执行
@@ -119,6 +128,8 @@ namespace FTProject
         private void OnDisable()
         {
             EventDispatcher.RemoveEventListener<bool>(EventName.ConfigLoadedEvent, OnConfigLoaded);
+            EventDispatcher.RemoveEventListener<BaseEnemy, int>(EventName.EnemyKilledEvent, OnRatedEnemyKilled);
+            EventDispatcher.RemoveEventListener<BaseEnemy, int>(EventName.EnemyReachedEndEvent, OnRatedEnemyLeaked);
             EventDispatcher.RemoveEventListener(EventName.StartRoundRequestEvent, OnStartRequest);
             EventDispatcher.RemoveEventListener<bool>(EventName.GameOverEvent, OnGameOver);
             EventDispatcher.RemoveEventListener<BaseTower>(EventName.TowerSelectedEvent, OnTowerSelected);
@@ -253,6 +264,24 @@ namespace FTProject
             // 【为什么放在这里而不是方法最开头】上面的关卡/棋盘校验失败会提前 return，
             // 那次不算"进了一关"；放在校验之后，计时只在真正开始建关时启动。
             GameClock.ResetLevelTimer();
+            _ratingProfile = Configs.GetLevelRating(levelId);
+            _ratingProfile = _ratingProfile != null ? _ratingProfile.Clone() : null;
+            string ratingError;
+            if (!Configs.RatingContentVerified || !Configs.ValidateRatingPlan(_ratingProfile, out ratingError))
+            {
+                Debug.LogError("[Rating] Level cannot start: rating config missing, invalid, or content hash mismatch");
+                State = GameFlowState.None;
+                return;
+            }
+            _run = new LevelRunMetrics { runId = System.Guid.NewGuid().ToString("N"), statisticsValid = true, timingValid = true };
+            if (_ratingProfile != null)
+            {
+                _run.profileId = _ratingProfile.profileId; _run.profileRevision = _ratingProfile.profileRevision;
+                _run.balanceRevision = _ratingProfile.balanceRevision; _run.ratingRevision = _ratingProfile.ratingRevision; _run.planHash = _ratingProfile.planHash;
+                _run.expectedWaveCount = _ratingProfile.expectedWaveCount; _run.expectedEnemyCount = _ratingProfile.expectedEnemyCount;
+            }
+            _settled = false; _pendingResult = null; _pendingSaveResult = null; _unresolvedEnemies.Clear();
+            SaveManager.Instance.EnsureRatingVersion(levelId);
 
             // 关卡配置确认可用后才切战斗 BGM。
             // 【为什么放在校验之后】配置不完整会在上面提前 return，那时不该把音乐换成战斗曲。
@@ -309,12 +338,6 @@ namespace FTProject
             // ⑦ 玩家数据（金币/生命来自关卡配置，不再是硬编码）
             PlayerDataManager.Instance.InitFromLevel(Level);
 
-            // HUD 是在上面才实例化的，错过了 PlayerStateInitEvent，这里补一次刷新
-            if (hud != null)
-            {
-                hud.RefreshAll();
-            }
-
             // ⑧ 预加载本关会用到的资源（打 AB 时提前取好包引用）
             PreloadLevelResources();
 
@@ -327,6 +350,13 @@ namespace FTProject
             TryRestoreSnapshot(Level.Id);
 
             State = GameFlowState.Preparing;
+            // The restored cursor must be published together with the restored economy and statistics.
+            if (hud != null) hud.RefreshAll();
+            if (_roundCursor == _roundIds.Count && _run.completedWaveCount == _roundIds.Count)
+            {
+                CompleteVictory();
+                return;
+            }
             Debug.Log(string.Format(
                 "[Flow] 关卡 {0}「{1}」就绪：棋盘 {2}×{3}，格子 {4} 世界单位，回合 {5} 个\n{6}",
                 Level.Id, Level.Name, Map.Cols, Map.Rows, cellSize, _roundIds.Count,
@@ -363,6 +393,7 @@ namespace FTProject
             {
                 ctrl = cam.gameObject.AddComponent<CameraController>();
             }
+            ctrl.topMarginCells = Mathf.Max(ctrl.topMarginCells, 1.6f);
             ctrl.FitBoard(map.Rows, map.Cols, cellSize, center);
         }
 
@@ -431,7 +462,7 @@ namespace FTProject
 
             if (State == GameFlowState.RoundRunning)
             {
-                Tips(Localization.Get("Round in progress, wait for it to finish") ?? "回合进行中，请等待本回合结束");
+                Tips(Localization.Get("Wave in progress, wait for it to finish") ?? "波次进行中，请等待本波结束");
                 return;
             }
             if (State == GameFlowState.GameOver)
@@ -445,19 +476,25 @@ namespace FTProject
             }
             if (_roundCursor >= _roundIds.Count)
             {
-                PlayerDataManager.Instance.Win();
+                CompleteVictory();
                 return;
             }
 
             RoundConfig round = Configs.GetRound(_roundIds[_roundCursor]);
             if (round == null)
             {
-                Tips(Localization.Get("Round {0} config missing", _roundIds[_roundCursor])
-                    ?? string.Format("回合 {0} 配置缺失", _roundIds[_roundCursor]));
+                Tips(Localization.Get("Wave config missing") ?? "波次配置缺失");
                 Debug.LogError(string.Format("[Flow] 找不到回合配置 id={0}", _roundIds[_roundCursor]));
                 return;
             }
 
+            // Persist preparation as one complete checkpoint, then freeze all half-wave changes.
+            SaveSnapshotNow();
+            if (_roundCursor == 0 && _run.completedWaveCount == 0) GameClock.StartLevelTimer();
+            _unresolvedEnemies.Clear();
+            int expected = 0;
+            if (round.WaveIds != null) foreach (int waveId in round.WaveIds) { var group = Configs.GetWaveGroup(waveId); if (group != null) expected += group.EnemyCount; }
+            _run.waves.Add(new WaveRunMetrics { ordinal = _roundCursor + 1, expected = expected, combatStartSeconds = GameClock.CombatElapsedSeconds });
             _wave.BeginRound(round);
             State = GameFlowState.RoundRunning;
             EventDispatcher.TriggerEvent<int>(EventName.RoundStartEvent, _roundCursor + 1);
@@ -465,8 +502,8 @@ namespace FTProject
             {
                 AudioManager.Instance.Play(AudioName.RoundStart);
             }
-            Tips(Localization.Get("Round {0}/{1} start", _roundCursor + 1, _roundIds.Count)
-                ?? string.Format("回合 {0}/{1} 开始", _roundCursor + 1, _roundIds.Count));
+            Tips(Localization.Get("Wave {0}/{1}", _roundCursor + 1, _roundIds.Count)
+                ?? string.Format("第 {0}/{1} 波", _roundCursor + 1, _roundIds.Count));
         }
 
         /// <summary>
@@ -519,10 +556,20 @@ namespace FTProject
         }
 
         /// <summary>
-        /// 用 LateUpdate 而不是 Update：CombatSystem 在本帧的 Update 里已经刷新过
-        /// AliveEnemyCount，这里读到的是最新值，回合结束判定不会慢一帧。
+        /// CombatSystem 先完成本帧战斗，LateUpdate 再推进出生时间轴。
+        /// 结束判定使用即时出生/结算账本，覆盖本阶段刚生成的怪物。
         /// </summary>
         private void LateUpdate()
+        {
+#if UNITY_EDITOR
+            if (GameClock.IsManualSimulation) return;
+#endif
+            TickFlowSimulation();
+        }
+#if UNITY_EDITOR
+        public void StepManualSimulation() { TickFlowSimulation(); }
+#endif
+        private void TickFlowSimulation()
         {
             // 自动回合倒计时（不受 State 限制，见 TickAutoNextRound 的说明）
             TickAutoNextRound(GameClock.DeltaTime);
@@ -534,7 +581,9 @@ namespace FTProject
 
             _wave.Tick(GameClock.DeltaTime);
 
-            int alive = CombatSystem.Instance != null ? CombatSystem.Instance.AliveEnemyCount : 0;
+            // The wave may have spawned its final enemy after CombatSystem cached its
+            // count this frame. The outcome ledger includes that spawn immediately.
+            int alive = _unresolvedEnemies.Count;
             _wave.CheckGroupCleared(alive);
 
             if (_wave.IsRoundFinished(alive))
@@ -545,7 +594,16 @@ namespace FTProject
 
         private void FinishRound()
         {
+            if (State != GameFlowState.RoundRunning || _settled) return;
+            if (_unresolvedEnemies.Count > 0) return;
+            WaveRunMetrics completed = _run != null && _run.waves.Count > 0 ? _run.waves[_run.waves.Count - 1] : null;
+            if (completed == null || completed.successfulSpawned != completed.expected || completed.killed + completed.leaked != completed.expected)
+            {
+                InvalidateRun("Wave ended with incomplete enemy accounting");
+                return;
+            }
             _wave.Stop();
+            GameClock.SetCombatRunning(false);
             int finishedIndex = _roundCursor + 1;
 
             // 回合奖励
@@ -555,8 +613,8 @@ namespace FTProject
                 if (rc != null && rc.RewardGold > 0)
                 {
                     PlayerDataManager.Instance.AddGold(rc.RewardGold);
-                    Tips(Localization.Get("Round reward +{0} gold", rc.RewardGold)
-                        ?? string.Format("回合奖励 +{0} 金币", rc.RewardGold));
+                    Tips(Localization.Get("Wave reward +{0} gold", rc.RewardGold)
+                        ?? string.Format("波次奖励 +{0} 金币", rc.RewardGold));
                 }
             }
 
@@ -567,6 +625,20 @@ namespace FTProject
             }
 
             _roundCursor++;
+            _run.completedWaveCount = _roundCursor;
+            if (completed != null)
+            {
+                completed.combatEndSeconds = GameClock.CombatElapsedSeconds;
+                completed.levelEndSeconds = GameClock.LevelElapsedSeconds;
+                completed.gold = PlayerDataManager.Instance.Gold; completed.hp = PlayerDataManager.Instance.Hp;
+                RoundConfig finishedRound = Configs.GetRound(_roundIds[_roundCursor - 1]);
+                completed.clearGold = finishedRound != null ? finishedRound.RewardGold : 0;
+            }
+            State = GameFlowState.RoundComplete;
+
+            // Save the next-wave wait in the same coherent boundary as tower phases.
+            float delay = _roundCursor < _roundIds.Count && Configs.Global != null ? Configs.Global.AutoNextRoundDelaySec : 0f;
+            _autoNextTimer = Mathf.Max(0f, delay); _autoNextTipAcc = 0f;
 
             // M3-5：每回合结束存一次快照 —— 这是"退出后继续"的粒度。
             // 【为什么是回合边界】只有此刻状态是自洽的：场上无残留怪物、金币与塔都已结算。
@@ -575,32 +647,7 @@ namespace FTProject
 
             if (_roundCursor >= _roundIds.Count)
             {
-                State = GameFlowState.GameOver;
-
-                // 【为什么结算要写在 Win() 之前】Win() 会派发 GameOverEvent，
-                // 界面可能立刻切走；如果存档晚一步写，"刚通关却没解锁下一关"。
-                PlayerDataManager pd = PlayerDataManager.Instance;
-                int stars = SaveManager.EvaluateStars(pd.Hp, pd.MaxHp);
-
-                // ★ 必须**先读后写**：RecordClear 是"只升不降"的合并，
-                //   先写再读就只能拿到合并后的最好成绩，界面便无法区分
-                //   "本次打了 2 星"与"历史上最好 3 星"，"新纪录"也就无从判断。
-                int previousBest = SaveManager.Instance.GetStars(Level.Id);
-                // 用时记录（UI 补全 B4「最佳用时」）：从 GameClock 取本局**游戏内**用时。
-                // 【为什么先 StopLevelTimer 再取】停止后 LevelElapsedSec 保留最后值，
-                // 且避免结算期间（玩家停在弹窗上）还在悄悄累加。
-                GameClock.StopLevelTimer();
-                int clearTimeMs = Mathf.Max(0, Mathf.RoundToInt(GameClock.LevelElapsedSec * 1000f));
-                SaveManager.Instance.RecordClear(Level.Id, stars, pd.Hp, clearTimeMs);
-
-                // 成绩先攒着，由 OnGameOver 统一弹结算界面（胜负共用同一条路径）
-                _pendingResult = BuildClearInfo(true, stars, previousBest);
-
-                EventDispatcher.TriggerEvent<int, int, int>(EventName.LevelClearEvent, Level.Id, stars, pd.Hp);
-                Tips(Localization.Get("Cleared! Earned {0}", SelectView.Stars(stars))
-                    ?? string.Format("通关！获得 {0}", SelectView.Stars(stars)));
-
-                PlayerDataManager.Instance.Win();
+                CompleteVictory();
             }
             else
             {
@@ -609,11 +656,8 @@ namespace FTProject
 
                 // 自动开下一回合：间隔读常数表（Global.autoNextRoundDelayMs）
                 // 留出间隔是为了让玩家在两波之间布防/卖塔；设 0 则完全交给玩家手动点
-                float delay = Configs.Global != null ? Configs.Global.AutoNextRoundDelaySec : 0f;
                 if (delay > 0f)
                 {
-                    _autoNextTimer = delay;
-                    _autoNextTipAcc = 0f;   // 立刻提示一次
                     Debug.Log(string.Format("[Flow] 回合 {0} 完成，{1:F1} 秒后自动开始回合 {2}",
                         finishedIndex, delay, _roundCursor + 1));
                 }
@@ -645,7 +689,7 @@ namespace FTProject
                 Debug.Log("[Flow] 自动开始下一回合");
                 if (_hud != null)
                 {
-                    _hud.SetStartButtonLabel(Localization.Get("Next Round") ?? "下一回合");
+                    _hud.SetStartButtonLabel(Localization.Get("Next Wave") ?? "下一波");
                 }
                 OnStartRequest();
                 return;
@@ -659,16 +703,18 @@ namespace FTProject
                 int sec = Mathf.CeilToInt(_autoNextTimer);
                 if (_hud != null)
                 {
-                    _hud.SetStartButtonLabel(Localization.Get("Next Round ({0})", sec)
-                        ?? string.Format("下一回合({0})", sec));
+                    _hud.SetStartButtonLabel(Localization.Get("Next Wave ({0})", sec)
+                        ?? string.Format("下一波({0})", sec));
                 }
-                Tips(Localization.Get("Round complete, next round starts in {0}s (or tap Next Round)", sec)
-                    ?? string.Format("回合完成，{0} 秒后自动开始下一回合（也可直接点「下一回合」）", sec));
+                Tips(Localization.Get("Wave complete, next wave starts in {0}s", sec)
+                    ?? string.Format("本波完成，{0} 秒后自动开始下一波", sec));
             }
         }
 
         private void OnGameOver(bool victory)
         {
+            GameClock.StopLevelTimer();
+            if (_run != null && victory && !_settled) _run.debugOverride = true;
             _wave.Stop();
             State = GameFlowState.GameOver;
             // 结算即离场：倍速复位 ×1，结算界面下按钮也不再可用（HudView 会置灰）
@@ -689,6 +735,94 @@ namespace FTProject
 
             ShowClearPopup(victory);
         }
+        private LevelRatingResult EvaluateRun(bool victory)
+        {
+            if (_run == null) return LevelRatingEvaluator.Evaluate(_ratingProfile, null);
+            _run.victory = victory;
+            var pd = PlayerDataManager.Instance;
+            _run.hp = pd != null ? pd.Hp : 0; _run.maxHp = pd != null ? pd.MaxHp : 0;
+            _run.combatElapsedSeconds = GameClock.CombatElapsedSeconds;
+            _run.levelElapsedSeconds = GameClock.LevelElapsedSeconds;
+            return LevelRatingEvaluator.Evaluate(_ratingProfile, _run);
+        }
+        private void CompleteVictory()
+        {
+            if (_settled) return;
+            _settled = true;
+            GameClock.StopLevelTimer();
+            State = GameFlowState.GameOver;
+            var result = EvaluateRun(true);
+            int previousBest = SaveManager.Instance.GetStars(Level.Id);
+            bool saved = result.valid && SaveManager.Instance.RecordClear(Level.Id, result);
+            _pendingSaveResult = result.valid && !saved ? result : null;
+            _pendingResult = BuildClearInfo(true, result.stars, previousBest);
+            _pendingResult.ratingResult = result;
+            _pendingResult.progressSaved = saved;
+            _pendingResult.savePending = result.valid && !saved;
+            _pendingResult.newRecord = saved && result.stars > previousBest;
+            if (_pendingResult.savePending)
+            {
+                var reasons = new List<string>(result.reasons); reasons.Add("Record could not be saved; retry save"); result.reasons = reasons.ToArray();
+                Debug.LogWarning("[Save] Final checkpoint retained; retry result saving before leaving.");
+            }
+            EventDispatcher.TriggerEvent<int, int, int>(EventName.LevelClearEvent, Level.Id, result.stars, PlayerDataManager.Instance.Hp);
+            PlayerDataManager.Instance.Win();
+        }
+        public bool RetryPendingClearSave()
+        {
+            if (_pendingSaveResult == null || _pendingResult == null || Level == null) return false;
+            if (!SaveManager.Instance.RecordClear(Level.Id, _pendingSaveResult)) return false;
+            _pendingResult.progressSaved = true; _pendingResult.savePending = false;
+            _pendingResult.newRecord = _pendingResult.stars > _pendingResult.previousBest;
+            _pendingResult.ratingResult = LevelRatingEvaluator.Evaluate(_pendingSaveResult.profile, _pendingSaveResult.metrics);
+            _pendingSaveResult = null;
+            var view = UIManager.Instance.Open<LevelClearView>(LevelClearView.LogicalName, UILayout.NormalPanel);
+            if (view != null) view.Show(_pendingResult);
+            return true;
+        }
+        public void MarkDebugRun() { if (_run != null) _run.debugOverride = true; }
+        public void InvalidateRun(string reason)
+        {
+            if (_run != null) _run.statisticsValid = false;
+            GameClock.StopLevelTimer(); _wave.Stop();
+            Debug.LogError("[Rating] Formal run invalidated: " + reason);
+            State = GameFlowState.GameOver;
+            ShowClearPopup(false);
+        }
+        public void NotifyEnemySpawned(BaseEnemy enemy)
+        {
+            if (_run == null || State != GameFlowState.RoundRunning || enemy == null) return;
+            if (!_unresolvedEnemies.Add(enemy)) { _run.statisticsValid = false; return; }
+            _run.successfulSpawned++;
+            GameClock.SetCombatRunning(true);
+            if (_run.waves.Count > 0)
+            {
+                var wave = _run.waves[_run.waves.Count - 1]; wave.successfulSpawned++;
+                wave.peakAlive = Mathf.Max(wave.peakAlive, _unresolvedEnemies.Count);
+            }
+        }
+        private void OnRatedEnemyKilled(BaseEnemy enemy, int reward) { RecordEnemyOutcome(enemy, false, reward); }
+        private void OnRatedEnemyLeaked(BaseEnemy enemy, int damage) { RecordEnemyOutcome(enemy, true, 0); }
+        private void RecordEnemyOutcome(BaseEnemy enemy, bool leaked, int reward)
+        {
+            if (_run == null || enemy == null || !_unresolvedEnemies.Remove(enemy)) return;
+            // Read identity before ReachedEnd recycles the object; HP is read only at final settlement.
+            int id = enemy.Config != null ? enemy.Config.Id : 0;
+            bool boss = _ratingProfile != null && _ratingProfile.bossVariantIds.Contains(id);
+            bool critical = _ratingProfile != null && _ratingProfile.criticalVariantIds.Contains(id);
+            if (leaked) { _run.leaked++; if (boss) _run.bossLeaked++; if (critical) _run.criticalLeaked++; }
+            else _run.killed++;
+            if (_run.waves.Count > 0)
+            {
+                var wave = _run.waves[_run.waves.Count - 1];
+                if (leaked) { wave.leaked++; if (boss) wave.bossLeaked++; if (critical) wave.criticalLeaked++; }
+                else { wave.killed++; wave.killGold += reward; }
+                // The last planned entity has settled; death animation recycling does not count.
+                if (wave.successfulSpawned == wave.expected && wave.killed + wave.leaked == wave.expected) GameClock.SetCombatRunning(false);
+            }
+        }
+        private void OnApplicationPause(bool paused) { GameClock.SetBackground(paused); }
+        private void OnApplicationFocus(bool focused) { GameClock.SetBackground(!focused); }
 
         // ------------------------------------------------------------------
         // 关卡结算弹窗
@@ -709,23 +843,14 @@ namespace FTProject
             }
             else
             {
-                // 走到这里只有两种情况：
-                //   ① 失败 —— 本就没有星级，按当前状态现场拼一份；
-                //   ② 调试键 F2 强制获胜 —— 没经过 FinishRound，_pendingResult 是空的。
-                // 为了让 F2 也能真实检验"结算 + 记录星级 + 重进游戏读回"这条链路，
-                // 这里对胜利补做一次与正式通关完全相同的结算，而不是只画个空壳界面。
-                PlayerDataManager pd = PlayerDataManager.Instance;
-                int stars = victory && pd != null
-                    ? SaveManager.EvaluateStars(pd.Hp, pd.MaxHp)
-                    : 0;
+                // Failure and debug previews use the same evaluator without persisting progress.
                 int previousBest = Level != null ? SaveManager.Instance.GetStars(Level.Id) : 0;
-                if (victory && Level != null)
-                {
-                    SaveManager.Instance.RecordClear(Level.Id, stars, pd.Hp);
-                }
-                info = BuildClearInfo(victory, stars, previousBest);
+                LevelRatingResult result = EvaluateRun(victory);
+                info = BuildClearInfo(victory, result.stars, previousBest);
+                info.ratingResult = result;
             }
-            _pendingResult = null;
+            // Keep the same frozen result if a duplicate event reopens the popup.
+            _pendingResult = info;
 
             LevelClearView view = UIManager.Instance.Open<LevelClearView>(
                 LevelClearView.LogicalName, UILayout.NormalPanel);
@@ -745,8 +870,8 @@ namespace FTProject
             info.victory = victory;
             info.levelId = Level != null ? Level.Id : 0;
             info.levelName = Level != null ? Localization.LevelName(Level.Id, Level.Name) : null;
-            info.stars = Mathf.Clamp(stars, 0, 3);
-            info.previousBest = Mathf.Clamp(previousBest, 0, 3);
+            info.stars = Mathf.Clamp(stars, 0, LevelRatingEvaluator.MaxStars);
+            info.previousBest = Mathf.Clamp(previousBest, 0, LevelRatingEvaluator.MaxStars);
             // 只有"打得比历史最好还好"才算刷新记录；平了不算
             info.newRecord = victory && info.stars > info.previousBest;
             info.hp = pd != null ? pd.Hp : 0;
@@ -797,7 +922,7 @@ namespace FTProject
         /// <summary>把当前局内状态写进快照并落盘。</summary>
         public void SaveSnapshotNow()
         {
-            if (Level == null)
+            if (Level == null || _run == null || State == GameFlowState.RoundRunning || State == GameFlowState.GameOver)
             {
                 return;
             }
@@ -808,6 +933,14 @@ namespace FTProject
             snap.gold = PlayerDataManager.Instance.Gold;
             snap.hp = PlayerDataManager.Instance.Hp;
             snap.maxHp = PlayerDataManager.Instance.MaxHp;
+            snap.formatVersion = 2;
+            snap.ratingProfile = _ratingProfile != null ? _ratingProfile.Clone() : null;
+            _run.combatElapsedSeconds = GameClock.CombatElapsedSeconds;
+            _run.levelElapsedSeconds = GameClock.LevelElapsedSeconds;
+            _run.hp = snap.hp; _run.maxHp = snap.maxHp;
+            snap.metrics = _run.Clone();
+            snap.levelTimerStarted = GameClock.IsLevelTimerRunning;
+            snap.autoNextRemainingSeconds = _autoNextTimer;
 
             System.Collections.Generic.IList<BaseTower> towers = TowerManager.Instance.Towers;
             for (int i = 0; i < towers.Count; i++)
@@ -822,6 +955,7 @@ namespace FTProject
                 ts.col = t.Cell.Col;
                 ts.type = t.Config.Type;
                 ts.level = t.Config.Level;
+                t.CaptureCheckpointState(ts);
                 snap.towers.Add(ts);
             }
 
@@ -831,12 +965,8 @@ namespace FTProject
         /// <summary>
         /// 尝试用快照恢复本关进度。
         ///
-        /// 【为什么 roundCursor &lt;= 0 就跳过】还没打完第一回合时，"继续"和"重开"没有区别，
-        /// 而重开的状态更干净（不会有半截的塔）。这种时候宁可让玩家从头开始。
-        ///
-        /// 【旧存档兼容（2026-10-14 三塔型收敛）】快照里若存有已被删除的塔型
-        /// （旧穿透 4 / 激光 5），GetTowerByTypeAndLevel 会报一条错误并返回 null，
-        /// 对应的塔被**跳过**：不崩溃、不返还金币，其余塔与回合进度照常恢复。
+        /// Restore the complete checkpoint, including statistics and fractional clocks.
+        /// Any incompatible content or missing tower invalidates the entire checkpoint.
         /// </summary>
         private void TryRestoreSnapshot(int levelId)
         {
@@ -845,24 +975,46 @@ namespace FTProject
                 return;
             }
             LevelSnapshot snap = SaveManager.Instance.Snapshot;
-            if (snap == null || snap.levelId != levelId || snap.roundCursor <= 0)
+            if (snap == null || snap.levelId != levelId)
             {
                 return;
             }
+            string invalidReason;
+            if (!LevelCheckpointValidator.IsCompatible(snap, _ratingProfile, _roundIds.Count, out invalidReason) || SaveManager.Instance.IsRunCommitted(levelId, snap.metrics != null ? snap.metrics.runId : null))
+            {
+                Debug.LogWarning("[Rating] Checkpoint discarded; restart current level: " + invalidReason);
+                Tips(Localization.Get("Checkpoint incompatible: restart level") ?? "Checkpoint incompatible: restart level");
+                SaveManager.Instance.ClearSnapshot(true);
+                return;
+            }
 
-            PlayerDataManager.Instance.RestoreState(levelId, snap.gold, snap.hp, snap.maxHp);
+            PlayerDataManager.Instance.RestoreState(levelId, snap.gold, snap.hp, snap.maxHp, snap.metrics.killed, snap.metrics.leaked);
 
             int built = 0;
             for (int i = 0; i < snap.towers.Count; i++)
             {
                 TowerSnapshot ts = snap.towers[i];
-                if (TowerManager.Instance.RestoreTower(ts.type, ts.level, ts.row, ts.col) != null)
+                BaseTower restored = ts != null ? TowerManager.Instance.RestoreTower(ts.type, ts.level, ts.row, ts.col) : null;
+                if (restored != null && restored.RestoreCheckpointState(ts))
                 {
                     built++;
                 }
+                else
+                {
+                    // Never certify a partially restored layout. Reset the whole checkpoint.
+                    TowerManager.Instance.ClearAll();
+                    PlayerDataManager.Instance.InitFromLevel(Level);
+                    SaveManager.Instance.ClearSnapshot(true);
+                    AStarManager.Instance.RequestRefresh();
+                    Debug.LogWarning("[Rating] Tower restoration failed: checkpoint discarded, level restarted");
+                    return;
+                }
             }
 
-            _roundCursor = Mathf.Clamp(snap.roundCursor, 0, Mathf.Max(0, _roundIds.Count - 1));
+            _roundCursor = snap.roundCursor;
+            _run = snap.metrics.Clone();
+            GameClock.RestoreTimers(_run.combatElapsedSeconds, _run.levelElapsedSeconds, snap.levelTimerStarted);
+            _autoNextTimer = snap.autoNextRemainingSeconds; _autoNextTipAcc = 0f;
 
             // 【必须重算路径】恢复出来的塔会重新设置 A* 的墙标记，地图阻挡关系变了，
             // 不重算的话怪物会按"没塔时"的旧路径走，一路穿塔而过。
@@ -877,8 +1029,8 @@ namespace FTProject
 
             Debug.Log(string.Format("[Flow] 已恢复第 {0} 关的局内快照：回合进度 {1}/{2}，塔 {3} 座",
                 levelId, _roundCursor, _roundIds.Count, built));
-            Tips(Localization.Get("Resumed from last progress (next round: {0})", _roundCursor + 1)
-                ?? string.Format("已从上次进度继续（下一回合：第 {0} 回合）", _roundCursor + 1));
+            Tips(Localization.Get("Resumed from checkpoint (next wave: {0})", _roundCursor + 1)
+                ?? string.Format("已从完整检查点继续（下一波：第 {0} 波）", _roundCursor + 1));
         }
 
         // ------------------------------------------------------------------
@@ -954,6 +1106,7 @@ namespace FTProject
             //   玩家进新关后会发现「开始」按钮点不动，第一回合永远开不了。
             UIManager.Instance.Close(HudView.LogicalName);
             _hud = null;
+            State = GameFlowState.None;
         }
 
         /// <summary>切到指定关卡（或重开同一关）。</summary>
@@ -963,10 +1116,14 @@ namespace FTProject
             {
                 return;
             }
+            if (SaveManager.Instance.HasSnapshot && SaveManager.Instance.Snapshot.levelId != levelId && !SaveManager.Instance.TryClearSnapshot())
+            {
+                Tips(Localization.Get("Checkpoint could not be cleared; original progress preserved") ?? "无法清除续玩记录，已保留原进度");
+                return;
+            }
             TeardownLevel();
             UIManager.Instance.Close(SelectView.LogicalName);
-            // 开新局 → 旧快照作废，否则下次进关会莫名其妙"接着上一局"
-            SaveManager.Instance.ClearSnapshot(true);
+            // Selection resumes the compatible checkpoint for the same level.
             BeginLevelWithMask(levelId);
         }
 
@@ -995,12 +1152,20 @@ namespace FTProject
             {
                 return;
             }
+            if (_pendingSaveResult != null && !RetryPendingClearSave()) return;
+            if (!SaveManager.Instance.TryClearSnapshot())
+            {
+                Tips(Localization.Get("Checkpoint could not be cleared; original progress preserved") ?? "无法清除续玩记录，已保留原进度");
+                return;
+            }
             StartLevel(Level.Id);
         }
 
         /// <summary>退出当前对局，回到关卡选择。</summary>
         public void QuitToSelect()
         {
+            if (_pendingSaveResult != null && !RetryPendingClearSave()) return;
+            SaveSnapshotNow();
             TeardownLevel();
             State = GameFlowState.None;
             // 回选关 = 离场：倍速复位 ×1（重开/下一关走 StartLevel→InitLevel，那里也会复位）
@@ -1252,6 +1417,7 @@ namespace FTProject
             }
             else if (Input.GetKeyDown(KeyCode.F2))
             {
+                MarkDebugRun();
                 PlayerDataManager.Instance.Win();
             }
             else if (Input.GetKeyDown(KeyCode.F3))

@@ -20,6 +20,7 @@ M3-2：8 关战役的完整编排（TBEnemyList 40 波 + TBRoundData 40 回合 +
   L1 = 1~5, L2 = 6~10, …, L8 = 36~40。关卡 N 用棋盘 N。
 """
 import os
+raise SystemExit('LEGACY pre-20x20 generator is retired. Use balance_pipeline.py; do not overwrite the new campaign.')
 import shutil
 import sys
 import datetime

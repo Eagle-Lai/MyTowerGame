@@ -34,6 +34,7 @@ namespace FTProject
         private readonly object _gate = new object();
         private bool _open;
         private int _txDepth;
+        private bool _txRollbackOnly;
         private string _path;
         private string _version;
 
@@ -272,6 +273,7 @@ namespace FTProject
                     // IMMEDIATE：立刻拿写锁，避免在"读→改→写"的临界区里
                     // 到提交那一刻才发现拿不到锁而失败（那会让整个事务白做）。
                     ExecInner("BEGIN IMMEDIATE;");
+                    _txRollbackOnly = false;
                 }
                 _txDepth++;
                 return new SqliteTransaction(this);
@@ -287,18 +289,22 @@ namespace FTProject
                 {
                     return;
                 }
+                if (!commit) _txRollbackOnly = true;
                 _txDepth--;
                 if (_txDepth > 0)
                 {
                     return;
                 }
+                bool shouldCommit = commit && !_txRollbackOnly;
                 try
                 {
-                    ExecInner(commit ? "COMMIT;" : "ROLLBACK;");
+                    ExecInner(shouldCommit ? "COMMIT;" : "ROLLBACK;");
+                    if (commit && !shouldCommit) throw new DatabaseException("An inner transaction rolled back; outer commit was rejected", "COMMIT", 0);
                 }
                 catch (Exception ex)
                 {
-                    Debug.LogError("[DB] " + (commit ? "COMMIT" : "ROLLBACK") + " 失败：" + ex.Message);
+                    if (shouldCommit) { try { ExecInner("ROLLBACK;"); } catch (Exception) { } }
+                    throw new DatabaseException("Transaction completion failed: " + ex.Message, shouldCommit ? "COMMIT" : "ROLLBACK", 0, ex);
                 }
             }
         }

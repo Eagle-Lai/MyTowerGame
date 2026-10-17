@@ -25,8 +25,17 @@ namespace FTProject
         /// <summary>关卡展示名（取自配置表，失败时也可能为空）</summary>
         public string levelName;
 
-        /// <summary>本次获得的星级 0~3（失败恒为 0）</summary>
+        /// <summary>本次获得的星级 0~5（失败恒为 0）</summary>
         public int stars;
+
+        /// <summary>唯一评分器产生的本局证据与原因。界面只展示，不重新评星。</summary>
+        public LevelRatingResult ratingResult;
+
+        /// <summary>正式成绩已成功写入存储后才允许展示新纪录或前往下一关。</summary>
+        public bool progressSaved;
+
+        /// <summary>有效成绩等待重试保存；重玩按钮在此状态下重试保存。</summary>
+        public bool savePending;
 
         /// <summary>本局**之前**的历史最高星级，用于对比展示</summary>
         public int previousBest;

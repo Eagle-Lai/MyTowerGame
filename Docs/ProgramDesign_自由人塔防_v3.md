@@ -1,5 +1,7 @@
 # 《自由人塔防》程序案（v3.0）
 
+> **2026-10-17 实施版本说明**：本文保留为 v3.0 历史架构与阶段计划。20 关 × 20 波、八档难度、五星评价、续玩校验和配置工作台已按 [`LevelBalance_Redesign_Executable_Prompt.md`](LevelBalance_Redesign_Executable_Prompt.md) 实施。当前数值唯一权威是 `Luban/BalanceDesign/balance_design.json`，数据管线与验证证据见 [`LevelBalance_Data_Design_And_Evidence.md`](LevelBalance_Data_Design_And_Evidence.md)，运行时与存档见 [`LevelRating_Runtime_And_Save.md`](LevelRating_Runtime_And_Save.md)。下文引用旧策划案为“唯一来源”的表述仅描述当时版本，不再覆盖新管线、20 波和五星规则。
+
 > 配套文档：`Docs/GameDesign_自由人塔防_v3.md`（策划案，数值与规则的唯一来源）
 > 工程：本工程　Unity 2022.3.62f3c1　|　目标平台：Android（minSdk 22 / IL2CPP / arm64-v8a + armeabi-v7a）
 > 基线：2026-10-08 工程实测（89 运行时脚本 / 21 编辑器工具 / 23 Luban 生成文件，namespace 分别为 `FTProject` / `FTProject.EditorTools` / `cfg`）

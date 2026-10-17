@@ -36,7 +36,7 @@ namespace FTProject
         /// <remarks>
         /// v2（UI 补全 B4）：level_progress 增加 best_time_ms（最快通关的游戏内毫秒数）。
         /// </remarks>
-        public const int CurrentVersion = 2;
+        public const int CurrentVersion = 3;
 
         public const string MetaSchemaVersion = "schema_version";
         public const string MetaCreatedAt = "created_at";
@@ -84,6 +84,7 @@ namespace FTProject
             "  clear_count  TEXT," +
             "  last_play_at INTEGER," +
             "  best_time_ms TEXT," +
+            "  rating_payload TEXT," +
             "  updated_at   INTEGER" +
             ");",
 
@@ -104,6 +105,7 @@ namespace FTProject
             "  gold         INTEGER," +
             "  hp           INTEGER," +
             "  max_hp       INTEGER," +
+            "  rating_payload TEXT," +
             "  updated_at   INTEGER" +
             ");",
 
@@ -196,6 +198,10 @@ namespace FTProject
                     // 密文列 → TEXT；老行该列为 NULL，读取端 UnprotectInt(null) 回落 0（= 无记录）。
                     case 1:
                         db.Execute("ALTER TABLE level_progress ADD COLUMN best_time_ms TEXT;");
+                        break;
+                    case 2:
+                        db.Execute("ALTER TABLE level_progress ADD COLUMN rating_payload TEXT;");
+                        db.Execute("ALTER TABLE level_snapshot ADD COLUMN rating_payload TEXT;");
                         break;
 
                     default:

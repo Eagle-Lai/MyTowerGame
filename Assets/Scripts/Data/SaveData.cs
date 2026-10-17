@@ -12,7 +12,7 @@ namespace FTProject
     public class LevelProgress
     {
         public int levelId;
-        /// <summary>星级 0~3；0 表示未通关</summary>
+        /// <summary>当前完整评级版本的星级 0~5；0 表示本版尚未评定。</summary>
         public int stars;
         /// <summary>历史最好成绩（剩余生命），仅用于展示</summary>
         public int bestHpLeft;
@@ -24,8 +24,20 @@ namespace FTProject
         /// 作为"最佳记录"才公平；用墙钟时间会让高倍速玩家的记录失真。
         /// </summary>
         public int bestTimeMs;
+        public int bestCombatTimeMs;
+        public string ratingVersionKey;
+        public LevelRatingResult bestRating;
+        public List<LegacyLevelProgress> legacy = new List<LegacyLevelProgress>();
+        public List<string> committedRunIds = new List<string>();
+        public bool Cleared { get { return stars > 0 || clearCount > 0 || (legacy != null && legacy.Exists(p => p.stars > 0 || p.clearCount > 0)); } }
+    }
 
-        public bool Cleared { get { return stars > 0; } }
+    [Serializable]
+    public class LegacyLevelProgress
+    {
+        public string versionKey;
+        public int stars, bestTimeMs, bestCombatTimeMs, bestHpLeft, clearCount;
+        public LevelRatingResult bestRating;
     }
 
     /// <summary>玩家设置。目前只有音量、静音、语言。</summary>
@@ -57,6 +69,23 @@ namespace FTProject
         public int col;
         public int type;
         public int level;
+        public bool runtimeStateSaved;
+        public float fireTimer, searchTimer, recoilTimer, auraPulseTimer;
+        public UnityEngine.Vector2 lastDirection;
+        public bool barrelPoseSaved, barrelBaseCached;
+        public UnityEngine.Vector3 barrelLocalPosition, barrelBasePosition;
+        public UnityEngine.Quaternion barrelLocalRotation;
+
+        public bool HasValidRuntimeState()
+        {
+            if (!runtimeStateSaved || !Finite(fireTimer) || fireTimer < 0f || !Finite(searchTimer) || searchTimer < 0f || !Finite(recoilTimer) || recoilTimer < 0f || !Finite(auraPulseTimer) || auraPulseTimer < 0f || !Finite(lastDirection.x) || !Finite(lastDirection.y)) return false;
+            if (!barrelPoseSaved) return !barrelBaseCached;
+            if (!Finite(barrelLocalPosition) || !Finite(barrelBasePosition) || !Finite(barrelLocalRotation.x) || !Finite(barrelLocalRotation.y) || !Finite(barrelLocalRotation.z) || !Finite(barrelLocalRotation.w)) return false;
+            float norm = barrelLocalRotation.x * barrelLocalRotation.x + barrelLocalRotation.y * barrelLocalRotation.y + barrelLocalRotation.z * barrelLocalRotation.z + barrelLocalRotation.w * barrelLocalRotation.w;
+            return Finite(norm) && System.Math.Abs(norm - 1f) < 0.001f;
+        }
+        private static bool Finite(float value) { return !float.IsNaN(value) && !float.IsInfinity(value); }
+        private static bool Finite(UnityEngine.Vector3 value) { return Finite(value.x) && Finite(value.y) && Finite(value.z); }
     }
 
     /// <summary>
@@ -75,6 +104,11 @@ namespace FTProject
         public int hp;
         public int maxHp;
         public List<TowerSnapshot> towers = new List<TowerSnapshot>();
+        public int formatVersion;
+        public LevelRatingProfile ratingProfile;
+        public LevelRunMetrics metrics;
+        public bool levelTimerStarted;
+        public float autoNextRemainingSeconds;
     }
 
     /// <summary>
@@ -86,7 +120,7 @@ namespace FTProject
     public class SaveData
     {
         /// <summary>当前存档格式版本。改动字段语义时必须 +1。</summary>
-        public const int CurrentVersion = 1;
+        public const int CurrentVersion = 2;
 
         public int version = CurrentVersion;
         public List<LevelProgress> levels = new List<LevelProgress>();

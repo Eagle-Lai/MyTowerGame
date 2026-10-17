@@ -1,5 +1,7 @@
 # 单机 2D 塔防《自由人塔防》设计与实施文档
 
+> **历史档案（2026-10-17 标记）**：本文为 2026-09-26 的 v2.1 记录，保留用于理解演进过程。当前 20 关 × 20 波、八档难度、塔与经济、怪物变体、五星评价及配置工作台，以 [`LevelBalance_Redesign_Executable_Prompt.md`](LevelBalance_Redesign_Executable_Prompt.md)、[`LevelBalance_Data_Design_And_Evidence.md`](LevelBalance_Data_Design_And_Evidence.md) 和实际生成配置为准；本文的关卡数、回合数、评分和旧数值不再用于修改当前数据。
+
 > 目标定位：实现一款**单机 2D** 版、核心机制对标《坚守阵地》（Fieldrunners）的塔防游戏。
 > 文档版本：**v2.1**（2D 重构版 · SpriteRenderer 路线修正）　|　编制日期：2026-09-26
 > 工程路径：本工程　|　主场景：`Assets/Scenes/main.unity`

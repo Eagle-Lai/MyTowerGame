@@ -8,7 +8,7 @@
 
 
 namespace cfg
-{ 
+{
     [System.Flags]
     public enum EquipPosition
     {
@@ -26,4 +26,4 @@ namespace cfg
         weapon = 30,
     }
 
-} 
+}

@@ -26,17 +26,40 @@ namespace FTProject
     {
         /// <summary>数据库文件名（放在 Application.persistentDataPath 下）</summary>
         internal const string DatabaseFileName = "freetower.db";
+        internal static string TestContextId;
+        internal static string ActiveTestContextId
+        {
+            get
+            {
+                if (!string.IsNullOrEmpty(TestContextId)) return TestContextId;
+#if UNITY_EDITOR
+                return UnityEditor.SessionState.GetString("FT.Balance.TestStorageContext", "");
+#else
+                return null;
+#endif
+            }
+        }
+        internal static string StorageDirectory
+        {
+            get
+            {
+                if (string.IsNullOrEmpty(ActiveTestContextId)) return Application.persistentDataPath;
+                string safe = System.Text.RegularExpressions.Regex.Replace(ActiveTestContextId, "[^A-Za-z0-9_-]", "_");
+                return Path.Combine(Application.persistentDataPath, "BalanceTests", safe);
+            }
+        }
 
         /// <summary>数据库完整路径（排查问题时打印它最快）</summary>
         internal static string DatabasePath
         {
-            get { return Path.Combine(Application.persistentDataPath, DatabaseFileName); }
+            get { return Path.Combine(StorageDirectory, DatabaseFileName); }
         }
 
         /// <summary>创建存档存储。**永不抛异常** —— 最差情况也会返回一个可用的 JSON 后端。</summary>
         internal static ISaveStorage Create()
         {
             ICryptoService crypto = CreateCrypto();
+            Directory.CreateDirectory(StorageDirectory);
 
             // ② 优先 SQLite
             string dbPath = DatabasePath;
@@ -62,7 +85,7 @@ namespace FTProject
             }
 
             // ③ 回退
-            JsonSaveStorage fallback = new JsonSaveStorage(crypto);
+            JsonSaveStorage fallback = new JsonSaveStorage(crypto, StorageDirectory);
             fallback.Initialize();
             return fallback;
         }

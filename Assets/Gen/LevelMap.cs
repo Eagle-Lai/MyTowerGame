@@ -12,11 +12,11 @@ using SimpleJSON;
 
 
 namespace cfg
-{ 
-
-public sealed partial class LevelMap :  Bright.Config.BeanBase 
 {
-    public LevelMap(JSONNode _json) 
+
+public sealed partial class LevelMap :  Bright.Config.BeanBase
+{
+    public LevelMap(JSONNode _json)
     {
         { if(!_json["id"].IsNumber) { throw new SerializationException(); }  Id = _json["id"]; }
         { if(!_json["levelId"].IsNumber) { throw new SerializationException(); }  LevelId = _json["levelId"]; }
@@ -27,7 +27,7 @@ public sealed partial class LevelMap :  Bright.Config.BeanBase
         PostInit();
     }
 
-    public LevelMap(int id, int levelId, int cols, int rows, System.Collections.Generic.List<string> cells, string desc ) 
+    public LevelMap(int id, int levelId, int cols, int rows, System.Collections.Generic.List<string> cells, string desc )
     {
         this.Id = id;
         this.LevelId = levelId;
@@ -91,7 +91,7 @@ public sealed partial class LevelMap :  Bright.Config.BeanBase
         + "Desc:" + Desc + ","
         + "}";
     }
-    
+
     partial void PostInit();
     partial void PostResolve();
 }

@@ -102,6 +102,16 @@ namespace FTProject
         {
             _title = FindText("Panel/Title");
             _stats = FindText("Panel/Stats");
+            if (_stats != null)
+            {
+                _stats.enableWordWrapping = true;
+                _stats.enableAutoSizing = true;
+                _stats.fontSizeMin = 20f;
+                _stats.fontSizeMax = 32f;
+                Vector2 size = _stats.rectTransform.sizeDelta;
+                size.y = Mathf.Max(size.y, 130f);
+                _stats.rectTransform.sizeDelta = size;
+            }
 
             _upgradeBtn = FindButton("Panel/UpgradeBtn");
             _upgradeLabel = FindText("Panel/UpgradeBtn/Label");
@@ -250,7 +260,14 @@ namespace FTProject
             SetText(_title, string.Format("{0}  Lv.{1}", cfg.DisplayName, cfg.Level));
             // 带上 DPS：升级值不值得，玩家看"攻击力"是看不出来的，
             // 而 power / CD 才是这条升级链真正在卖的东西。
-            SetText(_stats, Localization.Get("ATK {0}  RNG {1}  SPD {2}s  DPS {3}",
+            if (cfg.IsSlowAura)
+            {
+                SetText(_stats, Localization.Get("Slow {0:P0}  Range {1}  Refresh {2:0.00}s  DPS 0",
+                        cfg.EffectValue, cfg.RadiusGrid, cfg.CooldownSec)
+                    ?? string.Format("减速 {0:P0}   覆盖 {1} 格   刷新 {2:0.00}s   DPS 0",
+                        cfg.EffectValue, cfg.RadiusGrid, cfg.CooldownSec));
+            }
+            else SetText(_stats, Localization.Get("ATK {0}  RNG {1}  SPD {2}s  DPS {3}",
                     cfg.Power, cfg.RadiusGrid, cfg.CooldownSec, cfg.Power / cfg.CooldownSec)
                 ?? string.Format("攻击 {0:0.#}   射程 {1:0.#} 格   攻速 {2:0.00}s   DPS {3:0.#}",
                     cfg.Power, cfg.RadiusGrid, cfg.CooldownSec, cfg.Power / cfg.CooldownSec));

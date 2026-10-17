@@ -46,6 +46,23 @@ namespace FTProject
             flowManager.enemyRoot = enemyRoot;
             flowManager.bulletRoot = bulletRoot;
 
+            StartCoroutine(EnsureReporterWhenResourcesReady());
+        }
+
+        private System.Collections.IEnumerator EnsureReporterWhenResourcesReady()
+        {
+            // Direct main-scene entry initializes the resource loader asynchronously.
+            // Reporter.Awake loads its icons immediately, so wait for that contract first.
+            double deadline = Time.realtimeSinceStartupAsDouble + 120d;
+            while (!ResLoader.Instance.IsReady)
+            {
+                if (Time.realtimeSinceStartupAsDouble >= deadline)
+                {
+                    Debug.LogError("[Scene] Reporter 初始化超时：资源系统 120 秒内未就绪。请检查此前的资源启动错误。");
+                    yield break;
+                }
+                yield return null;
+            }
             EnsureReporter();
         }
 
@@ -86,13 +103,17 @@ namespace FTProject
             Reporter.ImageLoader = LoadReporterIcon;
             Reporter.ScrollerSkinLoader = LoadReporterScrollerSkin;
 
-            gameObject.AddComponent<Reporter>();
             // 原版 Reporter prefab 同一物体上自带 ReporterMessageReceiver
             // （OnPreStart 按分辨率调面板尺寸 + OnShow/OnHide/OnLog 用户钩子）。
             // 动态挂载时漏掉它，SendMessage("OnPreStart") 等会报 "no receiver" 警告
             // （恢复原版契约；OnLog 一侧的死循环隐患另在 Reporter.cs 用
             // DontRequireReceiver 釜底抽薪）。
-            gameObject.AddComponent<ReporterMessageReceiver>();
+            if (GetComponent<ReporterMessageReceiver>() == null)
+            {
+                gameObject.AddComponent<ReporterMessageReceiver>();
+            }
+            // Reporter.Awake synchronously sends OnPreStart; its receiver must already exist.
+            gameObject.AddComponent<Reporter>();
             Debug.Log("[Scene] Reporter 调试控制台已挂载（画圈或双击调出）");
         }
 

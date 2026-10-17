@@ -282,6 +282,8 @@ namespace FTProject.EditorTools
         //   手工版把穿透(4)/激光(5) 撤下后，只删了这两颗、**没有重新居中**，
         //   三颗仍占原来五槽里的左三格（x = -548/-274/0）。生成器必须与磁盘一致，
         //   否则「全量重建」会把整排按钮挪位（表现为与手工版对不上）。
+        //   这是 16:9 基准槽位。窄安全区由 HudView.RefreshBottomLayout 整排右移，
+        //   保留与左下 SpeedButton 的间隔，不能只靠角落锚定判断控件不会相互遮挡。
         // 【y 已废弃（2026-10-16）】原 y=-427 是"画布中心锚"的坐标；多分辨率适配后
         //   改底边锚（见 CreateTowerButton / TowerBtnBottomY），此处的 y 不再被使用。
         // 【将来恢复穿透/激光】在这里按原槽位补回 (274, 0)/(548, 0) 两条，
@@ -308,7 +310,7 @@ namespace FTProject.EditorTools
         ///   放在底中会盖住中间的塔按钮，点击被 StartButton 抢走 —— 等于"减速塔点不了"。
         ///   因此把两颗按钮挪到塔栏**两侧的空白区**，纵向与塔栏同一基线。
         /// 【为什么改角落锚定】原"中心 ±786"在窄比例屏（4:3 逻辑画布约 1663 宽）会被裁掉 ~65px；
-        ///   改贴屏幕左右边缘后任意宽度都成立，"避开塔栏"的意图依然成立；
+        ///   改贴屏幕左右边缘避免出画；窄屏仍会靠近塔栏，由 HudView 的运行时布局避让；
         ///   挂载层已收进安全区，角落锚定还会自动避开刘海。
         ///   16:9 换算：原左缘 = 960−786−110 = 64、原下缘 = 77 → 像素级同款（基准零位移）。
         /// </summary>
@@ -454,6 +456,17 @@ namespace FTProject.EditorTools
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
             Debug.Log("[M0] MainMenuView 单独重建结果：\n" + report.Text);
+        }
+
+        /// <summary>只同步详情与结算的五星节点；已有手工布局和资源 GUID 保留。</summary>
+        [MenuItem("Tools/塔防/高级（单步重建）/同步五星详情与结算（保留其它布局）", false, 313)]
+        public static void SyncFiveStarViewsOnly()
+        {
+            EditorUtil.Report report = new EditorUtil.Report();
+            BuildLevelDetail(report);
+            BuildLevelClear(report);
+            AssetDatabase.SaveAssets();
+            Debug.Log("[RatingUI] 五星界面同步结果：\n" + report.Text);
         }
 
         /// <summary>
@@ -1025,7 +1038,7 @@ namespace FTProject.EditorTools
                 Vector2.zero, report, out panel, 0f);
             root.AddComponent<SelectView>();
 
-            CreateText(panel.transform, "Summary", "Cleared 0/8　★ 0/24",
+            CreateText(panel.transform, "Summary", "Cleared 0/20　★ 0/100",
                 new Vector2(0.5f, 1f), new Vector2(0f, -182f), new Vector2(1400f, 60f),
                 TextAnchor.MiddleCenter, SelectSummaryFontSize);
 
@@ -1512,6 +1525,7 @@ namespace FTProject.EditorTools
         private static void BuildLevelClear(EditorUtil.Report report)
         {
             report.Head("生成关卡结算界面 → " + LevelClearPath);
+            if (SyncExistingRatingView(LevelClearPath, false, report)) return;
             string extra;
             if (!EditorUtil.IsSafeToRebuild(LevelClearPath, LevelClearChildren, out extra))
             {
@@ -1523,40 +1537,51 @@ namespace FTProject.EditorTools
 
             GameObject panel;
             GameObject root = CreateDialogShell("LevelClearView", "Level Clear!",
-                new Vector2(820f, 720f), report, out panel, -1f, new Vector2(580f, 56f));
+                new Vector2(1040f, 980f), report, out panel, -1f, new Vector2(900f, 56f));
             root.AddComponent<LevelClearView>();
 
             CreateText(panel.transform, "LevelName", "Level 1",
-                new Vector2(0.5f, 0.5f), new Vector2(0f, 210f), new Vector2(560f, 48f),
+                new Vector2(0.5f, 0.5f), new Vector2(0f, 380f), new Vector2(900f, 48f),
                 TextAnchor.MiddleCenter, SmallFontSize);
 
             // 本次星级是弹窗的主角，字号明显大于其它文本
-            CreateText(panel.transform, "Stars", "☆☆☆",
-                new Vector2(0.5f, 0.5f), new Vector2(0f, 118f), new Vector2(560f, 96f),
+            CreateText(panel.transform, "Stars", "☆☆☆☆☆",
+                new Vector2(0.5f, 0.5f), new Vector2(0f, 298f), new Vector2(900f, 86f),
                 TextAnchor.MiddleCenter, StarFontSize);
 
             // 「本次」与「历史最高」并排 —— 存档里的星级是只升不降的合并值，
             // 不分开显示的话，二次通关打出低分反而会看到高分。
-            CreateText(panel.transform, "StarDetail", "This ☆☆☆　　Best ☆☆☆",
-                new Vector2(0.5f, 0.5f), new Vector2(0f, 42f), new Vector2(560f, 44f),
+            CreateText(panel.transform, "StarDetail", "This ☆☆☆☆☆　　Best ☆☆☆☆☆",
+                new Vector2(0.5f, 0.5f), new Vector2(0f, 220f), new Vector2(900f, 44f),
                 TextAnchor.MiddleCenter, SmallFontSize);
 
             // 新纪录提示：默认隐藏，由 LevelClearView.Show 依据数据决定是否点亮
             TextMeshProUGUI recordTip = CreateText(panel.transform, "RecordTip",
                 "★ New Record! Best stars improved",
-                new Vector2(0.5f, 0.5f), new Vector2(0f, -6f), new Vector2(560f, 40f),
+                new Vector2(0.5f, 0.5f), new Vector2(0f, 170f), new Vector2(900f, 32f),
                 TextAnchor.MiddleCenter, SmallFontSize);
             recordTip.gameObject.SetActive(false);
 
             CreateText(panel.transform, "Stats", "HP 0/0　　Kills 0　　Leaks 0",
-                new Vector2(0.5f, 0.5f), new Vector2(0f, -66f), new Vector2(560f, 46f),
+                new Vector2(0.5f, 0.5f), new Vector2(0f, 118f), new Vector2(900f, 44f),
                 TextAnchor.MiddleCenter, SmallFontSize);
+
+            CreateText(panel.transform, "RatingContext", string.Empty,
+                new Vector2(0.5f, 0.5f), new Vector2(0f, 60f), new Vector2(900f, 60f), TextAnchor.MiddleCenter, 24);
+            CreateText(panel.transform, "RatingTimes", string.Empty,
+                new Vector2(0.5f, 0.5f), new Vector2(0f, 0f), new Vector2(900f, 54f), TextAnchor.MiddleCenter, 24);
+            CreateText(panel.transform, "RatingReasons", string.Empty,
+                new Vector2(0.5f, 0.5f), new Vector2(0f, -120f), new Vector2(900f, 154f), TextAnchor.MiddleCenter, 24);
 
             // 按钮加宽到 420：Label 文案含关卡名（"下一关：雪原前哨"），
             // 而 CreateText 关掉了自动换行，320 宽会溢出到面板外。其余两枚回 320（规范口径）。
-            CreatePanelButton(panel.transform, "NextBtn", "Next Level", new Vector2(0f, -136f), 420f, true);
-            CreatePanelButton(panel.transform, "RetryBtn", "Replay", new Vector2(0f, -216f));
-            CreatePanelButton(panel.transform, "SelectBtn", "Back to Levels", new Vector2(0f, -290f));
+            CreatePanelButton(panel.transform, "NextBtn", "Next Level", new Vector2(0f, -255f), 560f, true);
+            CreatePanelButton(panel.transform, "RetryBtn", "Replay", new Vector2(0f, -335f), 420f);
+            CreatePanelButton(panel.transform, "SelectBtn", "Back to Levels", new Vector2(0f, -415f), 420f);
+
+            ConfigureRatingText(panel.transform.Find("RatingContext"), 24);
+            ConfigureRatingText(panel.transform.Find("RatingTimes"), 24);
+            ConfigureRatingText(panel.transform.Find("RatingReasons"), 24);
 
             GameObject saved = PrefabUtility.SaveAsPrefabAsset(root, LevelClearPath);
             Object.DestroyImmediate(root);
@@ -2374,6 +2399,7 @@ namespace FTProject.EditorTools
         private static void BuildLevelDetail(EditorUtil.Report report)
         {
             report.Head("生成本关关卡详情 → " + LevelDetailPath);
+            if (SyncExistingRatingView(LevelDetailPath, true, report)) return;
             string extra;
             if (!EditorUtil.IsSafeToRebuild(LevelDetailPath, LevelDetailChildren, out extra))
             {
@@ -2399,7 +2425,7 @@ namespace FTProject.EditorTools
 
             // 标题基线 y_svg 146 → 面板中心 y_svg 540 → Y=+394；48 号 → 盒中心 ≈ +377
             TextMeshProUGUI title = CreateText(panel.transform, "DetailTitle", "Level",
-                new Vector2(0.5f, 0.5f), new Vector2(0f, 411f), new Vector2(940f, 64f),
+                new Vector2(0.5f, 0.5f), new Vector2(0f, 411f), new Vector2(940f, 84f),
                 TextAnchor.MiddleCenter, 48);
             title.color = TextPrimary;
 
@@ -2409,12 +2435,16 @@ namespace FTProject.EditorTools
                 TextAnchor.MiddleCenter, 30);
             name.color = TextSecondary;
 
-            // 星级行：y_svg 218..285 → 中心 251 → Y=+289；三颗星 x = −100 / 0 / +100
-            CreateImageAt(panel.transform, "Star1", new Vector2(0.5f, 0.5f), new Vector2(-100f, 289f),
+            // 成绩固定五槽；战役阶段以 I—V 文本单独展示。
+            CreateImageAt(panel.transform, "Star1", new Vector2(0.5f, 0.5f), new Vector2(-160f, 289f),
                 new Vector2(62f, 62f), "UI_Star_On", new Color(1f, 0.788f, 0.302f, 1f), false);
-            CreateImageAt(panel.transform, "Star2", new Vector2(0.5f, 0.5f), new Vector2(0f, 289f),
+            CreateImageAt(panel.transform, "Star2", new Vector2(0.5f, 0.5f), new Vector2(-80f, 289f),
                 new Vector2(62f, 62f), "UI_Star_On", new Color(1f, 0.788f, 0.302f, 1f), false);
-            CreateImageAt(panel.transform, "Star3", new Vector2(0.5f, 0.5f), new Vector2(100f, 289f),
+            CreateImageAt(panel.transform, "Star3", new Vector2(0.5f, 0.5f), new Vector2(0f, 289f),
+                new Vector2(62f, 62f), "UI_Star_On", new Color(1f, 0.788f, 0.302f, 1f), false);
+            CreateImageAt(panel.transform, "Star4", new Vector2(0.5f, 0.5f), new Vector2(80f, 289f),
+                new Vector2(62f, 62f), "UI_Star_On", new Color(1f, 0.788f, 0.302f, 1f), false);
+            CreateImageAt(panel.transform, "Star5", new Vector2(0.5f, 0.5f), new Vector2(160f, 289f),
                 new Vector2(62f, 62f), "UI_Star_On", new Color(1f, 0.788f, 0.302f, 1f), false);
 
             TextMeshProUGUI best = CreateText(panel.transform, "BestStarText", string.Empty,
@@ -2427,43 +2457,150 @@ namespace FTProject.EditorTools
             // ⚠️ 刻意**逐个写开**而不是用循环：`check_ui_contract.py` 靠"字面量节点名"比对
             //   View 的 Find 路径，写成 `infoNames[i]` 会让这 6 个节点全部漏检。
             CreateText(panel.transform, "Info1", string.Empty,
-                new Vector2(0.5f, 0.5f), new Vector2(-225f, 131f), new Vector2(430f, 50f),
+                new Vector2(0.5f, 0.5f), new Vector2(-225f, 174f), new Vector2(430f, 50f),
                 TextAnchor.MiddleCenter, 28);
             CreateText(panel.transform, "Info2", string.Empty,
-                new Vector2(0.5f, 0.5f), new Vector2(225f, 131f), new Vector2(430f, 50f),
+                new Vector2(0.5f, 0.5f), new Vector2(225f, 174f), new Vector2(430f, 50f),
                 TextAnchor.MiddleCenter, 28);
             CreateText(panel.transform, "Info3", string.Empty,
-                new Vector2(0.5f, 0.5f), new Vector2(-225f, 69f), new Vector2(430f, 50f),
+                new Vector2(0.5f, 0.5f), new Vector2(-225f, 117f), new Vector2(430f, 50f),
                 TextAnchor.MiddleCenter, 28);
             CreateText(panel.transform, "Info4", string.Empty,
-                new Vector2(0.5f, 0.5f), new Vector2(225f, 69f), new Vector2(430f, 50f),
+                new Vector2(0.5f, 0.5f), new Vector2(225f, 117f), new Vector2(430f, 50f),
                 TextAnchor.MiddleCenter, 28);
             CreateText(panel.transform, "Info5", string.Empty,
-                new Vector2(0.5f, 0.5f), new Vector2(-225f, 7f), new Vector2(430f, 50f),
+                new Vector2(0.5f, 0.5f), new Vector2(-225f, 60f), new Vector2(430f, 50f),
                 TextAnchor.MiddleCenter, 28);
             CreateText(panel.transform, "Info6", string.Empty,
-                new Vector2(0.5f, 0.5f), new Vector2(225f, 7f), new Vector2(430f, 50f),
+                new Vector2(0.5f, 0.5f), new Vector2(225f, 60f), new Vector2(430f, 50f),
                 TextAnchor.MiddleCenter, 28);
+            ConfigureRatingText(panel.transform.Find("Info1"), 28);
+            ConfigureRatingText(panel.transform.Find("Info2"), 28);
+            ConfigureRatingText(panel.transform.Find("Info3"), 28);
+            ConfigureRatingText(panel.transform.Find("Info4"), 28);
+            ConfigureRatingText(panel.transform.Find("Info5"), 28);
+            ConfigureRatingText(panel.transform.Find("Info6"), 28);
 
             // 本关怪物预览
             TextMeshProUGUI enemyLabel = CreateText(panel.transform, "EnemyLabel", "Enemies in this level",
-                new Vector2(0.5f, 0.5f), new Vector2(0f, -16f), new Vector2(880f, 32f),
+                new Vector2(0.5f, 0.5f), new Vector2(0f, 0f), new Vector2(840f, 44f),
                 TextAnchor.MiddleCenter, 24);
             enemyLabel.color = TextSecondary;
 
             TextMeshProUGUI enemyRow = CreateText(panel.transform, "EnemyIcons", string.Empty,
-                new Vector2(0.5f, 0.5f), new Vector2(0f, -60f), new Vector2(880f, 64f),
+                new Vector2(0.5f, 0.5f), new Vector2(0f, -42f), new Vector2(840f, 58f),
                 TextAnchor.MiddleCenter, 24);
             enemyRow.color = TextPrimary;
 
-            CreatePanelButton(panel.transform, "PlayBtn", "Start Challenge", new Vector2(0f, -194f), 560f, true, 88f, 34);
-            CreatePanelButton(panel.transform, "ReplayBtn", "Restart", new Vector2(-160f, -288f), 300f, false, 76f, 30);
-            CreatePanelButton(panel.transform, "CloseBtn", "Back", new Vector2(160f, -288f), 300f, false, 76f, 30);
+            CreateText(panel.transform, "RatingTarget", string.Empty,
+                new Vector2(0.5f, 0.5f), new Vector2(0f, -133f), new Vector2(820f, 106f), TextAnchor.MiddleCenter, 24);
+            ConfigureRatingText(panel.transform.Find("RatingTarget"), 24);
+            CreatePanelButton(panel.transform, "PlayBtn", "Start Challenge", new Vector2(0f, -250f), 560f, true, 88f, 34);
+            CreatePanelButton(panel.transform, "ReplayBtn", "Restart", new Vector2(-160f, -344f), 300f, false, 76f, 30);
+            CreatePanelButton(panel.transform, "CloseBtn", "Back", new Vector2(160f, -344f), 300f, false, 76f, 30);
 
             EditorUtility.SetDirty(root);
             PrefabUtility.SaveAsPrefabAsset(root, LevelDetailPath);
             Object.DestroyImmediate(root);
-            report.Ok("LevelDetailView.prefab（TopBar / DetailTitle / LevelName / Star1-3 / BestStarText / Info1-6 / EnemyLabel+EnemyIcons / Play+Replay+Close）");
+            report.Ok("LevelDetailView.prefab（Star1-5 / 当前版本历史 / 战役阶段 / 预设 / RatingTarget）");
+        }
+
+        /// <summary>只同步评分所需节点，保留手工布局和所有额外子节点。</summary>
+        private static bool SyncExistingRatingView(string path, bool detail, EditorUtil.Report report)
+        {
+            if (AssetDatabase.LoadAssetAtPath<GameObject>(path) == null) return false;
+            GameObject root = PrefabUtility.LoadPrefabContents(path);
+            try
+            {
+                Transform panel = root.transform.Find("Panel");
+                if (panel == null)
+                {
+                    report.Error("评分界面缺少 Panel，已保留原资源：" + path);
+                    return true;
+                }
+                if (detail)
+                {
+                    for (int i = 1; i <= LevelRatingEvaluator.MaxStars; i++)
+                    {
+                        string name = "Star" + i;
+                        Transform star = panel.Find(name);
+                        if (star == null)
+                        {
+                            Transform template = panel.Find("Star1");
+                            if (template == null) throw new System.InvalidOperationException("缺少 Star1 模板：" + path);
+                            star = Object.Instantiate(template.gameObject, panel).transform;
+                            star.name = name;
+                        }
+                        SetRatingRect(star, new Vector2((i - 3) * 80f, 289f), new Vector2(62f, 62f));
+                    }
+                    for (int i = 1; i <= 6; i++)
+                    {
+                        Transform info = panel.Find("Info" + i);
+                        SetRatingRect(info, new Vector2(i % 2 == 1 ? -225f : 225f,
+                            174f - ((i - 1) / 2) * 57f), new Vector2(430f, 50f));
+                        ConfigureRatingText(info, 28);
+                    }
+                    SetRatingRect(panel.Find("DetailTitle"), new Vector2(0f, 411f), new Vector2(940f, 84f));
+                    SetRatingRect(panel.Find("EnemyLabel"), new Vector2(0f, 0f), new Vector2(840f, 44f));
+                    SetRatingRect(panel.Find("EnemyIcons"), new Vector2(0f, -42f), new Vector2(840f, 58f));
+                    SyncRatingText(panel, "RatingTarget", new Vector2(0f, -133f), new Vector2(820f, 106f), 24);
+                    SetRatingRect(panel.Find("PlayBtn"), new Vector2(0f, -250f), new Vector2(560f, 88f));
+                    SetRatingRect(panel.Find("ReplayBtn"), new Vector2(-160f, -344f), new Vector2(300f, 76f));
+                    SetRatingRect(panel.Find("CloseBtn"), new Vector2(160f, -344f), new Vector2(300f, 76f));
+                }
+                else
+                {
+                    ((RectTransform)panel).sizeDelta = new Vector2(1040f, 980f);
+                    SyncRatingText(panel, "LevelName", new Vector2(0f, 380f), new Vector2(900f, 48f), 30);
+                    SyncRatingText(panel, "Stars", new Vector2(0f, 298f), new Vector2(900f, 86f), StarFontSize);
+                    SyncRatingText(panel, "StarDetail", new Vector2(0f, 220f), new Vector2(900f, 44f), 28);
+                    SyncRatingText(panel, "RecordTip", new Vector2(0f, 170f), new Vector2(900f, 32f), 24);
+                    SyncRatingText(panel, "Stats", new Vector2(0f, 118f), new Vector2(900f, 44f), 26);
+                    SyncRatingText(panel, "RatingContext", new Vector2(0f, 60f), new Vector2(900f, 60f), 24);
+                    SyncRatingText(panel, "RatingTimes", new Vector2(0f, 0f), new Vector2(900f, 54f), 24);
+                    SyncRatingText(panel, "RatingReasons", new Vector2(0f, -120f), new Vector2(900f, 154f), 24);
+                    panel.Find("Stars").GetComponent<TMP_Text>().text = "☆☆☆☆☆";
+                    panel.Find("StarDetail").GetComponent<TMP_Text>().text = "This ☆☆☆☆☆　　Best ☆☆☆☆☆";
+                    SetRatingRect(panel.Find("NextBtn"), new Vector2(0f, -255f), new Vector2(560f, 72f));
+                    SetRatingRect(panel.Find("RetryBtn"), new Vector2(0f, -335f), new Vector2(420f, 72f));
+                    SetRatingRect(panel.Find("SelectBtn"), new Vector2(0f, -415f), new Vector2(420f, 72f));
+                }
+                PrefabUtility.SaveAsPrefabAsset(root, path);
+                report.Ok("已局部同步五星界面并保留其它手工节点：" + path);
+                return true;
+            }
+            finally { PrefabUtility.UnloadPrefabContents(root); }
+        }
+
+        private static void SetRatingRect(Transform node, Vector2 position, Vector2 size)
+        {
+            if (node == null) return;
+            RectTransform rect = node as RectTransform;
+            if (rect == null) return;
+            rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0.5f, 0.5f);
+            rect.anchoredPosition = position;
+            rect.sizeDelta = size;
+        }
+
+        private static void SyncRatingText(Transform panel, string name, Vector2 position, Vector2 size, int fontSize)
+        {
+            Transform node = panel.Find(name);
+            if (node == null)
+                node = CreateText(panel, name, string.Empty, new Vector2(0.5f, 0.5f), position, size,
+                    TextAnchor.MiddleCenter, fontSize).transform;
+            SetRatingRect(node, position, size);
+            ConfigureRatingText(node, fontSize);
+        }
+
+        private static void ConfigureRatingText(Transform node, int fontSize)
+        {
+            TMP_Text text = node != null ? node.GetComponent<TMP_Text>() : null;
+            if (text == null) return;
+            text.fontSize = fontSize;
+            text.enableAutoSizing = true;
+            text.fontSizeMin = Mathf.Min(20, fontSize);
+            text.fontSizeMax = fontSize;
+            text.enableWordWrapping = true;
         }
 
         private static void BuildSellConfirm(EditorUtil.Report report)

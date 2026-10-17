@@ -62,6 +62,14 @@ namespace FTProject
         private int[] _towerButtonTypes;
         private TMP_Text[] _towerPriceTexts;
 
+        // 保留 prefab 的 16:9 槽位；窄安全区只整体右移建塔栏，避开左下倍速按钮。
+        private RectTransform _hudRect;
+        private RectTransform _speedRect;
+        private RectTransform[] _towerButtonRects;
+        private Vector2[] _towerButtonLayoutOrigins;
+        private float _bottomLayoutWidth = -1f;
+        private const float BottomControlGap = 24f;
+
         /// <summary>当前选中的塔类型与等级（M2 起由按钮决定 type；level 固定 1 = 建造等级）</summary>
         private int _towerType = 1;
         private int _towerLevel = 1;
@@ -162,6 +170,8 @@ namespace FTProject
             _towerButtons = new Button[TowerNodeNames.Length];
             _towerButtonTypes = new int[TowerNodeNames.Length];
             _towerPriceTexts = new TMP_Text[TowerNodeNames.Length];
+            _towerButtonRects = new RectTransform[TowerNodeNames.Length];
+            _towerButtonLayoutOrigins = new Vector2[TowerNodeNames.Length];
             for (int i = 0; i < TowerNodeNames.Length; i++)
             {
                 int type = TowerNodeTypes[i];
@@ -171,6 +181,8 @@ namespace FTProject
                 _towerPriceTexts[i] = FindChildText(TowerNodeNames[i] + "/PriceText");
                 if (_towerButtons[i] != null)
                 {
+                    _towerButtonRects[i] = _towerButtons[i].transform as RectTransform;
+                    _towerButtonLayoutOrigins[i] = _towerButtonRects[i].anchoredPosition;
                     int captured = type;
                     _towerButtons[i].onClick.AddListener(delegate { OnClickTower(captured); });
 
@@ -199,6 +211,44 @@ namespace FTProject
             if (_introButton != null)
             {
                 _introButton.onClick.AddListener(OnClickIntro);
+            }
+
+            _hudRect = transform as RectTransform;
+            _speedRect = _speedButton != null ? _speedButton.transform as RectTransform : null;
+            RefreshBottomLayout();
+        }
+
+        private void OnRectTransformDimensionsChange()
+        {
+            RefreshBottomLayout();
+        }
+
+        private void RefreshBottomLayout()
+        {
+            if (_hudRect == null || _speedRect == null || _towerButtonRects == null ||
+                _towerButtonRects.Length == 0 || _towerButtonRects[0] == null)
+                return;
+
+            float width = _hudRect.rect.width;
+            if (width <= 0f || Mathf.Abs(width - _bottomLayoutWidth) < 0.01f)
+                return;
+            _bottomLayoutWidth = width;
+
+            // 角落锚的速度按钮会随屏幕变窄向建塔栏靠近。以父级实际宽度计算边界，
+            // 不用 Screen.width，避免 CanvasScaler 和安全区改变后再次互叠。
+            Rect parent = _hudRect.rect;
+            float speedRight = parent.xMin + width * _speedRect.anchorMin.x +
+                _speedRect.anchoredPosition.x + _speedRect.rect.width * (1f - _speedRect.pivot.x);
+            RectTransform first = _towerButtonRects[0];
+            float firstLeft = parent.xMin + width * first.anchorMin.x +
+                _towerButtonLayoutOrigins[0].x - first.rect.width * first.pivot.x;
+            float shift = Mathf.Max(0f, speedRight + BottomControlGap - firstLeft);
+            for (int i = 0; i < _towerButtonRects.Length; i++)
+            {
+                if (_towerButtonRects[i] == null) continue;
+                Vector2 position = _towerButtonLayoutOrigins[i];
+                position.x += shift;
+                _towerButtonRects[i].anchoredPosition = position;
             }
         }
 
@@ -368,6 +418,8 @@ namespace FTProject
 
         private void Update()
         {
+            // Canvas 初次布局可能晚于 Awake；宽度未变时不写 RectTransform。
+            RefreshBottomLayout();
             // 吞 click 的窗口只保留一帧：click 永远发生在松手当帧，下一帧必然已处理完
             _suppressTowerClick = false;
 
@@ -481,7 +533,9 @@ namespace FTProject
             _roundKey = key;
             _roundArg = arg;
             _roundFallback = fallbackFormat;
-            SetText(_roundText, Localization.Get(key, arg) ?? string.Format(fallbackFormat, arg));
+            LevelConfig level = Configs.GetLevel(PlayerDataManager.Instance.CurrentLevelId);
+            int total = level != null ? level.RoundCount : 20;
+            SetText(_roundText, Localization.Get(key, arg, total) ?? string.Format(fallbackFormat, arg, total));
             LanguageManager.ApplyFont(_roundText);
         }
 
@@ -509,6 +563,8 @@ namespace FTProject
             PlayerDataManager pd = PlayerDataManager.Instance;
             SetText(_goldText, pd.Gold.ToString());
             SetText(_hpText, string.Format("{0}/{1}", pd.Hp, pd.MaxHp));
+            GameFlowManager flow = GameFlowManager.Instance;
+            SetRoundTextLocalized("Wave {0}/{1}", flow != null ? flow.CurrentRoundIndex : 0, "第 {0}/{1} 波");
             RefreshTowerAffordability();
         }
 
@@ -573,23 +629,23 @@ namespace FTProject
 
         private void OnRoundStart(int roundIndex)
         {
-            SetRoundTextLocalized("Round {0}", roundIndex, "回合 {0}");
+            SetRoundTextLocalized("Wave {0}/{1}", roundIndex, "第 {0}/{1} 波");
         }
 
         private void OnWaveStart(int waveIndex)
         {
-            SetRoundTextLocalized("Wave {0}", waveIndex, "第 {0} 波");
+            // WaveStart 是 Round 内编组索引，不能覆盖本关的正式波次序号。
         }
 
         private void OnRoundClear(int roundIndex)
         {
-            SetRoundTextLocalized("Round {0} Clear", roundIndex, "回合 {0} 完成");
+            SetRoundTextLocalized("Wave {0}/{1} clear", roundIndex, "第 {0}/{1} 波完成");
             // 恢复"开始"按钮，让玩家推进到下一回合
             if (_startButton != null)
             {
                 _startButton.interactable = true;
             }
-            SetStartLabelLocalized("Next Round", "下一回合");
+            SetStartLabelLocalized("Next Wave", "下一波");
         }
 
         private void OnGameOver(bool victory)

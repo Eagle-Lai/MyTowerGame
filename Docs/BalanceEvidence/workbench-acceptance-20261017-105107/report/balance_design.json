@@ -1,0 +1,527 @@
+{
+  "schemaVersion": 1,
+  "balanceRevision": "balance-20x20-v1",
+  "ratingRevision": "five-stars-v1",
+  "selectedProfileId": "ACCEPTANCE_20261017105107",
+  "profiles": [
+    {
+      "id": "D01",
+      "name": "非常容易",
+      "revision": "1",
+      "ehpMultiplier": 0.5,
+      "speedMultiplier": 0.9,
+      "gapMultiplier": 1.1,
+      "goldMultiplier": 1.4
+    },
+    {
+      "id": "D02",
+      "name": "容易",
+      "revision": "1",
+      "ehpMultiplier": 0.65,
+      "speedMultiplier": 0.94,
+      "gapMultiplier": 1.07,
+      "goldMultiplier": 1.25
+    },
+    {
+      "id": "D03",
+      "name": "中等偏下",
+      "revision": "1",
+      "ehpMultiplier": 0.82,
+      "speedMultiplier": 0.97,
+      "gapMultiplier": 1.04,
+      "goldMultiplier": 1.1
+    },
+    {
+      "id": "D04",
+      "name": "中等",
+      "revision": "1",
+      "ehpMultiplier": 1,
+      "speedMultiplier": 1,
+      "gapMultiplier": 1,
+      "goldMultiplier": 1
+    },
+    {
+      "id": "D05",
+      "name": "中等偏上",
+      "revision": "1",
+      "ehpMultiplier": 1.18,
+      "speedMultiplier": 1.02,
+      "gapMultiplier": 0.98,
+      "goldMultiplier": 0.96
+    },
+    {
+      "id": "D06",
+      "name": "困难",
+      "revision": "1",
+      "ehpMultiplier": 1.4,
+      "speedMultiplier": 1.04,
+      "gapMultiplier": 0.95,
+      "goldMultiplier": 0.92
+    },
+    {
+      "id": "D07",
+      "name": "非常困难",
+      "revision": "1",
+      "ehpMultiplier": 1.65,
+      "speedMultiplier": 1.06,
+      "gapMultiplier": 0.92,
+      "goldMultiplier": 0.88
+    },
+    {
+      "id": "D08",
+      "name": "极度困难",
+      "revision": "1",
+      "ehpMultiplier": 1.95,
+      "speedMultiplier": 1.08,
+      "gapMultiplier": 0.89,
+      "goldMultiplier": 0.84
+    },
+    {
+      "id": "ACCEPTANCE_20261017105107",
+      "name": "自定义 ACCEPTANCE_20261017105107",
+      "revision": "1",
+      "ehpMultiplier": 1,
+      "speedMultiplier": 1,
+      "gapMultiplier": 1,
+      "goldMultiplier": 1
+    }
+  ],
+  "formula": {
+    "countOffset": 6,
+    "baseEhpPerUnit": 30,
+    "levelEhpGrowth": 0.03,
+    "waveLinear": 0.12,
+    "waveQuadratic": 0.018,
+    "minBudgetGrowth": 1.04,
+    "pressureMultiplier": 1.12,
+    "finalMultiplier": 1.25,
+    "spawnBaseMs": 900,
+    "spawnWaveReductionMs": 15,
+    "spawnLevelReductionMs": 5,
+    "minSpawnMs": 450,
+    "maxSpawnMs": 900,
+    "speedLevelGrowth": 0.002,
+    "speedWaveGrowth": 0.001,
+    "initialGold": 100,
+    "goldPerLevel": 18,
+    "initialHp": 20,
+    "rewardBase": 6,
+    "rewardWaveBlock": 5,
+    "autoNextRoundDelayMs": 5000,
+    "autoStartRoundDelayMs": 0,
+    "tailBaseMs": 10000,
+    "tailTierGrowthMs": 2000
+  },
+  "roles": {
+    "normal": {
+      "weight": 1,
+      "speed": 1.1,
+      "armor": 0,
+      "reward": 2,
+      "damage": 1,
+      "type": 1
+    },
+    "swarm": {
+      "weight": 0.65,
+      "speed": 1.05,
+      "armor": 0,
+      "reward": 1,
+      "damage": 1,
+      "type": 1
+    },
+    "fast": {
+      "weight": 0.85,
+      "speed": 1.6,
+      "armor": 0,
+      "reward": 2,
+      "damage": 1,
+      "type": 2
+    },
+    "air": {
+      "weight": 1.2,
+      "speed": 1.4,
+      "armor": 0,
+      "reward": 3,
+      "damage": 1,
+      "type": 4
+    },
+    "medium": {
+      "weight": 2,
+      "speed": 1,
+      "armor": 0.08,
+      "reward": 3,
+      "damage": 1,
+      "type": 1
+    },
+    "heavy": {
+      "weight": 4,
+      "speed": 0.8,
+      "armor": 0.18,
+      "reward": 5,
+      "damage": 2,
+      "type": 3
+    },
+    "elite": {
+      "weight": 7,
+      "speed": 0.75,
+      "armor": 0.22,
+      "reward": 8,
+      "damage": 2,
+      "type": 3
+    },
+    "boss": {
+      "weight": 18,
+      "speed": 0.65,
+      "armor": 0.25,
+      "reward": 25,
+      "damage": 4,
+      "type": 5
+    }
+  },
+  "unlockSchedule": [
+    {
+      "canonicalId": 17,
+      "level": 1,
+      "wave": 1,
+      "role": "normal"
+    },
+    {
+      "canonicalId": 18,
+      "level": 1,
+      "wave": 2,
+      "role": "normal"
+    },
+    {
+      "canonicalId": 84,
+      "level": 1,
+      "wave": 3,
+      "role": "swarm"
+    },
+    {
+      "canonicalId": 83,
+      "level": 1,
+      "wave": 5,
+      "role": "medium"
+    },
+    {
+      "canonicalId": 13,
+      "level": 1,
+      "wave": 7,
+      "role": "air"
+    },
+    {
+      "canonicalId": 11,
+      "level": 1,
+      "wave": 8,
+      "role": "air"
+    },
+    {
+      "canonicalId": 14,
+      "level": 1,
+      "wave": 10,
+      "role": "air"
+    },
+    {
+      "canonicalId": 88,
+      "level": 1,
+      "wave": 11,
+      "role": "heavy"
+    },
+    {
+      "canonicalId": 123,
+      "level": 1,
+      "wave": 15,
+      "role": "medium"
+    },
+    {
+      "canonicalId": 30,
+      "level": 2,
+      "wave": 11,
+      "role": "fast"
+    },
+    {
+      "canonicalId": 108,
+      "level": 2,
+      "wave": 15,
+      "role": "medium"
+    },
+    {
+      "canonicalId": 98,
+      "level": 3,
+      "wave": 11,
+      "role": "fast"
+    },
+    {
+      "canonicalId": 80,
+      "level": 4,
+      "wave": 11,
+      "role": "heavy"
+    },
+    {
+      "canonicalId": 86,
+      "level": 4,
+      "wave": 15,
+      "role": "heavy"
+    },
+    {
+      "canonicalId": 31,
+      "level": 5,
+      "wave": 11,
+      "role": "heavy"
+    },
+    {
+      "canonicalId": 40,
+      "level": 6,
+      "wave": 11,
+      "role": "heavy"
+    },
+    {
+      "canonicalId": 58,
+      "level": 7,
+      "wave": 11,
+      "role": "fast"
+    },
+    {
+      "canonicalId": 127,
+      "level": 8,
+      "wave": 11,
+      "role": "heavy"
+    },
+    {
+      "canonicalId": 64,
+      "level": 9,
+      "wave": 11,
+      "role": "fast"
+    },
+    {
+      "canonicalId": 70,
+      "level": 10,
+      "wave": 11,
+      "role": "heavy"
+    },
+    {
+      "canonicalId": 67,
+      "level": 11,
+      "wave": 11,
+      "role": "heavy"
+    },
+    {
+      "canonicalId": 129,
+      "level": 12,
+      "wave": 20,
+      "role": "boss"
+    },
+    {
+      "canonicalId": 130,
+      "level": 13,
+      "wave": 20,
+      "role": "boss"
+    },
+    {
+      "canonicalId": 131,
+      "level": 14,
+      "wave": 20,
+      "role": "boss"
+    },
+    {
+      "canonicalId": 132,
+      "level": 15,
+      "wave": 20,
+      "role": "boss"
+    }
+  ],
+  "towerValues": [
+    {
+      "id": 1,
+      "power": 6,
+      "CD": 400,
+      "radius": 3,
+      "prices": 25,
+      "effectValue": 0,
+      "canAttackAir": 1,
+      "searchIntervalMs": 100
+    },
+    {
+      "id": 2,
+      "power": 14,
+      "CD": 400,
+      "radius": 3,
+      "prices": 40,
+      "effectValue": 0,
+      "canAttackAir": 1,
+      "searchIntervalMs": 100
+    },
+    {
+      "id": 3,
+      "power": 24,
+      "CD": 300,
+      "radius": 4,
+      "prices": 65,
+      "effectValue": 0,
+      "canAttackAir": 1,
+      "searchIntervalMs": 100
+    },
+    {
+      "id": 4,
+      "power": 14,
+      "CD": 1000,
+      "radius": 3,
+      "prices": 45,
+      "effectValue": 0,
+      "canAttackAir": 0,
+      "searchIntervalMs": 100
+    },
+    {
+      "id": 5,
+      "power": 28,
+      "CD": 900,
+      "radius": 3,
+      "prices": 60,
+      "effectValue": 0,
+      "canAttackAir": 0,
+      "searchIntervalMs": 100
+    },
+    {
+      "id": 6,
+      "power": 45,
+      "CD": 800,
+      "radius": 4,
+      "prices": 100,
+      "effectValue": 0,
+      "canAttackAir": 0,
+      "searchIntervalMs": 100
+    },
+    {
+      "id": 7,
+      "power": 0,
+      "CD": 400,
+      "radius": 3,
+      "prices": 35,
+      "effectValue": 0.25,
+      "canAttackAir": 1,
+      "searchIntervalMs": 100
+    },
+    {
+      "id": 8,
+      "power": 0,
+      "CD": 400,
+      "radius": 3,
+      "prices": 50,
+      "effectValue": 0.35,
+      "canAttackAir": 1,
+      "searchIntervalMs": 100
+    },
+    {
+      "id": 9,
+      "power": 0,
+      "CD": 400,
+      "radius": 4,
+      "prices": 80,
+      "effectValue": 0.45,
+      "canAttackAir": 1,
+      "searchIntervalMs": 100
+    }
+  ],
+  "rating": {
+    "twoStarHpPermille": 500,
+    "threeStarHpPermille": 750,
+    "fourStarHpPermille": 900,
+    "maxFourStarLeaks": 2,
+    "fourStarTimePermille": 1250
+  },
+  "maps": {
+    "expandTutorial": true,
+    "sparseObstacles": true,
+    "longAirCorridors": true
+  },
+  "overrides": [
+    {
+      "id": "edit-c060ee1b633d",
+      "target": "wave",
+      "profileId": "D04",
+      "field": "targetEhp",
+      "mode": "multiply",
+      "value": 1.01,
+      "scope": "wave",
+      "levelId": 1,
+      "waveOrdinal": 2
+    },
+    {
+      "id": "edit-2add6b004509",
+      "target": "wave",
+      "profileId": "D04",
+      "field": "targetEhp",
+      "mode": "multiply",
+      "value": 1.001,
+      "scope": "range",
+      "levelId": 1,
+      "waveStart": 3,
+      "waveEnd": 4
+    },
+    {
+      "id": "edit-c7cf2344b765",
+      "target": "wave",
+      "profileId": "D04",
+      "field": "targetEhp",
+      "mode": "multiply",
+      "value": 1.001,
+      "scope": "level",
+      "levelId": 2
+    },
+    {
+      "id": "edit-2c950986bc93",
+      "target": "tower",
+      "profileId": "D04",
+      "field": "power",
+      "mode": "replace",
+      "value": 7,
+      "scope": "global",
+      "levelId": 2,
+      "targetId": 1
+    },
+    {
+      "id": "edit-c060ee1b633d-ACCEPTANCE_20261017105107",
+      "target": "wave",
+      "profileId": "ACCEPTANCE_20261017105107",
+      "field": "targetEhp",
+      "mode": "multiply",
+      "value": 1.01,
+      "scope": "wave",
+      "levelId": 1,
+      "waveOrdinal": 2
+    },
+    {
+      "id": "edit-2add6b004509-ACCEPTANCE_20261017105107",
+      "target": "wave",
+      "profileId": "ACCEPTANCE_20261017105107",
+      "field": "targetEhp",
+      "mode": "multiply",
+      "value": 1.001,
+      "scope": "range",
+      "levelId": 1,
+      "waveStart": 3,
+      "waveEnd": 4
+    },
+    {
+      "id": "edit-c7cf2344b765-ACCEPTANCE_20261017105107",
+      "target": "wave",
+      "profileId": "ACCEPTANCE_20261017105107",
+      "field": "targetEhp",
+      "mode": "multiply",
+      "value": 1.001,
+      "scope": "level",
+      "levelId": 2
+    },
+    {
+      "id": "edit-2c950986bc93-ACCEPTANCE_20261017105107",
+      "target": "tower",
+      "profileId": "ACCEPTANCE_20261017105107",
+      "field": "power",
+      "mode": "replace",
+      "value": 7,
+      "scope": "global",
+      "levelId": 2,
+      "targetId": 1
+    }
+  ]
+}

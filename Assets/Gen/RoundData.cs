@@ -12,11 +12,11 @@ using SimpleJSON;
 
 
 namespace cfg
-{ 
-
-public sealed partial class RoundData :  Bright.Config.BeanBase 
 {
-    public RoundData(JSONNode _json) 
+
+public sealed partial class RoundData :  Bright.Config.BeanBase
+{
+    public RoundData(JSONNode _json)
     {
         { if(!_json["id"].IsNumber) { throw new SerializationException(); }  Id = _json["id"]; }
         { var __json0 = _json["EnemyIndexs"]; if(!__json0.IsArray) { throw new SerializationException(); } EnemyIndexs = new System.Collections.Generic.List<int>(__json0.Count); foreach(JSONNode __e0 in __json0.Children) { int __v0;  { if(!__e0.IsNumber) { throw new SerializationException(); }  __v0 = __e0; }  EnemyIndexs.Add(__v0); }   }
@@ -26,7 +26,7 @@ public sealed partial class RoundData :  Bright.Config.BeanBase
         PostInit();
     }
 
-    public RoundData(int id, System.Collections.Generic.List<int> EnemyIndexs, int interval, string name, int rewardGold ) 
+    public RoundData(int id, System.Collections.Generic.List<int> EnemyIndexs, int interval, string name, int rewardGold )
     {
         this.Id = id;
         this.EnemyIndexs = EnemyIndexs;
@@ -81,7 +81,7 @@ public sealed partial class RoundData :  Bright.Config.BeanBase
         + "RewardGold:" + RewardGold + ","
         + "}";
     }
-    
+
     partial void PostInit();
     partial void PostResolve();
 }

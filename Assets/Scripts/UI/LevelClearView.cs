@@ -37,6 +37,9 @@ namespace FTProject
         private TMP_Text _starDetail;
         private TMP_Text _recordTip;
         private TMP_Text _stats;
+        private TMP_Text _ratingTimes;
+        private TMP_Text _ratingReasons;
+        private TMP_Text _ratingContext;
         private Button _nextBtn;
         private TMP_Text _nextLabel;
         private Button _retryBtn;
@@ -51,6 +54,21 @@ namespace FTProject
             BindNodes();
         }
 
+        private void OnEnable()
+        {
+            EventDispatcher.AddEventListener<int>(EventName.LanguageChangedEvent, OnLanguageChanged);
+        }
+
+        private void OnDisable()
+        {
+            EventDispatcher.RemoveEventListener<int>(EventName.LanguageChangedEvent, OnLanguageChanged);
+        }
+
+        private void OnLanguageChanged(int language)
+        {
+            if (_info != null) Show(_info);
+        }
+
         private void BindNodes()
         {
             _title = FindText("Panel/Title");
@@ -59,6 +77,9 @@ namespace FTProject
             _starDetail = FindText("Panel/StarDetail");
             _recordTip = FindText("Panel/RecordTip");
             _stats = FindText("Panel/Stats");
+            _ratingTimes = FindText("Panel/RatingTimes");
+            _ratingReasons = FindText("Panel/RatingReasons");
+            _ratingContext = FindText("Panel/RatingContext");
 
             _nextBtn = FindButton("Panel/NextBtn");
             _nextLabel = FindText("Panel/NextBtn/Label");
@@ -123,7 +144,7 @@ namespace FTProject
             // "新纪录"只在真的超过历史最好成绩时出现
             if (_recordTip != null)
             {
-                bool show = info.victory && info.newRecord;
+                bool show = info.victory && info.progressSaved && !info.savePending && info.newRecord;
                 if (_recordTip.gameObject.activeSelf != show)
                 {
                     _recordTip.gameObject.SetActive(show);
@@ -139,18 +160,38 @@ namespace FTProject
                 ?? string.Format("剩余生命 {0}/{1}　　击杀 {2}　　漏怪 {3}",
                     info.hp, info.maxHp, info.killed, info.leaked));
 
+            LevelRatingResult result = info.ratingResult;
+            LevelRunMetrics metrics = result != null ? result.metrics : null;
+            LevelRatingProfile profile = result != null ? result.profile : null;
+            string combatTime = RatingPresentation.Time(metrics != null ? metrics.combatElapsedMs : 0);
+            string parTime = RatingPresentation.Time(profile != null ? profile.parCombatTimeMs : 0);
+            string levelTime = RatingPresentation.Time(metrics != null ? metrics.levelElapsedMs : 0);
+            SetText(_ratingTimes, Localization.Get("Combat {0} / Par {1} · Level {2}", combatTime, parTime, levelTime)
+                ?? string.Format("战斗 {0} / 五星上限 {1} · 整局 {2}", combatTime, parTime, levelTime));
+            string context = profile == null ? string.Empty
+                : SelectView.Difficulty(profile.difficultyTier) + " · "
+                    + (Localization.Get("Balance preset: {0}", RatingPresentation.ProfileName(profile.profileId))
+                        ?? ("调参预设：" + RatingPresentation.ProfileName(profile.profileId)));
+            if (metrics != null)
+            {
+                context += "\n" + (Localization.Get("Boss leaks {0} · Critical leaks {1}", metrics.bossLeaked, metrics.criticalLeaked)
+                    ?? string.Format("首领漏怪 {0} · 精英及首领漏怪 {1}", metrics.bossLeaked, metrics.criticalLeaked));
+            }
+            SetText(_ratingContext, context);
+            SetText(_ratingReasons, RatingPresentation.Reasons(result));
+
             // ---- 按钮 ----
             // 三种情况分开处理，避免"最后一关却显示一个可点的下一关"或
             // "失败时显示已是最后一关"这类自相矛盾的文案。
             if (_nextBtn != null)
             {
-                if (!info.victory)
+                if (!info.victory || !info.progressSaved || info.savePending || result == null || !result.valid)
                 {
                     _nextBtn.gameObject.SetActive(false);          // 失败没有下一关可言
                 }
                 else
                 {
-                    bool canGo = info.hasNext && info.nextLevelId > 0;
+                    bool canGo = info.hasNext && info.nextLevelId > 0 && result != null && result.valid;
                     _nextBtn.gameObject.SetActive(true);
                     _nextBtn.interactable = canGo;
                     if (!canGo)
@@ -169,9 +210,11 @@ namespace FTProject
                 }
             }
 
-            SetText(_retryLabel, info.victory
-                ? (Localization.Get("Replay") ?? "重玩本关")
-                : (Localization.Get("Try Again") ?? "重新挑战"));
+            SetText(_retryLabel, info.savePending
+                ? (Localization.Get("Retry Save") ?? "重试保存")
+                : info.victory
+                    ? (Localization.Get("Replay") ?? "重玩本关")
+                    : (Localization.Get("Try Again") ?? "重新挑战"));
         }
 
         // ------------------------------------------------------------------
@@ -180,7 +223,9 @@ namespace FTProject
 
         private void OnClickNext()
         {
-            if (_info == null || !_info.hasNext || _info.nextLevelId <= 0)
+            if (_info == null || !_info.victory || !_info.progressSaved || _info.savePending
+                || _info.ratingResult == null || !_info.ratingResult.valid
+                || !_info.hasNext || _info.nextLevelId <= 0)
             {
                 return;
             }
@@ -191,6 +236,11 @@ namespace FTProject
 
         private void OnClickRetry()
         {
+            if (_info != null && _info.savePending)
+            {
+                if (GameFlowManager.Instance != null) GameFlowManager.Instance.RetryPendingClearSave();
+                return;
+            }
             EventDispatcher.TriggerEvent(EventName.RestartLevelRequestEvent);
         }
 
@@ -227,9 +277,10 @@ namespace FTProject
 
         private static void SetText(TMP_Text t, string v)
         {
-            if (t != null && t.text != v)
+            if (t != null)
             {
-                t.text = v;
+                if (t.text != v) t.text = v;
+                LanguageManager.ApplyFont(t);
             }
         }
     }

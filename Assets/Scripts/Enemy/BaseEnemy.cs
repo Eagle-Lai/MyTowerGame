@@ -992,12 +992,15 @@ namespace FTProject
             }
             // 上限 0.95：留 5% 速度，避免怪被定住后看起来像卡死（也防止除零类隐患）
             ratio = Mathf.Clamp(ratio, 0f, 0.95f);
-            if (ratio >= _slowRatio)
+            // 弱光环不能延长强减速。强效果到期后，下一次弱光环脉冲再生效。
+            // 更强效果有自己的有效期，也不能继承较弱效果剩余的长持续时间。
+            if (ratio < _slowRatio && _slowTimer > 0f)
             {
-                _slowRatio = ratio;
+                return;
             }
-            _slowTimer = Mathf.Max(_slowTimer, durationSec);
-            SetSpeedScale(1f - _slowRatio);
+            _slowTimer = ratio > _slowRatio ? durationSec : Mathf.Max(_slowTimer, durationSec);
+            _slowRatio = ratio;
+            SetSpeedScale(1f - ratio);
         }
 
         /// <summary>施加持续伤害（每秒 dps 点，持续 durationSec 秒）。重复施加取更强的一层并刷新时长。</summary>

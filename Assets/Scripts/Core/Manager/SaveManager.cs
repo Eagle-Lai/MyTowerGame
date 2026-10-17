@@ -36,6 +36,29 @@ namespace FTProject
         private ISaveStorage _storage;
         private SaveData _data;
         private bool _loaded;
+        public const int MaxStars = LevelRatingEvaluator.MaxStars;
+        public static bool IsTestStorage { get { return !string.IsNullOrEmpty(SaveStorageFactory.ActiveTestContextId); } }
+        private sealed class StorageScope : IDisposable
+        {
+            private readonly SaveManager owner;
+            private readonly string previous;
+            private bool disposed;
+            public StorageScope(SaveManager manager, string prior) { owner = manager; previous = prior; }
+            public void Dispose() { if (disposed) return; disposed = true; owner.SwitchStorage(previous); }
+        }
+        public IDisposable SetTestStorageContext(string contextId)
+        {
+            if (string.IsNullOrEmpty(contextId)) throw new ArgumentException("A test storage identity is required");
+            string previous = SaveStorageFactory.TestContextId;
+            SwitchStorage(contextId);
+            return new StorageScope(this, previous);
+        }
+        private void SwitchStorage(string contextId)
+        {
+            if (_storage != null) { _storage.Flush(); _storage.Dispose(); }
+            SaveStorageFactory.TestContextId = contextId; _storage = null; _data = null; _loaded = false;
+            EnsureLoaded();
+        }
 
         // ------------------------------------------------------------------
         // 只读信息（自检 / 日志 / 排查用）
@@ -254,6 +277,21 @@ namespace FTProject
         ///   static readonly 不参与常量折叠，编译干净。
         /// </summary>
         private static readonly bool UnlockAllLevelsInEditor = true;
+        private static bool _testProductionUnlockRules;
+        private sealed class UnlockRuleScope : IDisposable
+        {
+            private readonly bool previous;
+            public UnlockRuleScope(bool prior) { previous = prior; }
+            public void Dispose() { _testProductionUnlockRules = previous; }
+        }
+        /// <summary>Exercise the actual player unlock path against isolated test storage only.</summary>
+        public IDisposable UseProductionUnlockRulesForTest()
+        {
+            if (!IsTestStorage) throw new InvalidOperationException("Unlock tests require isolated storage");
+            bool prior = _testProductionUnlockRules;
+            _testProductionUnlockRules = true;
+            return new UnlockRuleScope(prior);
+        }
 #endif
 
         /// <summary>
@@ -265,7 +303,7 @@ namespace FTProject
         public bool IsUnlocked(int levelId)
         {
 #if UNITY_EDITOR
-            if (UnlockAllLevelsInEditor)
+            if (UnlockAllLevelsInEditor && !_testProductionUnlockRules)
             {
                 return true;
             }
@@ -302,8 +340,9 @@ namespace FTProject
         public int GetStars(int levelId)
         {
             EnsureLoaded();
+            EnsureRatingVersion(levelId);
             LevelProgress p = _data.Find(levelId);
-            return p != null ? p.stars : 0;
+            return IsCurrentRating(p, levelId) ? p.stars : 0;
         }
 
         /// <summary>
@@ -314,53 +353,91 @@ namespace FTProject
         public int GetBestTimeMs(int levelId)
         {
             EnsureLoaded();
+            EnsureRatingVersion(levelId);
             LevelProgress p = _data.Find(levelId);
-            return p != null ? p.bestTimeMs : 0;
+            return IsCurrentRating(p, levelId) ? p.bestTimeMs : 0;
         }
 
         /// <summary>历史最好成绩（剩余生命），仅用于展示。0 = 无记录。</summary>
         public int GetBestHpLeft(int levelId)
         {
             EnsureLoaded();
+            EnsureRatingVersion(levelId);
             LevelProgress p = _data.Find(levelId);
-            return p != null ? p.bestHpLeft : 0;
+            return IsCurrentRating(p, levelId) ? p.bestHpLeft : 0;
         }
-
-        /// <summary>关卡通关结算：更新星级（只升不降）与累计次数，并立刻落库。</summary>
-        public void RecordClear(int levelId, int stars, int hpLeft)
+        private static bool IsCurrentRating(LevelProgress progress, int levelId)
         {
-            RecordClear(levelId, stars, hpLeft, 0);
+            var profile = Configs.GetLevelRating(levelId);
+            return progress != null && Configs.RatingContentVerified && profile != null && profile.IsValid && progress.ratingVersionKey == profile.versionKey;
         }
-
-        /// <summary>
-        /// 关卡通关结算（带用时）。
-        /// 【合并语义】星级**只升不降**、剩余生命**只升不降**、用时**只降不升**（更快才算新纪录）——
-        /// 三者方向不同是刻意的：前两个"越大越好"，用时"越小越好"。
-        /// <paramref name="timeMs"/> &lt;= 0 表示本次没有计时（例如调试直接获胜），不会污染已有记录。
-        /// </summary>
-        public void RecordClear(int levelId, int stars, int hpLeft, int timeMs)
+        public int GetBestCombatTimeMs(int levelId) { EnsureLoaded(); EnsureRatingVersion(levelId); var p = _data.Find(levelId); return IsCurrentRating(p, levelId) ? p.bestCombatTimeMs : 0; }
+        public int GetLegacyStars(int levelId)
+        {
+            EnsureLoaded(); EnsureRatingVersion(levelId); var p = _data.Find(levelId); int result = 0;
+            if (p != null && !IsCurrentRating(p, levelId)) result = p.stars;
+            if (p != null && p.legacy != null) foreach (var old in p.legacy) result = Math.Max(result, old.stars);
+            return result;
+        }
+        public bool IsCurrentVersionRated(int levelId) { return GetStars(levelId) > 0; }
+        public bool IsRunCommitted(int levelId, string runId)
+        {
+            EnsureLoaded(); var p = _data.Find(levelId);
+            return p != null && p.committedRunIds != null && p.committedRunIds.Contains(runId);
+        }
+        /// <summary>Back up first, then archive and change the current content identity. Re-entry is idempotent.</summary>
+        public void EnsureRatingVersion(int levelId)
         {
             EnsureLoaded();
-            LevelProgress p = _data.GetOrCreate(levelId);
-            if (stars > p.stars)
+            LevelRatingProfile profile = Configs.GetLevelRating(levelId);
+            if (!Configs.RatingContentVerified || profile == null || !profile.IsValid) return;
+            LevelProgress p = _data.Find(levelId);
+            if (p == null || p.ratingVersionKey == profile.versionKey) return;
+            if (_storage == null) return;
+            string oldKey = string.IsNullOrEmpty(p.ratingVersionKey) ? "legacy-v1-three-stars" : p.ratingVersionKey;
+            string backupKey = "rating-backup/" + levelId + "/" + oldKey;
+            string backup;
+            string originalJson = JsonUtility.ToJson(p);
+            if (_storage != null)
             {
-                p.stars = Mathf.Clamp(stars, 0, 3);
+                if (!_storage.TryGetValue(backupKey, out backup)) { _storage.SetValue(backupKey, originalJson, true); _storage.Flush(); }
+                if (!_storage.TryGetValue(backupKey, out backup) || string.IsNullOrEmpty(backup)) { Debug.LogWarning("[Save] Rating migration deferred: legacy backup could not be persisted"); return; }
             }
-            if (hpLeft > p.bestHpLeft)
-            {
-                p.bestHpLeft = hpLeft;
-            }
-            if (timeMs > 0 && (p.bestTimeMs <= 0 || timeMs < p.bestTimeMs))
-            {
-                p.bestTimeMs = timeMs;
-            }
-            p.clearCount++;
-            // 通关即视为本局结束，快照作废（否则下次进关会莫名其妙"接着上一局"）
-            ClearSnapshot(false);
-
-            PersistLevel(levelId);   // 只写这一关，而不是整表重写
-            PersistSnapshot();
+            var candidate = JsonUtility.FromJson<LevelProgress>(originalJson);
+            SaveProgressMigration.ArchiveForVersion(candidate, profile.versionKey);
+            if (_storage != null && !_storage.CommitClear(candidate)) { Debug.LogWarning("[Save] Rating migration deferred: archive could not be persisted"); return; }
+            _data.levels[_data.levels.IndexOf(p)] = candidate;
+            _data.snapshot = new LevelSnapshot();
+            if (_storage != null) { _storage.SetValue("rating-migrated/" + levelId, profile.versionKey, true); _storage.Flush(); }
+        }
+        public bool RecordClear(int levelId, LevelRatingResult result)
+        {
+            EnsureLoaded();
+            if (_storage == null || result == null || !result.valid || !result.victory || result.stars <= 0 || result.metrics == null || result.metrics.debugOverride) return false;
+            var current = Configs.GetLevelRating(levelId);
+            if (current == null || current.versionKey != result.versionKey) return false;
+            result = LevelRatingEvaluator.Evaluate(current, result.metrics);
+            if (!result.valid || !result.victory || result.stars <= 0) return false;
+            EnsureRatingVersion(levelId);
+            var existing = _data.Find(levelId);
+            if (existing != null && existing.ratingVersionKey != current.versionKey) return false;
+            LevelProgress original = existing ?? new LevelProgress { levelId = levelId, ratingVersionKey = current.versionKey };
+            if (IsRunCommitted(levelId, result.metrics.runId)) return true;
+            LevelProgress p = JsonUtility.FromJson<LevelProgress>(JsonUtility.ToJson(original));
+            if (p.committedRunIds == null) p.committedRunIds = new List<string>();
+            p.ratingVersionKey = result.versionKey;
+            if (result.stars > p.stars) { p.stars = Mathf.Clamp(result.stars, 0, MaxStars); p.bestRating = result; }
+            p.bestHpLeft = Math.Max(p.bestHpLeft, result.metrics.hp);
+            int levelMs = (int)Math.Min(int.MaxValue, result.metrics.levelElapsedMs), combatMs = (int)Math.Min(int.MaxValue, result.metrics.combatElapsedMs);
+            if (p.bestTimeMs <= 0 || levelMs < p.bestTimeMs) p.bestTimeMs = levelMs;
+            if (p.bestCombatTimeMs <= 0 || combatMs < p.bestCombatTimeMs) p.bestCombatTimeMs = combatMs;
+            p.clearCount++; p.committedRunIds.Add(result.metrics.runId);
+            int index = _data.levels.IndexOf(original);
+            if (_storage != null && !_storage.CommitClear(p)) return false;
+            if (index < 0) _data.levels.Add(p); else _data.levels[index] = p;
+            _data.snapshot = new LevelSnapshot();
             if (_storage != null) _storage.Flush();
+            return true;
         }
 
         /// <summary>把毫秒格式化成 `m:ss` 或 `--:--`（无记录）。UI 与日志共用一处口径。</summary>
@@ -372,29 +449,6 @@ namespace FTProject
             }
             int totalSec = timeMs / 1000;
             return string.Format("{0}:{1:00}", totalSec / 60, totalSec % 60);
-        }
-
-        /// <summary>
-        /// 星级评定。
-        /// 【为什么这样定】塔防的"打得好"最直观的度量就是"漏了多少怪"：
-        /// 一滴血没掉 = 3 星；掉不超过一半 = 2 星；通关即可 = 1 星。
-        /// 放在这里而不是结算界面里，是为了让"什么算 3 星"只有一处定义。
-        /// </summary>
-        public static int EvaluateStars(int hpLeft, int maxHp)
-        {
-            if (maxHp <= 0)
-            {
-                return 1;
-            }
-            if (hpLeft >= maxHp)
-            {
-                return 3;
-            }
-            if (hpLeft * 2 >= maxHp)
-            {
-                return 2;
-            }
-            return 1;
         }
 
         /// <summary>已通关的关卡数（关卡选择界面顶部汇总用）</summary>
@@ -426,7 +480,7 @@ namespace FTProject
                 {
                     if (_data.levels[i] != null)
                     {
-                        n += _data.levels[i].stars;
+                        n += GetStars(_data.levels[i].levelId);
                     }
                 }
                 return n;
@@ -527,22 +581,44 @@ namespace FTProject
         /// <summary>写入局内快照并立刻落盘（回合结束时由 GameFlowManager 调用）。</summary>
         public void SetSnapshot(LevelSnapshot snap)
         {
+            TrySetSnapshot(snap);
+        }
+
+        /// <summary>Publish a checkpoint only after storage confirms the complete write.</summary>
+        public bool TrySetSnapshot(LevelSnapshot snap)
+        {
             EnsureLoaded();
-            _data.snapshot = snap != null ? snap : new LevelSnapshot();
-            PersistSnapshot();
-            if (_storage != null) _storage.Flush();
+            if (_storage == null) return false;
+            var candidate = snap != null ? JsonUtility.FromJson<LevelSnapshot>(JsonUtility.ToJson(snap)) : new LevelSnapshot();
+            try
+            {
+                _storage.SaveSnapshot(candidate);
+                _storage.Flush();
+                if (!string.IsNullOrEmpty(_storage.LastError)) return false;
+                LevelSnapshot persisted = _storage.LoadSnapshot();
+                if (!string.IsNullOrEmpty(_storage.LastError) || persisted == null || JsonUtility.ToJson(persisted) != JsonUtility.ToJson(candidate)) return false;
+                _data.snapshot = persisted;
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning("[Save] Checkpoint was not published: " + ex.Message);
+                return false;
+            }
+        }
+
+        /// <summary>Keep the previous resumable boundary if durable invalidation fails.</summary>
+        public bool TryClearSnapshot()
+        {
+            return TrySetSnapshot(new LevelSnapshot());
         }
 
         /// <summary>开始新一局时作废快照。</summary>
         public void ClearSnapshot(bool save)
         {
             EnsureLoaded();
-            _data.snapshot = new LevelSnapshot();
-            if (save)
-            {
-                PersistSnapshot();
-                if (_storage != null) _storage.Flush();
-            }
+            if (save) TryClearSnapshot();
+            else _data.snapshot = new LevelSnapshot();
         }
 
         // ------------------------------------------------------------------

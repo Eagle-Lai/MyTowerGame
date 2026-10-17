@@ -198,7 +198,7 @@ namespace FTProject.EditorTools
             string[] expected =
             {
                 "tbenemydata", "tbtowerinfo", "tbbulletdata", "tbenemylist",
-                "tbrounddata", "tbsceneinfo", "tblevelmap", "tbglobal", "tbaudio"
+                "tbrounddata", "tbsceneinfo", "tblevelmap", "tbglobal", "tbaudio", "tblocalization", "tblevelrating"
             };
 
             for (int i = 0; i < expected.Length; i++)

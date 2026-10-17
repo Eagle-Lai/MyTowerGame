@@ -1,0 +1,183 @@
+{
+  "schemaVersion": 1,
+  "capturedUtc": "2026-10-17T11:17:53.290Z",
+  "service": "unityMCP",
+  "endpoint": "http://127.0.0.1:8082/mcp",
+  "identity": {
+    "success": true,
+    "message": "Retrieved project info.",
+    "error": null,
+    "data": {
+      "projectRoot": "E:/MyTowerGame",
+      "projectName": "MyTowerGame",
+      "unityVersion": "2022.3.62f3c1",
+      "platform": "Android",
+      "assetsPath": "E:/MyTowerGame/Assets"
+    },
+    "hint": null
+  },
+  "refresh": {
+    "result": {
+      "success": true,
+      "message": "Refresh recovered after Unity disconnect/retry; editor is ready.",
+      "error": null,
+      "data": {
+        "recovered_from_disconnect": true
+      },
+      "hint": null
+    }
+  },
+  "probe": {
+    "success": true,
+    "message": "Code executed successfully.",
+    "data": {
+      "result": {
+        "projectRoot": "E:\\MyTowerGame",
+        "unityVersion": "2022.3.62f3c1",
+        "scriptCompilationFailed": false,
+        "compiling": false,
+        "updating": false,
+        "playing": false
+      },
+      "compiler": "codedom"
+    }
+  },
+  "editorState": {
+    "success": true,
+    "message": "Retrieved editor state.",
+    "error": null,
+    "data": {
+      "schema_version": "unity-mcp/editor_state@2",
+      "observed_at_unix_ms": 1792235873290,
+      "sequence": 4,
+      "unity": {
+        "instance_id": "MyTowerGame@9e28c50b510eeb91",
+        "unity_version": "2022.3.62f3c1",
+        "project_id": null,
+        "platform": "WindowsEditor",
+        "is_batch_mode": false
+      },
+      "editor": {
+        "is_focused": true,
+        "play_mode": {
+          "is_playing": false,
+          "is_paused": false,
+          "is_changing": false
+        },
+        "active_scene": {
+          "path": "Assets/Scenes/Boot.unity",
+          "guid": "f868a4d2158d5c6498694acdc8836145",
+          "name": "Boot"
+        }
+      },
+      "activity": {
+        "phase": "idle",
+        "since_unix_ms": 1792235873290,
+        "reasons": [
+          "final-verification"
+        ]
+      },
+      "compilation": {
+        "is_compiling": false,
+        "is_domain_reload_pending": false,
+        "last_compile_started_unix_ms": 1792235859357,
+        "last_compile_finished_unix_ms": 1792235859571,
+        "last_domain_reload_before_unix_ms": null,
+        "last_domain_reload_after_unix_ms": 1792235861278
+      },
+      "assets": {
+        "is_updating": false,
+        "external_changes_dirty": false,
+        "external_changes_last_seen_unix_ms": 1792235861938,
+        "external_changes_dirty_since_unix_ms": null,
+        "external_changes_last_cleared_unix_ms": 1792235861997,
+        "refresh": {
+          "is_refresh_in_progress": false,
+          "last_refresh_requested_unix_ms": null,
+          "last_refresh_finished_unix_ms": null
+        }
+      },
+      "tests": {
+        "is_running": false,
+        "mode": null,
+        "current_job_id": null,
+        "started_unix_ms": null,
+        "started_by": "unknown",
+        "last_run": null
+      },
+      "transport": {
+        "unity_bridge_connected": null,
+        "last_message_unix_ms": null
+      },
+      "settings": {
+        "batch_execute_max_commands": 25
+      },
+      "advice": {
+        "ready_for_tools": true,
+        "blocking_reasons": [],
+        "recommended_retry_after_ms": 0,
+        "recommended_next_action": "none"
+      },
+      "staleness": {
+        "age_ms": 91,
+        "is_stale": false
+      }
+    },
+    "hint": null
+  },
+  "console": {
+    "success": true,
+    "message": "Retrieved 5 log entries.",
+    "data": {
+      "cursor": 0,
+      "pageSize": 50,
+      "nextCursor": null,
+      "truncated": false,
+      "total": 5,
+      "items": [
+        {
+          "type": "Error",
+          "message": "Failed to load asset. Error: Location is invalid: '__balance_missing_resource_ec2db6039d5145d7b539b1f77abeb6d3'.",
+          "file": "./Library/PackageCache/com.tuyoogame.yooasset@3b4cfb36cc/Runtime/ResourceManager/ResourceManager.cs",
+          "line": 213,
+          "stackTrace": "UnityEngine.Debug:LogError (object)\nYooAsset.YooLogger:LogError (string) (at ./Library/PackageCache/com.tuyoogame.yooasset@3b4cfb36cc/Runtime/Utility/YooLogger.cs:83)\nYooAsset.ResourceManager:LoadAssetAsync (YooAsset.AssetInfo,uint) (at ./Library/PackageCache/com.tuyoogame.yooasset@3b4cfb36cc/Runtime/ResourceManager/ResourceManager.cs:213)\nYooAsset.ResourcePackage:LoadAssetInternal (YooAsset.AssetInfo,bool,uint) (at ./Library/PackageCache/com.tuyoogame.yooasset@3b4cfb36cc/Runtime/ResourcePackage/ResourcePackage.cs:623)\nYooAsset.ResourcePackage:LoadAssetSync (string,System.Type) (at ./Library/PackageCache/com.tuyoogame.yooasset@3b4cfb36cc/Runtime/ResourcePackage/ResourcePackage.cs:549)\nFTProject.YooAssetResLoader:TryLoadSync (string,System.Type,string&) (at Assets/Scripts/Core/Res/YooAssetResLoader.cs:424)\nFTProject.YooAssetResLoader:LoadSyncInternal (string,System.Type,string) (at Assets/Scripts/Core/Res/YooAssetResLoader.cs:863)\nFTProject.YooAssetResLoader:Load<UnityEngine.GameObject> (string) (at Assets/Scripts/Core/Res/YooAssetResLoader.cs:852)\nFTProject.YooAssetResLoader:Instantiate (string,UnityEngine.Transform) (at Assets/Scripts/Core/Res/YooAssetResLoader.cs:955)\nFTProject.EnemyManager:CreateEnemy (string) (at Assets/Scripts/Enemy/EnemyManager.cs:145)\nFTProject.EnemyManager/<>c__DisplayClass15_0:<GetPool>b__0 () (at Assets/Scripts/Enemy/EnemyManager.cs:129)\nFTProject.ObjectPool`1<FTProject.BaseEnemy>:Get () (at Assets/Scripts/Core/ObjectPool.cs:70)\nFTProject.EnemyManager:Spawn (int) (at Assets/Scripts/Enemy/EnemyManager.cs:86)\nFTProject.WaveManager:Tick (single) (at Assets/Scripts/Round/WaveManager.cs:174)\nFTProject.GameFlowManager:TickFlowSimulation () (at Assets/Scripts/Game/GameFlowManager.cs:582)\nFTProject.GameFlowManager:StepManualSimulation () (at Assets/Scripts/Game/GameFlowManager.cs:570)\nFTProject.EditorTools.BalanceRuntimeSafetyVerifier:Step (single) (at Assets/Editor/Balance/BalanceRuntimeSafetyVerifier.cs:110)\nFTProject.EditorTools.BalanceRuntimeSafetyVerifier:MissingResource () (at Assets/Editor/Balance/BalanceRuntimeSafetyVerifier.cs:190)\nFTProject.EditorTools.BalanceRuntimeSafetyVerifier:Scenario (SimpleJSON.JSONArray,string,System.Action) (at Assets/Editor/Balance/BalanceRuntimeSafetyVerifier.cs:83)\nFTProject.EditorTools.BalanceRuntimeSafetyVerifier:Run (string) (at Assets/Editor/Balance/BalanceRuntimeSafetyVerifier.cs:41)\nMCPDynamicCode:Execute ()\nSystem.Reflection.MethodBase:Invoke (object,object[])\nMCPForUnity.Editor.Tools.ExecuteCode:InvokeCompiled (System.Reflection.Assembly,string) (at ./Library/PackageCache/com.coplaydev.unity-mcp@aa5fc638d6/Editor/Tools/ExecuteCode.cs:275)\nMCPForUnity.Editor.Tools.ExecuteCode:CompileAndExecute (string,string) (at ./Library/PackageCache/com.coplaydev.unity-mcp@aa5fc638d6/Editor/Tools/ExecuteCode.cs:257)\nMCPForUnity.Editor.Tools.ExecuteCode:HandleExecute (Newtonsoft.Json.Linq.JObject) (at ./Library/PackageCache/com.coplaydev.unity-mcp@aa5fc638d6/Editor/Tools/ExecuteCode.cs:130)\nMCPForUnity.Editor.Tools.ExecuteCode:HandleCommand (Newtonsoft.Json.Linq.JObject) (at ./Library/PackageCache/com.coplaydev.unity-mcp@aa5fc638d6/Editor/Tools/ExecuteCode.cs:95)\nMCPForUnity.Editor.Tools.CommandRegistry:ExecuteCommand (string,Newtonsoft.Json.Linq.JObject,System.Threading.Tasks.TaskCompletionSource`1<string>) (at ./Library/PackageCache/com.coplaydev.unity-mcp@aa5fc638d6/Editor/Tools/CommandRegistry.cs:295)\nMCPForUnity.Editor.Services.Transport.TransportCommandDispatcher:ProcessCommand (string,MCPForUnity.Editor.Services.Transport.TransportCommandDispatcher/PendingCommand) (at ./Library/PackageCache/com.coplaydev.unity-mcp@aa5fc638d6/Editor/Services/Transport/TransportCommandDispatcher.cs:366)\nMCPForUnity.Editor.Services.Transport.TransportCommandDispatcher:ProcessQueue () (at ./Library/PackageCache/com.coplaydev.unity-mcp@aa5fc638d6/Editor/Services/Transport/TransportCommandDispatcher.cs:262)\nUnityEditor.EditorApplication:Internal_CallUpdateFunctions ()\n"
+        },
+        {
+          "type": "Error",
+          "message": "[Res] YooAsset 加载失败：逻辑名「Enemy_Chick」，类型 GameObject\n  定位地址：__balance_missing_resource_ec2db6039d5145d7b539b1f77abeb6d3\n  错误：Location is invalid: '__balance_missing_resource_ec2db6039d5145d7b539b1f77abeb6d3'.\n  排查：\n   ① 该资源是否已被 Bundle Collector 收集（YooAsset ▸ Bundle Collector）\n   ② 收集器的「定位地址」规则是否与上面的地址口径一致（默认是「文件名」）\n   ③ 是否已构建过资源包（真机/离线模式）或模拟清单（编辑器模拟模式）",
+          "file": "Assets/Scripts/Core/Res/YooAssetResLoader.cs",
+          "line": 1683,
+          "stackTrace": "UnityEngine.Debug:LogError (object)\nFTProject.YooAssetResLoader:Fail (string) (at Assets/Scripts/Core/Res/YooAssetResLoader.cs:1683)\nFTProject.YooAssetResLoader:LoadSyncInternal (string,System.Type,string) (at Assets/Scripts/Core/Res/YooAssetResLoader.cs:866)\nFTProject.YooAssetResLoader:Load<UnityEngine.GameObject> (string) (at Assets/Scripts/Core/Res/YooAssetResLoader.cs:852)\nFTProject.YooAssetResLoader:Instantiate (string,UnityEngine.Transform) (at Assets/Scripts/Core/Res/YooAssetResLoader.cs:955)\nFTProject.EnemyManager:CreateEnemy (string) (at Assets/Scripts/Enemy/EnemyManager.cs:145)\nFTProject.EnemyManager/<>c__DisplayClass15_0:<GetPool>b__0 () (at Assets/Scripts/Enemy/EnemyManager.cs:129)\nFTProject.ObjectPool`1<FTProject.BaseEnemy>:Get () (at Assets/Scripts/Core/ObjectPool.cs:70)\nFTProject.EnemyManager:Spawn (int) (at Assets/Scripts/Enemy/EnemyManager.cs:86)\nFTProject.WaveManager:Tick (single) (at Assets/Scripts/Round/WaveManager.cs:174)\nFTProject.GameFlowManager:TickFlowSimulation () (at Assets/Scripts/Game/GameFlowManager.cs:582)\nFTProject.GameFlowManager:StepManualSimulation () (at Assets/Scripts/Game/GameFlowManager.cs:570)\nFTProject.EditorTools.BalanceRuntimeSafetyVerifier:Step (single) (at Assets/Editor/Balance/BalanceRuntimeSafetyVerifier.cs:110)\nFTProject.EditorTools.BalanceRuntimeSafetyVerifier:MissingResource () (at Assets/Editor/Balance/BalanceRuntimeSafetyVerifier.cs:190)\nFTProject.EditorTools.BalanceRuntimeSafetyVerifier:Scenario (SimpleJSON.JSONArray,string,System.Action) (at Assets/Editor/Balance/BalanceRuntimeSafetyVerifier.cs:83)\nFTProject.EditorTools.BalanceRuntimeSafetyVerifier:Run (string) (at Assets/Editor/Balance/BalanceRuntimeSafetyVerifier.cs:41)\nMCPDynamicCode:Execute ()\nSystem.Reflection.MethodBase:Invoke (object,object[])\nMCPForUnity.Editor.Tools.ExecuteCode:InvokeCompiled (System.Reflection.Assembly,string) (at ./Library/PackageCache/com.coplaydev.unity-mcp@aa5fc638d6/Editor/Tools/ExecuteCode.cs:275)\nMCPForUnity.Editor.Tools.ExecuteCode:CompileAndExecute (string,string) (at ./Library/PackageCache/com.coplaydev.unity-mcp@aa5fc638d6/Editor/Tools/ExecuteCode.cs:257)\nMCPForUnity.Editor.Tools.ExecuteCode:HandleExecute (Newtonsoft.Json.Linq.JObject) (at ./Library/PackageCache/com.coplaydev.unity-mcp@aa5fc638d6/Editor/Tools/ExecuteCode.cs:130)\nMCPForUnity.Editor.Tools.ExecuteCode:HandleCommand (Newtonsoft.Json.Linq.JObject) (at ./Library/PackageCache/com.coplaydev.unity-mcp@aa5fc638d6/Editor/Tools/ExecuteCode.cs:95)\nMCPForUnity.Editor.Tools.CommandRegistry:ExecuteCommand (string,Newtonsoft.Json.Linq.JObject,System.Threading.Tasks.TaskCompletionSource`1<string>) (at ./Library/PackageCache/com.coplaydev.unity-mcp@aa5fc638d6/Editor/Tools/CommandRegistry.cs:295)\nMCPForUnity.Editor.Services.Transport.TransportCommandDispatcher:ProcessCommand (string,MCPForUnity.Editor.Services.Transport.TransportCommandDispatcher/PendingCommand) (at ./Library/PackageCache/com.coplaydev.unity-mcp@aa5fc638d6/Editor/Services/Transport/TransportCommandDispatcher.cs:366)\nMCPForUnity.Editor.Services.Transport.TransportCommandDispatcher:ProcessQueue () (at ./Library/PackageCache/com.coplaydev.unity-mcp@aa5fc638d6/Editor/Services/Transport/TransportCommandDispatcher.cs:262)\nUnityEditor.EditorApplication:Internal_CallUpdateFunctions ()\n"
+        },
+        {
+          "type": "Error",
+          "message": "[Enemy] 创建失败：资源「Enemy_Chick」不可用，请检查 ResTable 与预制体是否存在",
+          "file": "Assets/Scripts/Enemy/EnemyManager.cs",
+          "line": 90,
+          "stackTrace": "UnityEngine.Debug:LogError (object)\nFTProject.EnemyManager:Spawn (int) (at Assets/Scripts/Enemy/EnemyManager.cs:90)\nFTProject.WaveManager:Tick (single) (at Assets/Scripts/Round/WaveManager.cs:174)\nFTProject.GameFlowManager:TickFlowSimulation () (at Assets/Scripts/Game/GameFlowManager.cs:582)\nFTProject.GameFlowManager:StepManualSimulation () (at Assets/Scripts/Game/GameFlowManager.cs:570)\nFTProject.EditorTools.BalanceRuntimeSafetyVerifier:Step (single) (at Assets/Editor/Balance/BalanceRuntimeSafetyVerifier.cs:110)\nFTProject.EditorTools.BalanceRuntimeSafetyVerifier:MissingResource () (at Assets/Editor/Balance/BalanceRuntimeSafetyVerifier.cs:190)\nFTProject.EditorTools.BalanceRuntimeSafetyVerifier:Scenario (SimpleJSON.JSONArray,string,System.Action) (at Assets/Editor/Balance/BalanceRuntimeSafetyVerifier.cs:83)\nFTProject.EditorTools.BalanceRuntimeSafetyVerifier:Run (string) (at Assets/Editor/Balance/BalanceRuntimeSafetyVerifier.cs:41)\nMCPDynamicCode:Execute ()\nSystem.Reflection.MethodBase:Invoke (object,object[])\nMCPForUnity.Editor.Tools.ExecuteCode:InvokeCompiled (System.Reflection.Assembly,string) (at ./Library/PackageCache/com.coplaydev.unity-mcp@aa5fc638d6/Editor/Tools/ExecuteCode.cs:275)\nMCPForUnity.Editor.Tools.ExecuteCode:CompileAndExecute (string,string) (at ./Library/PackageCache/com.coplaydev.unity-mcp@aa5fc638d6/Editor/Tools/ExecuteCode.cs:257)\nMCPForUnity.Editor.Tools.ExecuteCode:HandleExecute (Newtonsoft.Json.Linq.JObject) (at ./Library/PackageCache/com.coplaydev.unity-mcp@aa5fc638d6/Editor/Tools/ExecuteCode.cs:130)\nMCPForUnity.Editor.Tools.ExecuteCode:HandleCommand (Newtonsoft.Json.Linq.JObject) (at ./Library/PackageCache/com.coplaydev.unity-mcp@aa5fc638d6/Editor/Tools/ExecuteCode.cs:95)\nMCPForUnity.Editor.Tools.CommandRegistry:ExecuteCommand (string,Newtonsoft.Json.Linq.JObject,System.Threading.Tasks.TaskCompletionSource`1<string>) (at ./Library/PackageCache/com.coplaydev.unity-mcp@aa5fc638d6/Editor/Tools/CommandRegistry.cs:295)\nMCPForUnity.Editor.Services.Transport.TransportCommandDispatcher:ProcessCommand (string,MCPForUnity.Editor.Services.Transport.TransportCommandDispatcher/PendingCommand) (at ./Library/PackageCache/com.coplaydev.unity-mcp@aa5fc638d6/Editor/Services/Transport/TransportCommandDispatcher.cs:366)\nMCPForUnity.Editor.Services.Transport.TransportCommandDispatcher:ProcessQueue () (at ./Library/PackageCache/com.coplaydev.unity-mcp@aa5fc638d6/Editor/Services/Transport/TransportCommandDispatcher.cs:262)\nUnityEditor.EditorApplication:Internal_CallUpdateFunctions ()\n"
+        },
+        {
+          "type": "Error",
+          "message": "[Rating] Formal run invalidated: Spawn failed: Resource",
+          "file": "Assets/Scripts/Game/GameFlowManager.cs",
+          "line": 788,
+          "stackTrace": "UnityEngine.Debug:LogError (object)\nFTProject.GameFlowManager:InvalidateRun (string) (at Assets/Scripts/Game/GameFlowManager.cs:788)\nFTProject.WaveManager:Tick (single) (at Assets/Scripts/Round/WaveManager.cs:180)\nFTProject.GameFlowManager:TickFlowSimulation () (at Assets/Scripts/Game/GameFlowManager.cs:582)\nFTProject.GameFlowManager:StepManualSimulation () (at Assets/Scripts/Game/GameFlowManager.cs:570)\nFTProject.EditorTools.BalanceRuntimeSafetyVerifier:Step (single) (at Assets/Editor/Balance/BalanceRuntimeSafetyVerifier.cs:110)\nFTProject.EditorTools.BalanceRuntimeSafetyVerifier:MissingResource () (at Assets/Editor/Balance/BalanceRuntimeSafetyVerifier.cs:190)\nFTProject.EditorTools.BalanceRuntimeSafetyVerifier:Scenario (SimpleJSON.JSONArray,string,System.Action) (at Assets/Editor/Balance/BalanceRuntimeSafetyVerifier.cs:83)\nFTProject.EditorTools.BalanceRuntimeSafetyVerifier:Run (string) (at Assets/Editor/Balance/BalanceRuntimeSafetyVerifier.cs:41)\nMCPDynamicCode:Execute ()\nSystem.Reflection.MethodBase:Invoke (object,object[])\nMCPForUnity.Editor.Tools.ExecuteCode:InvokeCompiled (System.Reflection.Assembly,string) (at ./Library/PackageCache/com.coplaydev.unity-mcp@aa5fc638d6/Editor/Tools/ExecuteCode.cs:275)\nMCPForUnity.Editor.Tools.ExecuteCode:CompileAndExecute (string,string) (at ./Library/PackageCache/com.coplaydev.unity-mcp@aa5fc638d6/Editor/Tools/ExecuteCode.cs:257)\nMCPForUnity.Editor.Tools.ExecuteCode:HandleExecute (Newtonsoft.Json.Linq.JObject) (at ./Library/PackageCache/com.coplaydev.unity-mcp@aa5fc638d6/Editor/Tools/ExecuteCode.cs:130)\nMCPForUnity.Editor.Tools.ExecuteCode:HandleCommand (Newtonsoft.Json.Linq.JObject) (at ./Library/PackageCache/com.coplaydev.unity-mcp@aa5fc638d6/Editor/Tools/ExecuteCode.cs:95)\nMCPForUnity.Editor.Tools.CommandRegistry:ExecuteCommand (string,Newtonsoft.Json.Linq.JObject,System.Threading.Tasks.TaskCompletionSource`1<string>) (at ./Library/PackageCache/com.coplaydev.unity-mcp@aa5fc638d6/Editor/Tools/CommandRegistry.cs:295)\nMCPForUnity.Editor.Services.Transport.TransportCommandDispatcher:ProcessCommand (string,MCPForUnity.Editor.Services.Transport.TransportCommandDispatcher/PendingCommand) (at ./Library/PackageCache/com.coplaydev.unity-mcp@aa5fc638d6/Editor/Services/Transport/TransportCommandDispatcher.cs:366)\nMCPForUnity.Editor.Services.Transport.TransportCommandDispatcher:ProcessQueue () (at ./Library/PackageCache/com.coplaydev.unity-mcp@aa5fc638d6/Editor/Services/Transport/TransportCommandDispatcher.cs:262)\nUnityEditor.EditorApplication:Internal_CallUpdateFunctions ()\n"
+        },
+        {
+          "type": "Error",
+          "message": "[Rating] Formal run invalidated: Wave ended with incomplete enemy accounting",
+          "file": "Assets/Scripts/Game/GameFlowManager.cs",
+          "line": 788,
+          "stackTrace": "UnityEngine.Debug:LogError (object)\nFTProject.GameFlowManager:InvalidateRun (string) (at Assets/Scripts/Game/GameFlowManager.cs:788)\nFTProject.GameFlowManager:FinishRound () (at Assets/Scripts/Game/GameFlowManager.cs:602)\nSystem.Reflection.MethodBase:Invoke (object,object[])\nFTProject.EditorTools.BalanceRuntimeSafetyVerifier:Call (object,string,object[]) (at Assets/Editor/Balance/BalanceRuntimeSafetyVerifier.cs:107)\nFTProject.EditorTools.BalanceRuntimeSafetyVerifier:IncompleteWave () (at Assets/Editor/Balance/BalanceRuntimeSafetyVerifier.cs:227)\nFTProject.EditorTools.BalanceRuntimeSafetyVerifier:Scenario (SimpleJSON.JSONArray,string,System.Action) (at Assets/Editor/Balance/BalanceRuntimeSafetyVerifier.cs:83)\nFTProject.EditorTools.BalanceRuntimeSafetyVerifier:Run (string) (at Assets/Editor/Balance/BalanceRuntimeSafetyVerifier.cs:43)\nMCPDynamicCode:Execute ()\nSystem.Reflection.MethodBase:Invoke (object,object[])\nMCPForUnity.Editor.Tools.ExecuteCode:InvokeCompiled (System.Reflection.Assembly,string) (at ./Library/PackageCache/com.coplaydev.unity-mcp@aa5fc638d6/Editor/Tools/ExecuteCode.cs:275)\nMCPForUnity.Editor.Tools.ExecuteCode:CompileAndExecute (string,string) (at ./Library/PackageCache/com.coplaydev.unity-mcp@aa5fc638d6/Editor/Tools/ExecuteCode.cs:257)\nMCPForUnity.Editor.Tools.ExecuteCode:HandleExecute (Newtonsoft.Json.Linq.JObject) (at ./Library/PackageCache/com.coplaydev.unity-mcp@aa5fc638d6/Editor/Tools/ExecuteCode.cs:130)\nMCPForUnity.Editor.Tools.ExecuteCode:HandleCommand (Newtonsoft.Json.Linq.JObject) (at ./Library/PackageCache/com.coplaydev.unity-mcp@aa5fc638d6/Editor/Tools/ExecuteCode.cs:95)\nMCPForUnity.Editor.Tools.CommandRegistry:ExecuteCommand (string,Newtonsoft.Json.Linq.JObject,System.Threading.Tasks.TaskCompletionSource`1<string>) (at ./Library/PackageCache/com.coplaydev.unity-mcp@aa5fc638d6/Editor/Tools/CommandRegistry.cs:295)\nMCPForUnity.Editor.Services.Transport.TransportCommandDispatcher:ProcessCommand (string,MCPForUnity.Editor.Services.Transport.TransportCommandDispatcher/PendingCommand) (at ./Library/PackageCache/com.coplaydev.unity-mcp@aa5fc638d6/Editor/Services/Transport/TransportCommandDispatcher.cs:366)\nMCPForUnity.Editor.Services.Transport.TransportCommandDispatcher:ProcessQueue () (at ./Library/PackageCache/com.coplaydev.unity-mcp@aa5fc638d6/Editor/Services/Transport/TransportCommandDispatcher.cs:262)\nUnityEditor.EditorApplication:Internal_CallUpdateFunctions ()\n"
+        }
+      ]
+    }
+  },
+  "compilerErrors": {
+    "success": true,
+    "message": "Retrieved 0 log entries.",
+    "data": []
+  },
+  "consoleWasCleared": false,
+  "stateObservation": "Invoked the installed plugin's private EditorStateCache.ForceUpdate through reflection to recompute a fresh snapshot from actual editor state. The idle cache otherwise became stale. No package, snapshot fields, or readiness flags were modified."
+}

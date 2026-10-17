@@ -62,13 +62,15 @@ namespace FTProject
         /// 【为什么不复用 InitFromLevel】那个方法会把金币/生命重置成关卡初始值并清空统计，
         /// 而恢复的场景恰恰相反 —— 要**保留**玩家打到一半的状态。
         /// </summary>
-        public void RestoreState(int levelId, int gold, int hp, int maxHp)
+        public void RestoreState(int levelId, int gold, int hp, int maxHp, int killed = 0, int leaked = 0)
         {
             CurrentLevelId = levelId;
             Gold = Mathf.Max(0, gold);
             MaxHp = Mathf.Max(1, maxHp);
             Hp = Mathf.Clamp(hp, 0, MaxHp);
             IsGameOver = false;
+            TotalKilled = killed;
+            TotalLeaked = leaked;
 
             EventDispatcher.TriggerEvent<int, int>(EventName.GoldChangeEvent, Gold, 0);
             EventDispatcher.TriggerEvent<int, int>(EventName.PlayerHpChangeEvent, Hp, 0);

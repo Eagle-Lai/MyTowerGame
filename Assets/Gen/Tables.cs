@@ -10,8 +10,8 @@ using SimpleJSON;
 
 
 namespace cfg
-{ 
-   
+{
+
 public sealed partial class Tables
 {
     public TBEnemyData TBEnemyData {get; }
@@ -24,59 +24,64 @@ public sealed partial class Tables
     public TBGlobal TBGlobal {get; }
     public TBAudio TBAudio {get; }
     public TBLocalization TBLocalization {get; }
+    public TBLevelRating TBLevelRating {get; }
 
     public Tables(System.Func<string, JSONNode> loader)
     {
         var tables = new System.Collections.Generic.Dictionary<string, object>();
-        TBEnemyData = new TBEnemyData(loader("tbenemydata")); 
+        TBEnemyData = new TBEnemyData(loader("tbenemydata"));
         tables.Add("TBEnemyData", TBEnemyData);
-        TBRoundData = new TBRoundData(loader("tbrounddata")); 
+        TBRoundData = new TBRoundData(loader("tbrounddata"));
         tables.Add("TBRoundData", TBRoundData);
-        TBEnemyList = new TBEnemyList(loader("tbenemylist")); 
+        TBEnemyList = new TBEnemyList(loader("tbenemylist"));
         tables.Add("TBEnemyList", TBEnemyList);
-        TBSceneInfo = new TBSceneInfo(loader("tbsceneinfo")); 
+        TBSceneInfo = new TBSceneInfo(loader("tbsceneinfo"));
         tables.Add("TBSceneInfo", TBSceneInfo);
-        TBTowerInfo = new TBTowerInfo(loader("tbtowerinfo")); 
+        TBTowerInfo = new TBTowerInfo(loader("tbtowerinfo"));
         tables.Add("TBTowerInfo", TBTowerInfo);
-        TBBulletData = new TBBulletData(loader("tbbulletdata")); 
+        TBBulletData = new TBBulletData(loader("tbbulletdata"));
         tables.Add("TBBulletData", TBBulletData);
-        TBLevelMap = new TBLevelMap(loader("tblevelmap")); 
+        TBLevelMap = new TBLevelMap(loader("tblevelmap"));
         tables.Add("TBLevelMap", TBLevelMap);
-        TBGlobal = new TBGlobal(loader("tbglobal")); 
+        TBGlobal = new TBGlobal(loader("tbglobal"));
         tables.Add("TBGlobal", TBGlobal);
-        TBAudio = new TBAudio(loader("tbaudio")); 
+        TBAudio = new TBAudio(loader("tbaudio"));
         tables.Add("TBAudio", TBAudio);
-        TBLocalization = new TBLocalization(loader("tblocalization")); 
+        TBLocalization = new TBLocalization(loader("tblocalization"));
         tables.Add("TBLocalization", TBLocalization);
+        TBLevelRating = new TBLevelRating(loader("tblevelrating"));
+        tables.Add("TBLevelRating", TBLevelRating);
         PostInit();
 
-        TBEnemyData.Resolve(tables); 
-        TBRoundData.Resolve(tables); 
-        TBEnemyList.Resolve(tables); 
-        TBSceneInfo.Resolve(tables); 
-        TBTowerInfo.Resolve(tables); 
-        TBBulletData.Resolve(tables); 
-        TBLevelMap.Resolve(tables); 
-        TBGlobal.Resolve(tables); 
-        TBAudio.Resolve(tables); 
-        TBLocalization.Resolve(tables); 
+        TBEnemyData.Resolve(tables);
+        TBRoundData.Resolve(tables);
+        TBEnemyList.Resolve(tables);
+        TBSceneInfo.Resolve(tables);
+        TBTowerInfo.Resolve(tables);
+        TBBulletData.Resolve(tables);
+        TBLevelMap.Resolve(tables);
+        TBGlobal.Resolve(tables);
+        TBAudio.Resolve(tables);
+        TBLocalization.Resolve(tables);
+        TBLevelRating.Resolve(tables);
         PostResolve();
     }
 
     public void TranslateText(System.Func<string, string, string> translator)
     {
-        TBEnemyData.TranslateText(translator); 
-        TBRoundData.TranslateText(translator); 
-        TBEnemyList.TranslateText(translator); 
-        TBSceneInfo.TranslateText(translator); 
-        TBTowerInfo.TranslateText(translator); 
-        TBBulletData.TranslateText(translator); 
-        TBLevelMap.TranslateText(translator); 
-        TBGlobal.TranslateText(translator); 
-        TBAudio.TranslateText(translator); 
-        TBLocalization.TranslateText(translator); 
+        TBEnemyData.TranslateText(translator);
+        TBRoundData.TranslateText(translator);
+        TBEnemyList.TranslateText(translator);
+        TBSceneInfo.TranslateText(translator);
+        TBTowerInfo.TranslateText(translator);
+        TBBulletData.TranslateText(translator);
+        TBLevelMap.TranslateText(translator);
+        TBGlobal.TranslateText(translator);
+        TBAudio.TranslateText(translator);
+        TBLocalization.TranslateText(translator);
+        TBLevelRating.TranslateText(translator);
     }
-    
+
     partial void PostInit();
     partial void PostResolve();
 }

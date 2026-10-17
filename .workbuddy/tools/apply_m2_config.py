@@ -23,6 +23,7 @@ M2 配置表补齐脚本（多塔型 5 类 + 子弹特性 + 全局表现常数�
 【幂等性】重复执行结果一致（按 id 与列名定位，不按行号盲写）。
 """
 import os
+raise SystemExit('LEGACY M2 configuration is retired. Use balance_pipeline.py; do not overwrite the new campaign.')
 import shutil
 import sys
 import datetime

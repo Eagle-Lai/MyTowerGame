@@ -22,6 +22,8 @@ namespace FTProject
             new Dictionary<string, ObjectPool<BaseEnemy>>();
 
         private readonly List<BaseEnemy> _all = new List<BaseEnemy>(256);
+        public enum SpawnFailure { None, Capacity, Configuration, Resource, Path }
+        public SpawnFailure LastSpawnFailure { get; private set; }
 
         public override void OnInit()
         {
@@ -57,14 +59,17 @@ namespace FTProject
         /// <returns>生成失败返回 null</returns>
         public BaseEnemy Spawn(int enemyId)
         {
+            LastSpawnFailure = SpawnFailure.None;
             EnemyConfig cfg = Configs.GetEnemy(enemyId);
             if (cfg == null)
             {
+                LastSpawnFailure = SpawnFailure.Configuration;
                 Debug.LogWarning(string.Format("[Enemy] 生成失败：找不到怪物配置 id={0}", enemyId));
                 return null;
             }
             if (string.IsNullOrEmpty(cfg.ResName))
             {
+                LastSpawnFailure = SpawnFailure.Configuration;
                 Debug.LogWarning(string.Format("[Enemy] 生成失败：怪物 id={0} 未配置 resName", enemyId));
                 return null;
             }
@@ -73,9 +78,7 @@ namespace FTProject
             CombatSystem cs = CombatSystem.Instance;
             if (cs != null && Configs.Global != null && cs.AliveEnemyCount >= Configs.Global.MaxEnemyAlive)
             {
-                Debug.LogWarning(string.Format(
-                    "[Enemy] 同屏怪物已达上限 {0}，本次生成被跳过（可在 TBGlobal.maxEnemyAlive 调整）",
-                    Configs.Global.MaxEnemyAlive));
+                LastSpawnFailure = SpawnFailure.Capacity;
                 return null;
             }
 
@@ -83,6 +86,7 @@ namespace FTProject
             BaseEnemy enemy = pool.Get();
             if (enemy == null)
             {
+                LastSpawnFailure = SpawnFailure.Resource;
                 Debug.LogError(string.Format(
                     "[Enemy] 创建失败：资源「{0}」不可用，请检查 ResTable 与预制体是否存在", cfg.ResName));
                 return null;
@@ -91,6 +95,7 @@ namespace FTProject
             List<Point> path = AStarManager.Instance.GetPath();
             if (path == null || path.Count == 0)
             {
+                LastSpawnFailure = SpawnFailure.Path;
                 Debug.LogWarning("[Enemy] 当前无可用路径，生成被取消");
                 pool.Release(enemy);
                 return null;
@@ -107,6 +112,7 @@ namespace FTProject
 
             enemy.Init(cfg, path);
             cs.RegisterEnemy(enemy);
+            if (GameFlowManager.Instance != null) GameFlowManager.Instance.NotifyEnemySpawned(enemy);
             return enemy;
         }
 

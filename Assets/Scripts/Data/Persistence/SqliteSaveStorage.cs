@@ -84,6 +84,8 @@ namespace FTProject
                     s.muted = row.GetBool("muted", s.muted);
                     s.Clamp();
                 }
+                string language;
+                if (TryGetValue("settings.language", out language)) s.language = language ?? "";
             }
             catch (Exception ex)
             {
@@ -105,6 +107,7 @@ namespace FTProject
                     "INSERT OR REPLACE INTO game_settings (id, volume, muted, updated_at) " +
                     "VALUES (?1, ?2, ?3, ?4)",
                     SingleRowId, settings.volume, settings.muted ? 1 : 0, SaveSchema.Now());
+                SetValue("settings.language", settings.language ?? "", false);
             }
             catch (Exception ex)
             {
@@ -122,7 +125,7 @@ namespace FTProject
             try
             {
                 List<DbRow> rows = _db.Query(
-                    "SELECT level_id, stars, best_hp_left, clear_count, best_time_ms FROM level_progress ORDER BY level_id");
+                    "SELECT level_id, stars, best_hp_left, clear_count, best_time_ms, rating_payload FROM level_progress ORDER BY level_id");
                 for (int i = 0; i < rows.Count; i++)
                 {
                     DbRow r = rows[i];
@@ -133,10 +136,17 @@ namespace FTProject
                     p.clearCount = UnprotectInt(r.GetString("clear_count"), 0);
                     // 老库（v1）迁移后该列为 NULL → UnprotectInt 回落 0（= 无记录），不会报错
                     p.bestTimeMs = UnprotectInt(r.GetString("best_time_ms"), 0);
+                    string payload = Unprotect(r.GetString("rating_payload"));
+                    if (!string.IsNullOrEmpty(payload))
+                    {
+                        LevelProgress full = JsonUtility.FromJson<LevelProgress>(payload);
+                        if (full == null || full.levelId != p.levelId) throw new InvalidOperationException("Rating progress identity mismatch");
+                        p = full;
+                    }
                     // 星级非法（>3）说明密文被换过或历史脏数据 —— 夹紧而不是丢弃整条记录，
                     // 丢掉会让玩家平白少一关进度。
                     if (p.stars < 0) p.stars = 0;
-                    if (p.stars > 3) p.stars = 3;
+                    if (p.stars > LevelRatingEvaluator.MaxStars) p.stars = LevelRatingEvaluator.MaxStars;
                     if (p.levelId > 0)
                     {
                         list.Add(p);
@@ -158,23 +168,37 @@ namespace FTProject
             }
             try
             {
-                long now = SaveSchema.Now();
-                _db.Execute(
-                    "INSERT OR REPLACE INTO level_progress " +
-                    "(level_id, stars, best_hp_left, clear_count, best_time_ms, last_play_at, updated_at) " +
-                    "VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
-                    progress.levelId,
-                    ProtectInt(progress.stars),
-                    ProtectInt(progress.bestHpLeft),
-                    ProtectInt(progress.clearCount),
-                    ProtectInt(progress.bestTimeMs),
-                    now,
-                    now);
+                WriteLevel(progress);
             }
             catch (Exception ex)
             {
                 Fail("写入关卡进度失败", ex);
             }
+        }
+        private void WriteLevel(LevelProgress progress)
+        {
+            long now = SaveSchema.Now();
+            _db.Execute("INSERT OR REPLACE INTO level_progress (level_id, stars, best_hp_left, clear_count, best_time_ms, last_play_at, updated_at, rating_payload) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)", progress.levelId, ProtectInt(Mathf.Clamp(progress.stars, 0, LevelRatingEvaluator.MaxStars)), ProtectInt(progress.bestHpLeft), ProtectInt(progress.clearCount), ProtectInt(progress.bestTimeMs), now, now, Protect(JsonUtility.ToJson(progress)));
+        }
+        public bool CommitClear(LevelProgress progress)
+        {
+            LastError = null;
+            if (progress == null) return false;
+            try
+            {
+                // BEGIN IMMEDIATE can fail before a transaction handle exists (for
+                // example another connection owns the writer lock). Keep startup,
+                // commit and disposal inside the same non-throwing save boundary.
+                using (IDbTransaction tx = _db.BeginTransaction())
+                {
+                    WriteLevel(progress);
+                    _db.Execute("DELETE FROM level_snapshot");
+                    _db.Execute("DELETE FROM snapshot_tower");
+                    tx.Commit();
+                }
+                return true;
+            }
+            catch (Exception ex) { Fail("Atomic clear commit failed", ex); return false; }
         }
 
         public void DeleteLevel(int levelId)
@@ -195,11 +219,12 @@ namespace FTProject
 
         public LevelSnapshot LoadSnapshot()
         {
+            LastError = null;
             LevelSnapshot snap = new LevelSnapshot();
             try
             {
                 DbRow row = _db.QuerySingle(
-                    "SELECT valid, level_id, round_cursor, gold, hp, max_hp " +
+                    "SELECT valid, level_id, round_cursor, gold, hp, max_hp, rating_payload " +
                     "FROM level_snapshot WHERE id = ?1", SingleRowId);
                 if (row == null)
                 {
@@ -212,6 +237,15 @@ namespace FTProject
                 snap.gold = row.GetInt("gold");
                 snap.hp = row.GetInt("hp");
                 snap.maxHp = row.GetInt("max_hp");
+                string payload = Unprotect(row.GetString("rating_payload"));
+                if (!string.IsNullOrEmpty(payload))
+                {
+                    LevelSnapshot full = JsonUtility.FromJson<LevelSnapshot>(payload);
+                    if (full == null || full.levelId != snap.levelId || full.roundCursor != snap.roundCursor || full.gold != snap.gold || full.hp != snap.hp || full.maxHp != snap.maxHp || full.valid != snap.valid) throw new InvalidOperationException("Checkpoint identity mismatch");
+                    return full;
+                }
+                // Old checkpoints have no rating evidence and cannot resume the new campaign.
+                snap.valid = false;
 
                 if (snap.towers == null)
                 {
@@ -241,6 +275,7 @@ namespace FTProject
 
         public void SaveSnapshot(LevelSnapshot snapshot)
         {
+            LastError = null;
             if (snapshot == null)
             {
                 return;
@@ -255,8 +290,8 @@ namespace FTProject
                 long now = SaveSchema.Now();
                 _db.Execute(
                     "INSERT OR REPLACE INTO level_snapshot " +
-                    "(id, valid, level_id, round_cursor, gold, hp, max_hp, updated_at) " +
-                    "VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
+                    "(id, valid, level_id, round_cursor, gold, hp, max_hp, updated_at, rating_payload) " +
+                    "VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
                     SingleRowId,
                     snapshot.valid ? 1 : 0,
                     snapshot.levelId,
@@ -264,7 +299,7 @@ namespace FTProject
                     snapshot.gold,
                     snapshot.hp,
                     snapshot.maxHp,
-                    now);
+                    now, Protect(JsonUtility.ToJson(snapshot)));
 
                 _db.Execute("DELETE FROM snapshot_tower");
 

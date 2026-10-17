@@ -72,7 +72,7 @@ namespace FTProject
             _timer = 0f;
             _cursor = 0;
             _allSpawned = false;
-            CurrentGroupIndex = 0;
+            CurrentGroupIndex = -1;
 
             if (round == null || round.WaveIds == null || round.WaveIds.Count == 0)
             {
@@ -171,7 +171,15 @@ namespace FTProject
                     EventDispatcher.TriggerEvent<int>(EventName.WaveStartEvent, CurrentGroupIndex + 1);
                 }
 
-                EnemyManager.Instance.Spawn(e.EnemyId);
+                BaseEnemy spawned = EnemyManager.Instance.Spawn(e.EnemyId);
+                if (spawned == null)
+                {
+                    // Capacity is transient. Keep this exact timeline item for a later frame.
+                    if (EnemyManager.Instance.LastSpawnFailure == EnemyManager.SpawnFailure.Capacity) break;
+                    _running = false;
+                    if (GameFlowManager.Instance != null) GameFlowManager.Instance.InvalidateRun("Spawn failed: " + EnemyManager.Instance.LastSpawnFailure);
+                    return;
+                }
                 _cursor++;
             }
 

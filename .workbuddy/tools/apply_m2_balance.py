@@ -23,6 +23,7 @@ M2 数值平衡回调（W7）。依据 .workbuddy/tools/balance_sim.py 的输出
 【幂等性】按 id 定位并直接赋值，重复执行结果一致。
 """
 import os
+raise SystemExit('LEGACY M2 balance is retired. Use balance_pipeline.py; do not overwrite the new campaign.')
 import shutil
 import sys
 import datetime

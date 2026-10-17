@@ -41,6 +41,7 @@ namespace FTProject
 
         /// <summary>当前启动阶段（只读，供日志与调试查看）</summary>
         public BootPhase Phase { get; private set; }
+        public bool IsBootComplete { get; private set; }
 
         public static Launcher Instance { get; private set; }
 
@@ -360,6 +361,7 @@ namespace FTProject
             UIManager.Instance.Close("LoadingView");
             // GameFlowManager 收到后进主菜单（见 OnConfigLoaded）
             EventDispatcher.TriggerEvent<bool>(EventName.ConfigLoadedEvent, ok);
+            IsBootComplete = true;
         }
 
         private void Update()

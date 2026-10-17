@@ -19,6 +19,7 @@
     medium 750/0.8   ≈  940
 """
 import io, os, json, hashlib, collections
+raise SystemExit('LEGACY challenge configuration is retired. Use balance_pipeline.py; do not overwrite the new campaign.')
 import openpyxl
 
 ASSETS = r'D:\FreedomTower\Assets'

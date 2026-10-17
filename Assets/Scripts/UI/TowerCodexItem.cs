@@ -77,9 +77,13 @@ namespace FTProject
                 _typeName.color = theme;
             }
             if (_role != null) _role.text = roleText;
-            if (_dpsRow != null) _dpsRow.text = Localization.Get("Damage   {0}", cfg.Power) ?? string.Format("伤害　{0}", cfg.Power);
+            if (_dpsRow != null) _dpsRow.text = cfg.IsSlowAura
+                ? (Localization.Get("Slow {0:P0} · DPS 0", cfg.EffectValue) ?? string.Format("减速 {0:P0} · DPS 0", cfg.EffectValue))
+                : (Localization.Get("Damage   {0}", cfg.Power) ?? string.Format("伤害　{0}", cfg.Power));
             if (_rangeRow != null) _rangeRow.text = Localization.Get("Range    {0:F1}", cfg.RadiusGrid) ?? string.Format("射程　{0:F1} 格", cfg.RadiusGrid);
-            if (_speedRow != null) _speedRow.text = Localization.Get("Speed    {0:F2}", cfg.CooldownSec) ?? string.Format("攻速　{0:F2} 秒", cfg.CooldownSec);
+            if (_speedRow != null) _speedRow.text = cfg.IsSlowAura
+                ? (Localization.Get("Aura refresh {0:0.00}s", cfg.CooldownSec) ?? string.Format("光环刷新　{0:0.00} 秒", cfg.CooldownSec))
+                : (Localization.Get("Speed    {0:F2}", cfg.CooldownSec) ?? string.Format("攻速　{0:F2} 秒", cfg.CooldownSec));
             if (_priceRow != null) _priceRow.text = Localization.Get("Cost     {0}", cfg.Prices) ?? string.Format("造价　{0} 金币", cfg.Prices);
             if (_desc != null)
             {

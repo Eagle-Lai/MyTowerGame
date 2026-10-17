@@ -151,6 +151,8 @@ namespace FTProject.EditorTools
                         clone.AddComponent<BaseEnemy>();
                     }
 
+                    RestoreMissingParticleMaterials(clone);
+
                     float barWorldY = AttachHpBar(clone, barBg, barFill);
                     if (barWorldY > -1000f)
                     {
@@ -227,6 +229,26 @@ namespace FTProject.EditorTools
                     missingScripts));
             }
             report.Ok("下一步：执行「8a. 打 AssetBundle 标记」，让这些怪物按家族进入 enemy_<家族> 资源包");
+        }
+
+        // Some source art prefabs refer to a particle material absent from the pack.
+        // Keep the installed battle-prefab repair when regenerating from those sources.
+        private static void RestoreMissingParticleMaterials(GameObject root)
+        {
+            foreach (var renderer in root.GetComponentsInChildren<ParticleSystemRenderer>(true))
+            {
+                Material[] materials = renderer.sharedMaterials;
+                bool changed = false;
+                for (int i = 0; i < materials.Length; i++)
+                {
+                    if (materials[i] != null) continue;
+                    Material fallback = AssetDatabase.LoadAssetAtPath<Material>("Assets/Materials/EnemyParticles.mat");
+                    if (fallback == null) throw new System.InvalidOperationException("Missing battle particle material: Assets/Materials/EnemyParticles.mat");
+                    materials[i] = fallback;
+                    changed = true;
+                }
+                if (changed) renderer.sharedMaterials = materials;
+            }
         }
 
         // ------------------------------------------------------------------

@@ -15,6 +15,7 @@
 【地图事实】LevelMap 9~13 是全开阔直线图（0 障碍），14/15 各 3 格障碍 —— 描述按实际棋盘写。
 """
 import datetime
+raise SystemExit('LEGACY 5-wave recipe retired by balance-20x20-v1. Use balance_pipeline.py; this script must not overwrite the new campaign.')
 import os
 import shutil
 import sys

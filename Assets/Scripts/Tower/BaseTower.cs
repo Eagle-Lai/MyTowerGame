@@ -177,6 +177,34 @@ namespace FTProject
             get { Vector2 p = transform.position; return p; }
         }
 
+        /// <summary>Capture combat phases as well as the layout at an enemy-free boundary.</summary>
+        public void CaptureCheckpointState(TowerSnapshot snapshot)
+        {
+            snapshot.runtimeStateSaved = true;
+            snapshot.fireTimer = _fireTimer; snapshot.searchTimer = _searchTimer;
+            snapshot.recoilTimer = _recoilTimer; snapshot.auraPulseTimer = _auraPulseTimer;
+            snapshot.lastDirection = _lastDir;
+            snapshot.barrelPoseSaved = _barrel != null;
+            snapshot.barrelBaseCached = _barrel != null && _barrelBaseCached;
+            if (_barrel != null)
+            {
+                snapshot.barrelLocalPosition = _barrel.localPosition;
+                snapshot.barrelLocalRotation = _barrel.localRotation;
+                snapshot.barrelBasePosition = _barrelBasePos;
+            }
+        }
+
+        public bool RestoreCheckpointState(TowerSnapshot snapshot)
+        {
+            if (snapshot == null || !snapshot.HasValidRuntimeState() || snapshot.barrelPoseSaved != (_barrel != null)) return false;
+            _fireTimer = snapshot.fireTimer; _searchTimer = snapshot.searchTimer;
+            _recoilTimer = snapshot.recoilTimer; _auraPulseTimer = snapshot.auraPulseTimer;
+            _lastDir = snapshot.lastDirection; _target = null; _candidates.Clear();
+            _barrelBaseCached = snapshot.barrelBaseCached; _barrelBasePos = snapshot.barrelBasePosition;
+            if (_barrel != null) { _barrel.localPosition = snapshot.barrelLocalPosition; _barrel.localRotation = snapshot.barrelLocalRotation; }
+            return true;
+        }
+
         private Vector2 MuzzlePosition
         {
             get
@@ -285,7 +313,7 @@ namespace FTProject
 
             float r2 = radius * radius;
             Vector2 self = Position;
-            float ratio = Config.EffectValue;          // 减速比例（塔三级 0.5/0.6/0.7）
+            float ratio = Config.EffectValue;          // 配置中的减速比例
             float duration = Config.CooldownSec + SlowAuraLingerSec;
             int applied = 0;
             for (int i = 0; i < _candidates.Count; i++)
@@ -557,7 +585,7 @@ namespace FTProject
         }
 
         /// <summary>
-        /// 在落点引爆：对半径 radius（格）内**全部**存活敌人造成伤害并施加效果。
+        /// 在落点引爆：对半径内可攻击的存活敌人造成伤害并施加效果。
         /// 与原 BaseBullet.Explode 同口径：范围从落点算，与落点上是否站怪无关。
         /// </summary>
         private void DetonateAt(Vector2 center, float radius, float damage, BulletConfig bulletCfg)
@@ -578,6 +606,11 @@ namespace FTProject
             {
                 BaseEnemy e = _candidates[i];
                 if (e == null || !e.IsAlive)
+                {
+                    continue;
+                }
+                // 命中集合与索敌使用同一对空规则，避免地面爆炸误伤贴近的飞行怪。
+                if (e.Config == null || (e.Config.IsFlying && !Config.CanAttackAir))
                 {
                     continue;
                 }

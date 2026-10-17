@@ -32,7 +32,8 @@ namespace FTProject
         private TMP_Text _bestStarText;
         private TMP_Text _enemyLabel;
         private TMP_Text _enemyIcons;
-        private readonly Image[] _stars = new Image[3];
+        private TMP_Text _ratingTarget;
+        private readonly Image[] _stars = new Image[LevelRatingEvaluator.MaxStars];
         private readonly TMP_Text[] _info = new TMP_Text[6];
         private Button _playBtn;
         private Button _replayBtn;
@@ -40,6 +41,21 @@ namespace FTProject
         private TMP_Text _playLabel;
 
         private int _levelId;
+
+        private void OnEnable()
+        {
+            EventDispatcher.AddEventListener<int>(EventName.LanguageChangedEvent, OnLanguageChanged);
+        }
+
+        private void OnDisable()
+        {
+            EventDispatcher.RemoveEventListener<int>(EventName.LanguageChangedEvent, OnLanguageChanged);
+        }
+
+        private void OnLanguageChanged(int language)
+        {
+            if (_levelId > 0) Fill(_levelId);
+        }
 
         /// <summary>打开并展示某一关的详情。levelId 非法时直接不显示（不弹空窗）。</summary>
         public static void Show(int levelId)
@@ -66,6 +82,7 @@ namespace FTProject
             _bestStarText = FindText("Panel/BestStarText");
             _enemyLabel = FindText("Panel/EnemyLabel");
             _enemyIcons = FindText("Panel/EnemyIcons");
+            _ratingTarget = FindText("Panel/RatingTarget");
             _playBtn = FindButton("Panel/PlayBtn");
             _replayBtn = FindButton("Panel/ReplayBtn");
             _closeBtn = FindButton("Panel/CloseBtn");
@@ -76,6 +93,8 @@ namespace FTProject
             _stars[0] = FindImage("Panel/Star1");
             _stars[1] = FindImage("Panel/Star2");
             _stars[2] = FindImage("Panel/Star3");
+            _stars[3] = FindImage("Panel/Star4");
+            _stars[4] = FindImage("Panel/Star5");
 
             _info[0] = FindText("Panel/Info1");
             _info[1] = FindText("Panel/Info2");
@@ -85,7 +104,7 @@ namespace FTProject
             _info[5] = FindText("Panel/Info6");
 
             if (_playBtn != null) _playBtn.onClick.AddListener(OnClickPlay);
-            if (_replayBtn != null) _replayBtn.onClick.AddListener(OnClickPlay);
+            if (_replayBtn != null) _replayBtn.onClick.AddListener(OnClickReplay);
             if (_closeBtn != null) _closeBtn.onClick.AddListener(OnClickClose);
             Button bg = FindButton("Bg");
             if (bg != null) bg.onClick.AddListener(OnClickClose);
@@ -118,7 +137,7 @@ namespace FTProject
             int stars = sm != null ? sm.GetStars(levelId) : 0;
             bool unlocked = sm == null || sm.IsUnlocked(levelId);
 
-            for (int i = 0; i < 3; i++)
+            for (int i = 0; i < _stars.Length; i++)
             {
                 if (_stars[i] != null)
                 {
@@ -128,13 +147,14 @@ namespace FTProject
             // 【为什么先算出字符串再赋值】把三元表达式拆成独立语句：
             // 多行调用会让参数个数的静态校验脚本误判（它按行解析）。
             string bestText = stars > 0
-                ? (Localization.Get("Best {0} Star", stars) ?? string.Format("历史最佳 {0} 星", stars))
-                : (Localization.Get("Not cleared yet") ?? "尚未通关");
+                ? (Localization.Get("Current version best: {0}/5", stars) ?? string.Format("本版历史最佳：{0}/5", stars))
+                : (sm != null && sm.GetLegacyStars(levelId) > 0
+                    ? (Localization.Get("Legacy clear; current version unrated") ?? "旧版已通关，本版待评定")
+                    : (Localization.Get("Current version unrated") ?? "本版待评定"));
             SetText(_bestStarText, bestText);
 
             // 波次总数 = 各回合的 WaveCount 之和（回合数 ≠ 波数，分开显示）
             List<int> roundIds = lv.RoundIds;
-            int totalWaves = 0;
             HashSet<int> enemyIds = new HashSet<int>();
             if (roundIds != null)
             {
@@ -145,7 +165,6 @@ namespace FTProject
                     {
                         continue;
                     }
-                    totalWaves += round.WaveCount;
                     List<int> waveIds = round.WaveIds;
                     if (waveIds == null)
                     {
@@ -167,18 +186,27 @@ namespace FTProject
                 }
             }
 
-            string diff = lv.Difficulty >= 3 ? "★★★" : (lv.Difficulty == 2 ? "★★☆" : "★☆☆");
-            int bestTimeMs = sm != null ? sm.GetBestTimeMs(levelId) : 0;
+            LevelRatingProfile rating = Configs.GetLevelRating(levelId);
+            long bestTimeMs = sm != null ? sm.GetBestCombatTimeMs(levelId) : 0;
 
-            SetText(_info[0], Localization.Get("Rounds    {0}", lv.RoundCount) ?? string.Format("回合数　{0}", lv.RoundCount));
-            SetText(_info[1], Localization.Get("Waves     {0}", totalWaves) ?? string.Format("波次　　{0}", totalWaves));
+            SetText(_info[0], Localization.Get("Waves     {0}", lv.RoundCount) ?? string.Format("波次　　{0}", lv.RoundCount));
+            string profileName = rating != null ? RatingPresentation.ProfileName(rating.profileId) : "—";
+            SetText(_info[1], Localization.Get("Balance preset: {0}", profileName) ?? ("调参预设：" + profileName));
             SetText(_info[2], Localization.Get("Start Gold {0}", lv.InitialGold) ?? string.Format("初始金币　{0}", lv.InitialGold));
             SetText(_info[3], Localization.Get("Start HP   {0}", lv.InitialHp) ?? string.Format("初始生命　{0}", lv.InitialHp));
-            SetText(_info[4], Localization.Get("Difficulty {0}", diff) ?? string.Format("难度　　{0}", diff));
+            SetText(_info[4], SelectView.Difficulty(lv.Difficulty));
             // 【最佳用时】0 显示成 --:--（SaveManager.FormatTime 统一口径）——
             // "没有记录"与"0 秒通关"必须一眼分得开
-            SetText(_info[5], Localization.Get("Best Time {0}", SaveManager.FormatTime(bestTimeMs))
-                ?? string.Format("最佳用时　{0}", SaveManager.FormatTime(bestTimeMs)));
+            SetText(_info[5], Localization.Get("Best combat: {0}", RatingPresentation.Time(bestTimeMs))
+                ?? ("最佳战斗用时：" + RatingPresentation.Time(bestTimeMs)));
+            string target = rating == null
+                ? (Localization.Get("Rating config missing or invalid") ?? "评分配置缺失或无效")
+                : (Localization.Get("Five-star target: full HP, no leaks, all enemies defeated; combat ≤ {0}", RatingPresentation.Time(rating.parCombatTimeMs))
+                    ?? ("五星目标：满血、无漏怪、全部击杀；战斗用时 ≤ " + RatingPresentation.Time(rating.parCombatTimeMs)));
+            string calibrationNotice = rating != null && rating.calibrationStatus == "verified_unity_reference"
+                ? "" : "\n" + (Localization.Get("Time baseline pending verification") ?? "时间基准待验证");
+            SetText(_ratingTarget, target + "\n" + (Localization.Get("Combat time excludes preparation, inter-wave waits and pauses") ?? "战斗用时不含开场准备、波间等待与暂停")
+                + calibrationNotice);
 
             SetText(_enemyLabel, Localization.Get("Enemies in this level") ?? "本关出现怪物");
             SetText(_enemyIcons, BuildEnemySummary(enemyIds));
@@ -262,6 +290,20 @@ namespace FTProject
             EventDispatcher.TriggerEvent<int>(EventName.SelectLevelRequestEvent, id);
         }
 
+        private void OnClickReplay()
+        {
+            SaveManager save = SaveManager.Instance;
+            // 选关入口会续玩兼容快照；“从头重打”须先确认清除已落盘，再进入同一入口。
+            if (save != null && !save.TryClearSnapshot())
+            {
+                EventDispatcher.TriggerEvent<string>(EventName.ShowTipEvent,
+                    Localization.Get("Checkpoint could not be cleared; original progress preserved")
+                    ?? "未能清除续玩存档，原进度已保留");
+                return;
+            }
+            OnClickPlay();
+        }
+
         private void OnClickClose()
         {
             UIManager.Instance.Close(LogicalName);
@@ -269,9 +311,10 @@ namespace FTProject
 
         private static void SetText(TMP_Text t, string v)
         {
-            if (t != null && t.text != v)
+            if (t != null)
             {
-                t.text = v;
+                if (t.text != v) t.text = v;
+                LanguageManager.ApplyFont(t);
             }
         }
 

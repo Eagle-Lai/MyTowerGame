@@ -43,25 +43,29 @@ namespace FTProject
         private const string KvFileName = "freetower_kv.json";
 
         private readonly ICryptoService _crypto;
+        private readonly string _directory;
         private SaveData _data;
         private KvFile _kv;
         private bool _initialized;
+        private bool _futureFormatReadOnly;
 
-        internal JsonSaveStorage(ICryptoService crypto)
+        internal JsonSaveStorage(ICryptoService crypto, string directory = null)
         {
             _crypto = crypto;
+            _directory = directory ?? Application.persistentDataPath;
+            Directory.CreateDirectory(_directory);
         }
 
         public string BackendName { get { return "JSON 文件（SQLite 回退）"; } }
 
         public string Location
         {
-            get { return Path.Combine(Application.persistentDataPath, SaveFileName); }
+            get { return Path.Combine(_directory, SaveFileName); }
         }
 
         private string KvPath
         {
-            get { return Path.Combine(Application.persistentDataPath, KvFileName); }
+            get { return Path.Combine(_directory, KvFileName); }
         }
 
         public bool IsReady { get { return _initialized; } }
@@ -116,11 +120,19 @@ namespace FTProject
                     Debug.LogWarning("[Save] 存档解析为 null，按新档处理：" + path);
                     return new SaveData();
                 }
-                if (d.version != SaveData.CurrentVersion)
+                if (d.version > SaveData.CurrentVersion)
                 {
-                    Debug.LogWarning(string.Format(
-                        "[Save] 存档版本 {0} != 当前 {1}，已重置为新档", d.version, SaveData.CurrentVersion));
+                    _futureFormatReadOnly = true;
+                    Debug.LogWarning("[Save] Save format is newer than this client; original file is read-only");
                     return new SaveData();
+                }
+                if (d.version < SaveData.CurrentVersion)
+                {
+                    string backup = path + ".legacy-v" + d.version + ".bak";
+                    if (!File.Exists(backup)) File.Copy(path, backup);
+                    // Preserve old scores verbatim; content-version migration is done by SaveManager.
+                    d.version = SaveData.CurrentVersion;
+                    if (d.snapshot != null && d.snapshot.formatVersion < 2) d.snapshot.valid = false;
                 }
                 Normalize(d);
                 return d;
@@ -141,13 +153,21 @@ namespace FTProject
             if (d.snapshot == null) d.snapshot = new LevelSnapshot();
             if (d.snapshot.towers == null) d.snapshot.towers = new List<TowerSnapshot>();
             d.settings.Clamp();
+            foreach (LevelProgress p in d.levels)
+            {
+                if (p == null) continue;
+                p.stars = Mathf.Clamp(p.stars, 0, LevelRatingEvaluator.MaxStars);
+                if (p.legacy == null) p.legacy = new List<LegacyLevelProgress>();
+                if (p.committedRunIds == null) p.committedRunIds = new List<string>();
+            }
         }
 
-        private void WriteSaveFile()
+        private bool WriteSaveFile(SaveData candidate = null)
         {
+            if (_futureFormatReadOnly) { LastError = "Future-format save is read-only"; Debug.LogWarning("[Save] " + LastError); return false; }
             try
             {
-                string json = JsonUtility.ToJson(_data, true);
+                string json = JsonUtility.ToJson(candidate ?? _data, true);
                 string payload = _crypto != null ? _crypto.Encrypt(json) : json;
                 // 同样用"临时文件 + 替换"，避免写一半崩溃留下半截存档。
                 string path = Location;
@@ -155,14 +175,16 @@ namespace FTProject
                 File.WriteAllText(tmp, payload);
                 if (File.Exists(path))
                 {
-                    File.Delete(path);
+                    File.Replace(tmp, path, path + ".previous.bak");
                 }
-                File.Move(tmp, path);
+                else File.Move(tmp, path);
+                return true;
             }
             catch (Exception ex)
             {
                 LastError = "写档失败：" + ex.Message;
                 Debug.LogWarning("[Save] " + LastError + "\n  路径：" + Location);
+                return false;
             }
         }
 
@@ -200,18 +222,22 @@ namespace FTProject
             }
         }
 
-        private void WriteKvFile()
+        private bool WriteKvFile(KvFile candidate)
         {
             try
             {
-                string json = JsonUtility.ToJson(_kv, true);
+                string json = JsonUtility.ToJson(candidate, true);
                 string payload = _crypto != null ? _crypto.Encrypt(json) : json;
-                File.WriteAllText(KvPath, payload);
+                string tmp = KvPath + ".tmp";
+                File.WriteAllText(tmp, payload);
+                if (File.Exists(KvPath)) File.Replace(tmp, KvPath, KvPath + ".previous.bak"); else File.Move(tmp, KvPath);
+                return true;
             }
             catch (Exception ex)
             {
                 LastError = "写入键值文件失败：" + ex.Message;
                 Debug.LogWarning("[Save] " + LastError);
+                return false;
             }
         }
 
@@ -238,7 +264,7 @@ namespace FTProject
 
         public GameSettings LoadSettings()
         {
-            return _data != null ? _data.settings : new GameSettings();
+            return _data != null ? Clone(_data.settings) : new GameSettings();
         }
 
         public void SaveSettings(GameSettings settings)
@@ -248,13 +274,14 @@ namespace FTProject
                 return;
             }
             settings.Clamp();
-            _data.settings = settings;
-            WriteSaveFile();
+            SaveData candidate = Clone(_data);
+            candidate.settings = Clone(settings);
+            if (WriteSaveFile(candidate)) _data = candidate;
         }
 
         public List<LevelProgress> LoadLevels()
         {
-            return _data != null ? _data.levels : new List<LevelProgress>();
+            return _data != null ? Clone(_data).levels : new List<LevelProgress>();
         }
 
         public void SaveLevel(LevelProgress progress)
@@ -263,32 +290,53 @@ namespace FTProject
             {
                 return;
             }
-            LevelProgress p = _data.GetOrCreate(progress.levelId);
-            p.stars = progress.stars;
-            p.bestHpLeft = progress.bestHpLeft;
-            p.clearCount = progress.clearCount;
-            WriteSaveFile();
+            SaveData candidate = Clone(_data);
+            int index = candidate.levels.FindIndex(p => p != null && p.levelId == progress.levelId);
+            LevelProgress copy = Clone(progress);
+            copy.stars = Mathf.Clamp(copy.stars, 0, LevelRatingEvaluator.MaxStars);
+            if (index < 0) candidate.levels.Add(copy); else candidate.levels[index] = copy;
+            if (WriteSaveFile(candidate)) _data = candidate;
         }
 
         public void DeleteLevel(int levelId)
         {
-            LevelProgress p = _data.Find(levelId);
+            SaveData candidate = Clone(_data);
+            LevelProgress p = candidate.Find(levelId);
             if (p != null)
             {
-                _data.levels.Remove(p);
-                WriteSaveFile();
+                candidate.levels.Remove(p);
+                if (WriteSaveFile(candidate)) _data = candidate;
             }
         }
 
         public LevelSnapshot LoadSnapshot()
         {
-            return _data != null ? _data.snapshot : new LevelSnapshot();
+            LastError = null;
+            return _data != null ? Clone(_data.snapshot) : new LevelSnapshot();
+        }
+        public bool CommitClear(LevelProgress progress)
+        {
+            if (progress == null) return false;
+            SaveData candidate = Clone(_data);
+            int index = candidate.levels.FindIndex(p => p != null && p.levelId == progress.levelId);
+            var copy = Clone(progress);
+            if (index < 0) candidate.levels.Add(copy); else candidate.levels[index] = copy;
+            candidate.snapshot = new LevelSnapshot();
+            if (!WriteSaveFile(candidate)) return false;
+            _data = candidate;
+            return true;
         }
 
         public void SaveSnapshot(LevelSnapshot snapshot)
         {
-            _data.snapshot = snapshot != null ? snapshot : new LevelSnapshot();
-            WriteSaveFile();
+            LastError = null;
+            SaveData candidate = Clone(_data);
+            candidate.snapshot = snapshot != null ? Clone(snapshot) : new LevelSnapshot();
+            if (WriteSaveFile(candidate)) _data = candidate;
+        }
+        private static T Clone<T>(T value) where T : class
+        {
+            return value == null ? null : JsonUtility.FromJson<T>(JsonUtility.ToJson(value));
         }
 
         public bool TryGetValue(string key, out string value)
@@ -326,25 +374,27 @@ namespace FTProject
                 return;
             }
             string stored = (sensitive && _crypto != null) ? _crypto.Encrypt(value) : value;
-            KvEntry e = FindKv(key);
+            KvFile candidate = Clone(_kv);
+            KvEntry e = candidate.items.Find(x => x != null && x.k == key);
             if (e == null)
             {
                 e = new KvEntry();
                 e.k = key;
-                _kv.items.Add(e);
+                candidate.items.Add(e);
             }
             e.v = stored;
             e.sensitive = sensitive;
-            WriteKvFile();
+            if (WriteKvFile(candidate)) _kv = candidate;
         }
 
         public void DeleteValue(string key)
         {
-            KvEntry e = FindKv(key);
+            KvFile candidate = Clone(_kv);
+            KvEntry e = candidate.items.Find(x => x != null && x.k == key);
             if (e != null)
             {
-                _kv.items.Remove(e);
-                WriteKvFile();
+                candidate.items.Remove(e);
+                if (WriteKvFile(candidate)) _kv = candidate;
             }
         }
 
@@ -352,6 +402,7 @@ namespace FTProject
         {
             _data = new SaveData();
             _kv = new KvFile();
+            _futureFormatReadOnly = false;
             try
             {
                 if (File.Exists(Location)) File.Delete(Location);

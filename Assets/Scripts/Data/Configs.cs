@@ -22,7 +22,7 @@ namespace FTProject
     ///   - 速度：格/秒
     ///   - 时间：秒（表里多为毫秒，已在包装类里换算）
     /// </summary>
-    public static class Configs
+    public static partial class Configs
     {
         // ------------------------------------------------------------------
         // 表实例
@@ -41,6 +41,7 @@ namespace FTProject
 
         /// <summary>多语言文本表。语言无关地存三种语言文本，运行时按当前语言取。</summary>
         public static TBLocalization LocalizationTable { get; private set; }
+        public static TBLevelRating RatingTable { get; private set; }
 
         /// <summary>全局参数（单行）</summary>
         public static GlobalConfig Global { get; private set; }
@@ -49,12 +50,14 @@ namespace FTProject
 
         /// <summary>加载失败的表名列表（供 UI 显示与自检）</summary>
         public static readonly List<string> FailedTables = new List<string>();
+        private static readonly Dictionary<string, string> LoadedJson = new Dictionary<string, string>();
+        public static bool RatingContentVerified { get; private set; }
 
         private static readonly string[] ConfigKeys =
         {
             "tbenemydata", "tbtowerinfo", "tbbulletdata", "tbenemylist",
             "tbrounddata", "tbsceneinfo", "tblevelmap", "tbglobal", "tbaudio",
-            "tblocalization"
+            "tblocalization", "tblevelrating"
         };
 
         // ------------------------------------------------------------------
@@ -104,6 +107,7 @@ namespace FTProject
                 () =>
                 {
                     FailedTables.Clear();
+                    LoadedJson.Clear();
 
                 EnemyTable = LoadTable("tbenemydata", n => new TBEnemyData(n));
                 TowerTable = LoadTable("tbtowerinfo", n => new TBTowerInfo(n));
@@ -115,6 +119,7 @@ namespace FTProject
                 GlobalTable = LoadTable("tbglobal", n => new TBGlobal(n));
                 AudioTable = LoadTable("tbaudio", n => new TBAudio(n));
                 LocalizationTable = LoadTable("tblocalization", n => new TBLocalization(n));
+                RatingTable = LoadTable("tblevelrating", n => new TBLevelRating(n));
                 _audioByLogicalName = null;   // 换了一份表数据 → 索引缓存必须作废
 
                 // Global 是单行表，单独取
@@ -141,6 +146,8 @@ namespace FTProject
                 }
 
                 bool ok = FailedTables.Count == 0;
+                RatingContentVerified = ok && VerifyRatingContent();
+                if (!RatingContentVerified) { FailedTables.Add("tblevelrating(content hash mismatch)"); ok = false; }
                 IsLoaded = true;
 
                 LogSummary(ok);
@@ -176,6 +183,7 @@ namespace FTProject
             try
             {
                 JSONNode node = JSONNode.Parse(ta.text);
+                LoadedJson[key] = ta.text;
                 T table = ctor(node);
                 if (table == null)
                 {
@@ -340,6 +348,80 @@ namespace FTProject
                 return null;
             }
             return new EnemyConfig(d);
+        }
+        public static LevelRatingProfile GetLevelRating(int id)
+        {
+            return LevelRatingProfile.From(RatingTable != null ? RatingTable.GetOrDefault(id) : null);
+        }
+        private static bool VerifyRatingContent()
+        {
+            if (RatingTable == null || RatingTable.DataList == null || LevelTable == null || RatingTable.DataList.Count != LevelTable.DataList.Count) return false;
+            string actual = CalculateRuntimeContentHash(LoadedJson, RatingTable.DataList);
+            if (actual == null) return false;
+            var rows = RatingTable.DataList;
+            foreach (var row in rows)
+            {
+                if (row.RuntimeContentHash != actual) { Debug.LogError("[Rating] Actual config content differs from the certified rating plan: " + row.Id); return false; }
+                string error;
+                if (!ValidateRatingPlan(LevelRatingProfile.From(row), out error)) { Debug.LogError("[Rating] " + error); return false; }
+            }
+            Debug.Log("[Rating] Runtime configuration SHA256 verified: " + actual);
+            return true;
+        }
+        private static string CalculateRuntimeContentHash(IDictionary<string, string> jsonTexts, IList<cfg.LevelRating> ratingRows)
+        {
+            string[] keys = { "tbenemydata", "tbenemylist", "tbrounddata", "tbsceneinfo", "tblevelmap", "tbtowerinfo", "tbbulletdata", "tbglobal" };
+            var text = new System.Text.StringBuilder();
+            foreach (string key in keys)
+            {
+                string json; if (!jsonTexts.TryGetValue(key, out json)) return null;
+                text.Append(key).Append('\n').Append(json.TrimStart('\uFEFF').Replace("\r\n", "\n").Replace("\r", "\n")).Append('\n');
+            }
+            var rows = new List<cfg.LevelRating>(ratingRows); rows.Sort((a, b) => a.Id.CompareTo(b.Id));
+            foreach (var r in rows)
+            {
+                text.Append(string.Join("|", r.Id, r.DifficultyTier, r.ProfileId, r.ProfileRevision, r.ExpectedWaveCount, r.ExpectedEnemyCount, r.TwoStarHpPermille, r.ThreeStarHpPermille, r.FourStarHpPermille, r.MaxFourStarLeaks, r.FourStarTimePermille, r.ParCombatTimeMs, string.Join(",", r.BossVariantIds), string.Join(",", r.CriticalVariantIds), r.BalanceRevision, r.RatingRevision, r.PlanHash)).Append('\n');
+            }
+            string actual;
+            using (var sha = System.Security.Cryptography.SHA256.Create()) actual = BitConverter.ToString(sha.ComputeHash(System.Text.Encoding.UTF8.GetBytes(text.ToString()))).Replace("-", "").ToLowerInvariant();
+            return actual;
+        }
+        public static bool ValidateRatingPlan(LevelRatingProfile profile, out string error)
+        {
+            error = "Rating config missing or invalid";
+            if (profile == null || !profile.IsValid) return false;
+            var level = LevelTable != null ? LevelTable.GetOrDefault(profile.id) : null;
+            if (level == null || level.Difficulty != profile.difficultyTier || level.RoundList == null || level.RoundList.Count != profile.expectedWaveCount) return false;
+            int total = 0; var rounds = new HashSet<int>(); var groups = new HashSet<int>(); var bosses = new HashSet<int>(); var seen = new HashSet<int>();
+            foreach (int roundId in level.RoundList)
+            {
+                var round = RoundTable != null ? RoundTable.GetOrDefault(roundId) : null;
+                if (round == null || !rounds.Add(roundId) || round.EnemyIndexs == null || round.EnemyIndexs.Count != 1) return false;
+                int groupId = round.EnemyIndexs[0]; var group = WaveTable != null ? WaveTable.GetOrDefault(groupId) : null;
+                if (group == null || !groups.Add(groupId) || group.EnemyIndexs == null || group.EnemyIndexs.Count == 0) return false;
+                foreach (int enemyId in group.EnemyIndexs)
+                {
+                    var enemy = EnemyTable != null ? EnemyTable.GetOrDefault(enemyId) : null;
+                    if (enemy == null || string.IsNullOrEmpty(enemy.ResName)) return false;
+                    total++; seen.Add(enemyId); if (enemy.Type == 5) bosses.Add(enemyId);
+                }
+            }
+            if (total != profile.expectedEnemyCount || !bosses.SetEquals(profile.bossVariantIds)) return false;
+            foreach (int id in profile.criticalVariantIds) if (!seen.Contains(id)) return false;
+            foreach (int id in bosses) if (!profile.criticalVariantIds.Contains(id)) return false;
+            error = null; return true;
+        }
+        public static void ReloadForNewRunAsync(Action<bool> onDone)
+        {
+            var flow = GameFlowManager.Instance;
+            if (flow != null && (flow.State == GameFlowState.RoundRunning || flow.State == GameFlowState.Preparing))
+            {
+                Debug.LogError("[Config] Running games keep their frozen configuration. Return to selection before reloading.");
+                if (onDone != null) onDone(false);
+                return;
+            }
+            IsLoaded = false;
+            LoadAsync(onDone);
         }
 
         public static TowerConfig GetTower(int id)

@@ -178,11 +178,43 @@ def view_paths(path):
     """收集 View 脚本里所有 transform.Find("...") 的字符串。"""
     src = strip_comments(read(path))
     found = set()
-    for m in re.finditer(r'Find(?:Text|Button|Rect)?\(\s*"([^"]+)"', src):
+    for m in re.finditer(r'Find(?:Text|Button|Rect|Image)?\(\s*"([^"]+)"', src):
         found.add(m.group(1))
     for m in re.finditer(r'\.\s*Find\(\s*"([^"]+)"', src):
         found.add(m.group(1))
     return found
+
+
+def prefab_nodes(path):
+    """Read serialized transform ancestry from the actual checked-in prefab."""
+    src = read(path)
+    blocks = {int(m.group(2)): (int(m.group(1)), m.group(3)) for m in re.finditer(
+        r'--- !u!(\d+) &(\d+)\n(.*?)(?=--- !u!|\Z)', src, re.S)}
+    names = {}
+    transforms = {}
+    for ident, (kind, block) in blocks.items():
+        if kind == 1:
+            match = re.search(r'^  m_Name: (.*)$', block, re.M)
+            if match:
+                names[ident] = match.group(1)
+        elif kind in (4, 224):
+            owner = re.search(r'm_GameObject: \{fileID: (\d+)\}', block)
+            parent = re.search(r'm_Father: \{fileID: (\d+)\}', block)
+            if owner and parent:
+                transforms[ident] = (int(owner.group(1)), int(parent.group(1)))
+
+    def node_path(ident, visited=None):
+        visited = set() if visited is None else visited
+        if ident in visited:
+            raise ValueError('Prefab transform cycle: %s' % path)
+        visited.add(ident)
+        owner, parent = transforms[ident]
+        if parent == 0:
+            return ''
+        prefix = node_path(parent, visited)
+        return (prefix + '/' if prefix else '') + names[owner]
+
+    return {node_path(ident) for ident in transforms if transforms[ident][1] != 0}
 
 
 def main():
@@ -232,6 +264,16 @@ def main():
         if missing:
             problems.append((view, missing, sorted(nodes)))
 
+        # 评分链必须同时通过生成器与真实资源检查，不能只证明代码里存在创建语句。
+        if view in ('LevelDetailView', 'LevelClearView'):
+            prefab = os.path.join(PROJ, 'Assets', 'Prefabs', 'UI', view + '.prefab')
+            actual = prefab_nodes(prefab)
+            missing_actual = sorted(refs - actual)
+            if view == 'LevelDetailView':
+                missing_actual += sorted({'Panel/Star%d' % n for n in range(1, 6)} - actual)
+            if missing_actual:
+                problems.append((view + ' actual prefab', sorted(set(missing_actual)), sorted(actual)))
+
     print('=' * 78)
     print('UI 节点契约校验（View 的 Find 路径 vs 生成器产出的节点）')
     print('  已比对视图：%d 个' % checked)
@@ -241,7 +283,7 @@ def main():
             print('           %s' % x)
         print('         生成器实际产出：%s' % ', '.join(nodes))
     if not problems:
-        print('  PASS  所有视图引用的节点都能在生成器里找到')
+        print('  PASS  所有视图引用的节点都能在生成器里找到；两张评分 prefab 与五槽星级完整')
     print()
     print('RESULT:', 'FAIL' if problems else 'PASS')
     return 1 if problems else 0

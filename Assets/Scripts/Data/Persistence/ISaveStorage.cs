@@ -58,6 +58,8 @@ namespace FTProject
 
         LevelSnapshot LoadSnapshot();
         void SaveSnapshot(LevelSnapshot snapshot);
+        /// <summary>Commit a run and invalidate its checkpoint in one durable unit.</summary>
+        bool CommitClear(LevelProgress progress);
 
         // ---- 通用键值（设置项 / 其它零散数据）-----------------------------
 

@@ -6,8 +6,8 @@ using SimpleJSON;
     tables = x.tables
 }}
 
-{{cs_start_name_space_grace x.namespace}} 
-   
+{{cs_start_name_space_grace x.namespace}}
+
 public sealed partial class {{name}}
 {
     {{~for table in tables ~}}
@@ -23,13 +23,13 @@ public sealed partial class {{name}}
     {
         var tables = new System.Collections.Generic.Dictionary<string, object>();
         {{~for table in tables ~}}
-        {{table.name}} = new {{table.full_name}}(loader("{{table.output_data_file}}")); 
+        {{table.name}} = new {{table.full_name}}(loader("{{table.output_data_file}}"));
         tables.Add("{{table.full_name}}", {{table.name}});
         {{~end~}}
         PostInit();
 
         {{~for table in tables ~}}
-        {{table.name}}.Resolve(tables); 
+        {{table.name}}.Resolve(tables);
         {{~end~}}
         PostResolve();
     }
@@ -37,10 +37,10 @@ public sealed partial class {{name}}
     public void TranslateText(System.Func<string, string, string> translator)
     {
         {{~for table in tables ~}}
-        {{table.name}}.TranslateText(translator); 
+        {{table.name}}.TranslateText(translator);
         {{~end~}}
     }
-    
+
     partial void PostInit();
     partial void PostResolve();
 }
