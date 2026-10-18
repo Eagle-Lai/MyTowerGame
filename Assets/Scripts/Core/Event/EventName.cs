@@ -93,10 +93,28 @@ namespace FTProject
         /// <summary>请求关闭关卡选择界面（回到当前对局 / 退出）</summary>
         public const string CloseSelectRequestEvent = "CloseSelectRequestEvent";
 
-        /// <summary>请求暂停</summary>
+        /// <summary>
+        /// 请求打开暂停菜单弹窗（PauseView：继续 / 重开 / 设置 / 退出选关）。
+        /// 【2026-10-18 语义收窄】改成**纯菜单入口**，不再暂停游戏：
+        ///   暂停/继续由 <see cref="PauseToggleRequestEvent"/> 负责（HUD 的 Btn_Pause）。
+        ///   发送方：HudView 的 Btn_Intro（原「游戏介绍」按钮，弹窗能力由 Btn_Pause 迁移过来）。
+        /// </summary>
         public const string PauseRequestEvent = "PauseRequestEvent";
 
-        /// <summary>请求继续（取消暂停）</summary>
+        /// <summary>
+        /// 请求暂停 / 继续（同一个开关，取反）。无 UI、不弹任何窗。
+        /// 发送方：HudView 的 Btn_Pause、键盘热键 P。接收方：GameFlowManager 统一改 timeScale。
+        /// </summary>
+        public const string PauseToggleRequestEvent = "PauseToggleRequestEvent";
+
+        /// <summary>
+        /// 暂停状态**已变化**（参数：bool 是否暂停）。由 GameFlowManager 在 timeScale 真正变化后派发。
+        /// 【为什么要这条】暂停菜单可以在"未暂停"时打开（Btn_Intro），它的标题要能在
+        ///   "菜单 / 已暂停"之间实时切换 —— 只靠打开时算一次，热键 P 在菜单开着时改状态就会留下旧标题。
+        /// </summary>
+        public const string PauseStateChangedEvent = "PauseStateChangedEvent";
+
+        /// <summary>请求继续（取消暂停）—— 暂停菜单的「继续」按钮仍走这条</summary>
         public const string ResumeRequestEvent = "ResumeRequestEvent";
 
         /// <summary>请求重开当前关卡</summary>

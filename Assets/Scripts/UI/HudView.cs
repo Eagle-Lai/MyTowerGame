@@ -21,8 +21,12 @@ namespace FTProject
     ///     映射只在本文件的 TowerTypeOf 与美术目录两处，别处不要各写一份。
     ///
     /// 【2026-10-14 新增】右上角两颗按钮 + 塔按钮长按拖拽建造：
-    ///   · Btn_Pause  → PauseRequestEvent（GameFlowManager 打开 PauseView，timeScale=0 可恢复）
-    ///   · Btn_Intro  → OpenGameIntroRequestEvent（打开 GameIntroView，内含「回到选关」）
+    ///   · Btn_Pause  → PauseToggleRequestEvent（GameFlowManager.TogglePause → GameClock.SetPaused）
+    ///     ★ 2026-10-18：**不再弹任何窗**，只做暂停/继续开关（点击一次暂停、再点一次恢复）；
+    ///       文案两态：未暂停 `Pause` ⇄ 已暂停 `Continue`（RefreshPauseLabel，不挂 TextLocalizer）。
+    ///   · Btn_Intro  → PauseRequestEvent（打开暂停菜单 PauseView：继续/重开/设置/退出选关）
+    ///     ★ 2026-10-18：弹窗能力由 Btn_Pause 迁移过来；打开菜单**不暂停游戏**
+    ///       （暂停只由 Btn_Pause / 热键 P 控制，两个按钮职责互不覆盖）。
     ///   · 塔按钮手势两分：快速点按 = 经典放置态（点击落子）；长按/按住后移动 =
     ///     拖拽建造（TowerDragBeginEvent，ghost 跟手、松手校验落子）——对标《坚守阵地》。
     ///     判定细节见 TowerHoldSec / TowerDragStartPixels 与 OnTowerButtonPressed/Released。
@@ -50,9 +54,17 @@ namespace FTProject
         private Button _speedButton;
         private TMP_Text _speedLabel;
 
-        // ---- 右上角：暂停 / 游戏介绍（2026-10-14）----
+        // ---- 右上角：暂停开关 / 暂停菜单（2026-10-14；2026-10-18 职责重划）----
         private Button _pauseButton;
         private Button _introButton;
+        /// <summary>
+        /// 暂停按钮的文案（2026-10-18 起由本类按状态写：未暂停 = Pause，已暂停 = Continue）。
+        /// 【为什么不用 TextLocalizer】它是**两态文本**，和 MuteBtn 同类：挂了本地化组件后，
+        ///   切语言会按 prefab 原文（Pause）重刷，把"已暂停 → Continue"冲掉。
+        ///   所以该节点刻意不挂 TextLocalizer（见 LocalizationPrefabBinder 的 Btn_Pause 跳过规则），
+        ///   切语言时由 OnLanguageChanged → RefreshPauseLabel 按当前状态重算。
+        /// </summary>
+        private TMP_Text _pauseLabel;
 
         /// <summary>
         /// 塔按钮：节点名 → (按钮, 塔型, 价格文本)。
@@ -130,6 +142,7 @@ namespace FTProject
             EventDispatcher.RemoveEventListener(EventName.PlayerStateInitEvent, RefreshAll);
             EventDispatcher.RemoveEventListener<float>(EventName.GameSpeedChangedEvent, OnSpeedChanged);
             EventDispatcher.RemoveEventListener<int>(EventName.LanguageChangedEvent, OnLanguageChanged);
+            EventDispatcher.RemoveEventListener<bool>(EventName.PauseStateChangedEvent, OnPauseStateChanged);
         }
 
         // ------------------------------------------------------------------
@@ -199,14 +212,22 @@ namespace FTProject
                 }
             }
 
-            // 右上角：暂停 / 游戏介绍（2026-10-14）
-            // 【文案不在这里 SetText】两颗按钮的 Label 是静态文案（英文原文写死在 prefab），
+            // 右上角：暂停开关 / 暂停菜单（2026-10-14 新增；2026-10-18 职责重划）
+            // 【文案口径】Btn_Intro 的 Label 是静态文案（英文原文 Menu 写死在 prefab），
             //   由 LocalizationPrefabBinder 批量挂 TextLocalizer 自动切语言 —— 与其它界面按钮同口径。
+            //   但 Btn_Pause 是**两态**（Pause ⇄ Continue），刻意不挂 TextLocalizer，
+            //   由 RefreshPauseLabel 按 GameClock.IsPaused 写、并在语言切换时重算。
+            // 【为什么监听器只加一次、且不重复绑】这两个按钮的 prefab 上没有任何持久化 onClick
+            //   （m_Calls 为空），绑定只发生在 Awake 这一次；重绑会给同一次点击派发两次事件
+            //   （表现为"点暂停立刻又恢复"），所以这里保持"一个按钮一个监听"。
             _pauseButton = FindButton("Btn_Pause");
             if (_pauseButton != null)
             {
                 _pauseButton.onClick.AddListener(OnClickPause);
             }
+            // 暂停按钮是"暂停/继续"两态：文案由 RefreshPauseLabel 按当前状态写（见字段注释）
+            _pauseLabel = FindChildText("Btn_Pause/Label");
+            RefreshPauseLabel();
             _introButton = FindButton("Btn_Intro");
             if (_introButton != null)
             {
@@ -268,6 +289,8 @@ namespace FTProject
             EventDispatcher.AddEventListener<float>(EventName.GameSpeedChangedEvent, OnSpeedChanged);
             // 语言切换：重放回合文本与开始按钮文本（配方见 OnLanguageChanged）
             EventDispatcher.AddEventListener<int>(EventName.LanguageChangedEvent, OnLanguageChanged);
+            // 暂停状态变化：刷新暂停按钮的两态文案（Pause ⇄ Continue）
+            EventDispatcher.AddEventListener<bool>(EventName.PauseStateChangedEvent, OnPauseStateChanged);
         }
 
         private TMP_Text FindText(string path)
@@ -436,24 +459,36 @@ namespace FTProject
         }
 
         // ------------------------------------------------------------------
-        // 右上角：暂停 / 游戏介绍（2026-10-14）
+        // 右上角：暂停开关 / 暂停菜单（2026-10-14；2026-10-18 职责重划）
         // ------------------------------------------------------------------
 
+        /// <summary>
+        /// 暂停/继续开关（Btn_Pause）。**不弹任何窗**。
+        /// 【链路】PauseToggleRequestEvent → GameFlowManager.OnPauseToggleRequest → TogglePause
+        ///   → GameClock.SetPaused（timeScale 0/1）。
+        /// 【为什么发给流程层而不是直接写 timeScale】HUD 不持有游戏状态（见类注释），
+        ///   且暂停的唯一写入口必须只有一处，否则界面与流程层会各写一次、状态互相覆盖。
+        /// </summary>
         private void OnClickPause()
         {
-            // 【真机诊断埋点】"点暂停没反应"排查链第一环；
-            // 后续链路：PauseRequestEvent → GameFlowManager.OnPauseRequest → PauseView（timeScale=0）。
-            Debug.Log("[HUD] 点击暂停按钮");
-            // GameOver 时 GameFlowManager 会拒开暂停界面，这里不用重复判状态
-            EventDispatcher.TriggerEvent(EventName.PauseRequestEvent);
+            // 【真机诊断埋点】"点暂停没反应"排查链第一环：点击是否到达 HUD。
+            // 后续链路看 [Flow] 暂停/继续（timeScale=…）。
+            Debug.Log("[HUD] 点击暂停按钮（暂停/继续开关，不弹窗）");
+            EventDispatcher.TriggerEvent(EventName.PauseToggleRequestEvent);
         }
 
+        /// <summary>
+        /// 打开暂停菜单弹窗（Btn_Intro）。
+        /// 【2026-10-18】原 Btn_Pause 的"弹窗"能力迁移到这里：
+        ///   本方法**只发打开菜单的请求，不触发暂停**（PauseView 也不再改 timeScale），
+        ///   所以点一下不会把游戏停住；想停请按旁边的 Btn_Pause。
+        /// </summary>
         private void OnClickIntro()
         {
-            // 【真机诊断埋点】"点介绍没反应"排查链第一环；
-            // 后续链路：OpenGameIntroRequestEvent → GameFlowManager.OnOpenGameIntroRequest。
-            Debug.Log("[HUD] 点击游戏介绍按钮");
-            EventDispatcher.TriggerEvent(EventName.OpenGameIntroRequestEvent);
+            // 【真机诊断埋点】"点菜单按钮没反应"排查链第一环；
+            // 后续链路：PauseRequestEvent → GameFlowManager.OnPauseRequest → PauseView。
+            Debug.Log("[HUD] 点击暂停菜单按钮（只开菜单，不暂停）");
+            EventDispatcher.TriggerEvent(EventName.PauseRequestEvent);
         }
 
         // ------------------------------------------------------------------
@@ -525,6 +560,33 @@ namespace FTProject
             {
                 SetStartLabelLocalized(_startKey, _startFallback);
             }
+            // 暂停按钮的两态文案（Pause / Continue）没有 TextLocalizer，必须在这里重算；
+            // 状态从 GameClock 现取，不依赖任何配方 —— 中途暂停/继续都不会让文案过期。
+            RefreshPauseLabel();
+        }
+
+        /// <summary>暂停状态变化 → 重刷暂停按钮文案（Pause ⇄ Continue）。</summary>
+        private void OnPauseStateChanged(bool paused)
+        {
+            RefreshPauseLabel();
+        }
+
+        /// <summary>
+        /// 写暂停按钮文案：未暂停 = Pause（暂停），已暂停 = Continue（继续）。
+        /// 【状态源是 GameClock.IsPaused】与"暂停的唯一写入口 GameClock.SetPaused"同一份状态，
+        ///   不另存一个布尔，免得 UI 与流程层的暂停态各说各话。
+        /// </summary>
+        private void RefreshPauseLabel()
+        {
+            if (_pauseLabel == null)
+            {
+                return;
+            }
+            bool paused = GameClock.IsPaused;
+            _pauseLabel.text = paused
+                ? (Localization.Get("Continue") ?? "继续")
+                : (Localization.Get("Pause") ?? "暂停");
+            LanguageManager.ApplyFont(_pauseLabel);
         }
 
         /// <summary>写回合文本并记住配方（语言切换时按配方重放）。</summary>

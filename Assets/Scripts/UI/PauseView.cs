@@ -5,13 +5,20 @@ using UnityEngine.UI;
 namespace FTProject
 {
     /// <summary>
-    /// 暂停界面（M3-6）。
+    /// 暂停菜单弹窗（M3-6；2026-10-18 起与"暂停"解耦）。
     ///
-    /// 【暂停是怎么实现的】Time.timeScale = 0 + 一个自绘的半透明遮罩。
-    ///   【为什么必须由本界面负责恢复】如果暂停后直接销毁界面而不恢复 timeScale，
-    ///   游戏会永久卡住 —— 这是暂停功能最经典的 bug。所以：
-    ///     · OnDisable 里无条件恢复 timeScale（覆盖"被别处销毁"的情况）
-    ///     · 按钮点击用 unscaled 语义（见各 OnClick 的注释），否则 timeScale=0 时按钮反馈会僵住
+    /// 【它现在是什么】一个**菜单浮层**：继续 / 重开 / 设置 / 退出选关。
+    ///   入口 = HUD 右上角 Btn_Intro（原 Btn_Pause 的弹窗能力迁移过来）。
+    ///   标题按状态取词：已暂停 → `Game Paused`；未暂停 → `Menu`（见 Refresh）。
+    ///   （Btn_Intro 的按钮文案 2026-10-18 也从 `Game Intro` 改成了 `Menu`，与之对应）
+    ///
+    /// 【为什么不再碰 timeScale】2026-10-18 的需求把两件事拆开了：
+    ///   · 暂停/继续 = Btn_Pause（或热键 P）→ GameFlowManager.TogglePause → GameClock.SetPaused；
+    ///   · 打开本菜单 = 只摆 UI，不改变游戏时间（点 Btn_Intro 不该把游戏停住）。
+    ///   所以本界面**不再在 OnEnable 压 timeScale、也不在 OnDisable 恢复**——
+    ///   那种"界面负责暂停"的写法会在"开着菜单被人从别处解除暂停"时把时间又写回去，
+    ///   与流程层的暂停状态互相打架（这正是本次要清理的遗留耦合）。
+    ///   时间恢复的唯一入口是 GameClock.SetPaused(false)（GameFlowManager 负责）。
     ///
     /// 【本界面不做的事】不改任何游戏数值，只发事件；真正的重开/退出由 GameFlowManager 执行。
     /// </summary>
@@ -44,18 +51,18 @@ namespace FTProject
 
         private void OnEnable()
         {
-            Time.timeScale = 0f;
+            // 注意：这里**不写 Time.timeScale**（见类注释）。暂停由流程层独占。
             Refresh();
             Subscribe();
         }
 
         /// <summary>
-        /// 【关键】无论因为什么原因被关掉/销毁，都必须把时间恢复回来。
-        /// 放在 OnDisable 而不是各个按钮里，是为了覆盖"被 UIManager 直接关掉"这类路径。
+        /// 关闭时同样不碰 timeScale：本界面可能是在"游戏正常运行"时打开的，
+        /// 关掉它不该顺手暂停/恢复任何东西（原先无条件 Time.timeScale = 1f 会把
+        /// 别处设好的暂停态冲掉）。
         /// </summary>
         private void OnDisable()
         {
-            Time.timeScale = 1f;
             Unsubscribe();
         }
 
@@ -72,7 +79,14 @@ namespace FTProject
         {
             if (_title != null)
             {
-                _title.text = Localization.Get("Game Paused") ?? "暂停";
+                // 【标题为什么按状态取词】本菜单可以在"游戏正常运行"时打开（Btn_Intro），
+                //   这时写"已暂停"就是假话。所以：
+                //     已暂停 → Game Paused（暂停）；未暂停 → Menu（菜单）。
+                //   两个 key 都在多语言表里（Menu = 2026-10-18 新增），缺表时才用中文兜底。
+                string text = GameClock.IsPaused
+                    ? (Localization.Get("Game Paused") ?? "暂停")
+                    : (Localization.Get("Menu") ?? "菜单");
+                _title.text = text;
                 LanguageManager.ApplyFont(_title);
             }
         }
@@ -84,6 +98,8 @@ namespace FTProject
                 return;
             }
             EventDispatcher.AddEventListener<int>(EventName.LanguageChangedEvent, OnLanguageChanged);
+            // 暂停状态可能在菜单开着时变化（热键 P / 别的入口），标题要跟着切
+            EventDispatcher.AddEventListener<bool>(EventName.PauseStateChangedEvent, OnPauseStateChanged);
             _subscribed = true;
         }
 
@@ -94,10 +110,16 @@ namespace FTProject
                 return;
             }
             EventDispatcher.RemoveEventListener<int>(EventName.LanguageChangedEvent, OnLanguageChanged);
+            EventDispatcher.RemoveEventListener<bool>(EventName.PauseStateChangedEvent, OnPauseStateChanged);
             _subscribed = false;
         }
 
         private void OnLanguageChanged(int lang)
+        {
+            Refresh();
+        }
+
+        private void OnPauseStateChanged(bool paused)
         {
             Refresh();
         }
@@ -109,8 +131,9 @@ namespace FTProject
 
         private void OnClickRestart()
         {
-            // 先恢复时间再重开：否则新一局会在 timeScale=0 下启动，看起来像卡死
-            Time.timeScale = 1f;
+            // 【为什么这里不再写 timeScale】重开走 RestartLevel → StartLevel → TeardownLevel，
+            //   而 TeardownLevel 里已经有唯一的解除暂停入口（GameClock.SetPaused(false)）。
+            //   在 UI 里再写一次就是双写，容易与流程层状态脱钩。
             EventDispatcher.TriggerEvent(EventName.RestartLevelRequestEvent);
         }
 
@@ -121,7 +144,7 @@ namespace FTProject
 
         private void OnClickQuit()
         {
-            Time.timeScale = 1f;
+            // 同上：退出对局由 QuitToSelect → TeardownLevel 统一解除暂停
             EventDispatcher.TriggerEvent(EventName.QuitToSelectRequestEvent);
         }
 

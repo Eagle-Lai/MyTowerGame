@@ -157,6 +157,15 @@ namespace FTProject.EditorTools
                     continue;
                 }
 
+                // Btn_Pause/Label 是"暂停 / 继续"两态文本（HudView.RefreshPauseLabel 按 GameClock.IsPaused 写），
+                // 与 MuteBtn 同理：挂了本地化组件会在切语言时被"按 prefab 原文 Pause"刷回，
+                // 把暂停态的 Continue 冲掉。该节点由 HudView 在语言切换时自己重算文案。
+                if (t.transform.parent != null && t.transform.parent.name == "Btn_Pause")
+                {
+                    skipped++;
+                    continue;
+                }
+
                 // TMP_Dropdown 内部的文本（设置界面的语言下拉框）一律跳过：
                 //   · caption 与列表项由 TMP_Dropdown 运行时按当前语言自显名填充；
                 //   · 挂了本地化组件后，切语言时会把它们按"占位原文"冲掉，表现为文案错乱。

@@ -109,6 +109,7 @@ public class AOTGenericReferences : UnityEngine.MonoBehaviour
 	// System.Collections.Generic.IComparer<float>
 	// System.Collections.Generic.IComparer<int>
 	// System.Collections.Generic.IComparer<object>
+	// System.Collections.Generic.IDictionary<object,object>
 	// System.Collections.Generic.IEnumerable<FTProject.WaveManager.SpawnEntry>
 	// System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<int,object>>
 	// System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<object,FTProject.LocEntry>>

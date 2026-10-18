@@ -1,0 +1,54 @@
+  + Exception Group Traceback (most recent call last):
+  |   File "D:\FreedomTower_1\.workbuddy\cache\ui-resolution-20261018\client.py", line 60, in <module>
+  |     if __name__=='__main__':asyncio.run(main())
+  |                             ^^^^^^^^^^^^^^^^^^^
+  |   File "C:\Users\78296\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\asyncio\runners.py", line 195, in run
+  |     return runner.run(main)
+  |            ^^^^^^^^^^^^^^^^
+  |   File "C:\Users\78296\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\asyncio\runners.py", line 118, in run
+  |     return self._loop.run_until_complete(task)
+  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |   File "C:\Users\78296\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\asyncio\base_events.py", line 691, in run_until_complete
+  |     return future.result()
+  |            ^^^^^^^^^^^^^^^
+  |   File "D:\FreedomTower_1\.workbuddy\cache\ui-resolution-20261018\client.py", line 58, in main
+  |     async with streamablehttp_client('http://127.0.0.1:8082/mcp', httpx_client_factory=lambda **kw:httpx.AsyncClient(**{**kw,'trust_env':False})) as (r,w,_):
+  |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |   File "C:\Users\78296\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\contextlib.py", line 231, in __aexit__
+  |     await self.gen.athrow(value)
+  |   File "C:\Users\78296\AppData\Local\uv\cache\archive-v0\h6ROiubxYMi9DTp6\Lib\site-packages\mcp\client\streamable_http.py", line 742, in streamablehttp_client
+  |     async with streamable_http_client(
+  |                ^^^^^^^^^^^^^^^^^^^^^^^
+  |   File "C:\Users\78296\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\contextlib.py", line 231, in __aexit__
+  |     await self.gen.athrow(value)
+  |   File "C:\Users\78296\AppData\Local\uv\cache\archive-v0\h6ROiubxYMi9DTp6\Lib\site-packages\mcp\client\streamable_http.py", line 672, in streamable_http_client
+  |     async with anyio.create_task_group() as tg:
+  |                ^^^^^^^^^^^^^^^^^^^^^^^^^
+  |   File "C:\Users\78296\AppData\Local\uv\cache\archive-v0\h6ROiubxYMi9DTp6\Lib\site-packages\anyio\_backends\_asyncio.py", line 847, in __aexit__
+  |     raise BaseExceptionGroup(
+  | ExceptionGroup: unhandled errors in a TaskGroup (1 sub-exception)
+  +-+---------------- 1 ----------------
+    | Exception Group Traceback (most recent call last):
+    |   File "C:\Users\78296\AppData\Local\uv\cache\archive-v0\h6ROiubxYMi9DTp6\Lib\site-packages\mcp\client\streamable_http.py", line 695, in streamable_http_client
+    |     yield (
+    |   File "C:\Users\78296\AppData\Local\uv\cache\archive-v0\h6ROiubxYMi9DTp6\Lib\site-packages\mcp\client\streamable_http.py", line 747, in streamablehttp_client
+    |     yield streams
+    |   File "D:\FreedomTower_1\.workbuddy\cache\ui-resolution-20261018\client.py", line 59, in main
+    |     async with ClientSession(r,w) as session: await run(session)
+    |                ^^^^^^^^^^^^^^^^^^
+    |   File "C:\Users\78296\AppData\Local\uv\cache\archive-v0\h6ROiubxYMi9DTp6\Lib\site-packages\mcp\shared\session.py", line 238, in __aexit__
+    |     return await self._task_group.__aexit__(exc_type, exc_val, exc_tb)
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "C:\Users\78296\AppData\Local\uv\cache\archive-v0\h6ROiubxYMi9DTp6\Lib\site-packages\anyio\_backends\_asyncio.py", line 847, in __aexit__
+    |     raise BaseExceptionGroup(
+    | ExceptionGroup: unhandled errors in a TaskGroup (1 sub-exception)
+    +-+---------------- 1 ----------------
+      | Traceback (most recent call last):
+      |   File "D:\FreedomTower_1\.workbuddy\cache\ui-resolution-20261018\client.py", line 59, in main
+      |     async with ClientSession(r,w) as session: await run(session)
+      |                                               ^^^^^^^^^^^^^^^^^^
+      |   File "D:\FreedomTower_1\.workbuddy\cache\ui-resolution-20261018\client.py", line 29, in run
+      |     if len(matches)!=1:raise RuntimeError('Expected exactly one matching project instance')
+      |                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+      | RuntimeError: Expected exactly one matching project instance
+      +------------------------------------

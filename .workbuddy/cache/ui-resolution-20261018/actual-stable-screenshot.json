@@ -1,0 +1,4 @@
+{
+  "action": "execute",
+  "code": "var view=FTProject.UIManager.Instance.Get<FTProject.LevelDetailView>(\"LevelDetailView\"); if(view==null) throw new System.Exception(\"No detail view\"); var group=view.GetComponent<UnityEngine.CanvasGroup>(); if(group!=null && group.alpha<0.99f) throw new System.Exception(\"Wait for fade completion: \"+group.alpha); UnityEngine.ScreenCapture.CaptureScreenshot(\"D:/FreedomTower_1/Docs/UIResolution/20261018/actual-canvas-select-detail.png\"); return new {fadeAlpha=group==null?1:group.alpha,width=UnityEngine.Screen.width,height=UnityEngine.Screen.height};"
+}

@@ -26,6 +26,8 @@ namespace FTProject
     ///
     /// 【暂停怎么走】暂停仍然靠 `Time.timeScale = 0`：此时 `Time.deltaTime` 为 0，
     ///   于是 DeltaTime 也为 0，全部模拟自然停摆 —— 倍速与暂停是两条互不写入的通道。
+    ///   2026-10-18 起，暂停的**唯一写入口**是 <see cref="SetPaused"/>（由 GameFlowManager 调），
+    ///   UI 不再各自写 timeScale（旧 PauseView 在 OnEnable/OnDisable 里写，已移除）。
     /// </summary>
     public static class GameClock
     {
@@ -78,6 +80,29 @@ namespace FTProject
         {
             get { return _speed; }
             set { _speed = value > 0f ? value : 1f; }
+        }
+
+        /// <summary>
+        /// 当前是否处于暂停态（只认 `Time.timeScale &lt;= 0` 这一种口径）。
+        /// 【为什么把暂停也收到这里】timeScale 在本工程语义收窄为"暂停开关"，
+        ///   而它是全局唯一的一份状态；散在 UI / 流程层各写一次必然出现
+        ///   "界面关了但还停着"或"点了继续其实没恢复"这类互相打架的状态。
+        ///   所以暂停的**写入口**只有 <see cref="SetPaused"/> 一个（GameFlowManager 调用）。
+        /// </summary>
+        public static bool IsPaused
+        {
+            get { return Time.timeScale <= 0f; }
+        }
+
+        /// <summary>
+        /// 暂停 / 继续的唯一写入口。
+        /// 【为什么要把帧缓存作废】暂停那一帧之前可能已经算过 `_cachedDelta`，
+        ///   恢复当帧若沿用旧值，会让模拟多吃一帧（表现为"继续后怪物瞬移一小步"）。
+        /// </summary>
+        public static void SetPaused(bool paused)
+        {
+            Time.timeScale = paused ? 0f : 1f;
+            _cachedFrame = -1;
         }
 
         /// <summary>

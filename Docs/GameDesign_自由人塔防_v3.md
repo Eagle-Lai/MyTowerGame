@@ -395,7 +395,9 @@ TipText：anchor(0.5,0.3)，1100×60，38 号居中；队列最多 3 条（超�
 | GameOver | 胜/败 | 胜：评星→RecordClear→解锁下一关；派 `GameOverEvent` → LevelClearView | 弹窗按钮→Loading/SelectView |
 | （叠加）Paused | 任意局中状态 + 暂停请求 | timeScale=0，战斗 tick 停摆（与倍速解耦：暂停走 timeScale、倍速走 GameClock.Speed，互不写入对方通道；Speed 保持原档位，恢复后立即生效） | 继续→回到原状态 |
 
-事件总线关键事件（实现侧直接复用，禁止新造平行事件）：`ConfigLoadedEvent / SelectLevelRequestEvent / StartRoundRequestEvent / RoundClearEvent / GameOverEvent / TowerSelectedEvent / TowerUpgradeRequestEvent / TowerSellRequestEvent / PauseRequestEvent / ResumeRequestEvent / RestartLevelRequestEvent / QuitToSelectRequestEvent / OpenSettingsRequestEvent / CloseSettingsRequestEvent / LevelClearEvent`。
+事件总线关键事件（实现侧直接复用，禁止新造平行事件）：`ConfigLoadedEvent / SelectLevelRequestEvent / StartRoundRequestEvent / RoundClearEvent / GameOverEvent / TowerSelectedEvent / TowerUpgradeRequestEvent / TowerSellRequestEvent / PauseToggleRequestEvent / PauseRequestEvent / ResumeRequestEvent / RestartLevelRequestEvent / QuitToSelectRequestEvent / OpenSettingsRequestEvent / CloseSettingsRequestEvent / LevelClearEvent`。
+
+> 2026-10-18 语义划分：`PauseToggleRequestEvent` = 暂停/继续开关（HUD `Btn_Pause`、热键 P，不弹窗）；`PauseRequestEvent` = 只打开暂停菜单弹窗（HUD `Btn_Intro` 文案已改为 `Menu`），**不再暂停**；`PauseStateChangedEvent(bool)` 是"暂停状态已变化"的广播（供暂停菜单标题等跟随）。暂停的唯一写入口是 `GameClock.SetPaused`。
 
 ### 7.5 胜负判定与星级
 

@@ -26,8 +26,8 @@ namespace FTProject.EditorTools
     ///   ├── Btn_Tower_Retard 建塔·减速（type=3）→ PriceText ★ 名字 Retard ↔ 枚举 Slow，映射见 HudView
     ///   ├── SpeedButton     倍速（→ SpeedButton/Label）
     ///   ├── StartButton     开始 / 下一回合（→ StartButton/Label）
-    ///   ├── Btn_Pause       暂停（右上角，2026-10-14）→ PauseRequestEvent
-    ///   └── Btn_Intro       游戏介绍（右上角）→ OpenGameIntroRequestEvent
+    ///   ├── Btn_Pause       暂停/继续开关（右上角，2026-10-14）→ PauseToggleRequestEvent（不弹窗）
+    ///   └── Btn_Intro       暂停菜单入口（右上角）→ PauseRequestEvent（打开 PauseView，不暂停）
     ///
     /// GameIntroView 节点（游戏介绍弹窗，2026-10-14）：
     ///   GameIntroView
@@ -96,6 +96,20 @@ namespace FTProject.EditorTools
     /// </summary>
     public static class UIPrefabBuilder
     {
+        private static string _layoutPreviewFolder;
+
+        /// <summary>Generate disposable assets for comparison without deleting or saving production prefabs.</summary>
+        public static void BuildLayoutPreview(string folder)
+        {
+            if (string.IsNullOrEmpty(folder) || !folder.StartsWith("Assets/__UIResolutionPreview", System.StringComparison.Ordinal)
+                || folder.IndexOf('/', "Assets/".Length) >= 0 || folder.Contains("\\") || folder.Contains(".."))
+                throw new System.ArgumentException("Layout previews must use a dedicated Assets/__UIResolutionPreview folder.");
+            if (_layoutPreviewFolder != null) throw new System.InvalidOperationException("A UI preview is already being generated.");
+            _layoutPreviewFolder = folder;
+            try { BuildInternal(new EditorUtil.Report()); }
+            finally { _layoutPreviewFolder = null; }
+        }
+
         public const string HudPath = "Assets/Prefabs/UI/HudView.prefab";
         public const string TipsPath = "Assets/Prefabs/UI/TipsView.prefab";
         public const string TowerInfoPath = "Assets/Prefabs/UI/TowerInfoView.prefab";
@@ -643,7 +657,7 @@ namespace FTProject.EditorTools
                 return;
             }
 
-            AssetDatabase.DeleteAsset(HudPath);
+            DeleteUiPrefab(HudPath);
             EditorUtil.EnsureFolderOfFile(HudPath);
 
             GameObject root = new GameObject("HudView", typeof(RectTransform));
@@ -678,11 +692,12 @@ namespace FTProject.EditorTools
             CreateButton(root.transform, "SpeedButton", "×1", new Vector2(0f, 0f), new Vector2(SideBtnEdgeX, SideBtnEdgeY));
             CreateButton(root.transform, "StartButton", "Start", new Vector2(1f, 0f), new Vector2(-SideBtnEdgeX, SideBtnEdgeY), true);
 
-            // 右上角：暂停 / 游戏介绍（2026-10-14，与 EnsureHudTopRightButtons 同一套几何）
+            // 右上角：暂停开关 / 暂停菜单（2026-10-14；2026-10-18 职责重划）
+            //   Btn_Pause = 暂停/继续开关（不弹窗）；Btn_Intro = 打开展停菜单（不暂停）
             CreateHudCornerButton(root.transform, "Btn_Pause", "Pause", HudPausePos, HudCornerBtnSize);
-            CreateHudCornerButton(root.transform, "Btn_Intro", "Game Intro", HudIntroPos, HudCornerBtnSize);
+            CreateHudCornerButton(root.transform, "Btn_Intro", "Menu", HudIntroPos, HudCornerBtnSize);
 
-            GameObject saved = PrefabUtility.SaveAsPrefabAsset(root, HudPath);
+            GameObject saved = SaveUiPrefab(root, HudPath);
             Object.DestroyImmediate(root);
 
             if (saved == null)
@@ -820,25 +835,25 @@ namespace FTProject.EditorTools
         {
             report.Head("生成提示层 → " + TipsPath);
 
-            AssetDatabase.DeleteAsset(TipsPath);
+            DeleteUiPrefab(TipsPath);
             EditorUtil.EnsureFolderOfFile(TipsPath);
 
             GameObject root = new GameObject("TipsView", typeof(RectTransform));
             Stretch((RectTransform)root.transform);
             CanvasGroup cg = root.AddComponent<CanvasGroup>();
-            cg.alpha = 0f;              // 初始透明，由 TipsView 控制淡入淡出
+            cg.alpha = 1f;              // 保留当前资源的预览状态；运行时由 TipsView 管理显隐
             cg.blocksRaycasts = false;
             cg.interactable = false;
             root.AddComponent<TipsView>();
 
-            // 提示条底（居中：锚点与支点都在屏幕中心，位置 0；TipText 挂在其下，随条一起动）
+            // 提示条跟随安全区顶部；与现有资源一致，避免重建恢复成屏幕居中。
             GameObject bar = new GameObject("TipBar", typeof(RectTransform));
             bar.transform.SetParent(root.transform, false);
             RectTransform brt = (RectTransform)bar.transform;
-            brt.anchorMin = new Vector2(0.5f, 0.5f);
-            brt.anchorMax = new Vector2(0.5f, 0.5f);
+            brt.anchorMin = new Vector2(0.5f, 1f);
+            brt.anchorMax = new Vector2(0.5f, 1f);
             brt.pivot = new Vector2(0.5f, 0.5f);
-            brt.anchoredPosition = new Vector2(0f, 0f);
+            brt.anchoredPosition = new Vector2(0f, -263f);
             brt.sizeDelta = new Vector2(1160f, 84f);
             Image barImg = bar.AddComponent<Image>();
             barImg.raycastTarget = false;
@@ -854,7 +869,7 @@ namespace FTProject.EditorTools
             tip.enableWordWrapping = true;
             tip.overflowMode = TextOverflowModes.Overflow;
 
-            GameObject saved = PrefabUtility.SaveAsPrefabAsset(root, TipsPath);
+            GameObject saved = SaveUiPrefab(root, TipsPath);
             Object.DestroyImmediate(root);
 
             if (saved == null)
@@ -882,7 +897,7 @@ namespace FTProject.EditorTools
                 return;
             }
 
-            AssetDatabase.DeleteAsset(TowerInfoPath);
+            DeleteUiPrefab(TowerInfoPath);
             EditorUtil.EnsureFolderOfFile(TowerInfoPath);
 
             GameObject root = new GameObject("TowerInfoView", typeof(RectTransform));
@@ -927,7 +942,7 @@ namespace FTProject.EditorTools
             CreatePanelButton(panel.transform, "SellBtn", "Sell", new Vector2(0f, -110f));
             CreatePanelButton(panel.transform, "CloseBtn", "Close", new Vector2(0f, -200f));
 
-            GameObject saved = PrefabUtility.SaveAsPrefabAsset(root, TowerInfoPath);
+            GameObject saved = SaveUiPrefab(root, TowerInfoPath);
             Object.DestroyImmediate(root);
 
             if (saved == null)
@@ -1029,7 +1044,7 @@ namespace FTProject.EditorTools
                 return;
             }
 
-            AssetDatabase.DeleteAsset(SelectPath);
+            DeleteUiPrefab(SelectPath);
             EditorUtil.EnsureFolderOfFile(SelectPath);
 
             GameObject panel;
@@ -1136,7 +1151,7 @@ namespace FTProject.EditorTools
             CreatePanelButton(panel.transform, "CloseBtn", "Back", new Vector2(0f, PanelCloseBtnBottomY), 340f, true, 84f,
                 0, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f));
 
-            GameObject saved = PrefabUtility.SaveAsPrefabAsset(root, SelectPath);
+            GameObject saved = SaveUiPrefab(root, SelectPath);
             Object.DestroyImmediate(root);
             if (saved == null)
             {
@@ -1158,7 +1173,7 @@ namespace FTProject.EditorTools
         /// </summary>
         private static GameObject BuildSelectItemPrefab(EditorUtil.Report report)
         {
-            AssetDatabase.DeleteAsset(SelectItemPath);   // 幂等：先删后建
+            DeleteUiPrefab(SelectItemPath);   // 幂等：先删后建
             EditorUtil.EnsureFolderOfFile(SelectItemPath);
 
             GameObject go = new GameObject("SelectLevelItem", typeof(RectTransform));
@@ -1227,7 +1242,7 @@ namespace FTProject.EditorTools
             //      卡片会整片不可见 —— 到那时记得把这一行删掉。
             go.SetActive(false);
 
-            GameObject saved = PrefabUtility.SaveAsPrefabAsset(go, SelectItemPath);
+            GameObject saved = SaveUiPrefab(go, SelectItemPath);
             Object.DestroyImmediate(go);
             if (saved == null)
             {
@@ -1287,7 +1302,7 @@ namespace FTProject.EditorTools
                 report.Error("PauseView.prefab 检测到生成器不识别的节点：" + extra + "　→ 已中止");
                 return;
             }
-            AssetDatabase.DeleteAsset(PausePath);
+            DeleteUiPrefab(PausePath);
             EditorUtil.EnsureFolderOfFile(PausePath);
 
             GameObject panel;
@@ -1300,7 +1315,7 @@ namespace FTProject.EditorTools
             CreatePanelButton(panel.transform, "SettingsBtn", "Settings", new Vector2(0f, -120f));
             CreatePanelButton(panel.transform, "QuitBtn", "Back to Levels", new Vector2(0f, -210f));
 
-            GameObject saved = PrefabUtility.SaveAsPrefabAsset(root, PausePath);
+            GameObject saved = SaveUiPrefab(root, PausePath);
             Object.DestroyImmediate(root);
             if (saved == null)
             {
@@ -1341,7 +1356,7 @@ namespace FTProject.EditorTools
                 report.Error("GameIntroView.prefab 检测到生成器不识别的节点：" + extra + "　→ 已中止");
                 return;
             }
-            AssetDatabase.DeleteAsset(GameIntroPath);
+            DeleteUiPrefab(GameIntroPath);
             EditorUtil.EnsureFolderOfFile(GameIntroPath);
 
             GameObject panel;
@@ -1365,7 +1380,7 @@ namespace FTProject.EditorTools
             CreatePanelButton(panel.transform, "CloseBtn", "Close",
                 new Vector2(255f, -245f), 290f, false);
 
-            GameObject saved = PrefabUtility.SaveAsPrefabAsset(root, GameIntroPath);
+            GameObject saved = SaveUiPrefab(root, GameIntroPath);
             Object.DestroyImmediate(root);
             if (saved == null)
             {
@@ -1402,14 +1417,14 @@ namespace FTProject.EditorTools
             }
             if (root.transform.Find("Btn_Intro") == null)
             {
-                CreateHudCornerButton(root.transform, "Btn_Intro", "Game Intro", HudIntroPos, HudCornerBtnSize);
-                report.Ok("补挂 Btn_Intro（Game Intro）");
+                CreateHudCornerButton(root.transform, "Btn_Intro", "Menu", HudIntroPos, HudCornerBtnSize);
+                report.Ok("补挂 Btn_Intro（Menu）");
                 changed = true;
             }
 
             if (changed)
             {
-                PrefabUtility.SaveAsPrefabAsset(root, HudPath);
+                SaveUiPrefab(root, HudPath);
             }
             else
             {
@@ -1450,8 +1465,8 @@ namespace FTProject.EditorTools
 
             TextMeshProUGUI t = CreateText(go.transform, "Label", label,
                 new Vector2(0.5f, 0.5f), Vector2.zero, size, TextAnchor.MiddleCenter, 30);
-            // ★ 2026-10-15 手工版口径：右上角这两颗（Pause / Game Intro）的 Label 开自动字号
-            //   （"Game Intro" 这类较长的英文按钮文案靠自动收放塞进 180×56）。
+            // ★ 2026-10-15 手工版口径：右上角这两颗（Pause / Menu）的 Label 开自动字号
+            //   （文案较长时靠自动收放塞进 180×56；2026-10-18 "Game Intro" 已改为 "Menu"）。
             SetAutoSize(t);
             // Label 铺满按钮
             RectTransform lrt = (RectTransform)t.transform;
@@ -1471,7 +1486,7 @@ namespace FTProject.EditorTools
                 report.Error("SettingView.prefab 检测到生成器不识别的节点：" + extra + "　→ 已中止");
                 return;
             }
-            AssetDatabase.DeleteAsset(SettingPath);
+            DeleteUiPrefab(SettingPath);
             EditorUtil.EnsureFolderOfFile(SettingPath);
 
             GameObject panel;
@@ -1505,7 +1520,7 @@ namespace FTProject.EditorTools
             CreatePanelButton(panel.transform, "ResetBtn", "Reset Save", new Vector2(0f, -208f));
             CreatePanelButton(panel.transform, "CloseBtn", "Close", new Vector2(0f, -296f));
 
-            GameObject saved = PrefabUtility.SaveAsPrefabAsset(root, SettingPath);
+            GameObject saved = SaveUiPrefab(root, SettingPath);
             Object.DestroyImmediate(root);
             if (saved == null)
             {
@@ -1532,7 +1547,7 @@ namespace FTProject.EditorTools
                 report.Error("LevelClearView.prefab 检测到生成器不识别的节点：" + extra + "　→ 已中止");
                 return;
             }
-            AssetDatabase.DeleteAsset(LevelClearPath);
+            DeleteUiPrefab(LevelClearPath);
             EditorUtil.EnsureFolderOfFile(LevelClearPath);
 
             GameObject panel;
@@ -1583,7 +1598,7 @@ namespace FTProject.EditorTools
             ConfigureRatingText(panel.transform.Find("RatingTimes"), 24);
             ConfigureRatingText(panel.transform.Find("RatingReasons"), 24);
 
-            GameObject saved = PrefabUtility.SaveAsPrefabAsset(root, LevelClearPath);
+            GameObject saved = SaveUiPrefab(root, LevelClearPath);
             Object.DestroyImmediate(root);
             if (saved == null)
             {
@@ -1930,7 +1945,7 @@ namespace FTProject.EditorTools
                 return;
             }
 
-            AssetDatabase.DeleteAsset(SplashPath);
+            DeleteUiPrefab(SplashPath);
             EditorUtil.EnsureFolderOfFile(SplashPath);
 
             GameObject panel;
@@ -1987,7 +2002,7 @@ namespace FTProject.EditorTools
             dots.color = TextSecondary;
 
             EditorUtility.SetDirty(root);
-            PrefabUtility.SaveAsPrefabAsset(root, SplashPath);
+            SaveUiPrefab(root, SplashPath);
             Object.DestroyImmediate(root);
             report.Ok("SplashView.prefab（Logo / GameTitle / Subtitle / Version / LoadingDots）");
         }
@@ -2002,7 +2017,7 @@ namespace FTProject.EditorTools
                 return;
             }
 
-            AssetDatabase.DeleteAsset(LoadingPath);
+            DeleteUiPrefab(LoadingPath);
             EditorUtil.EnsureFolderOfFile(LoadingPath);
 
             GameObject panel;
@@ -2094,7 +2109,7 @@ namespace FTProject.EditorTools
             tip.color = TextSecondary;
 
             EditorUtility.SetDirty(root);
-            PrefabUtility.SaveAsPrefabAsset(root, LoadingPath);
+            SaveUiPrefab(root, LoadingPath);
             Object.DestroyImmediate(root);
             report.Ok("LoadingView.prefab（Logo / StatusText / ProgressBar(Track|Fill|Glow) / PercentText / TipText）");
         }
@@ -2109,7 +2124,7 @@ namespace FTProject.EditorTools
                 return;
             }
 
-            AssetDatabase.DeleteAsset(HotUpdatePath);
+            DeleteUiPrefab(HotUpdatePath);
             EditorUtil.EnsureFolderOfFile(HotUpdatePath);
 
             GameObject panel;
@@ -2215,7 +2230,7 @@ namespace FTProject.EditorTools
             SetNodeActive(panel.transform, "FailText", false);
 
             EditorUtility.SetDirty(root);
-            PrefabUtility.SaveAsPrefabAsset(root, HotUpdatePath);
+            SaveUiPrefab(root, HotUpdatePath);
             Object.DestroyImmediate(root);
             report.Ok("HotUpdateView.prefab（HotTitle / PhaseText / ProgressBar(Track|Fill|Glow) / PercentText / SizeText / SpeedText / DetailText / BtnGroup(Pause|Resume|Retry) / FailText）");
         }
@@ -2328,7 +2343,7 @@ namespace FTProject.EditorTools
                 return;
             }
 
-            AssetDatabase.DeleteAsset(MainMenuPath);
+            DeleteUiPrefab(MainMenuPath);
             EditorUtil.EnsureFolderOfFile(MainMenuPath);
 
             GameObject panel;
@@ -2391,7 +2406,7 @@ namespace FTProject.EditorTools
             ver.color = TextTertiary;
 
             EditorUtility.SetDirty(root);
-            PrefabUtility.SaveAsPrefabAsset(root, MainMenuPath);
+            SaveUiPrefab(root, MainMenuPath);
             Object.DestroyImmediate(root);
             report.Ok("MainMenuView.prefab（Logo / GameTitle / Subtitle(隐藏) / StatBg+StarText+ClearText / Start+Codex+Setting+Quit / Version）");
         }
@@ -2407,7 +2422,7 @@ namespace FTProject.EditorTools
                 return;
             }
 
-            AssetDatabase.DeleteAsset(LevelDetailPath);
+            DeleteUiPrefab(LevelDetailPath);
             EditorUtil.EnsureFolderOfFile(LevelDetailPath);
 
             // 弹窗 900×900（手工版把宽度收到 900；高度不变）
@@ -2500,7 +2515,7 @@ namespace FTProject.EditorTools
             CreatePanelButton(panel.transform, "CloseBtn", "Back", new Vector2(160f, -344f), 300f, false, 76f, 30);
 
             EditorUtility.SetDirty(root);
-            PrefabUtility.SaveAsPrefabAsset(root, LevelDetailPath);
+            SaveUiPrefab(root, LevelDetailPath);
             Object.DestroyImmediate(root);
             report.Ok("LevelDetailView.prefab（Star1-5 / 当前版本历史 / 战役阶段 / 预设 / RatingTarget）");
         }
@@ -2565,7 +2580,7 @@ namespace FTProject.EditorTools
                     SetRatingRect(panel.Find("RetryBtn"), new Vector2(0f, -335f), new Vector2(420f, 72f));
                     SetRatingRect(panel.Find("SelectBtn"), new Vector2(0f, -415f), new Vector2(420f, 72f));
                 }
-                PrefabUtility.SaveAsPrefabAsset(root, path);
+                SaveUiPrefab(root, path);
                 report.Ok("已局部同步五星界面并保留其它手工节点：" + path);
                 return true;
             }
@@ -2613,7 +2628,7 @@ namespace FTProject.EditorTools
                 return;
             }
 
-            AssetDatabase.DeleteAsset(SellConfirmPath);
+            DeleteUiPrefab(SellConfirmPath);
             EditorUtil.EnsureFolderOfFile(SellConfirmPath);
 
             GameObject panel;
@@ -2662,7 +2677,7 @@ namespace FTProject.EditorTools
             CreatePanelButton(panel.transform, "CancelBtn", "Cancel", new Vector2(260f, -256f), 240f, false, 88f, 32);
 
             EditorUtility.SetDirty(root);
-            PrefabUtility.SaveAsPrefabAsset(root, SellConfirmPath);
+            SaveUiPrefab(root, SellConfirmPath);
             Object.DestroyImmediate(root);
             report.Ok("SellConfirmView.prefab（TopBar+SellTitle / TowerIcon / TowerName / WarnText / RefundLabel+RefundValue / Confirm+Cancel）");
         }
@@ -2677,7 +2692,7 @@ namespace FTProject.EditorTools
                 return;
             }
 
-            AssetDatabase.DeleteAsset(ConfirmPath);
+            DeleteUiPrefab(ConfirmPath);
             EditorUtil.EnsureFolderOfFile(ConfirmPath);
 
             GameObject panel;
@@ -2714,7 +2729,7 @@ namespace FTProject.EditorTools
             CreatePanelButton(panel.transform, "CancelBtn", "Cancel", new Vector2(220f, -168f), 240f, false, 88f, 32);
 
             EditorUtility.SetDirty(root);
-            PrefabUtility.SaveAsPrefabAsset(root, ConfirmPath);
+            SaveUiPrefab(root, ConfirmPath);
             Object.DestroyImmediate(root);
             report.Ok("ConfirmView.prefab（TopBar+BodyTitle / BodyText / DangerIcon / Confirm+Cancel）");
         }
@@ -2741,7 +2756,7 @@ namespace FTProject.EditorTools
                 return;
             }
 
-            AssetDatabase.DeleteAsset(TowerCodexPath);
+            DeleteUiPrefab(TowerCodexPath);
             EditorUtil.EnsureFolderOfFile(TowerCodexPath);
 
             GameObject panel;
@@ -2750,7 +2765,7 @@ namespace FTProject.EditorTools
 
             // 标题基线 y_svg 90（整页 64 号）→ 盒中心 ≈ 450 + 22 = +472
             TextMeshProUGUI title = CreateText(panel.transform, "CodexTitle", "Tower Codex",
-                new Vector2(0.5f, 0.5f), new Vector2(0f, 472f), new Vector2(1400f, 92f),
+                new Vector2(0.5f, 1f), new Vector2(0f, -68f), new Vector2(1400f, 92f),
                 TextAnchor.MiddleCenter, 64);
             title.color = TextPrimary;
 
@@ -2774,10 +2789,9 @@ namespace FTProject.EditorTools
             RectTransform vrt = (RectTransform)viewport.transform;
             // ⚠️ pivot.x 必须预置 0（LoopListView2 的 AdjustPivot 会强改），矩形用 offsetMin/Max 描述
             vrt.pivot = new Vector2(0f, 0.5f);
-            vrt.anchorMin = new Vector2(0f, 0.5f);
-            vrt.anchorMax = new Vector2(1f, 0.5f);
-            vrt.offsetMin = new Vector2((CodexListW - CodexItemW) * 0.5f, -CodexListH * 0.5f);
-            vrt.offsetMax = new Vector2(-(CodexListW - CodexItemW) * 0.5f, CodexListH * 0.5f);
+            vrt.anchorMin = vrt.anchorMax = new Vector2(0.5f, 0.5f);
+            vrt.anchoredPosition = new Vector2(-CodexItemW * 0.5f, 0f);
+            vrt.sizeDelta = new Vector2(CodexItemW, CodexListH);
 
             GameObject content = new GameObject("Content", typeof(RectTransform));
             content.transform.SetParent(viewport.transform, false);
@@ -2812,14 +2826,14 @@ namespace FTProject.EditorTools
                 new Vector2(1f, 0.5f), new Vector2(1f, 0.5f));
 
             CreateText(panel.transform, "PageText", "1 / 5",
-                new Vector2(0.5f, 0.5f), new Vector2(0f, -330f), new Vector2(600f, 44f),
+                new Vector2(0.5f, 0f), new Vector2(0f, 184f), new Vector2(600f, 44f),
                 TextAnchor.MiddleCenter, 28);
 
             // 关闭按钮改"贴屏幕底边"（原中心锚 -430 在 ≥21.3:9 高屏会被裁）
             CreatePanelButton(panel.transform, "CloseBtn", "Back", new Vector2(0f, PanelCloseBtnBottomY), 340f, true, 84f, 32,
                 new Vector2(0.5f, 0f), new Vector2(0.5f, 0f));
 
-            GameObject saved = PrefabUtility.SaveAsPrefabAsset(root, TowerCodexPath);
+            GameObject saved = SaveUiPrefab(root, TowerCodexPath);
             Object.DestroyImmediate(root);
             if (saved == null)
             {
@@ -2832,7 +2846,7 @@ namespace FTProject.EditorTools
         /// <summary>塔图鉴卡片（460×640）：图标 + 塔名 + 定位 + 四项数值 + 描述。</summary>
         private static GameObject BuildTowerCodexItemPrefab(EditorUtil.Report report)
         {
-            AssetDatabase.DeleteAsset(TowerCodexItemPath);   // 幂等：先删后建
+            DeleteUiPrefab(TowerCodexItemPath);   // 幂等：先删后建
             EditorUtil.EnsureFolderOfFile(TowerCodexItemPath);
 
             GameObject go = new GameObject("TowerCodexItem", typeof(RectTransform));
@@ -2888,7 +2902,7 @@ namespace FTProject.EditorTools
             //   ⚠️ 若日后改用不强制激活的池化实现，卡片会整片不可见 —— 到那时删掉这一行。
             go.SetActive(false);
 
-            GameObject saved = PrefabUtility.SaveAsPrefabAsset(go, TowerCodexItemPath);
+            GameObject saved = SaveUiPrefab(go, TowerCodexItemPath);
             Object.DestroyImmediate(go);
             if (saved == null)
             {
@@ -3180,6 +3194,24 @@ namespace FTProject.EditorTools
             return AssetDatabase.LoadAssetAtPath<Sprite>(path);
         }
 
+        // The same definition is applied by the in-place migration and every generation entry.
+        private static GameObject SaveUiPrefab(GameObject root, string path)
+        {
+            UIResolutionLayout.Apply(root);
+            string output = LayoutOutputPath(path);
+            EditorUtil.EnsureFolderOfFile(output);
+            return PrefabUtility.SaveAsPrefabAsset(root, output);
+        }
+
+        private static string LayoutOutputPath(string path)
+        {
+            return _layoutPreviewFolder == null ? path : _layoutPreviewFolder + "/" + System.IO.Path.GetFileName(path);
+        }
+
+        private static bool DeleteUiPrefab(string path)
+        {
+            return AssetDatabase.DeleteAsset(LayoutOutputPath(path));
+        }
         private static void Stretch(RectTransform rt)
         {
             rt.anchorMin = Vector2.zero;

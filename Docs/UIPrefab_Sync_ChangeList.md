@@ -378,3 +378,68 @@ python .workbuddy/tools/diff_ui_prefabs.py --base .workbuddy/tmp/ui_base
   打标菜单每次都以 `✘ 资源不存在` 结尾（本轮日志里那行 error 就是它）。待定：补 prefab 或删登记。
 - 本轮改动横跨 **prefab 内容 + AB 标记 + 热更脚本（TipsView.cs / SelectView.cs）**，
   真机要看到效果必须**重打 AB（ui_hud 等）+ 出新热更 dll 后重部署**；仅提交 git 不会生效。
+
+---
+
+## 7. 第四轮（2026-10-18）：HUD 右上角职责重划 + Btn_Intro 文案
+
+### 7.1 背景
+
+原先 `Btn_Pause` = 打开暂停菜单（`PauseView`，`OnEnable` 里 `timeScale=0` 即"弹窗即暂停"），
+`Btn_Intro` = 打开游戏介绍弹窗。需求把两件事拆开：
+
+- `Btn_Pause` **只做暂停/继续开关**，点击不弹任何窗；
+- 弹窗能力迁到 `Btn_Intro`，且**打开菜单不暂停游戏**。
+
+### 7.2 预制体侧改动（只改文案，结构/几何零变动）
+
+| # | 预制体 | 节点 | 旧 → 新 | 同步到 |
+|---|---|---|---|---|
+| 1 | HudView | `Btn_Intro/Label` | `Game Intro` → `Menu` | `UIPrefabBuilder.BuildHud` / `EnsureHudTopRightButtons` 的 `CreateHudCornerButton(..., "Menu", ...)` |
+| 2 | HudView | `Btn_Pause/Label` | **移除 `TextLocalizer` 组件**（文本仍 `Pause`，运行时按状态写 `Pause`/`Continue`） | `HudView.RefreshPauseLabel` + `LocalizationPrefabBinder` 的 `Btn_Pause` 父节点跳过规则 |
+
+> `Btn_Intro/Label` 上的 `TextLocalizer` 保持 `key` 留空（自动用节点文本当 key），
+> 所以**文案必须与多语言表主键逐字一致**：表里已新增 `Menu`（菜单 / 選單）词条。
+> `Btn_Pause/Label` 是**两态文本**（未暂停 `Pause` ⇄ 已暂停 `Continue`），与 `MuteBtn/Label` 同理：
+> 挂 `TextLocalizer` 会在切语言时按 prefab 原文刷回、把 `Continue` 冲掉，故移除组件，
+> 并在 308 批量挂载工具里按父节点名 `Btn_Pause` 跳过（否则下次跑 308 会再挂回来）。
+> 几何 180×56 / 自动字号不变，`assetBundleName=ui_hud` 未受影响。
+
+### 7.3 多语言表改动
+
+| 文件 | 改动 |
+|---|---|
+| `Luban/Config/Datas/Localization.xlsx` | 追加 1 行：`Menu` / `Menu` / `菜单` / `選單`（脚本 `.workbuddy/tools/append_localization_menu_20261018.py`，幂等、只追加不改行） |
+| `Assets/ConfigJson/tblocalization.json` | 由菜单 `3. 导出配置表（Luban）` 重新生成（352 条） |
+
+> 没有用 `gen_localization_table.py` 重新生成：它的 `ROWS` 只剩 168 条（表已 351 条），
+> 重跑会丢掉后来追加的 180+ 条词条。
+
+### 7.4 代码侧
+
+| 文件 | 改动 |
+|---|---|
+| `Core/Event/EventName.cs` | 新增 `PauseToggleRequestEvent`（暂停/继续开关）与 `PauseStateChangedEvent(bool)`（状态变化广播） |
+| `Core/GameClock.cs` | 新增 `IsPaused` / `SetPaused(bool)` —— `timeScale` 的**唯一**写入口 |
+| `Game/GameFlowManager.cs` | `TogglePause()` / `SetPausedState()`；`OnPauseRequest` 只开菜单不暂停；热键 P 改为暂停开关 |
+| `UI/HudView.cs` | `Btn_Pause` → `PauseToggleRequestEvent`（文案按 `GameClock.IsPaused` 写 `Pause`/`Continue`，订阅 `PauseStateChangedEvent`）；`Btn_Intro` → `PauseRequestEvent` |
+| `Editor/LocalizationPrefabBinder.cs` | 308 增加 `Btn_Pause` 父节点跳过规则（两态文本，防被重新挂上 `TextLocalizer`） |
+| `UI/PauseView.cs` | 删掉 `OnEnable/OnDisable` 里的 `timeScale` 写入；标题按 `GameClock.IsPaused` 取 `Game Paused` / `Menu`，并订阅 `PauseStateChangedEvent` 实时切换 |
+
+### 7.5 验证
+
+- `refresh_unity(force/all/compile)`：`scriptCompilationFailed=False`，Console 0 错误。
+- 编辑器读取实测：`Btn_Intro/Label.text=Menu`、`TextLocalizer.key` 为空、`assetBundleName=ui_hud`；
+  `PauseView/Panel/Title` 无 `TextLocalizer`（动态标题，切语言由 `PauseView.Refresh` 重算）；
+  菜单四颗按钮的 `Label` 均有 `TextLocalizer`（`Continue` / `Restart Level` / `Settings` / `Back to Levels` 词条齐全）。
+- Play 冒烟（`Assets/Scenes/Boot.unity` → Main → `StartLevel(1)`）实测：
+  | 操作 | timeScale | `Btn_Pause/Label` | 暂停菜单 |
+  |---|---|---|---|
+  | 初始 | 1 | 暂停 | 未打开 |
+  | 点 `Btn_Pause` | 0 | 继续 | 未打开 |
+  | 再点 `Btn_Pause` | 1 | 暂停 | 未打开 |
+  | 点 `Btn_Intro` | **1（不暂停）** | 暂停 | 打开，标题「菜单」 |
+  | 暂停中打开菜单 | 0 | — | 标题实时变「暂停」 |
+  | 菜单「继续」 | 1 | 暂停 | 关闭 |
+  两个按钮 `onClick.GetPersistentEventCount()` 均为 0（无 prefab 持久化绑定，无重复派发）。
+- 真机/热更要看到新文案仍须**重打 AB（ui_hud）+ 重部署**；仅 git 提交不生效。

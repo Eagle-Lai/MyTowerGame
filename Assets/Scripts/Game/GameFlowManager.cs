@@ -111,6 +111,7 @@ namespace FTProject
             EventDispatcher.AddEventListener<int>(EventName.SelectLevelRequestEvent, OnSelectLevelRequest);
             EventDispatcher.AddEventListener(EventName.CloseSelectRequestEvent, OnCloseSelectRequest);
             EventDispatcher.AddEventListener(EventName.PauseRequestEvent, OnPauseRequest);
+            EventDispatcher.AddEventListener(EventName.PauseToggleRequestEvent, OnPauseToggleRequest);
             EventDispatcher.AddEventListener(EventName.ResumeRequestEvent, OnResumeRequest);
             EventDispatcher.AddEventListener(EventName.RestartLevelRequestEvent, OnRestartRequest);
             EventDispatcher.AddEventListener(EventName.QuitToSelectRequestEvent, OnQuitToSelectRequest);
@@ -138,6 +139,7 @@ namespace FTProject
             EventDispatcher.RemoveEventListener<int>(EventName.SelectLevelRequestEvent, OnSelectLevelRequest);
             EventDispatcher.RemoveEventListener(EventName.CloseSelectRequestEvent, OnCloseSelectRequest);
             EventDispatcher.RemoveEventListener(EventName.PauseRequestEvent, OnPauseRequest);
+            EventDispatcher.RemoveEventListener(EventName.PauseToggleRequestEvent, OnPauseToggleRequest);
             EventDispatcher.RemoveEventListener(EventName.ResumeRequestEvent, OnResumeRequest);
             EventDispatcher.RemoveEventListener(EventName.RestartLevelRequestEvent, OnRestartRequest);
             EventDispatcher.RemoveEventListener(EventName.QuitToSelectRequestEvent, OnQuitToSelectRequest);
@@ -1057,7 +1059,8 @@ namespace FTProject
         public void TeardownLevel()
         {
             _autoNextTimer = 0f;
-            Time.timeScale = 1f;
+            // 离开对局必须解除暂停：走统一写入口（原先是裸写 Time.timeScale = 1f）
+            SetPausedState(false);
 
             // 关卡计时停止（UI 补全 B4）。放在这里而不是各出口分别调：
             // TeardownLevel 是唯一的拆卸入口，所有离开对局的路径都会经过它。
@@ -1230,20 +1233,83 @@ namespace FTProject
             InitLevel(Level != null ? Level.Id : Configs.GetFirstLevelId());
         }
 
+        /// <summary>
+        /// 打开暂停**菜单**弹窗（2026-10-18 起由 HUD 的 Btn_Intro 发送）。
+        /// 【为什么不在这里暂停】暂停已与"弹窗"解耦：
+        ///   · 暂停/继续 = Btn_Pause → <see cref="OnPauseToggleRequest"/> → <see cref="TogglePause"/>；
+        ///   · 本方法只负责"把菜单摆出来"，**不动 timeScale**（弹窗想开就开，战斗照常）。
+        ///   这样两个按钮的职责互不覆盖，也不会出现"关菜单顺手把暂停丢了"。
+        /// </summary>
         private void OnPauseRequest()
         {
             if (State == GameFlowState.GameOver)
             {
-                return;   // 已结算就别再暂停了
+                return;   // 已结算就别再开菜单了（结算界面在那儿）
             }
-            UIManager.Instance.Open<PauseView>(PauseView.LogicalName, UILayout.NormalPanel);
+            PauseView view = UIManager.Instance.Open<PauseView>(PauseView.LogicalName, UILayout.NormalPanel);
+            if (view == null)
+            {
+                Debug.LogWarning("[Flow] PauseView 打开失败（prefab 可能还没生成）");
+            }
+        }
+
+        /// <summary>
+        /// 暂停 / 继续（HUD 的 Btn_Pause、键盘 P）。
+        /// 【为什么暂停也要过流程层】HUD 持有不了"是否局中/是否已结算"这些状态；
+        ///   而且暂停唯一的合法写入口必须只有一处（GameClock.SetPaused），否则
+        ///   多个界面各写一次 timeScale 就会出现互相覆盖的僵死状态。
+        /// </summary>
+        private void OnPauseToggleRequest()
+        {
+            TogglePause();
+        }
+
+        /// <summary>暂停态取反。只在"局中"三种状态生效（Loading / None / GameOver 一律忽略）。</summary>
+        public void TogglePause()
+        {
+            if (State != GameFlowState.Preparing &&
+                State != GameFlowState.RoundRunning &&
+                State != GameFlowState.RoundComplete)
+            {
+                Debug.Log(string.Format("[Flow] 当前状态 {0} 不接受暂停切换，已忽略", State));
+                return;
+            }
+            bool paused = !GameClock.IsPaused;
+            SetPausedState(paused);
+            // 【真机诊断埋点】"点暂停没反应"排查链第二环：开关是否真的落到 timeScale 上
+            Debug.Log(string.Format("[Flow] {0}（timeScale={1}）", paused ? "暂停" : "继续", Time.timeScale));
+        }
+
+        /// <summary>
+        /// 暂停状态的**唯一**写入口：改 timeScale + 广播变化（真的变了才广播）。
+        /// 【为什么集中在一处】UI（PauseView 标题）与流程层都要看这个状态；
+        ///   若各处分别写 timeScale、再各自派事件，就会出现"界面已切文案但时间没停"这类错位。
+        /// </summary>
+        private void SetPausedState(bool paused)
+        {
+            bool changed = GameClock.IsPaused != paused;
+            GameClock.SetPaused(paused);
+            if (changed)
+            {
+                EventDispatcher.TriggerEvent<bool>(EventName.PauseStateChangedEvent, paused);
+            }
+        }
+
+        /// <summary>强制恢复运行（离开对局 / 重开 / 热键取消时用），幂等。</summary>
+        public void EnsureRunning()
+        {
+            if (GameClock.IsPaused)
+            {
+                GameClock.SetPaused(false);
+            }
         }
 
         private void OnResumeRequest()
         {
             UIManager.Instance.Close(PauseView.LogicalName);
             UIManager.Instance.Close(SettingView.LogicalName);
-            Time.timeScale = 1f;
+            // 走统一写入口（原先是直接写 Time.timeScale，与流程层的暂停状态容易脱钩）
+            SetPausedState(false);
         }
 
         private void OnRestartRequest()
@@ -1257,9 +1323,11 @@ namespace FTProject
         }
 
         /// <summary>
-        /// 打开游戏介绍弹窗（HUD 右上角「游戏介绍」按钮，2026-10-14）。
-        /// 【为什么不暂停】弹窗是查阅型界面，打开期间战斗照常（想暂停用暂停按钮）；
-        /// 弹窗内的「回到选关」走 QuitToSelectRequestEvent，与本方法无关（见 GameIntroView）。
+        /// 打开游戏介绍弹窗（GameIntroView，2026-10-14）。
+        /// 【2026-10-18 现状】HUD 的 Btn_Intro 已改为打开暂停菜单（PauseRequestEvent），
+        ///   本入口暂时**没有发送方**——保留是为了 GameIntroView 的资产/契约不失效
+        ///   （将来要恢复入口，加一颗按钮发 OpenGameIntroRequestEvent 即可，流程层不用再改）。
+        /// 【为什么不暂停】弹窗是查阅型界面，打开期间战斗照常；暂停只由 Btn_Pause 控制。
         /// </summary>
         private void OnOpenGameIntroRequest()
         {
@@ -1391,7 +1459,7 @@ namespace FTProject
             //   因此即便本 Update 的执行顺序排在 CombatSystem 之后也不影响正确性。
             GameClock.Tick();
 
-            // ---- M3：暂停热键 ----
+            // ---- M3：暂停热键（2026-10-18 改为与 Btn_Pause 同一语义：只暂停/继续，不弹窗）----
             // 【为什么是 P 而不是 ESC】ESC 已被 TowerPlacement 用作"取消放置 / 取消选中"，
             // 两个系统同帧抢同一个键，必然出现"按一下既取消选中又暂停"。
             //
@@ -1400,14 +1468,9 @@ namespace FTProject
             // GetKeyDown 不受 timeScale 影响，所以这个热键在暂停中依然有效。
             if (Input.GetKeyDown(KeyCode.P))
             {
-                if (UIManager.Instance.IsOpen(PauseView.LogicalName))
-                {
-                    OnResumeRequest();
-                }
-                else
-                {
-                    OnPauseRequest();
-                }
+                // 原先：菜单开着 → 继续；否则开菜单。现在暂停与菜单彻底分开：
+                // 热键只当暂停开关（菜单由 HUD 的 Btn_Intro 打开），避免"按 P 弹窗"的旧行为残留。
+                TogglePause();
             }
 
             // 调试快捷键：F1 打印完整状态，F2 强制获胜，F3 性能报告（联调/压测用）

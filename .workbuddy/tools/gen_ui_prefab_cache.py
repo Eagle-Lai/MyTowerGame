@@ -37,7 +37,7 @@ from _prefab_tree import parse, build, describe_comps  # noqa: E402
 
 # 参与缓存的 prefab 名单（= Assets/Prefabs/UI 下本工程自有的 UI prefab）
 PREFAB_NAMES = [
-    'ConfirmView', 'HudView', 'LevelClearView', 'LevelDetailView', 'MainMenuView',
+    'ConfirmView', 'GameIntroView', 'HudView', 'LevelClearView', 'LevelDetailView', 'MainMenuView',
     'PauseView', 'SelectLevelItem', 'SelectView', 'SellConfirmView', 'SettingView',
     'TipsView', 'TowerCodexItem', 'TowerCodexView', 'TowerInfoView',
 ]
@@ -71,6 +71,7 @@ def dump_prefab(path):
             rec['anchorMax'] = _scalar(b, 'm_AnchorMax')
             rec['anchoredPosition'] = _scalar(b, 'm_AnchoredPosition')
             rec['sizeDelta'] = _scalar(b, 'm_SizeDelta')
+            rec['pivot'] = _scalar(b, 'm_Pivot')
             rec['children'] = [node(c, p) for c in t['children_go'] if c in gos]
         else:
             rec['children'] = []

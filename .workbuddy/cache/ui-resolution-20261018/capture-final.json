@@ -1,0 +1,54 @@
+[
+  {
+    "arguments": {
+      "types": [
+        "error"
+      ],
+      "action": "get",
+      "format": "json",
+      "count": "50"
+    },
+    "label": "runtime-errors-before",
+    "name": "read_console"
+  },
+  {
+    "name": "execute_code",
+    "label": "assert-isolated-ready",
+    "arguments": {
+      "action": "execute",
+      "code": "if(!UnityEditor.EditorApplication.isPlaying || !FTProject.Configs.IsLoaded || !FTProject.SaveManager.IsTestStorage) throw new System.Exception(\"Test setup is not ready\"); return true;"
+    }
+  },
+  {
+    "arguments": {
+      "code": "return FTProject.EditorTools.UIResolutionVerifier.CaptureView(\"TowerCodexView\", \"D:/FreedomTower_1/Docs/UIResolution/20261018\");",
+      "action": "execute"
+    },
+    "label": "TowerCodexView",
+    "name": "execute_code"
+  },
+  {
+    "arguments": {
+      "code": "return FTProject.EditorTools.UIResolutionVerifier.CaptureView(\"HudView\", \"D:/FreedomTower_1/Docs/UIResolution/20261018\");",
+      "action": "execute"
+    },
+    "label": "HudView",
+    "name": "execute_code"
+  },
+  {
+    "arguments": {
+      "code": "return FTProject.EditorTools.UIResolutionVerifier.CaptureView(\"GameIntroView\", \"D:/FreedomTower_1/Docs/UIResolution/20261018\");",
+      "action": "execute"
+    },
+    "label": "GameIntroView",
+    "name": "execute_code"
+  },
+  {
+    "arguments": {
+      "code": "return FTProject.EditorTools.UIResolutionVerifier.CaptureView(\"TowerInfoView\", \"D:/FreedomTower_1/Docs/UIResolution/20261018\");",
+      "action": "execute"
+    },
+    "label": "TowerInfoView",
+    "name": "execute_code"
+  }
+]

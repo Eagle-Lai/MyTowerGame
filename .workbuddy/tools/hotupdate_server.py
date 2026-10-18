@@ -17,8 +17,15 @@
   2) UDP：每个本机 IPv4 网卡，各向
        · 定向广播 x.y.z.255（假设 /24）
        · 全网广播 255.255.255.255
+       · **单播兜底**：同网段每台主机逐个发一遍（--no-sweep 可关）
      每 ~1s 发一包，载荷："FTHOTUPD1|port=8000"。
      客户端校验魔数前缀，取**来源 IP** 为服务器地址。
+
+     ★为什么要有单播兜底（2026-10-17 真机实测）：电脑挂在手机热点
+       （192.168.43.x）时，客户端→AP 主机的定向广播可能被热点/系统过滤，
+       手机上的 App 一条都收不到（浏览器能开 HTTP、却"检测不到热更"）。
+       接收方只认端口+魔数、不区分广播/单播，所以逐个单播到同网段每台
+       主机（含 AP 主机 192.168.43.1）即可绕开过滤。
 
 【用法】
   python hotupdate_server.py               # 常驻（Ctrl+C 停）
@@ -46,6 +53,9 @@ from pathlib import Path
 
 MAGIC = b"FTHOTUPD1|"
 
+#: 单播兜底的最大主机数：/24=254 台正常扫；/23 以上（>512）跳过，避免一次发上万包
+MAX_SWEEP_HOSTS = 512
+
 ROOT = Path(__file__).resolve().parents[2] / "HotUpdateServer"
 
 _IPV4_RE = re.compile(r"\b(\d{1,3}(?:\.\d{1,3}){3})\b")
@@ -68,7 +78,7 @@ def local_ipv4s() -> list:
                     ip, mask = a.address, a.netmask
             if ip and mask and not ip.startswith(("127.", "169.254.")):
                 bc = str(ipaddress.ip_network(f"{ip}/{mask}", strict=False).broadcast_address)
-                out.append((name, ip, bc))
+                out.append((name, ip, bc, mask))
         if out:
             return out
     except ImportError:
@@ -117,43 +127,76 @@ def local_ipv4s() -> list:
             if not bad:
                 try:
                     bc = str(ipaddress.ip_network(f"{ip}/{mask}", strict=False).broadcast_address)
-                    out.append((adapter, ip, bc))
+                    out.append((adapter, ip, bc, mask))
                 except ValueError:
                     pass
             ip = mask = None
     return out
 
 
-def broadcaster(udp_port: int, interval: float, stop_evt: threading.Event) -> None:
-    """每个网卡各绑一个 UDP socket 发定向/全网广播。"""
+def _unicast_targets(ip: str, mask: str):
+    """该网段内可做单播兜底的主机地址（排除网络地址/广播地址/本机）。
+
+    ★用途见文件头：热点(AP)场景下广播可能被过滤，单播到每台主机可绕开。
+    网段主机数 > MAX_SWEEP_HOSTS 时返回空（避免大网段一次发上万包）。
+    """
+    try:
+        net = ipaddress.ip_network(f"{ip}/{mask}", strict=False)
+    except ValueError:
+        return []
+    if net.num_addresses - 2 > MAX_SWEEP_HOSTS:
+        return []
+    me = ipaddress.ip_address(ip)
+    return [str(h) for h in net.hosts() if h != me]
+
+
+def broadcaster(udp_port: int, interval: float, stop_evt: threading.Event,
+                enable_sweep: bool = True, http_port: int = 8000) -> None:
+    """每个网卡各绑一个 UDP socket 发定向/全网广播 + 单播兜底。
+
+    ★载荷里的 port 必须是 **HTTP 端口**（客户端拿它拼 http://来源IP:port）——
+      2026-10-17 修：原实现错发成 udp_port(28000)，客户端因此去探
+      http://x.x.x.x:28000/Android/HybridCLR/md5.txt，连接被拒 → 可达性闸门
+      关闭 → 真机表现"检测不到热更"（UDP 明明收到了却没用）。
+    """
     ifaces = local_ipv4s()
     if not ifaces:
         print("[bcast] 未发现可用的局域网 IPv4，广播线程退出（HTTP 仍正常）")
         return
     print("[bcast] 广播网卡：")
-    for name, ip, bc in ifaces:
+    for name, ip, bc, _mask in ifaces:
         print(f"[bcast]   {name:<24} ip={ip:<16} broadcast={bc}")
 
     socks = []
-    for _name, ip, bc in ifaces:
+    for _name, ip, bc, mask in ifaces:
         try:
             s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
             s.bind((ip, 0))
             s.settimeout(0.2)
-            socks.append((s, ip, bc))
         except OSError as e:
             print(f"[bcast] 绑定 {ip} 失败（跳过）：{e}")
+            continue
+        targets = _unicast_targets(ip, mask) if enable_sweep else []
+        socks.append((s, ip, bc, targets))
+        if targets:
+            print(f"[bcast]   单播兜底 {ip} → {len(targets)} 个地址"
+                  f"（{targets[0]} … {targets[-1]}）")
 
-    payload_tail = f"port={udp_port}".encode("ascii")
+    payload_tail = f"port={http_port}".encode("ascii")
     n = 0
     while not stop_evt.is_set():
-        for s, ip, bc in socks:
+        for s, ip, bc, targets in socks:
             for dst in (bc, "255.255.255.255"):
                 try:
                     s.sendto(MAGIC + payload_tail, (dst, udp_port))
                 except OSError:
                     pass  # 目标网段不可广播时静默（如虚拟网卡）
+            for dst in targets:
+                try:
+                    s.sendto(MAGIC + payload_tail, (dst, udp_port))
+                except OSError:
+                    pass
         n += 1
         stop_evt.wait(interval)
     print(f"[bcast] 已停止（共发送 {n} 轮）")
@@ -192,6 +235,8 @@ def main() -> int:
     ap.add_argument("--root", default=str(ROOT), help="HTTP 根目录（默认 HotUpdateServer/）")
     ap.add_argument("--self-test", action="store_true",
                     help="起服务前先自收广播验证（约 3s）")
+    ap.add_argument("--no-sweep", action="store_true",
+                    help="关闭同网段单播兜底（默认开启；手机热点/AP 场景需要它）")
     args = ap.parse_args()
 
     root = Path(args.root)
@@ -202,17 +247,22 @@ def main() -> int:
     if args.self_test:
         threading.Thread(target=broadcaster,
                          args=(args.udp_port, 0.3, threading.Event()),
+                         kwargs={"enable_sweep": not args.no_sweep,
+                                 "http_port": args.http_port},
                          daemon=True).start()
         self_test(args.udp_port)
     else:
         threading.Thread(target=broadcaster,
                          args=(args.udp_port, args.interval, threading.Event()),
+                         kwargs={"enable_sweep": not args.no_sweep,
+                                 "http_port": args.http_port},
                          daemon=True).start()
 
     handler = partial(SimpleHTTPRequestHandler, directory=str(root))
     httpd = ThreadingHTTPServer(("0.0.0.0", args.http_port), handler)
     print(f"[http] serving {root} at 0.0.0.0:{args.http_port}")
-    print(f"[udp ] broadcasting FTHOTUPD1 to port {args.udp_port}")
+    print(f"[udp ] broadcasting FTHOTUPD1 to port {args.udp_port}"
+          + ("（含同网段单播兜底）" if not args.no_sweep else "（仅广播）"))
     try:
         httpd.serve_forever()
     except KeyboardInterrupt:

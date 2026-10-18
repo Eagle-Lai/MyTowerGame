@@ -1,0 +1,4 @@
+{
+  "code": "if(!FTProject.SaveManager.IsTestStorage) throw new System.Exception(\"Requires isolated storage\"); FTProject.UIManager.Instance.Close(\"MainMenuView\"); var view=FTProject.UIManager.Instance.Open<FTProject.SelectView>(\"SelectView\",FTProject.UILayout.NormalPanel); return new {opened=view!=null,width=UnityEngine.Screen.width,height=UnityEngine.Screen.height,safeArea=UnityEngine.Screen.safeArea.ToString()};",
+  "action": "execute"
+}

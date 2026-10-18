@@ -11,9 +11,9 @@ namespace FTProject
     ///   火力塔另在落点播一段爆炸序列帧。本组件就是这两段序列帧的播放器。
     ///
     /// 【两种形态】
-    ///   1. 枪口焰：Attach 到炮管（Img_gun）下作为子物体 —— 跟随炮管旋转，
-    ///      localPosition 对齐炮口（BarrelPoint）。帧内火焰**朝上画**（与炮管贴图
-    ///      原生朝向一致，见 BaseTower.BarrelNativeAngle 的说明），因此无需再转。
+    ///   1. 枪口焰：Attach 到炮口节点 BarrelPoint 下作为子物体 —— 与炮口严格同点、
+    ///      跟随炮管旋转。帧内火焰**朝上画**、轴点在焰底（与炮管贴图原生朝向 90° 一致，
+    ///      见 BaseTower.BarrelNativeAngle 的说明），因此无需再转。
     ///   2. 落点爆炸：PlayBlastAt(worldPos) 从静态池取一个一次性实例播放，
     ///      播完自动归池。池化是因为火力塔攻速不低，逐次 Instantiate 会产生 GC 尖峰。
     ///
@@ -27,6 +27,8 @@ namespace FTProject
     {
         private const float MuzzleFps = 20f;
         private const float BlastFps = 16f;
+        /// <summary>枪口焰子物体的节点名（幂等复用靠它找回来）。</summary>
+        private const string FxNodeName = "FireFx_Muzzle";
 
         private SpriteRenderer _sr;
         private Sprite[] _frames;
@@ -51,8 +53,14 @@ namespace FTProject
         // ------------------------------------------------------------------
 
         /// <summary>
-        /// 在炮管下挂一个枪口焰子物体（每塔一个，随炮管旋转）。
-        /// localPosition 取炮口标记 BarrelPoint（没有就顶在炮管上沿）。
+        /// 在炮口节点下挂一个枪口焰子物体（每塔一个，随炮管旋转）。
+        ///
+        /// ★位置权威 = 预制体里的 BarrelPoint 节点：焰直接作为它的子物体、本地位置置零，
+        ///   与节点严格重合（不复制本地坐标，避免以后中间层加缩放/旋转时算错）。
+        ///   帧的轴点在**焰底**（见 .workbuddy/tools/gen_tower_fire_frames.py 的
+        ///   MUZZLE_BASE_MARGIN + meta alignment=9/pivot y=0.2），所以焰根正好从枪口喷出，
+        ///   焰底以下那圈回喷光晕落在炮管上作过渡。
+        ///   只有预制体缺 BarrelPoint 时才退回"炮管上沿"的估算位置并告警。
         /// </summary>
         public static TowerFireFx AttachMuzzle(Transform barrel, Transform muzzleTip)
         {
@@ -60,21 +68,18 @@ namespace FTProject
             {
                 return null;
             }
-            Transform t = barrel.Find("FireFx_Muzzle");
+            Transform anchor = muzzleTip != null ? muzzleTip : barrel;
+            Transform t = anchor.Find(FxNodeName);
+            if (t == null && muzzleTip != null)
+            {
+                // 兼容：旧版本把焰挂在炮管上，换了锚点后重新挂到炮口
+                t = barrel.Find(FxNodeName);
+            }
             GameObject go;
             if (t == null)
             {
-                go = new GameObject("FireFx_Muzzle");
-                go.transform.SetParent(barrel, false);
-                if (muzzleTip != null)
-                {
-                    go.transform.localPosition = muzzleTip.localPosition;
-                }
-                else
-                {
-                    go.transform.localPosition = new Vector3(0f, 0.5f, 0f);
-                }
-                go.transform.localScale = Vector3.one * 0.9f;
+                go = new GameObject(FxNodeName);
+                go.transform.SetParent(anchor, false);
                 SpriteRenderer sr = go.AddComponent<SpriteRenderer>();
                 // 塔层之上、子弹层之下：焰要盖住炮管，但不得盖住飞行中的弹体/爆炸
                 sr.sortingOrder = BoardSorting.Tower + 2;
@@ -82,7 +87,22 @@ namespace FTProject
             else
             {
                 go = t.gameObject;
+                if (go.transform.parent != anchor)
+                {
+                    go.transform.SetParent(anchor, false);
+                }
             }
+            if (muzzleTip != null)
+            {
+                go.transform.localPosition = Vector3.zero;
+            }
+            else
+            {
+                go.transform.localPosition = new Vector3(0f, 0.6f, 0f);
+                Debug.LogWarning("[TowerFireFx] 塔预制体缺 BarrelPoint，枪口焰退回炮管上沿绘制");
+            }
+            go.transform.localRotation = Quaternion.identity;
+            go.transform.localScale = Vector3.one * 0.9f;
             TowerFireFx fx = go.GetComponent<TowerFireFx>();
             if (fx == null)
             {

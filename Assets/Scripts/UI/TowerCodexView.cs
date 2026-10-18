@@ -166,7 +166,8 @@ namespace FTProject
         /// </summary>
         private void UpdateItemVisuals()
         {
-            float centerX = _list.transform.position.x;
+            RectTransform viewport = _list.GetComponent<ScrollRect>().viewport;
+            float centerX = viewport.rect.center.x;
             int count = _list.ShownItemCount;
             for (int i = 0; i < count; i++)
             {
@@ -182,7 +183,9 @@ namespace FTProject
                     continue;
                 }
 
-                float dist = Mathf.Abs(item.transform.position.x - centerX);
+                RectTransform itemRect = (RectTransform)item.transform;
+                Vector3 itemCenter = viewport.InverseTransformPoint(itemRect.TransformPoint(itemRect.rect.center));
+                float dist = Mathf.Abs(itemCenter.x - centerX);
                 float t = Mathf.Clamp01(dist / FocusFalloff);
                 float scale = Mathf.Lerp(1f, MinScale, t);
                 body.localScale = new Vector3(scale, scale, 1f);

@@ -5,7 +5,12 @@ using UnityEngine.UI;
 namespace FTProject
 {
     /// <summary>
-    /// 游戏介绍弹窗（2026-10-14 新增，HUD 右上角「游戏介绍」按钮打开）。
+    /// 游戏介绍弹窗（2026-10-14 新增，原由 HUD 右上角「游戏介绍」按钮打开）。
+    ///
+    /// 【2026-10-18 现状：暂无入口】HUD 的 Btn_Intro 已改为打开暂停菜单（PauseView），
+    ///   本弹窗的按钮入口随之撤下；界面资产、多语言词条、事件链路
+    ///   （OpenGameIntroRequestEvent → GameFlowManager.OnOpenGameIntroRequest）全部保留，
+    ///   将来要恢复入口只需加一颗按钮发那个事件，不用改本文件。
     ///
     /// 【需求契约】弹窗中必须包含一个「回到选关」按钮，点击后返回关卡选择界面 ——
     ///   走 QuitToSelectRequestEvent（与暂停界面的退出、结算弹窗的返回完全同源），
@@ -102,15 +107,15 @@ namespace FTProject
             }
         }
 
-        /// <summary>「回到选关」：恢复时间后发退出对局事件（口径与 PauseView.OnClickQuit 一致）。</summary>
+        /// <summary>「回到选关」：发退出对局事件（口径与 PauseView.OnClickQuit 一致）。</summary>
         private void OnClickBack()
         {
             // 【真机诊断埋点】"点回到选关没反应"排查链第一环；
             // 后续链路：QuitToSelectRequestEvent → GameFlowManager.QuitToSelect → TeardownLevel。
             Debug.Log("[Intro] 点击回到选关");
-            // 与 PauseView 同理：先恢复时间再退出，否则新一屏会在 timeScale=0 下启动
-            //（本界面虽然自己不改 timeScale，但防"从暂停界面叠过来的极端路径"）。
-            Time.timeScale = 1f;
+            // 【2026-10-18】不再在这里写 Time.timeScale：暂停的唯一写入口是
+            //   GameClock.SetPaused(false)，而退出对局走 TeardownLevel 时已经统一解除暂停。
+            //   UI 再写一次会与流程层状态脱钩（例如把别处设好的暂停态冲掉）。
             EventDispatcher.TriggerEvent(EventName.QuitToSelectRequestEvent);
         }
 

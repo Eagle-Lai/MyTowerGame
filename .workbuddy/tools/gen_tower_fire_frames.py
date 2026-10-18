@@ -6,12 +6,18 @@ gen_tower_fire_frames.py — 生成塔开火序列帧（2026-10-17 攻击表现�
 开火只播枪口焰序列帧 + 即时伤害判定；火力塔在落点补一段爆炸序列帧。
 
 产物（Assets/_UIAssets/Tower/FireFx/）：
-  Tower_Muzzle_Normal_0..3.png  128x128  普通塔枪口焰（黄白、朝上，锚点在底部中央）
-  Tower_Muzzle_Power_0..4.png   160x160  火力塔枪口焰（橙红、更大，朝上）
+  Tower_Muzzle_Normal_0..3.png  128x128  普通塔枪口焰（黄白、朝上，轴点=焰底）
+  Tower_Muzzle_Power_0..4.png   160x160  火力塔枪口焰（橙红、更大，朝上，轴点=焰底）
   Tower_Blast_0..5.png          256x256  落点爆炸（中心引爆：闪光→火球→冲击环→烟雾）
 
-朝向约定：炮管贴图原生朝上（BaseTower.BarrelNativeAngle=90°），
-枪口焰作为炮管子物体跟随旋转，因此**帧内火焰朝上画**、锚点取底部中央（Unity pivot 手写 meta 为 bottom）。
+朝向与轴点约定（★2026-10-17 修正）：
+  炮管贴图原生朝上（BaseTower.BarrelNativeAngle=90°），枪口焰挂在炮口节点
+  BarrelPoint 下、跟随炮管旋转，因此**帧内火焰朝上画**。
+  轴点必须**正好落在焰底**（白热核心中心），这样精灵位置 = BarrelPoint 位置时，
+  焰根就落在枪口上；焰底以下那圈回喷光晕留在炮管上，是想要的自然过渡。
+  → base_y = h*(1-BASE_MARGIN)，meta 用 **alignment: 9（Custom）+ spritePivot y=BASE_MARGIN**。
+  ★别再写 alignment: 1 —— Unity 的 SpriteAlignment 枚举是 0=Center,1=TopLeft,…,7=BottomCenter,9=Custom，
+    1 是"左上角"，会把整张贴图挂到炮口右下方（曾因此枪口焰整个跑偏）。
 
 确定性：固定随机种子，重复运行产物逐字节一致（便于 diff 复核）。
 运行：C:/Users/Administrator/.workbuddy/binaries/python/envs/default/Scripts/python.exe 本脚本
@@ -26,6 +32,10 @@ from PIL import Image, ImageDraw, ImageFilter
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")
 OUT_DIR = os.path.normpath(os.path.join(ROOT, "Assets", "_UIAssets", "Tower", "FireFx"))
 SS = 2  # 超采样倍数（抗锯齿）
+
+# 枪口焰：焰底距画布底边的留白比例（= meta 里的轴点 y）。
+# 留白只给"焰底以下那圈回喷光晕"用，焰底本身正好落在轴点上 → 轴点即枪口。
+MUZZLE_BASE_MARGIN = 0.20
 
 random.seed(20261017)
 
@@ -153,7 +163,7 @@ def finalize(buf, w, h, out_w):
 
 
 # ---------------------------------------------------------------------------
-# 枪口焰（朝上、锚点底部中央；最后平移到画布中央）
+# 枪口焰（朝上；焰底 = 轴点 = BarrelPoint；焰底以下 CIRCLE 半径内的回喷光晕留白）
 # ---------------------------------------------------------------------------
 
 def gen_muzzle(size, frames, hot, cool, base_len, base_w, heavy):
@@ -166,7 +176,8 @@ def gen_muzzle(size, frames, hot, cool, base_len, base_w, heavy):
         env = [0.62, 1.0, 0.72, 0.34, 0.16][min(f, 4)]
         w = h = size * SS
         buf = new_canvas(w, h)
-        cx, base_y = w * 0.5, h * 0.78        # 锚点（底部中央附近起火）
+        # ★焰底位置必须与 meta 的 spritePivot.y 一致（都是 MUZZLE_BASE_MARGIN）
+        cx, base_y = w * 0.5, h * (1.0 - MUZZLE_BASE_MARGIN)
         inten = env * peak
         length = base_len * SS * (0.45 + 0.75 * env)
         width = base_w * SS * (0.5 + 0.7 * env)
@@ -385,18 +396,30 @@ TextureImporter:
 """
 
 
-def write_group(imgs, prefix, bundle, pivot_bottom):
+def existing_guid(meta_path):
+    """沿用同名 .meta 里已有的 guid —— 重跑脚本不能换 GUID（否则引用/AB 全抖）。"""
+    try:
+        with open(meta_path, "r", encoding="utf-8") as fp:
+            for line in fp:
+                if line.startswith("guid: "):
+                    return line[6:].strip()
+    except OSError:
+        pass
+    return None
+
+
+def write_group(imgs, prefix, bundle, alignment, pivot_y):
+    """alignment 走 Unity SpriteAlignment 枚举：0=Center，9=Custom（此时以 spritePivot 为准）。"""
     os.makedirs(OUT_DIR, exist_ok=True)
     for i, img in enumerate(imgs):
         name = "%s_%d" % (prefix, i)
         png = os.path.join(OUT_DIR, name + ".png")
         meta = os.path.join(OUT_DIR, name + ".png.meta")
         img.save(png)
-        alignment = 1 if pivot_bottom else 0   # 1=bottom 0=center
-        pivot_y = 0.0 if pivot_bottom else 0.5
+        guid = existing_guid(meta) or uuid.uuid4().hex
         with open(meta, "w", encoding="utf-8", newline="\n") as fp:
             fp.write(META_TMPL.format(
-                guid=uuid.uuid4().hex, alignment=alignment, pivot_y=pivot_y, bundle=bundle))
+                guid=guid, alignment=alignment, pivot_y=pivot_y, bundle=bundle))
         print("write", png)
 
 
@@ -405,17 +428,20 @@ def main():
     normal = gen_muzzle(128, 4,
                         hot=(255, 240, 180), cool=(255, 190, 80),
                         base_len=64, base_w=16, heavy=False)
-    write_group(normal, "Tower_Muzzle_Normal", "tower_normal", pivot_bottom=True)
+    write_group(normal, "Tower_Muzzle_Normal", "tower_normal",
+                alignment=9, pivot_y=MUZZLE_BASE_MARGIN)
 
     # 火力塔枪口焰：橙红、宽厚（重炮感）
     power = gen_muzzle(160, 5,
                        hot=(255, 220, 150), cool=(255, 130, 50),
                        base_len=84, base_w=26, heavy=True)
-    write_group(power, "Tower_Muzzle_Power", "tower_power", pivot_bottom=True)
+    write_group(power, "Tower_Muzzle_Power", "tower_power",
+                alignment=9, pivot_y=MUZZLE_BASE_MARGIN)
 
-    # 落点爆炸：居中锚点
+    # 落点爆炸：居中锚点（引爆点在中心，位置由 PlayBlastAt 的落点决定）
     blast = gen_blast(256, 6)
-    write_group(blast, "Tower_Blast", "tower_power", pivot_bottom=False)
+    write_group(blast, "Tower_Blast", "tower_power",
+                alignment=0, pivot_y=0.5)
 
     print("done ->", OUT_DIR)
 

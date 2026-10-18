@@ -1,0 +1,18 @@
+[
+  {
+    "name": "execute_code",
+    "label": "migrate-and-preview",
+    "arguments": {
+      "action": "execute",
+      "code": "if (UnityEditor.EditorUtility.scriptCompilationFailed) throw new System.Exception(\"Compilation failed\"); FTProject.EditorTools.UIResolutionLayout.SyncExisting(); var saved = new System.Collections.Generic.Dictionary<string,string>(); foreach (string p in System.IO.Directory.GetFiles(\"Assets/Prefabs/UI\",\"*.prefab\")) saved[p]=System.IO.File.ReadAllText(p); FTProject.EditorTools.UIResolutionLayout.SyncExisting(); foreach(var kv in saved) if(System.IO.File.ReadAllText(kv.Key)!=kv.Value) throw new System.Exception(\"Migration is not idempotent: \"+kv.Key); FTProject.EditorTools.UIPrefabBuilder.BuildLayoutPreview(\"Assets/__UIResolutionPreview20261018\"); foreach(var kv in saved) if(System.IO.File.ReadAllText(kv.Key)!=kv.Value) throw new System.Exception(\"Isolated generation modified production: \"+kv.Key); return new { compilationFailed=UnityEditor.EditorUtility.scriptCompilationFailed, productionCount=saved.Count, migrationIdempotent=true, productionUnchangedByPreview=true, previewCount=System.IO.Directory.GetFiles(\"Assets/__UIResolutionPreview20261018\",\"*.prefab\").Length };"
+    }
+  },
+  {
+    "label": "resume-isolated-play",
+    "arguments": {
+      "action": "execute",
+      "code": "if(UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode) throw new System.Exception(\"Editor has not stopped\"); UnityEditor.SessionState.SetString(\"FT.Balance.TestStorageContext\",\"ui-resolution-20261018\"); UnityEditor.SceneManagement.EditorSceneManager.playModeStartScene=UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEditor.SceneAsset>(\"Assets/Scenes/Main.unity\"); UnityEditor.EditorApplication.isPlaying=true; return \"Restart isolated validation\";"
+    },
+    "name": "execute_code"
+  }
+]
