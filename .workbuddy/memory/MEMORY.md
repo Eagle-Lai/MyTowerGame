@@ -148,3 +148,7 @@
   （热更脚本打包时被剔除）→ 全脚本 missing、黑屏卡死、logcat 无任何 `[Boot]` 日志。
   识别特征：启动 1 秒内出现 `The referenced script (FTProject.*) is missing` 且完全无 [Boot] 日志 = 起始场景错了，不是热更链路问题。
   已恢复 `ProjectSettings/EditorBuildSettings.asset` 为 ee973da 版本（Boot enabled / Main disabled）。
+- ★热更部署铁律（2026-10-19）：AB 构建（菜单9）后**必须立刻跑** `deploy_free_tower_cdn.py`，否则服务器根
+  `FreeTower.version` 指针停留在旧版本 → 客户端拿旧清单，新增资源（如 tblevelrating）报"清单找不到定位地址"。
+  验证：`curl --noproxy "*" http://127.0.0.1:8000/FreeTower.version` 应等于本地 Bundles 最新版本目录。
+  另：`Bundles/Android/FreeTower/{1.0.25,1.0.26}/`（历史版本区）与服务器根平铺区是两回事，前者不被运行时请求。
