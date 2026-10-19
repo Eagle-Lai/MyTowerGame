@@ -28,7 +28,7 @@ class BalanceIoTests(unittest.TestCase):
         after={p:core.file_hash(p) for p in cls.formal_hashes}
         assert after==cls.formal_hashes,'Formal project data changed during read-only staging tests'
         cls.evidence['formalProjectHashesUnchanged']=True
-        core.write_json(core.ROOT/'Docs/BalanceEvidence/pipeline-io-tests.json',cls.evidence)
+        core.write_json(core.ROOT/'Docs/BalanceEvidence/30x25/pipeline-io-tests.json',cls.evidence)
 
     def cli(self,command,out,editor_log=False,extra=()):
         env=os.environ.copy();env.pop('FT_BALANCE_EDITOR_LOG',None)
@@ -66,7 +66,7 @@ class BalanceIoTests(unittest.TestCase):
             self.assertIn('invalid choice',(out/'pipeline.log').read_text(encoding='utf-8'))
 
     def test_real_workbooks_reuse_rows_preserve_prototypes_and_export(self):
-        recipe=core.read_json(core.ROOT/'Library/BalanceWorkbench/gradient-calibration/recipe.json')
+        recipe=core.read_json(core.DEFAULT_RECIPE)
         plans=[core.generate(recipe,p) for p in ['D08','D08','D04']]
         plans[1]=copy.deepcopy(plans[1]);plans[1]['tables']['tbenemydata']=plans[1]['tables']['tbenemydata'][:-64]
         original_data=core.DATA

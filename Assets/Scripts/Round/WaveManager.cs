@@ -175,7 +175,12 @@ namespace FTProject
                 if (spawned == null)
                 {
                     // Capacity is transient. Keep this exact timeline item for a later frame.
-                    if (EnemyManager.Instance.LastSpawnFailure == EnemyManager.SpawnFailure.Capacity) break;
+                    if (EnemyManager.Instance.LastSpawnFailure == EnemyManager.SpawnFailure.Capacity)
+                    {
+                        var run = GameFlowManager.Instance != null ? GameFlowManager.Instance.RunMetrics : null;
+                        if (run != null && run.waves.Count > 0) run.waves[run.waves.Count - 1].spawnDeferredCount++;
+                        break;
+                    }
                     _running = false;
                     if (GameFlowManager.Instance != null) GameFlowManager.Instance.InvalidateRun("Spawn failed: " + EnemyManager.Instance.LastSpawnFailure);
                     return;

@@ -1,0 +1,4170 @@
+{
+  "profileId": "D04",
+  "levelId": 11,
+  "planHash": "664473a02e820ab6e66e918ba0be060aa6c3eb554736ae1b35539cfef3ea1f0a",
+  "strategyId": "mixed",
+  "strategyRevision": "spatial-fixed-step-30x25-v2",
+  "policy": {
+    "capacity": 135,
+    "upgradeShare": 0.6,
+    "maxTowers": 21,
+    "targetCount": 21,
+    "upgradeAfter": 4,
+    "preferUpgrade": true,
+    "midwaveUpgrades": true,
+    "cheapFallback": true
+  },
+  "stepMs": 100,
+  "seed": 42,
+  "coverage": "offline_prediction_only",
+  "approximations": [
+    "Four-direction BFS tie order may differ from Unity A*",
+    "Fixed-step movement then tower attacks instead of Unity frame scheduling",
+    "Float64 arithmetic instead of Unity float32; near-threshold results need Unity comparison",
+    "No visual/camera/touch validation; no certification of five-star reachability",
+    "Build and upgrade operations only at wave boundaries; no borrowing future kill income"
+  ],
+  "result": "predicted_clear",
+  "error": null,
+  "predictionStars": null,
+  "ratingStatus": "requires C# LevelRatingEvaluator; simulator does not implement another scoring algorithm",
+  "combatToParRatio": 0.6718260869565252,
+  "balance": 5249,
+  "leaked": 0,
+  "metrics": {
+    "runId": "offline:D04:L11:mixed:spatial-fixed-step-30x25-v2",
+    "profileId": "D04",
+    "profileRevision": "2",
+    "balanceRevision": "balance-30x25-economy-v2",
+    "ratingRevision": "five-stars-v1",
+    "planHash": "664473a02e820ab6e66e918ba0be060aa6c3eb554736ae1b35539cfef3ea1f0a",
+    "expectedWaveCount": 25,
+    "completedWaveCount": 25,
+    "expectedEnemyCount": 1300,
+    "successfulSpawned": 1300,
+    "killed": 1300,
+    "leaked": 0,
+    "bossLeaked": 0,
+    "criticalLeaked": 0,
+    "hp": 20,
+    "maxHp": 20,
+    "combatElapsedMs": 772600,
+    "levelElapsedMs": 892600,
+    "combatElapsedSeconds": 772.6000000000041,
+    "levelElapsedSeconds": 892.6000000000043,
+    "debugOverride": false,
+    "statisticsValid": true,
+    "timingValid": true,
+    "victory": true,
+    "waves": [
+      {
+        "ordinal": 1,
+        "expected": 28,
+        "successfulSpawned": 28,
+        "killed": 28,
+        "leaked": 0,
+        "bossLeaked": 0,
+        "criticalLeaked": 0,
+        "gold": 55,
+        "hp": 20,
+        "killGold": 168,
+        "clearGold": 12,
+        "peakAlive": 6,
+        "combatStartSeconds": 0.0,
+        "combatEndSeconds": 19.6,
+        "levelEndSeconds": 19.6
+      },
+      {
+        "ordinal": 2,
+        "expected": 30,
+        "successfulSpawned": 30,
+        "killed": 30,
+        "leaked": 0,
+        "bossLeaked": 0,
+        "criticalLeaked": 0,
+        "gold": 42,
+        "hp": 20,
+        "killGold": 180,
+        "clearGold": 12,
+        "peakAlive": 5,
+        "combatStartSeconds": 19.6,
+        "combatEndSeconds": 40.1,
+        "levelEndSeconds": 45.1
+      },
+      {
+        "ordinal": 3,
+        "expected": 32,
+        "successfulSpawned": 32,
+        "killed": 32,
+        "leaked": 0,
+        "bossLeaked": 0,
+        "criticalLeaked": 0,
+        "gold": 60,
+        "hp": 20,
+        "killGold": 176,
+        "clearGold": 12,
+        "peakAlive": 3,
+        "combatStartSeconds": 40.1,
+        "combatEndSeconds": 60.5,
+        "levelEndSeconds": 70.5
+      },
+      {
+        "ordinal": 4,
+        "expected": 34,
+        "successfulSpawned": 34,
+        "killed": 34,
+        "leaked": 0,
+        "bossLeaked": 0,
+        "criticalLeaked": 0,
+        "gold": 48,
+        "hp": 20,
+        "killGold": 186,
+        "clearGold": 12,
+        "peakAlive": 3,
+        "combatStartSeconds": 60.5,
+        "combatEndSeconds": 81.8,
+        "levelEndSeconds": 96.8
+      },
+      {
+        "ordinal": 5,
+        "expected": 36,
+        "successfulSpawned": 36,
+        "killed": 36,
+        "leaked": 0,
+        "bossLeaked": 0,
+        "criticalLeaked": 0,
+        "gold": 51,
+        "hp": 20,
+        "killGold": 201,
+        "clearGold": 12,
+        "peakAlive": 3,
+        "combatStartSeconds": 81.8,
+        "combatEndSeconds": 103.69999999999999,
+        "levelEndSeconds": 123.7
+      },
+      {
+        "ordinal": 6,
+        "expected": 38,
+        "successfulSpawned": 38,
+        "killed": 38,
+        "leaked": 0,
+        "bossLeaked": 0,
+        "criticalLeaked": 0,
+        "gold": 72,
+        "hp": 20,
+        "killGold": 216,
+        "clearGold": 15,
+        "peakAlive": 3,
+        "combatStartSeconds": 103.69999999999999,
+        "combatEndSeconds": 126.69999999999999,
+        "levelEndSeconds": 151.7
+      },
+      {
+        "ordinal": 7,
+        "expected": 40,
+        "successfulSpawned": 40,
+        "killed": 40,
+        "leaked": 0,
+        "bossLeaked": 0,
+        "criticalLeaked": 0,
+        "gold": 79,
+        "hp": 20,
+        "killGold": 227,
+        "clearGold": 15,
+        "peakAlive": 3,
+        "combatStartSeconds": 126.69999999999999,
+        "combatEndSeconds": 150.5,
+        "levelEndSeconds": 180.5
+      },
+      {
+        "ordinal": 8,
+        "expected": 42,
+        "successfulSpawned": 42,
+        "killed": 42,
+        "leaked": 0,
+        "bossLeaked": 0,
+        "criticalLeaked": 0,
+        "gold": 88,
+        "hp": 20,
+        "killGold": 239,
+        "clearGold": 15,
+        "peakAlive": 3,
+        "combatStartSeconds": 150.5,
+        "combatEndSeconds": 175.5,
+        "levelEndSeconds": 210.5
+      },
+      {
+        "ordinal": 9,
+        "expected": 44,
+        "successfulSpawned": 44,
+        "killed": 44,
+        "leaked": 0,
+        "bossLeaked": 0,
+        "criticalLeaked": 0,
+        "gold": 22,
+        "hp": 20,
+        "killGold": 249,
+        "clearGold": 15,
+        "peakAlive": 4,
+        "combatStartSeconds": 175.5,
+        "combatEndSeconds": 201.1,
+        "levelEndSeconds": 241.1
+      },
+      {
+        "ordinal": 10,
+        "expected": 46,
+        "successfulSpawned": 46,
+        "killed": 46,
+        "leaked": 0,
+        "bossLeaked": 0,
+        "criticalLeaked": 0,
+        "gold": 298,
+        "hp": 20,
+        "killGold": 261,
+        "clearGold": 15,
+        "peakAlive": 4,
+        "combatStartSeconds": 201.1,
+        "combatEndSeconds": 227.79999999999998,
+        "levelEndSeconds": 272.8
+      },
+      {
+        "ordinal": 11,
+        "expected": 48,
+        "successfulSpawned": 48,
+        "killed": 48,
+        "leaked": 0,
+        "bossLeaked": 0,
+        "criticalLeaked": 0,
+        "gold": 321,
+        "hp": 20,
+        "killGold": 285,
+        "clearGold": 18,
+        "peakAlive": 6,
+        "combatStartSeconds": 227.79999999999998,
+        "combatEndSeconds": 254.89999999999998,
+        "levelEndSeconds": 304.9
+      },
+      {
+        "ordinal": 12,
+        "expected": 50,
+        "successfulSpawned": 50,
+        "killed": 50,
+        "leaked": 0,
+        "bossLeaked": 0,
+        "criticalLeaked": 0,
+        "gold": 164,
+        "hp": 20,
+        "killGold": 305,
+        "clearGold": 18,
+        "peakAlive": 7,
+        "combatStartSeconds": 254.89999999999998,
+        "combatEndSeconds": 282.5,
+        "levelEndSeconds": 337.5
+      },
+      {
+        "ordinal": 13,
+        "expected": 52,
+        "successfulSpawned": 52,
+        "killed": 52,
+        "leaked": 0,
+        "bossLeaked": 0,
+        "criticalLeaked": 0,
+        "gold": 359,
+        "hp": 20,
+        "killGold": 317,
+        "clearGold": 18,
+        "peakAlive": 7,
+        "combatStartSeconds": 282.5,
+        "combatEndSeconds": 311.0,
+        "levelEndSeconds": 371.0
+      },
+      {
+        "ordinal": 14,
+        "expected": 54,
+        "successfulSpawned": 54,
+        "killed": 54,
+        "leaked": 0,
+        "bossLeaked": 0,
+        "criticalLeaked": 0,
+        "gold": 565,
+        "hp": 20,
+        "killGold": 328,
+        "clearGold": 18,
+        "peakAlive": 8,
+        "combatStartSeconds": 311.0,
+        "combatEndSeconds": 340.4,
+        "levelEndSeconds": 405.4
+      },
+      {
+        "ordinal": 15,
+        "expected": 56,
+        "successfulSpawned": 56,
+        "killed": 56,
+        "leaked": 0,
+        "bossLeaked": 0,
+        "criticalLeaked": 0,
+        "gold": 933,
+        "hp": 20,
+        "killGold": 350,
+        "clearGold": 18,
+        "peakAlive": 12,
+        "combatStartSeconds": 340.4,
+        "combatEndSeconds": 371.09999999999997,
+        "levelEndSeconds": 441.1
+      },
+      {
+        "ordinal": 16,
+        "expected": 58,
+        "successfulSpawned": 58,
+        "killed": 58,
+        "leaked": 0,
+        "bossLeaked": 0,
+        "criticalLeaked": 0,
+        "gold": 1298,
+        "hp": 20,
+        "killGold": 344,
+        "clearGold": 21,
+        "peakAlive": 13,
+        "combatStartSeconds": 371.09999999999997,
+        "combatEndSeconds": 402.4,
+        "levelEndSeconds": 477.4
+      },
+      {
+        "ordinal": 17,
+        "expected": 60,
+        "successfulSpawned": 60,
+        "killed": 60,
+        "leaked": 0,
+        "bossLeaked": 0,
+        "criticalLeaked": 0,
+        "gold": 1687,
+        "hp": 20,
+        "killGold": 368,
+        "clearGold": 21,
+        "peakAlive": 15,
+        "combatStartSeconds": 402.4,
+        "combatEndSeconds": 437.79999999999995,
+        "levelEndSeconds": 517.8
+      },
+      {
+        "ordinal": 18,
+        "expected": 62,
+        "successfulSpawned": 62,
+        "killed": 62,
+        "leaked": 0,
+        "bossLeaked": 0,
+        "criticalLeaked": 0,
+        "gold": 2086,
+        "hp": 20,
+        "killGold": 378,
+        "clearGold": 21,
+        "peakAlive": 18,
+        "combatStartSeconds": 437.79999999999995,
+        "combatEndSeconds": 472.49999999999994,
+        "levelEndSeconds": 557.5
+      },
+      {
+        "ordinal": 19,
+        "expected": 64,
+        "successfulSpawned": 64,
+        "killed": 64,
+        "leaked": 0,
+        "bossLeaked": 0,
+        "criticalLeaked": 0,
+        "gold": 2497,
+        "hp": 20,
+        "killGold": 390,
+        "clearGold": 21,
+        "peakAlive": 18,
+        "combatStartSeconds": 472.49999999999994,
+        "combatEndSeconds": 508.79999999999995,
+        "levelEndSeconds": 598.8
+      },
+      {
+        "ordinal": 20,
+        "expected": 66,
+        "successfulSpawned": 66,
+        "killed": 66,
+        "leaked": 0,
+        "bossLeaked": 0,
+        "criticalLeaked": 0,
+        "gold": 2928,
+        "hp": 20,
+        "killGold": 410,
+        "clearGold": 21,
+        "peakAlive": 25,
+        "combatStartSeconds": 508.79999999999995,
+        "combatEndSeconds": 548.0999999999999,
+        "levelEndSeconds": 643.1
+      },
+      {
+        "ordinal": 21,
+        "expected": 68,
+        "successfulSpawned": 68,
+        "killed": 68,
+        "leaked": 0,
+        "bossLeaked": 0,
+        "criticalLeaked": 0,
+        "gold": 3364,
+        "hp": 20,
+        "killGold": 412,
+        "clearGold": 24,
+        "peakAlive": 26,
+        "combatStartSeconds": 548.0999999999999,
+        "combatEndSeconds": 587.8,
+        "levelEndSeconds": 687.8
+      },
+      {
+        "ordinal": 22,
+        "expected": 70,
+        "successfulSpawned": 70,
+        "killed": 70,
+        "leaked": 0,
+        "bossLeaked": 0,
+        "criticalLeaked": 0,
+        "gold": 3816,
+        "hp": 20,
+        "killGold": 428,
+        "clearGold": 24,
+        "peakAlive": 28,
+        "combatStartSeconds": 587.8,
+        "combatEndSeconds": 630.1999999999999,
+        "levelEndSeconds": 735.2
+      },
+      {
+        "ordinal": 23,
+        "expected": 72,
+        "successfulSpawned": 72,
+        "killed": 72,
+        "leaked": 0,
+        "bossLeaked": 0,
+        "criticalLeaked": 0,
+        "gold": 4278,
+        "hp": 20,
+        "killGold": 438,
+        "clearGold": 24,
+        "peakAlive": 30,
+        "combatStartSeconds": 630.1999999999999,
+        "combatEndSeconds": 674.6999999999999,
+        "levelEndSeconds": 784.7
+      },
+      {
+        "ordinal": 24,
+        "expected": 74,
+        "successfulSpawned": 74,
+        "killed": 74,
+        "leaked": 0,
+        "bossLeaked": 0,
+        "criticalLeaked": 0,
+        "gold": 4753,
+        "hp": 20,
+        "killGold": 451,
+        "clearGold": 24,
+        "peakAlive": 31,
+        "combatStartSeconds": 674.6999999999999,
+        "combatEndSeconds": 719.4999999999999,
+        "levelEndSeconds": 834.5
+      },
+      {
+        "ordinal": 25,
+        "expected": 76,
+        "successfulSpawned": 76,
+        "killed": 76,
+        "leaked": 0,
+        "bossLeaked": 0,
+        "criticalLeaked": 0,
+        "gold": 5249,
+        "hp": 20,
+        "killGold": 472,
+        "clearGold": 24,
+        "peakAlive": 39,
+        "combatStartSeconds": 719.4999999999999,
+        "combatEndSeconds": 772.5999999999999,
+        "levelEndSeconds": 892.6
+      }
+    ]
+  },
+  "ratingProfile": {
+    "id": 11,
+    "difficultyTier": 2,
+    "profileId": "D04",
+    "profileRevision": "2",
+    "expectedWaveCount": 25,
+    "expectedEnemyCount": 1300,
+    "twoStarHpPermille": 500,
+    "threeStarHpPermille": 750,
+    "fourStarHpPermille": 900,
+    "maxFourStarLeaks": 2,
+    "fourStarTimePermille": 1250,
+    "parCombatTimeMs": 1150000,
+    "bossVariantIds": [],
+    "criticalVariantIds": [
+      3528542,
+      3538542,
+      10017599
+    ],
+    "balanceRevision": "balance-30x25-economy-v2",
+    "ratingRevision": "five-stars-v1",
+    "calibrationStatus": "pending_unity_reference",
+    "runtimeContentHash": "",
+    "planHash": "664473a02e820ab6e66e918ba0be060aa6c3eb554736ae1b35539cfef3ea1f0a"
+  },
+  "operations": [
+    {
+      "waveOrdinal": 1,
+      "timeMs": 0,
+      "action": "build",
+      "row": 2,
+      "col": 0,
+      "towerId": 1,
+      "cost": 25,
+      "balanceAfter": 175
+    },
+    {
+      "waveOrdinal": 1,
+      "timeMs": 0,
+      "action": "build",
+      "row": 4,
+      "col": 1,
+      "towerId": 4,
+      "cost": 40,
+      "balanceAfter": 135
+    },
+    {
+      "waveOrdinal": 1,
+      "timeMs": 0,
+      "action": "build",
+      "row": 1,
+      "col": 0,
+      "towerId": 1,
+      "cost": 25,
+      "balanceAfter": 110
+    },
+    {
+      "waveOrdinal": 1,
+      "timeMs": 0,
+      "action": "build",
+      "row": 5,
+      "col": 1,
+      "towerId": 7,
+      "cost": 30,
+      "balanceAfter": 80
+    },
+    {
+      "waveOrdinal": 1,
+      "timeMs": 0,
+      "action": "upgrade",
+      "row": 5,
+      "col": 1,
+      "towerId": 8,
+      "cost": 45,
+      "balanceAfter": 35
+    },
+    {
+      "waveOrdinal": 1,
+      "timeMs": 0,
+      "action": "build",
+      "row": 6,
+      "col": 1,
+      "towerId": 1,
+      "cost": 25,
+      "balanceAfter": 10
+    },
+    {
+      "waveOrdinal": 1,
+      "timeMs": 6399,
+      "action": "upgrade",
+      "row": 2,
+      "col": 0,
+      "towerId": 2,
+      "cost": 45,
+      "balanceAfter": 1
+    },
+    {
+      "waveOrdinal": 1,
+      "timeMs": 11199,
+      "action": "upgrade",
+      "row": 1,
+      "col": 0,
+      "towerId": 2,
+      "cost": 45,
+      "balanceAfter": 4
+    },
+    {
+      "waveOrdinal": 1,
+      "timeMs": 15199,
+      "action": "upgrade",
+      "row": 6,
+      "col": 1,
+      "towerId": 2,
+      "cost": 45,
+      "balanceAfter": 1
+    },
+    {
+      "waveOrdinal": 2,
+      "timeMs": 0,
+      "action": "build",
+      "row": 7,
+      "col": 1,
+      "towerId": 1,
+      "cost": 25,
+      "balanceAfter": 30
+    },
+    {
+      "waveOrdinal": 2,
+      "timeMs": 3200,
+      "action": "upgrade",
+      "row": 7,
+      "col": 1,
+      "towerId": 2,
+      "cost": 45,
+      "balanceAfter": 3
+    },
+    {
+      "waveOrdinal": 2,
+      "timeMs": 11199,
+      "action": "upgrade",
+      "row": 5,
+      "col": 1,
+      "towerId": 9,
+      "cost": 65,
+      "balanceAfter": 4
+    },
+    {
+      "waveOrdinal": 2,
+      "timeMs": 17599,
+      "action": "upgrade",
+      "row": 2,
+      "col": 0,
+      "towerId": 3,
+      "cost": 70,
+      "balanceAfter": 0
+    },
+    {
+      "waveOrdinal": 3,
+      "timeMs": 0,
+      "action": "build",
+      "row": 0,
+      "col": 2,
+      "towerId": 4,
+      "cost": 40,
+      "balanceAfter": 2
+    },
+    {
+      "waveOrdinal": 3,
+      "timeMs": 8799,
+      "action": "upgrade",
+      "row": 4,
+      "col": 1,
+      "towerId": 5,
+      "cost": 65,
+      "balanceAfter": 3
+    },
+    {
+      "waveOrdinal": 3,
+      "timeMs": 15599,
+      "action": "upgrade",
+      "row": 0,
+      "col": 2,
+      "towerId": 5,
+      "cost": 65,
+      "balanceAfter": 0
+    },
+    {
+      "waveOrdinal": 4,
+      "timeMs": 0,
+      "action": "build",
+      "row": 2,
+      "col": 1,
+      "towerId": 1,
+      "cost": 25,
+      "balanceAfter": 35
+    },
+    {
+      "waveOrdinal": 4,
+      "timeMs": 0,
+      "action": "build",
+      "row": 4,
+      "col": 2,
+      "towerId": 7,
+      "cost": 30,
+      "balanceAfter": 5
+    },
+    {
+      "waveOrdinal": 4,
+      "timeMs": 5299,
+      "action": "upgrade",
+      "row": 4,
+      "col": 2,
+      "towerId": 8,
+      "cost": 45,
+      "balanceAfter": 0
+    },
+    {
+      "waveOrdinal": 4,
+      "timeMs": 10899,
+      "action": "upgrade",
+      "row": 2,
+      "col": 1,
+      "towerId": 2,
+      "cost": 45,
+      "balanceAfter": 1
+    },
+    {
+      "waveOrdinal": 4,
+      "timeMs": 17699,
+      "action": "upgrade",
+      "row": 4,
+      "col": 2,
+      "towerId": 9,
+      "cost": 65,
+      "balanceAfter": 0
+    },
+    {
+      "waveOrdinal": 5,
+      "timeMs": 0,
+      "action": "build",
+      "row": 8,
+      "col": 1,
+      "towerId": 1,
+      "cost": 25,
+      "balanceAfter": 23
+    },
+    {
+      "waveOrdinal": 5,
+      "timeMs": 3200,
+      "action": "upgrade",
+      "row": 8,
+      "col": 1,
+      "towerId": 2,
+      "cost": 45,
+      "balanceAfter": 1
+    },
+    {
+      "waveOrdinal": 5,
+      "timeMs": 11099,
+      "action": "upgrade",
+      "row": 2,
+      "col": 1,
+      "towerId": 3,
+      "cost": 70,
+      "balanceAfter": 3
+    },
+    {
+      "waveOrdinal": 5,
+      "timeMs": 18799,
+      "action": "upgrade",
+      "row": 1,
+      "col": 0,
+      "towerId": 3,
+      "cost": 70,
+      "balanceAfter": 3
+    },
+    {
+      "waveOrdinal": 6,
+      "timeMs": 0,
+      "action": "build",
+      "row": 2,
+      "col": 2,
+      "towerId": 1,
+      "cost": 25,
+      "balanceAfter": 26
+    },
+    {
+      "waveOrdinal": 6,
+      "timeMs": 2600,
+      "action": "upgrade",
+      "row": 2,
+      "col": 2,
+      "towerId": 2,
+      "cost": 45,
+      "balanceAfter": 4
+    },
+    {
+      "waveOrdinal": 6,
+      "timeMs": 9899,
+      "action": "upgrade",
+      "row": 2,
+      "col": 2,
+      "towerId": 3,
+      "cost": 70,
+      "balanceAfter": 1
+    },
+    {
+      "waveOrdinal": 6,
+      "timeMs": 16599,
+      "action": "upgrade",
+      "row": 6,
+      "col": 1,
+      "towerId": 3,
+      "cost": 70,
+      "balanceAfter": 1
+    },
+    {
+      "waveOrdinal": 7,
+      "timeMs": 0,
+      "action": "upgrade",
+      "row": 7,
+      "col": 1,
+      "towerId": 3,
+      "cost": 70,
+      "balanceAfter": 2
+    },
+    {
+      "waveOrdinal": 7,
+      "timeMs": 7499,
+      "action": "upgrade",
+      "row": 8,
+      "col": 1,
+      "towerId": 3,
+      "cost": 70,
+      "balanceAfter": 2
+    },
+    {
+      "waveOrdinal": 7,
+      "timeMs": 17099,
+      "action": "upgrade",
+      "row": 0,
+      "col": 2,
+      "towerId": 6,
+      "cost": 95,
+      "balanceAfter": 0
+    },
+    {
+      "waveOrdinal": 8,
+      "timeMs": 0,
+      "action": "build",
+      "row": 2,
+      "col": 3,
+      "towerId": 4,
+      "cost": 40,
+      "balanceAfter": 39
+    },
+    {
+      "waveOrdinal": 8,
+      "timeMs": 0,
+      "action": "build",
+      "row": 3,
+      "col": 4,
+      "towerId": 1,
+      "cost": 25,
+      "balanceAfter": 14
+    },
+    {
+      "waveOrdinal": 8,
+      "timeMs": 4200,
+      "action": "upgrade",
+      "row": 3,
+      "col": 4,
+      "towerId": 2,
+      "cost": 45,
+      "balanceAfter": 5
+    },
+    {
+      "waveOrdinal": 8,
+      "timeMs": 9999,
+      "action": "upgrade",
+      "row": 2,
+      "col": 3,
+      "towerId": 5,
+      "cost": 65,
+      "balanceAfter": 0
+    },
+    {
+      "waveOrdinal": 8,
+      "timeMs": 17399,
+      "action": "upgrade",
+      "row": 3,
+      "col": 4,
+      "towerId": 3,
+      "cost": 70,
+      "balanceAfter": 3
+    },
+    {
+      "waveOrdinal": 9,
+      "timeMs": 0,
+      "action": "build",
+      "row": 4,
+      "col": 4,
+      "towerId": 7,
+      "cost": 30,
+      "balanceAfter": 58
+    },
+    {
+      "waveOrdinal": 9,
+      "timeMs": 0,
+      "action": "upgrade",
+      "row": 4,
+      "col": 4,
+      "towerId": 8,
+      "cost": 45,
+      "balanceAfter": 13
+    },
+    {
+      "waveOrdinal": 9,
+      "timeMs": 5799,
+      "action": "upgrade",
+      "row": 4,
+      "col": 4,
+      "towerId": 9,
+      "cost": 65,
+      "balanceAfter": 1
+    },
+    {
+      "waveOrdinal": 9,
+      "timeMs": 16099,
+      "action": "upgrade",
+      "row": 2,
+      "col": 3,
+      "towerId": 6,
+      "cost": 95,
+      "balanceAfter": 12
+    },
+    {
+      "waveOrdinal": 9,
+      "timeMs": 25100,
+      "action": "upgrade",
+      "row": 4,
+      "col": 1,
+      "towerId": 6,
+      "cost": 95,
+      "balanceAfter": 1
+    },
+    {
+      "waveOrdinal": 11,
+      "timeMs": 0,
+      "action": "build",
+      "row": 1,
+      "col": 4,
+      "towerId": 1,
+      "cost": 25,
+      "balanceAfter": 273
+    },
+    {
+      "waveOrdinal": 11,
+      "timeMs": 0,
+      "action": "upgrade",
+      "row": 1,
+      "col": 4,
+      "towerId": 2,
+      "cost": 45,
+      "balanceAfter": 228
+    },
+    {
+      "waveOrdinal": 11,
+      "timeMs": 0,
+      "action": "upgrade",
+      "row": 1,
+      "col": 4,
+      "towerId": 3,
+      "cost": 70,
+      "balanceAfter": 158
+    },
+    {
+      "waveOrdinal": 11,
+      "timeMs": 0,
+      "action": "build",
+      "row": 5,
+      "col": 4,
+      "towerId": 1,
+      "cost": 25,
+      "balanceAfter": 133
+    },
+    {
+      "waveOrdinal": 11,
+      "timeMs": 0,
+      "action": "upgrade",
+      "row": 5,
+      "col": 4,
+      "towerId": 2,
+      "cost": 45,
+      "balanceAfter": 88
+    },
+    {
+      "waveOrdinal": 11,
+      "timeMs": 0,
+      "action": "upgrade",
+      "row": 5,
+      "col": 4,
+      "towerId": 3,
+      "cost": 70,
+      "balanceAfter": 18
+    },
+    {
+      "waveOrdinal": 12,
+      "timeMs": 0,
+      "action": "build",
+      "row": 6,
+      "col": 3,
+      "towerId": 4,
+      "cost": 40,
+      "balanceAfter": 281
+    },
+    {
+      "waveOrdinal": 12,
+      "timeMs": 0,
+      "action": "upgrade",
+      "row": 6,
+      "col": 3,
+      "towerId": 5,
+      "cost": 65,
+      "balanceAfter": 216
+    },
+    {
+      "waveOrdinal": 12,
+      "timeMs": 0,
+      "action": "upgrade",
+      "row": 6,
+      "col": 3,
+      "towerId": 6,
+      "cost": 95,
+      "balanceAfter": 121
+    },
+    {
+      "waveOrdinal": 12,
+      "timeMs": 0,
+      "action": "build",
+      "row": 7,
+      "col": 3,
+      "towerId": 1,
+      "cost": 25,
+      "balanceAfter": 96
+    },
+    {
+      "waveOrdinal": 12,
+      "timeMs": 0,
+      "action": "upgrade",
+      "row": 7,
+      "col": 3,
+      "towerId": 2,
+      "cost": 45,
+      "balanceAfter": 51
+    },
+    {
+      "waveOrdinal": 12,
+      "timeMs": 0,
+      "action": "build",
+      "row": 2,
+      "col": 4,
+      "towerId": 7,
+      "cost": 30,
+      "balanceAfter": 21
+    },
+    {
+      "waveOrdinal": 12,
+      "timeMs": 3900,
+      "action": "upgrade",
+      "row": 2,
+      "col": 4,
+      "towerId": 8,
+      "cost": 45,
+      "balanceAfter": 6
+    },
+    {
+      "waveOrdinal": 12,
+      "timeMs": 9399,
+      "action": "upgrade",
+      "row": 2,
+      "col": 4,
+      "towerId": 9,
+      "cost": 65,
+      "balanceAfter": 1
+    },
+    {
+      "waveOrdinal": 12,
+      "timeMs": 15899,
+      "action": "upgrade",
+      "row": 7,
+      "col": 3,
+      "towerId": 3,
+      "cost": 70,
+      "balanceAfter": 11
+    },
+    {
+      "waveOrdinal": 13,
+      "timeMs": 0,
+      "action": "build",
+      "row": 7,
+      "col": 5,
+      "towerId": 1,
+      "cost": 25,
+      "balanceAfter": 139
+    },
+    {
+      "waveOrdinal": 13,
+      "timeMs": 0,
+      "action": "upgrade",
+      "row": 7,
+      "col": 5,
+      "towerId": 2,
+      "cost": 45,
+      "balanceAfter": 94
+    },
+    {
+      "waveOrdinal": 13,
+      "timeMs": 0,
+      "action": "upgrade",
+      "row": 7,
+      "col": 5,
+      "towerId": 3,
+      "cost": 70,
+      "balanceAfter": 24
+    },
+    {
+      "waveOrdinal": 14,
+      "timeMs": 0,
+      "action": "build",
+      "row": 8,
+      "col": 5,
+      "towerId": 1,
+      "cost": 25,
+      "balanceAfter": 334
+    },
+    {
+      "waveOrdinal": 14,
+      "timeMs": 0,
+      "action": "upgrade",
+      "row": 8,
+      "col": 5,
+      "towerId": 2,
+      "cost": 45,
+      "balanceAfter": 289
+    },
+    {
+      "waveOrdinal": 14,
+      "timeMs": 0,
+      "action": "upgrade",
+      "row": 8,
+      "col": 5,
+      "towerId": 3,
+      "cost": 70,
+      "balanceAfter": 219
+    }
+  ],
+  "waves": [
+    {
+      "waveOrdinal": 1,
+      "planned": 28,
+      "successfulSpawned": 28,
+      "totalEhp": 726.88,
+      "towerCount": 5,
+      "capacity": 135,
+      "occupancy": 0.037037037037037035,
+      "pathLength": 10,
+      "spawnDeferredCount": 0,
+      "layout": [
+        {
+          "row": 2,
+          "col": 0,
+          "towerId": 2
+        },
+        {
+          "row": 4,
+          "col": 1,
+          "towerId": 4
+        },
+        {
+          "row": 1,
+          "col": 0,
+          "towerId": 2
+        },
+        {
+          "row": 5,
+          "col": 1,
+          "towerId": 8
+        },
+        {
+          "row": 6,
+          "col": 1,
+          "towerId": 2
+        }
+      ],
+      "flyingCount": 0,
+      "heavyCount": 0,
+      "eliteCount": 0,
+      "bossCount": 0,
+      "killed": 28,
+      "leaked": 0,
+      "bossLeaked": 0,
+      "criticalLeaked": 0,
+      "killGold": 168,
+      "clearReward": 12,
+      "goldBeforePurchases": 200,
+      "spent": 325,
+      "balance": 55,
+      "hp": 20,
+      "towerComposition": {
+        "2": 3,
+        "4": 1,
+        "8": 1
+      },
+      "combatElapsedMs": 19600,
+      "levelElapsedMs": 19600,
+      "alivePeak": 6,
+      "groundEffectiveShootingWindowSec": 76.9999999999999,
+      "airEffectiveShootingWindowSec": 0,
+      "overkillDamage": 88.11999999999989,
+      "cleared": true
+    },
+    {
+      "waveOrdinal": 2,
+      "planned": 30,
+      "successfulSpawned": 30,
+      "totalEhp": 864.468,
+      "towerCount": 6,
+      "capacity": 135,
+      "occupancy": 0.044444444444444446,
+      "pathLength": 10,
+      "spawnDeferredCount": 0,
+      "layout": [
+        {
+          "row": 2,
+          "col": 0,
+          "towerId": 3
+        },
+        {
+          "row": 4,
+          "col": 1,
+          "towerId": 4
+        },
+        {
+          "row": 1,
+          "col": 0,
+          "towerId": 2
+        },
+        {
+          "row": 5,
+          "col": 1,
+          "towerId": 9
+        },
+        {
+          "row": 6,
+          "col": 1,
+          "towerId": 2
+        },
+        {
+          "row": 7,
+          "col": 1,
+          "towerId": 2
+        }
+      ],
+      "flyingCount": 0,
+      "heavyCount": 0,
+      "eliteCount": 0,
+      "bossCount": 0,
+      "killed": 30,
+      "leaked": 0,
+      "bossLeaked": 0,
+      "criticalLeaked": 0,
+      "killGold": 180,
+      "clearReward": 12,
+      "goldBeforePurchases": 55,
+      "spent": 205,
+      "balance": 42,
+      "hp": 20,
+      "towerComposition": {
+        "3": 1,
+        "4": 1,
+        "2": 3,
+        "9": 1
+      },
+      "combatElapsedMs": 20500,
+      "levelElapsedMs": 45100,
+      "alivePeak": 5,
+      "groundEffectiveShootingWindowSec": 78.99999999999979,
+      "airEffectiveShootingWindowSec": 0,
+      "overkillDamage": 159.53200000000004,
+      "cleared": true
+    },
+    {
+      "waveOrdinal": 3,
+      "planned": 32,
+      "successfulSpawned": 32,
+      "totalEhp": 1030.0928,
+      "towerCount": 7,
+      "capacity": 135,
+      "occupancy": 0.05185185185185185,
+      "pathLength": 10,
+      "spawnDeferredCount": 0,
+      "layout": [
+        {
+          "row": 2,
+          "col": 0,
+          "towerId": 3
+        },
+        {
+          "row": 4,
+          "col": 1,
+          "towerId": 5
+        },
+        {
+          "row": 1,
+          "col": 0,
+          "towerId": 2
+        },
+        {
+          "row": 5,
+          "col": 1,
+          "towerId": 9
+        },
+        {
+          "row": 6,
+          "col": 1,
+          "towerId": 2
+        },
+        {
+          "row": 7,
+          "col": 1,
+          "towerId": 2
+        },
+        {
+          "row": 0,
+          "col": 2,
+          "towerId": 5
+        }
+      ],
+      "flyingCount": 0,
+      "heavyCount": 0,
+      "eliteCount": 0,
+      "bossCount": 0,
+      "killed": 32,
+      "leaked": 0,
+      "bossLeaked": 0,
+      "criticalLeaked": 0,
+      "killGold": 176,
+      "clearReward": 12,
+      "goldBeforePurchases": 42,
+      "spent": 170,
+      "balance": 60,
+      "hp": 20,
+      "towerComposition": {
+        "3": 1,
+        "5": 2,
+        "2": 3,
+        "9": 1
+      },
+      "combatElapsedMs": 20400,
+      "levelElapsedMs": 70500,
+      "alivePeak": 3,
+      "groundEffectiveShootingWindowSec": 40.400000000000304,
+      "airEffectiveShootingWindowSec": 0,
+      "overkillDamage": 163.90720000000027,
+      "cleared": true
+    },
+    {
+      "waveOrdinal": 4,
+      "planned": 34,
+      "successfulSpawned": 34,
+      "totalEhp": 1226.8696,
+      "towerCount": 9,
+      "capacity": 135,
+      "occupancy": 0.06666666666666667,
+      "pathLength": 12,
+      "spawnDeferredCount": 0,
+      "layout": [
+        {
+          "row": 2,
+          "col": 0,
+          "towerId": 3
+        },
+        {
+          "row": 4,
+          "col": 1,
+          "towerId": 5
+        },
+        {
+          "row": 1,
+          "col": 0,
+          "towerId": 2
+        },
+        {
+          "row": 5,
+          "col": 1,
+          "towerId": 9
+        },
+        {
+          "row": 6,
+          "col": 1,
+          "towerId": 2
+        },
+        {
+          "row": 7,
+          "col": 1,
+          "towerId": 2
+        },
+        {
+          "row": 0,
+          "col": 2,
+          "towerId": 5
+        },
+        {
+          "row": 2,
+          "col": 1,
+          "towerId": 2
+        },
+        {
+          "row": 4,
+          "col": 2,
+          "towerId": 9
+        }
+      ],
+      "flyingCount": 0,
+      "heavyCount": 0,
+      "eliteCount": 0,
+      "bossCount": 0,
+      "killed": 34,
+      "leaked": 0,
+      "bossLeaked": 0,
+      "criticalLeaked": 0,
+      "killGold": 186,
+      "clearReward": 12,
+      "goldBeforePurchases": 60,
+      "spent": 210,
+      "balance": 48,
+      "hp": 20,
+      "towerComposition": {
+        "3": 1,
+        "5": 2,
+        "2": 4,
+        "9": 2
+      },
+      "combatElapsedMs": 21300,
+      "levelElapsedMs": 96800,
+      "alivePeak": 3,
+      "groundEffectiveShootingWindowSec": 38.20000000000027,
+      "airEffectiveShootingWindowSec": 0,
+      "overkillDamage": 224.1304,
+      "cleared": true
+    },
+    {
+      "waveOrdinal": 5,
+      "planned": 36,
+      "successfulSpawned": 36,
+      "totalEhp": 1603.70496,
+      "towerCount": 10,
+      "capacity": 135,
+      "occupancy": 0.07407407407407407,
+      "pathLength": 12,
+      "spawnDeferredCount": 0,
+      "layout": [
+        {
+          "row": 2,
+          "col": 0,
+          "towerId": 3
+        },
+        {
+          "row": 4,
+          "col": 1,
+          "towerId": 5
+        },
+        {
+          "row": 1,
+          "col": 0,
+          "towerId": 3
+        },
+        {
+          "row": 5,
+          "col": 1,
+          "towerId": 9
+        },
+        {
+          "row": 6,
+          "col": 1,
+          "towerId": 2
+        },
+        {
+          "row": 7,
+          "col": 1,
+          "towerId": 2
+        },
+        {
+          "row": 0,
+          "col": 2,
+          "towerId": 5
+        },
+        {
+          "row": 2,
+          "col": 1,
+          "towerId": 3
+        },
+        {
+          "row": 4,
+          "col": 2,
+          "towerId": 9
+        },
+        {
+          "row": 8,
+          "col": 1,
+          "towerId": 2
+        }
+      ],
+      "flyingCount": 0,
+      "heavyCount": 0,
+      "eliteCount": 0,
+      "bossCount": 0,
+      "killed": 36,
+      "leaked": 0,
+      "bossLeaked": 0,
+      "criticalLeaked": 0,
+      "killGold": 201,
+      "clearReward": 12,
+      "goldBeforePurchases": 48,
+      "spent": 210,
+      "balance": 51,
+      "hp": 20,
+      "towerComposition": {
+        "3": 3,
+        "5": 2,
+        "9": 2,
+        "2": 3
+      },
+      "combatElapsedMs": 21900,
+      "levelElapsedMs": 123700,
+      "alivePeak": 3,
+      "groundEffectiveShootingWindowSec": 44.600000000000364,
+      "airEffectiveShootingWindowSec": 0,
+      "overkillDamage": 210.5074124800001,
+      "cleared": true
+    },
+    {
+      "waveOrdinal": 6,
+      "planned": 38,
+      "successfulSpawned": 38,
+      "totalEhp": 1726.34,
+      "towerCount": 11,
+      "capacity": 135,
+      "occupancy": 0.08148148148148149,
+      "pathLength": 14,
+      "spawnDeferredCount": 0,
+      "layout": [
+        {
+          "row": 2,
+          "col": 0,
+          "towerId": 3
+        },
+        {
+          "row": 4,
+          "col": 1,
+          "towerId": 5
+        },
+        {
+          "row": 1,
+          "col": 0,
+          "towerId": 3
+        },
+        {
+          "row": 5,
+          "col": 1,
+          "towerId": 9
+        },
+        {
+          "row": 6,
+          "col": 1,
+          "towerId": 3
+        },
+        {
+          "row": 7,
+          "col": 1,
+          "towerId": 2
+        },
+        {
+          "row": 0,
+          "col": 2,
+          "towerId": 5
+        },
+        {
+          "row": 2,
+          "col": 1,
+          "towerId": 3
+        },
+        {
+          "row": 4,
+          "col": 2,
+          "towerId": 9
+        },
+        {
+          "row": 8,
+          "col": 1,
+          "towerId": 2
+        },
+        {
+          "row": 2,
+          "col": 2,
+          "towerId": 3
+        }
+      ],
+      "flyingCount": 3,
+      "heavyCount": 0,
+      "eliteCount": 0,
+      "bossCount": 0,
+      "killed": 38,
+      "leaked": 0,
+      "bossLeaked": 0,
+      "criticalLeaked": 0,
+      "killGold": 216,
+      "clearReward": 15,
+      "goldBeforePurchases": 51,
+      "spent": 210,
+      "balance": 72,
+      "hp": 20,
+      "towerComposition": {
+        "3": 5,
+        "5": 2,
+        "9": 2,
+        "2": 2
+      },
+      "combatElapsedMs": 23000,
+      "levelElapsedMs": 151700,
+      "alivePeak": 3,
+      "groundEffectiveShootingWindowSec": 36.300000000000246,
+      "airEffectiveShootingWindowSec": 2.400000000000001,
+      "overkillDamage": 142.1438481012658,
+      "cleared": true
+    },
+    {
+      "waveOrdinal": 7,
+      "planned": 40,
+      "successfulSpawned": 40,
+      "totalEhp": 2035.2640000000001,
+      "towerCount": 11,
+      "capacity": 135,
+      "occupancy": 0.08148148148148149,
+      "pathLength": 14,
+      "spawnDeferredCount": 0,
+      "layout": [
+        {
+          "row": 2,
+          "col": 0,
+          "towerId": 3
+        },
+        {
+          "row": 4,
+          "col": 1,
+          "towerId": 5
+        },
+        {
+          "row": 1,
+          "col": 0,
+          "towerId": 3
+        },
+        {
+          "row": 5,
+          "col": 1,
+          "towerId": 9
+        },
+        {
+          "row": 6,
+          "col": 1,
+          "towerId": 3
+        },
+        {
+          "row": 7,
+          "col": 1,
+          "towerId": 3
+        },
+        {
+          "row": 0,
+          "col": 2,
+          "towerId": 6
+        },
+        {
+          "row": 2,
+          "col": 1,
+          "towerId": 3
+        },
+        {
+          "row": 4,
+          "col": 2,
+          "towerId": 9
+        },
+        {
+          "row": 8,
+          "col": 1,
+          "towerId": 3
+        },
+        {
+          "row": 2,
+          "col": 2,
+          "towerId": 3
+        }
+      ],
+      "flyingCount": 3,
+      "heavyCount": 0,
+      "eliteCount": 0,
+      "bossCount": 0,
+      "killed": 40,
+      "leaked": 0,
+      "bossLeaked": 0,
+      "criticalLeaked": 0,
+      "killGold": 227,
+      "clearReward": 15,
+      "goldBeforePurchases": 72,
+      "spent": 235,
+      "balance": 79,
+      "hp": 20,
+      "towerComposition": {
+        "3": 7,
+        "5": 1,
+        "9": 2,
+        "6": 1
+      },
+      "combatElapsedMs": 23800,
+      "levelElapsedMs": 180500,
+      "alivePeak": 3,
+      "groundEffectiveShootingWindowSec": 42.30000000000033,
+      "airEffectiveShootingWindowSec": 3.1000000000000014,
+      "overkillDamage": 200.45076725978632,
+      "cleared": true
+    },
+    {
+      "waveOrdinal": 8,
+      "planned": 42,
+      "successfulSpawned": 42,
+      "totalEhp": 2387.8008,
+      "towerCount": 13,
+      "capacity": 135,
+      "occupancy": 0.0962962962962963,
+      "pathLength": 20,
+      "spawnDeferredCount": 0,
+      "layout": [
+        {
+          "row": 2,
+          "col": 0,
+          "towerId": 3
+        },
+        {
+          "row": 4,
+          "col": 1,
+          "towerId": 5
+        },
+        {
+          "row": 1,
+          "col": 0,
+          "towerId": 3
+        },
+        {
+          "row": 5,
+          "col": 1,
+          "towerId": 9
+        },
+        {
+          "row": 6,
+          "col": 1,
+          "towerId": 3
+        },
+        {
+          "row": 7,
+          "col": 1,
+          "towerId": 3
+        },
+        {
+          "row": 0,
+          "col": 2,
+          "towerId": 6
+        },
+        {
+          "row": 2,
+          "col": 1,
+          "towerId": 3
+        },
+        {
+          "row": 4,
+          "col": 2,
+          "towerId": 9
+        },
+        {
+          "row": 8,
+          "col": 1,
+          "towerId": 3
+        },
+        {
+          "row": 2,
+          "col": 2,
+          "towerId": 3
+        },
+        {
+          "row": 2,
+          "col": 3,
+          "towerId": 5
+        },
+        {
+          "row": 3,
+          "col": 4,
+          "towerId": 3
+        }
+      ],
+      "flyingCount": 3,
+      "heavyCount": 0,
+      "eliteCount": 0,
+      "bossCount": 0,
+      "killed": 42,
+      "leaked": 0,
+      "bossLeaked": 0,
+      "criticalLeaked": 0,
+      "killGold": 239,
+      "clearReward": 15,
+      "goldBeforePurchases": 79,
+      "spent": 245,
+      "balance": 88,
+      "hp": 20,
+      "towerComposition": {
+        "3": 8,
+        "5": 2,
+        "9": 2,
+        "6": 1
+      },
+      "combatElapsedMs": 25000,
+      "levelElapsedMs": 210500,
+      "alivePeak": 3,
+      "groundEffectiveShootingWindowSec": 47.400000000000404,
+      "airEffectiveShootingWindowSec": 2.9000000000000012,
+      "overkillDamage": 263.016672,
+      "cleared": true
+    },
+    {
+      "waveOrdinal": 9,
+      "planned": 44,
+      "successfulSpawned": 44,
+      "totalEhp": 2787.0656,
+      "towerCount": 14,
+      "capacity": 135,
+      "occupancy": 0.1037037037037037,
+      "pathLength": 22,
+      "spawnDeferredCount": 0,
+      "layout": [
+        {
+          "row": 2,
+          "col": 0,
+          "towerId": 3
+        },
+        {
+          "row": 4,
+          "col": 1,
+          "towerId": 6
+        },
+        {
+          "row": 1,
+          "col": 0,
+          "towerId": 3
+        },
+        {
+          "row": 5,
+          "col": 1,
+          "towerId": 9
+        },
+        {
+          "row": 6,
+          "col": 1,
+          "towerId": 3
+        },
+        {
+          "row": 7,
+          "col": 1,
+          "towerId": 3
+        },
+        {
+          "row": 0,
+          "col": 2,
+          "towerId": 6
+        },
+        {
+          "row": 2,
+          "col": 1,
+          "towerId": 3
+        },
+        {
+          "row": 4,
+          "col": 2,
+          "towerId": 9
+        },
+        {
+          "row": 8,
+          "col": 1,
+          "towerId": 3
+        },
+        {
+          "row": 2,
+          "col": 2,
+          "towerId": 3
+        },
+        {
+          "row": 2,
+          "col": 3,
+          "towerId": 6
+        },
+        {
+          "row": 3,
+          "col": 4,
+          "towerId": 3
+        },
+        {
+          "row": 4,
+          "col": 4,
+          "towerId": 9
+        }
+      ],
+      "flyingCount": 3,
+      "heavyCount": 0,
+      "eliteCount": 0,
+      "bossCount": 0,
+      "killed": 44,
+      "leaked": 0,
+      "bossLeaked": 0,
+      "criticalLeaked": 0,
+      "killGold": 249,
+      "clearReward": 15,
+      "goldBeforePurchases": 88,
+      "spent": 330,
+      "balance": 22,
+      "hp": 20,
+      "towerComposition": {
+        "3": 8,
+        "6": 3,
+        "9": 3
+      },
+      "combatElapsedMs": 25600,
+      "levelElapsedMs": 241100,
+      "alivePeak": 4,
+      "groundEffectiveShootingWindowSec": 56.40000000000053,
+      "airEffectiveShootingWindowSec": 3.4000000000000017,
+      "overkillDamage": 347.0651990361445,
+      "cleared": true
+    },
+    {
+      "waveOrdinal": 10,
+      "planned": 46,
+      "successfulSpawned": 46,
+      "totalEhp": 3559.79096,
+      "towerCount": 14,
+      "capacity": 135,
+      "occupancy": 0.1037037037037037,
+      "pathLength": 22,
+      "spawnDeferredCount": 0,
+      "layout": [
+        {
+          "row": 2,
+          "col": 0,
+          "towerId": 3
+        },
+        {
+          "row": 4,
+          "col": 1,
+          "towerId": 6
+        },
+        {
+          "row": 1,
+          "col": 0,
+          "towerId": 3
+        },
+        {
+          "row": 5,
+          "col": 1,
+          "towerId": 9
+        },
+        {
+          "row": 6,
+          "col": 1,
+          "towerId": 3
+        },
+        {
+          "row": 7,
+          "col": 1,
+          "towerId": 3
+        },
+        {
+          "row": 0,
+          "col": 2,
+          "towerId": 6
+        },
+        {
+          "row": 2,
+          "col": 1,
+          "towerId": 3
+        },
+        {
+          "row": 4,
+          "col": 2,
+          "towerId": 9
+        },
+        {
+          "row": 8,
+          "col": 1,
+          "towerId": 3
+        },
+        {
+          "row": 2,
+          "col": 2,
+          "towerId": 3
+        },
+        {
+          "row": 2,
+          "col": 3,
+          "towerId": 6
+        },
+        {
+          "row": 3,
+          "col": 4,
+          "towerId": 3
+        },
+        {
+          "row": 4,
+          "col": 4,
+          "towerId": 9
+        }
+      ],
+      "flyingCount": 3,
+      "heavyCount": 0,
+      "eliteCount": 0,
+      "bossCount": 0,
+      "killed": 46,
+      "leaked": 0,
+      "bossLeaked": 0,
+      "criticalLeaked": 0,
+      "killGold": 261,
+      "clearReward": 15,
+      "goldBeforePurchases": 22,
+      "spent": 0,
+      "balance": 298,
+      "hp": 20,
+      "towerComposition": {
+        "3": 8,
+        "6": 3,
+        "9": 3
+      },
+      "combatElapsedMs": 26700,
+      "levelElapsedMs": 272800,
+      "alivePeak": 4,
+      "groundEffectiveShootingWindowSec": 70.60000000000026,
+      "airEffectiveShootingWindowSec": 3.800000000000002,
+      "overkillDamage": 393.92780855404027,
+      "cleared": true
+    },
+    {
+      "waveOrdinal": 11,
+      "planned": 48,
+      "successfulSpawned": 48,
+      "totalEhp": 3738.24,
+      "towerCount": 16,
+      "capacity": 135,
+      "occupancy": 0.11851851851851852,
+      "pathLength": 26,
+      "spawnDeferredCount": 0,
+      "layout": [
+        {
+          "row": 2,
+          "col": 0,
+          "towerId": 3
+        },
+        {
+          "row": 4,
+          "col": 1,
+          "towerId": 6
+        },
+        {
+          "row": 1,
+          "col": 0,
+          "towerId": 3
+        },
+        {
+          "row": 5,
+          "col": 1,
+          "towerId": 9
+        },
+        {
+          "row": 6,
+          "col": 1,
+          "towerId": 3
+        },
+        {
+          "row": 7,
+          "col": 1,
+          "towerId": 3
+        },
+        {
+          "row": 0,
+          "col": 2,
+          "towerId": 6
+        },
+        {
+          "row": 2,
+          "col": 1,
+          "towerId": 3
+        },
+        {
+          "row": 4,
+          "col": 2,
+          "towerId": 9
+        },
+        {
+          "row": 8,
+          "col": 1,
+          "towerId": 3
+        },
+        {
+          "row": 2,
+          "col": 2,
+          "towerId": 3
+        },
+        {
+          "row": 2,
+          "col": 3,
+          "towerId": 6
+        },
+        {
+          "row": 3,
+          "col": 4,
+          "towerId": 3
+        },
+        {
+          "row": 4,
+          "col": 4,
+          "towerId": 9
+        },
+        {
+          "row": 1,
+          "col": 4,
+          "towerId": 3
+        },
+        {
+          "row": 5,
+          "col": 4,
+          "towerId": 3
+        }
+      ],
+      "flyingCount": 0,
+      "heavyCount": 4,
+      "eliteCount": 0,
+      "bossCount": 0,
+      "killed": 48,
+      "leaked": 0,
+      "bossLeaked": 0,
+      "criticalLeaked": 0,
+      "killGold": 285,
+      "clearReward": 18,
+      "goldBeforePurchases": 298,
+      "spent": 280,
+      "balance": 321,
+      "hp": 20,
+      "towerComposition": {
+        "3": 10,
+        "6": 3,
+        "9": 3
+      },
+      "combatElapsedMs": 27100,
+      "levelElapsedMs": 304900,
+      "alivePeak": 6,
+      "groundEffectiveShootingWindowSec": 79.09999999999978,
+      "airEffectiveShootingWindowSec": 0,
+      "overkillDamage": 253.22943273906054,
+      "cleared": true
+    },
+    {
+      "waveOrdinal": 12,
+      "planned": 50,
+      "successfulSpawned": 50,
+      "totalEhp": 4296.379999999999,
+      "towerCount": 19,
+      "capacity": 135,
+      "occupancy": 0.14074074074074075,
+      "pathLength": 32,
+      "spawnDeferredCount": 0,
+      "layout": [
+        {
+          "row": 2,
+          "col": 0,
+          "towerId": 3
+        },
+        {
+          "row": 4,
+          "col": 1,
+          "towerId": 6
+        },
+        {
+          "row": 1,
+          "col": 0,
+          "towerId": 3
+        },
+        {
+          "row": 5,
+          "col": 1,
+          "towerId": 9
+        },
+        {
+          "row": 6,
+          "col": 1,
+          "towerId": 3
+        },
+        {
+          "row": 7,
+          "col": 1,
+          "towerId": 3
+        },
+        {
+          "row": 0,
+          "col": 2,
+          "towerId": 6
+        },
+        {
+          "row": 2,
+          "col": 1,
+          "towerId": 3
+        },
+        {
+          "row": 4,
+          "col": 2,
+          "towerId": 9
+        },
+        {
+          "row": 8,
+          "col": 1,
+          "towerId": 3
+        },
+        {
+          "row": 2,
+          "col": 2,
+          "towerId": 3
+        },
+        {
+          "row": 2,
+          "col": 3,
+          "towerId": 6
+        },
+        {
+          "row": 3,
+          "col": 4,
+          "towerId": 3
+        },
+        {
+          "row": 4,
+          "col": 4,
+          "towerId": 9
+        },
+        {
+          "row": 1,
+          "col": 4,
+          "towerId": 3
+        },
+        {
+          "row": 5,
+          "col": 4,
+          "towerId": 3
+        },
+        {
+          "row": 6,
+          "col": 3,
+          "towerId": 6
+        },
+        {
+          "row": 7,
+          "col": 3,
+          "towerId": 3
+        },
+        {
+          "row": 2,
+          "col": 4,
+          "towerId": 9
+        }
+      ],
+      "flyingCount": 6,
+      "heavyCount": 5,
+      "eliteCount": 0,
+      "bossCount": 0,
+      "killed": 50,
+      "leaked": 0,
+      "bossLeaked": 0,
+      "criticalLeaked": 0,
+      "killGold": 305,
+      "clearReward": 18,
+      "goldBeforePurchases": 321,
+      "spent": 480,
+      "balance": 164,
+      "hp": 20,
+      "towerComposition": {
+        "3": 11,
+        "6": 4,
+        "9": 4
+      },
+      "combatElapsedMs": 27600,
+      "levelElapsedMs": 337500,
+      "alivePeak": 7,
+      "groundEffectiveShootingWindowSec": 84.79999999999946,
+      "airEffectiveShootingWindowSec": 10.699999999999978,
+      "overkillDamage": 425.89408902077184,
+      "cleared": true
+    },
+    {
+      "waveOrdinal": 13,
+      "planned": 52,
+      "successfulSpawned": 52,
+      "totalEhp": 4913.7088,
+      "towerCount": 20,
+      "capacity": 135,
+      "occupancy": 0.14814814814814814,
+      "pathLength": 32,
+      "spawnDeferredCount": 0,
+      "layout": [
+        {
+          "row": 2,
+          "col": 0,
+          "towerId": 3
+        },
+        {
+          "row": 4,
+          "col": 1,
+          "towerId": 6
+        },
+        {
+          "row": 1,
+          "col": 0,
+          "towerId": 3
+        },
+        {
+          "row": 5,
+          "col": 1,
+          "towerId": 9
+        },
+        {
+          "row": 6,
+          "col": 1,
+          "towerId": 3
+        },
+        {
+          "row": 7,
+          "col": 1,
+          "towerId": 3
+        },
+        {
+          "row": 0,
+          "col": 2,
+          "towerId": 6
+        },
+        {
+          "row": 2,
+          "col": 1,
+          "towerId": 3
+        },
+        {
+          "row": 4,
+          "col": 2,
+          "towerId": 9
+        },
+        {
+          "row": 8,
+          "col": 1,
+          "towerId": 3
+        },
+        {
+          "row": 2,
+          "col": 2,
+          "towerId": 3
+        },
+        {
+          "row": 2,
+          "col": 3,
+          "towerId": 6
+        },
+        {
+          "row": 3,
+          "col": 4,
+          "towerId": 3
+        },
+        {
+          "row": 4,
+          "col": 4,
+          "towerId": 9
+        },
+        {
+          "row": 1,
+          "col": 4,
+          "towerId": 3
+        },
+        {
+          "row": 5,
+          "col": 4,
+          "towerId": 3
+        },
+        {
+          "row": 6,
+          "col": 3,
+          "towerId": 6
+        },
+        {
+          "row": 7,
+          "col": 3,
+          "towerId": 3
+        },
+        {
+          "row": 2,
+          "col": 4,
+          "towerId": 9
+        },
+        {
+          "row": 7,
+          "col": 5,
+          "towerId": 3
+        }
+      ],
+      "flyingCount": 6,
+      "heavyCount": 5,
+      "eliteCount": 0,
+      "bossCount": 0,
+      "killed": 52,
+      "leaked": 0,
+      "bossLeaked": 0,
+      "criticalLeaked": 0,
+      "killGold": 317,
+      "clearReward": 18,
+      "goldBeforePurchases": 164,
+      "spent": 140,
+      "balance": 359,
+      "hp": 20,
+      "towerComposition": {
+        "3": 12,
+        "6": 4,
+        "9": 4
+      },
+      "combatElapsedMs": 28500,
+      "levelElapsedMs": 371000,
+      "alivePeak": 7,
+      "groundEffectiveShootingWindowSec": 99.8999999999986,
+      "airEffectiveShootingWindowSec": 12.69999999999997,
+      "overkillDamage": 356.16004057636854,
+      "cleared": true
+    },
+    {
+      "waveOrdinal": 14,
+      "planned": 54,
+      "successfulSpawned": 54,
+      "totalEhp": 5593.341599999999,
+      "towerCount": 21,
+      "capacity": 135,
+      "occupancy": 0.15555555555555556,
+      "pathLength": 32,
+      "spawnDeferredCount": 0,
+      "layout": [
+        {
+          "row": 2,
+          "col": 0,
+          "towerId": 3
+        },
+        {
+          "row": 4,
+          "col": 1,
+          "towerId": 6
+        },
+        {
+          "row": 1,
+          "col": 0,
+          "towerId": 3
+        },
+        {
+          "row": 5,
+          "col": 1,
+          "towerId": 9
+        },
+        {
+          "row": 6,
+          "col": 1,
+          "towerId": 3
+        },
+        {
+          "row": 7,
+          "col": 1,
+          "towerId": 3
+        },
+        {
+          "row": 0,
+          "col": 2,
+          "towerId": 6
+        },
+        {
+          "row": 2,
+          "col": 1,
+          "towerId": 3
+        },
+        {
+          "row": 4,
+          "col": 2,
+          "towerId": 9
+        },
+        {
+          "row": 8,
+          "col": 1,
+          "towerId": 3
+        },
+        {
+          "row": 2,
+          "col": 2,
+          "towerId": 3
+        },
+        {
+          "row": 2,
+          "col": 3,
+          "towerId": 6
+        },
+        {
+          "row": 3,
+          "col": 4,
+          "towerId": 3
+        },
+        {
+          "row": 4,
+          "col": 4,
+          "towerId": 9
+        },
+        {
+          "row": 1,
+          "col": 4,
+          "towerId": 3
+        },
+        {
+          "row": 5,
+          "col": 4,
+          "towerId": 3
+        },
+        {
+          "row": 6,
+          "col": 3,
+          "towerId": 6
+        },
+        {
+          "row": 7,
+          "col": 3,
+          "towerId": 3
+        },
+        {
+          "row": 2,
+          "col": 4,
+          "towerId": 9
+        },
+        {
+          "row": 7,
+          "col": 5,
+          "towerId": 3
+        },
+        {
+          "row": 8,
+          "col": 5,
+          "towerId": 3
+        }
+      ],
+      "flyingCount": 6,
+      "heavyCount": 5,
+      "eliteCount": 0,
+      "bossCount": 0,
+      "killed": 54,
+      "leaked": 0,
+      "bossLeaked": 0,
+      "criticalLeaked": 0,
+      "killGold": 328,
+      "clearReward": 18,
+      "goldBeforePurchases": 359,
+      "spent": 140,
+      "balance": 565,
+      "hp": 20,
+      "towerComposition": {
+        "3": 13,
+        "6": 4,
+        "9": 4
+      },
+      "combatElapsedMs": 29400,
+      "levelElapsedMs": 405400,
+      "alivePeak": 8,
+      "groundEffectiveShootingWindowSec": 129.09999999999695,
+      "airEffectiveShootingWindowSec": 9.699999999999982,
+      "overkillDamage": 448.6195798473296,
+      "cleared": true
+    },
+    {
+      "waveOrdinal": 15,
+      "planned": 56,
+      "successfulSpawned": 56,
+      "totalEhp": 6972.232960000002,
+      "towerCount": 21,
+      "capacity": 135,
+      "occupancy": 0.15555555555555556,
+      "pathLength": 32,
+      "spawnDeferredCount": 0,
+      "layout": [
+        {
+          "row": 2,
+          "col": 0,
+          "towerId": 3
+        },
+        {
+          "row": 4,
+          "col": 1,
+          "towerId": 6
+        },
+        {
+          "row": 1,
+          "col": 0,
+          "towerId": 3
+        },
+        {
+          "row": 5,
+          "col": 1,
+          "towerId": 9
+        },
+        {
+          "row": 6,
+          "col": 1,
+          "towerId": 3
+        },
+        {
+          "row": 7,
+          "col": 1,
+          "towerId": 3
+        },
+        {
+          "row": 0,
+          "col": 2,
+          "towerId": 6
+        },
+        {
+          "row": 2,
+          "col": 1,
+          "towerId": 3
+        },
+        {
+          "row": 4,
+          "col": 2,
+          "towerId": 9
+        },
+        {
+          "row": 8,
+          "col": 1,
+          "towerId": 3
+        },
+        {
+          "row": 2,
+          "col": 2,
+          "towerId": 3
+        },
+        {
+          "row": 2,
+          "col": 3,
+          "towerId": 6
+        },
+        {
+          "row": 3,
+          "col": 4,
+          "towerId": 3
+        },
+        {
+          "row": 4,
+          "col": 4,
+          "towerId": 9
+        },
+        {
+          "row": 1,
+          "col": 4,
+          "towerId": 3
+        },
+        {
+          "row": 5,
+          "col": 4,
+          "towerId": 3
+        },
+        {
+          "row": 6,
+          "col": 3,
+          "towerId": 6
+        },
+        {
+          "row": 7,
+          "col": 3,
+          "towerId": 3
+        },
+        {
+          "row": 2,
+          "col": 4,
+          "towerId": 9
+        },
+        {
+          "row": 7,
+          "col": 5,
+          "towerId": 3
+        },
+        {
+          "row": 8,
+          "col": 5,
+          "towerId": 3
+        }
+      ],
+      "flyingCount": 6,
+      "heavyCount": 5,
+      "eliteCount": 1,
+      "bossCount": 0,
+      "killed": 56,
+      "leaked": 0,
+      "bossLeaked": 0,
+      "criticalLeaked": 0,
+      "killGold": 350,
+      "clearReward": 18,
+      "goldBeforePurchases": 565,
+      "spent": 0,
+      "balance": 933,
+      "hp": 20,
+      "towerComposition": {
+        "3": 13,
+        "6": 4,
+        "9": 4
+      },
+      "combatElapsedMs": 30700,
+      "levelElapsedMs": 441100,
+      "alivePeak": 12,
+      "groundEffectiveShootingWindowSec": 222.99999999999162,
+      "airEffectiveShootingWindowSec": 9.699999999999982,
+      "overkillDamage": 519.8592524072437,
+      "cleared": true
+    },
+    {
+      "waveOrdinal": 16,
+      "planned": 58,
+      "successfulSpawned": 58,
+      "totalEhp": 7151.98,
+      "towerCount": 21,
+      "capacity": 135,
+      "occupancy": 0.15555555555555556,
+      "pathLength": 32,
+      "spawnDeferredCount": 0,
+      "layout": [
+        {
+          "row": 2,
+          "col": 0,
+          "towerId": 3
+        },
+        {
+          "row": 4,
+          "col": 1,
+          "towerId": 6
+        },
+        {
+          "row": 1,
+          "col": 0,
+          "towerId": 3
+        },
+        {
+          "row": 5,
+          "col": 1,
+          "towerId": 9
+        },
+        {
+          "row": 6,
+          "col": 1,
+          "towerId": 3
+        },
+        {
+          "row": 7,
+          "col": 1,
+          "towerId": 3
+        },
+        {
+          "row": 0,
+          "col": 2,
+          "towerId": 6
+        },
+        {
+          "row": 2,
+          "col": 1,
+          "towerId": 3
+        },
+        {
+          "row": 4,
+          "col": 2,
+          "towerId": 9
+        },
+        {
+          "row": 8,
+          "col": 1,
+          "towerId": 3
+        },
+        {
+          "row": 2,
+          "col": 2,
+          "towerId": 3
+        },
+        {
+          "row": 2,
+          "col": 3,
+          "towerId": 6
+        },
+        {
+          "row": 3,
+          "col": 4,
+          "towerId": 3
+        },
+        {
+          "row": 4,
+          "col": 4,
+          "towerId": 9
+        },
+        {
+          "row": 1,
+          "col": 4,
+          "towerId": 3
+        },
+        {
+          "row": 5,
+          "col": 4,
+          "towerId": 3
+        },
+        {
+          "row": 6,
+          "col": 3,
+          "towerId": 6
+        },
+        {
+          "row": 7,
+          "col": 3,
+          "towerId": 3
+        },
+        {
+          "row": 2,
+          "col": 4,
+          "towerId": 9
+        },
+        {
+          "row": 7,
+          "col": 5,
+          "towerId": 3
+        },
+        {
+          "row": 8,
+          "col": 5,
+          "towerId": 3
+        }
+      ],
+      "flyingCount": 0,
+      "heavyCount": 5,
+      "eliteCount": 0,
+      "bossCount": 0,
+      "killed": 58,
+      "leaked": 0,
+      "bossLeaked": 0,
+      "criticalLeaked": 0,
+      "killGold": 344,
+      "clearReward": 21,
+      "goldBeforePurchases": 933,
+      "spent": 0,
+      "balance": 1298,
+      "hp": 20,
+      "towerComposition": {
+        "3": 13,
+        "6": 4,
+        "9": 4
+      },
+      "combatElapsedMs": 31300,
+      "levelElapsedMs": 477400,
+      "alivePeak": 13,
+      "groundEffectiveShootingWindowSec": 232.1999999999911,
+      "airEffectiveShootingWindowSec": 0,
+      "overkillDamage": 497.6186899328861,
+      "cleared": true
+    },
+    {
+      "waveOrdinal": 17,
+      "planned": 60,
+      "successfulSpawned": 60,
+      "totalEhp": 8037.216,
+      "towerCount": 21,
+      "capacity": 135,
+      "occupancy": 0.15555555555555556,
+      "pathLength": 32,
+      "spawnDeferredCount": 0,
+      "layout": [
+        {
+          "row": 2,
+          "col": 0,
+          "towerId": 3
+        },
+        {
+          "row": 4,
+          "col": 1,
+          "towerId": 6
+        },
+        {
+          "row": 1,
+          "col": 0,
+          "towerId": 3
+        },
+        {
+          "row": 5,
+          "col": 1,
+          "towerId": 9
+        },
+        {
+          "row": 6,
+          "col": 1,
+          "towerId": 3
+        },
+        {
+          "row": 7,
+          "col": 1,
+          "towerId": 3
+        },
+        {
+          "row": 0,
+          "col": 2,
+          "towerId": 6
+        },
+        {
+          "row": 2,
+          "col": 1,
+          "towerId": 3
+        },
+        {
+          "row": 4,
+          "col": 2,
+          "towerId": 9
+        },
+        {
+          "row": 8,
+          "col": 1,
+          "towerId": 3
+        },
+        {
+          "row": 2,
+          "col": 2,
+          "towerId": 3
+        },
+        {
+          "row": 2,
+          "col": 3,
+          "towerId": 6
+        },
+        {
+          "row": 3,
+          "col": 4,
+          "towerId": 3
+        },
+        {
+          "row": 4,
+          "col": 4,
+          "towerId": 9
+        },
+        {
+          "row": 1,
+          "col": 4,
+          "towerId": 3
+        },
+        {
+          "row": 5,
+          "col": 4,
+          "towerId": 3
+        },
+        {
+          "row": 6,
+          "col": 3,
+          "towerId": 6
+        },
+        {
+          "row": 7,
+          "col": 3,
+          "towerId": 3
+        },
+        {
+          "row": 2,
+          "col": 4,
+          "towerId": 9
+        },
+        {
+          "row": 7,
+          "col": 5,
+          "towerId": 3
+        },
+        {
+          "row": 8,
+          "col": 5,
+          "towerId": 3
+        }
+      ],
+      "flyingCount": 7,
+      "heavyCount": 6,
+      "eliteCount": 0,
+      "bossCount": 0,
+      "killed": 60,
+      "leaked": 0,
+      "bossLeaked": 0,
+      "criticalLeaked": 0,
+      "killGold": 368,
+      "clearReward": 21,
+      "goldBeforePurchases": 1298,
+      "spent": 0,
+      "balance": 1687,
+      "hp": 20,
+      "towerComposition": {
+        "3": 13,
+        "6": 4,
+        "9": 4
+      },
+      "combatElapsedMs": 35400,
+      "levelElapsedMs": 517800,
+      "alivePeak": 15,
+      "groundEffectiveShootingWindowSec": 293.19999999999817,
+      "airEffectiveShootingWindowSec": 12.499999999999972,
+      "overkillDamage": 508.3959163302741,
+      "cleared": true
+    },
+    {
+      "waveOrdinal": 18,
+      "planned": 62,
+      "successfulSpawned": 62,
+      "totalEhp": 8997.2168,
+      "towerCount": 21,
+      "capacity": 135,
+      "occupancy": 0.15555555555555556,
+      "pathLength": 32,
+      "spawnDeferredCount": 0,
+      "layout": [
+        {
+          "row": 2,
+          "col": 0,
+          "towerId": 3
+        },
+        {
+          "row": 4,
+          "col": 1,
+          "towerId": 6
+        },
+        {
+          "row": 1,
+          "col": 0,
+          "towerId": 3
+        },
+        {
+          "row": 5,
+          "col": 1,
+          "towerId": 9
+        },
+        {
+          "row": 6,
+          "col": 1,
+          "towerId": 3
+        },
+        {
+          "row": 7,
+          "col": 1,
+          "towerId": 3
+        },
+        {
+          "row": 0,
+          "col": 2,
+          "towerId": 6
+        },
+        {
+          "row": 2,
+          "col": 1,
+          "towerId": 3
+        },
+        {
+          "row": 4,
+          "col": 2,
+          "towerId": 9
+        },
+        {
+          "row": 8,
+          "col": 1,
+          "towerId": 3
+        },
+        {
+          "row": 2,
+          "col": 2,
+          "towerId": 3
+        },
+        {
+          "row": 2,
+          "col": 3,
+          "towerId": 6
+        },
+        {
+          "row": 3,
+          "col": 4,
+          "towerId": 3
+        },
+        {
+          "row": 4,
+          "col": 4,
+          "towerId": 9
+        },
+        {
+          "row": 1,
+          "col": 4,
+          "towerId": 3
+        },
+        {
+          "row": 5,
+          "col": 4,
+          "towerId": 3
+        },
+        {
+          "row": 6,
+          "col": 3,
+          "towerId": 6
+        },
+        {
+          "row": 7,
+          "col": 3,
+          "towerId": 3
+        },
+        {
+          "row": 2,
+          "col": 4,
+          "towerId": 9
+        },
+        {
+          "row": 7,
+          "col": 5,
+          "towerId": 3
+        },
+        {
+          "row": 8,
+          "col": 5,
+          "towerId": 3
+        }
+      ],
+      "flyingCount": 7,
+      "heavyCount": 6,
+      "eliteCount": 0,
+      "bossCount": 0,
+      "killed": 62,
+      "leaked": 0,
+      "bossLeaked": 0,
+      "criticalLeaked": 0,
+      "killGold": 378,
+      "clearReward": 21,
+      "goldBeforePurchases": 1687,
+      "spent": 0,
+      "balance": 2086,
+      "hp": 20,
+      "towerComposition": {
+        "3": 13,
+        "6": 4,
+        "9": 4
+      },
+      "combatElapsedMs": 34700,
+      "levelElapsedMs": 557500,
+      "alivePeak": 18,
+      "groundEffectiveShootingWindowSec": 345.6000000000101,
+      "airEffectiveShootingWindowSec": 13.599999999999968,
+      "overkillDamage": 524.4537128057552,
+      "cleared": true
+    },
+    {
+      "waveOrdinal": 19,
+      "planned": 64,
+      "successfulSpawned": 64,
+      "totalEhp": 10035.0976,
+      "towerCount": 21,
+      "capacity": 135,
+      "occupancy": 0.15555555555555556,
+      "pathLength": 32,
+      "spawnDeferredCount": 0,
+      "layout": [
+        {
+          "row": 2,
+          "col": 0,
+          "towerId": 3
+        },
+        {
+          "row": 4,
+          "col": 1,
+          "towerId": 6
+        },
+        {
+          "row": 1,
+          "col": 0,
+          "towerId": 3
+        },
+        {
+          "row": 5,
+          "col": 1,
+          "towerId": 9
+        },
+        {
+          "row": 6,
+          "col": 1,
+          "towerId": 3
+        },
+        {
+          "row": 7,
+          "col": 1,
+          "towerId": 3
+        },
+        {
+          "row": 0,
+          "col": 2,
+          "towerId": 6
+        },
+        {
+          "row": 2,
+          "col": 1,
+          "towerId": 3
+        },
+        {
+          "row": 4,
+          "col": 2,
+          "towerId": 9
+        },
+        {
+          "row": 8,
+          "col": 1,
+          "towerId": 3
+        },
+        {
+          "row": 2,
+          "col": 2,
+          "towerId": 3
+        },
+        {
+          "row": 2,
+          "col": 3,
+          "towerId": 6
+        },
+        {
+          "row": 3,
+          "col": 4,
+          "towerId": 3
+        },
+        {
+          "row": 4,
+          "col": 4,
+          "towerId": 9
+        },
+        {
+          "row": 1,
+          "col": 4,
+          "towerId": 3
+        },
+        {
+          "row": 5,
+          "col": 4,
+          "towerId": 3
+        },
+        {
+          "row": 6,
+          "col": 3,
+          "towerId": 6
+        },
+        {
+          "row": 7,
+          "col": 3,
+          "towerId": 3
+        },
+        {
+          "row": 2,
+          "col": 4,
+          "towerId": 9
+        },
+        {
+          "row": 7,
+          "col": 5,
+          "towerId": 3
+        },
+        {
+          "row": 8,
+          "col": 5,
+          "towerId": 3
+        }
+      ],
+      "flyingCount": 7,
+      "heavyCount": 6,
+      "eliteCount": 0,
+      "bossCount": 0,
+      "killed": 64,
+      "leaked": 0,
+      "bossLeaked": 0,
+      "criticalLeaked": 0,
+      "killGold": 390,
+      "clearReward": 21,
+      "goldBeforePurchases": 2086,
+      "spent": 0,
+      "balance": 2497,
+      "hp": 20,
+      "towerComposition": {
+        "3": 13,
+        "6": 4,
+        "9": 4
+      },
+      "combatElapsedMs": 36300,
+      "levelElapsedMs": 598800,
+      "alivePeak": 18,
+      "groundEffectiveShootingWindowSec": 393.00000000002086,
+      "airEffectiveShootingWindowSec": 15.89999999999996,
+      "overkillDamage": 620.2627065105386,
+      "cleared": true
+    },
+    {
+      "waveOrdinal": 20,
+      "planned": 66,
+      "successfulSpawned": 66,
+      "totalEhp": 12269.37096,
+      "towerCount": 21,
+      "capacity": 135,
+      "occupancy": 0.15555555555555556,
+      "pathLength": 32,
+      "spawnDeferredCount": 0,
+      "layout": [
+        {
+          "row": 2,
+          "col": 0,
+          "towerId": 3
+        },
+        {
+          "row": 4,
+          "col": 1,
+          "towerId": 6
+        },
+        {
+          "row": 1,
+          "col": 0,
+          "towerId": 3
+        },
+        {
+          "row": 5,
+          "col": 1,
+          "towerId": 9
+        },
+        {
+          "row": 6,
+          "col": 1,
+          "towerId": 3
+        },
+        {
+          "row": 7,
+          "col": 1,
+          "towerId": 3
+        },
+        {
+          "row": 0,
+          "col": 2,
+          "towerId": 6
+        },
+        {
+          "row": 2,
+          "col": 1,
+          "towerId": 3
+        },
+        {
+          "row": 4,
+          "col": 2,
+          "towerId": 9
+        },
+        {
+          "row": 8,
+          "col": 1,
+          "towerId": 3
+        },
+        {
+          "row": 2,
+          "col": 2,
+          "towerId": 3
+        },
+        {
+          "row": 2,
+          "col": 3,
+          "towerId": 6
+        },
+        {
+          "row": 3,
+          "col": 4,
+          "towerId": 3
+        },
+        {
+          "row": 4,
+          "col": 4,
+          "towerId": 9
+        },
+        {
+          "row": 1,
+          "col": 4,
+          "towerId": 3
+        },
+        {
+          "row": 5,
+          "col": 4,
+          "towerId": 3
+        },
+        {
+          "row": 6,
+          "col": 3,
+          "towerId": 6
+        },
+        {
+          "row": 7,
+          "col": 3,
+          "towerId": 3
+        },
+        {
+          "row": 2,
+          "col": 4,
+          "towerId": 9
+        },
+        {
+          "row": 7,
+          "col": 5,
+          "towerId": 3
+        },
+        {
+          "row": 8,
+          "col": 5,
+          "towerId": 3
+        }
+      ],
+      "flyingCount": 7,
+      "heavyCount": 6,
+      "eliteCount": 1,
+      "bossCount": 0,
+      "killed": 66,
+      "leaked": 0,
+      "bossLeaked": 0,
+      "criticalLeaked": 0,
+      "killGold": 410,
+      "clearReward": 21,
+      "goldBeforePurchases": 2497,
+      "spent": 0,
+      "balance": 2928,
+      "hp": 20,
+      "towerComposition": {
+        "3": 13,
+        "6": 4,
+        "9": 4
+      },
+      "combatElapsedMs": 39300,
+      "levelElapsedMs": 643100,
+      "alivePeak": 25,
+      "groundEffectiveShootingWindowSec": 511.5000000000478,
+      "airEffectiveShootingWindowSec": 18.799999999999997,
+      "overkillDamage": 538.791189468026,
+      "cleared": true
+    },
+    {
+      "waveOrdinal": 21,
+      "planned": 68,
+      "successfulSpawned": 68,
+      "totalEhp": 12577.0,
+      "towerCount": 21,
+      "capacity": 135,
+      "occupancy": 0.15555555555555556,
+      "pathLength": 32,
+      "spawnDeferredCount": 0,
+      "layout": [
+        {
+          "row": 2,
+          "col": 0,
+          "towerId": 3
+        },
+        {
+          "row": 4,
+          "col": 1,
+          "towerId": 6
+        },
+        {
+          "row": 1,
+          "col": 0,
+          "towerId": 3
+        },
+        {
+          "row": 5,
+          "col": 1,
+          "towerId": 9
+        },
+        {
+          "row": 6,
+          "col": 1,
+          "towerId": 3
+        },
+        {
+          "row": 7,
+          "col": 1,
+          "towerId": 3
+        },
+        {
+          "row": 0,
+          "col": 2,
+          "towerId": 6
+        },
+        {
+          "row": 2,
+          "col": 1,
+          "towerId": 3
+        },
+        {
+          "row": 4,
+          "col": 2,
+          "towerId": 9
+        },
+        {
+          "row": 8,
+          "col": 1,
+          "towerId": 3
+        },
+        {
+          "row": 2,
+          "col": 2,
+          "towerId": 3
+        },
+        {
+          "row": 2,
+          "col": 3,
+          "towerId": 6
+        },
+        {
+          "row": 3,
+          "col": 4,
+          "towerId": 3
+        },
+        {
+          "row": 4,
+          "col": 4,
+          "towerId": 9
+        },
+        {
+          "row": 1,
+          "col": 4,
+          "towerId": 3
+        },
+        {
+          "row": 5,
+          "col": 4,
+          "towerId": 3
+        },
+        {
+          "row": 6,
+          "col": 3,
+          "towerId": 6
+        },
+        {
+          "row": 7,
+          "col": 3,
+          "towerId": 3
+        },
+        {
+          "row": 2,
+          "col": 4,
+          "towerId": 9
+        },
+        {
+          "row": 7,
+          "col": 5,
+          "towerId": 3
+        },
+        {
+          "row": 8,
+          "col": 5,
+          "towerId": 3
+        }
+      ],
+      "flyingCount": 8,
+      "heavyCount": 6,
+      "eliteCount": 0,
+      "bossCount": 0,
+      "killed": 68,
+      "leaked": 0,
+      "bossLeaked": 0,
+      "criticalLeaked": 0,
+      "killGold": 412,
+      "clearReward": 24,
+      "goldBeforePurchases": 2928,
+      "spent": 0,
+      "balance": 3364,
+      "hp": 20,
+      "towerComposition": {
+        "3": 13,
+        "6": 4,
+        "9": 4
+      },
+      "combatElapsedMs": 39700,
+      "levelElapsedMs": 687800,
+      "alivePeak": 26,
+      "groundEffectiveShootingWindowSec": 572.3000000000616,
+      "airEffectiveShootingWindowSec": 25.30000000000009,
+      "overkillDamage": 748.7515320334239,
+      "cleared": true
+    },
+    {
+      "waveOrdinal": 22,
+      "planned": 70,
+      "successfulSpawned": 70,
+      "totalEhp": 13647.172,
+      "towerCount": 21,
+      "capacity": 135,
+      "occupancy": 0.15555555555555556,
+      "pathLength": 32,
+      "spawnDeferredCount": 0,
+      "layout": [
+        {
+          "row": 2,
+          "col": 0,
+          "towerId": 3
+        },
+        {
+          "row": 4,
+          "col": 1,
+          "towerId": 6
+        },
+        {
+          "row": 1,
+          "col": 0,
+          "towerId": 3
+        },
+        {
+          "row": 5,
+          "col": 1,
+          "towerId": 9
+        },
+        {
+          "row": 6,
+          "col": 1,
+          "towerId": 3
+        },
+        {
+          "row": 7,
+          "col": 1,
+          "towerId": 3
+        },
+        {
+          "row": 0,
+          "col": 2,
+          "towerId": 6
+        },
+        {
+          "row": 2,
+          "col": 1,
+          "towerId": 3
+        },
+        {
+          "row": 4,
+          "col": 2,
+          "towerId": 9
+        },
+        {
+          "row": 8,
+          "col": 1,
+          "towerId": 3
+        },
+        {
+          "row": 2,
+          "col": 2,
+          "towerId": 3
+        },
+        {
+          "row": 2,
+          "col": 3,
+          "towerId": 6
+        },
+        {
+          "row": 3,
+          "col": 4,
+          "towerId": 3
+        },
+        {
+          "row": 4,
+          "col": 4,
+          "towerId": 9
+        },
+        {
+          "row": 1,
+          "col": 4,
+          "towerId": 3
+        },
+        {
+          "row": 5,
+          "col": 4,
+          "towerId": 3
+        },
+        {
+          "row": 6,
+          "col": 3,
+          "towerId": 6
+        },
+        {
+          "row": 7,
+          "col": 3,
+          "towerId": 3
+        },
+        {
+          "row": 2,
+          "col": 4,
+          "towerId": 9
+        },
+        {
+          "row": 7,
+          "col": 5,
+          "towerId": 3
+        },
+        {
+          "row": 8,
+          "col": 5,
+          "towerId": 3
+        }
+      ],
+      "flyingCount": 8,
+      "heavyCount": 7,
+      "eliteCount": 0,
+      "bossCount": 0,
+      "killed": 70,
+      "leaked": 0,
+      "bossLeaked": 0,
+      "criticalLeaked": 0,
+      "killGold": 428,
+      "clearReward": 24,
+      "goldBeforePurchases": 3364,
+      "spent": 0,
+      "balance": 3816,
+      "hp": 20,
+      "towerComposition": {
+        "3": 13,
+        "6": 4,
+        "9": 4
+      },
+      "combatElapsedMs": 42400,
+      "levelElapsedMs": 735200,
+      "alivePeak": 28,
+      "groundEffectiveShootingWindowSec": 618.6000000000721,
+      "airEffectiveShootingWindowSec": 25.30000000000009,
+      "overkillDamage": 567.3702910817914,
+      "cleared": true
+    },
+    {
+      "waveOrdinal": 23,
+      "planned": 72,
+      "successfulSpawned": 72,
+      "totalEhp": 15027.7248,
+      "towerCount": 21,
+      "capacity": 135,
+      "occupancy": 0.15555555555555556,
+      "pathLength": 32,
+      "spawnDeferredCount": 0,
+      "layout": [
+        {
+          "row": 2,
+          "col": 0,
+          "towerId": 3
+        },
+        {
+          "row": 4,
+          "col": 1,
+          "towerId": 6
+        },
+        {
+          "row": 1,
+          "col": 0,
+          "towerId": 3
+        },
+        {
+          "row": 5,
+          "col": 1,
+          "towerId": 9
+        },
+        {
+          "row": 6,
+          "col": 1,
+          "towerId": 3
+        },
+        {
+          "row": 7,
+          "col": 1,
+          "towerId": 3
+        },
+        {
+          "row": 0,
+          "col": 2,
+          "towerId": 6
+        },
+        {
+          "row": 2,
+          "col": 1,
+          "towerId": 3
+        },
+        {
+          "row": 4,
+          "col": 2,
+          "towerId": 9
+        },
+        {
+          "row": 8,
+          "col": 1,
+          "towerId": 3
+        },
+        {
+          "row": 2,
+          "col": 2,
+          "towerId": 3
+        },
+        {
+          "row": 2,
+          "col": 3,
+          "towerId": 6
+        },
+        {
+          "row": 3,
+          "col": 4,
+          "towerId": 3
+        },
+        {
+          "row": 4,
+          "col": 4,
+          "towerId": 9
+        },
+        {
+          "row": 1,
+          "col": 4,
+          "towerId": 3
+        },
+        {
+          "row": 5,
+          "col": 4,
+          "towerId": 3
+        },
+        {
+          "row": 6,
+          "col": 3,
+          "towerId": 6
+        },
+        {
+          "row": 7,
+          "col": 3,
+          "towerId": 3
+        },
+        {
+          "row": 2,
+          "col": 4,
+          "towerId": 9
+        },
+        {
+          "row": 7,
+          "col": 5,
+          "towerId": 3
+        },
+        {
+          "row": 8,
+          "col": 5,
+          "towerId": 3
+        }
+      ],
+      "flyingCount": 8,
+      "heavyCount": 7,
+      "eliteCount": 0,
+      "bossCount": 0,
+      "killed": 72,
+      "leaked": 0,
+      "bossLeaked": 0,
+      "criticalLeaked": 0,
+      "killGold": 438,
+      "clearReward": 24,
+      "goldBeforePurchases": 3816,
+      "spent": 0,
+      "balance": 4278,
+      "hp": 20,
+      "towerComposition": {
+        "3": 13,
+        "6": 4,
+        "9": 4
+      },
+      "combatElapsedMs": 44500,
+      "levelElapsedMs": 784700,
+      "alivePeak": 30,
+      "groundEffectiveShootingWindowSec": 703.6000000000914,
+      "airEffectiveShootingWindowSec": 26.70000000000011,
+      "overkillDamage": 629.0598957676332,
+      "cleared": true
+    },
+    {
+      "waveOrdinal": 24,
+      "planned": 74,
+      "successfulSpawned": 74,
+      "totalEhp": 16501.7336,
+      "towerCount": 21,
+      "capacity": 135,
+      "occupancy": 0.15555555555555556,
+      "pathLength": 32,
+      "spawnDeferredCount": 0,
+      "layout": [
+        {
+          "row": 2,
+          "col": 0,
+          "towerId": 3
+        },
+        {
+          "row": 4,
+          "col": 1,
+          "towerId": 6
+        },
+        {
+          "row": 1,
+          "col": 0,
+          "towerId": 3
+        },
+        {
+          "row": 5,
+          "col": 1,
+          "towerId": 9
+        },
+        {
+          "row": 6,
+          "col": 1,
+          "towerId": 3
+        },
+        {
+          "row": 7,
+          "col": 1,
+          "towerId": 3
+        },
+        {
+          "row": 0,
+          "col": 2,
+          "towerId": 6
+        },
+        {
+          "row": 2,
+          "col": 1,
+          "towerId": 3
+        },
+        {
+          "row": 4,
+          "col": 2,
+          "towerId": 9
+        },
+        {
+          "row": 8,
+          "col": 1,
+          "towerId": 3
+        },
+        {
+          "row": 2,
+          "col": 2,
+          "towerId": 3
+        },
+        {
+          "row": 2,
+          "col": 3,
+          "towerId": 6
+        },
+        {
+          "row": 3,
+          "col": 4,
+          "towerId": 3
+        },
+        {
+          "row": 4,
+          "col": 4,
+          "towerId": 9
+        },
+        {
+          "row": 1,
+          "col": 4,
+          "towerId": 3
+        },
+        {
+          "row": 5,
+          "col": 4,
+          "towerId": 3
+        },
+        {
+          "row": 6,
+          "col": 3,
+          "towerId": 6
+        },
+        {
+          "row": 7,
+          "col": 3,
+          "towerId": 3
+        },
+        {
+          "row": 2,
+          "col": 4,
+          "towerId": 9
+        },
+        {
+          "row": 7,
+          "col": 5,
+          "towerId": 3
+        },
+        {
+          "row": 8,
+          "col": 5,
+          "towerId": 3
+        }
+      ],
+      "flyingCount": 8,
+      "heavyCount": 7,
+      "eliteCount": 0,
+      "bossCount": 0,
+      "killed": 74,
+      "leaked": 0,
+      "bossLeaked": 0,
+      "criticalLeaked": 0,
+      "killGold": 451,
+      "clearReward": 24,
+      "goldBeforePurchases": 4278,
+      "spent": 0,
+      "balance": 4753,
+      "hp": 20,
+      "towerComposition": {
+        "3": 13,
+        "6": 4,
+        "9": 4
+      },
+      "combatElapsedMs": 44800,
+      "levelElapsedMs": 834500,
+      "alivePeak": 31,
+      "groundEffectiveShootingWindowSec": 780.900000000109,
+      "airEffectiveShootingWindowSec": 26.1000000000001,
+      "overkillDamage": 576.6776321931585,
+      "cleared": true
+    },
+    {
+      "waveOrdinal": 25,
+      "planned": 76,
+      "successfulSpawned": 76,
+      "totalEhp": 21325.330048000003,
+      "towerCount": 21,
+      "capacity": 135,
+      "occupancy": 0.15555555555555556,
+      "pathLength": 32,
+      "spawnDeferredCount": 0,
+      "layout": [
+        {
+          "row": 2,
+          "col": 0,
+          "towerId": 3
+        },
+        {
+          "row": 4,
+          "col": 1,
+          "towerId": 6
+        },
+        {
+          "row": 1,
+          "col": 0,
+          "towerId": 3
+        },
+        {
+          "row": 5,
+          "col": 1,
+          "towerId": 9
+        },
+        {
+          "row": 6,
+          "col": 1,
+          "towerId": 3
+        },
+        {
+          "row": 7,
+          "col": 1,
+          "towerId": 3
+        },
+        {
+          "row": 0,
+          "col": 2,
+          "towerId": 6
+        },
+        {
+          "row": 2,
+          "col": 1,
+          "towerId": 3
+        },
+        {
+          "row": 4,
+          "col": 2,
+          "towerId": 9
+        },
+        {
+          "row": 8,
+          "col": 1,
+          "towerId": 3
+        },
+        {
+          "row": 2,
+          "col": 2,
+          "towerId": 3
+        },
+        {
+          "row": 2,
+          "col": 3,
+          "towerId": 6
+        },
+        {
+          "row": 3,
+          "col": 4,
+          "towerId": 3
+        },
+        {
+          "row": 4,
+          "col": 4,
+          "towerId": 9
+        },
+        {
+          "row": 1,
+          "col": 4,
+          "towerId": 3
+        },
+        {
+          "row": 5,
+          "col": 4,
+          "towerId": 3
+        },
+        {
+          "row": 6,
+          "col": 3,
+          "towerId": 6
+        },
+        {
+          "row": 7,
+          "col": 3,
+          "towerId": 3
+        },
+        {
+          "row": 2,
+          "col": 4,
+          "towerId": 9
+        },
+        {
+          "row": 7,
+          "col": 5,
+          "towerId": 3
+        },
+        {
+          "row": 8,
+          "col": 5,
+          "towerId": 3
+        }
+      ],
+      "flyingCount": 9,
+      "heavyCount": 7,
+      "eliteCount": 1,
+      "bossCount": 0,
+      "killed": 76,
+      "leaked": 0,
+      "bossLeaked": 0,
+      "criticalLeaked": 0,
+      "killGold": 472,
+      "clearReward": 24,
+      "goldBeforePurchases": 4753,
+      "spent": 0,
+      "balance": 5249,
+      "hp": 20,
+      "towerComposition": {
+        "3": 13,
+        "6": 4,
+        "9": 4
+      },
+      "combatElapsedMs": 53100,
+      "levelElapsedMs": 892600,
+      "alivePeak": 39,
+      "groundEffectiveShootingWindowSec": 1070.400000000122,
+      "airEffectiveShootingWindowSec": 38.70000000000028,
+      "overkillDamage": 577.0978941131639,
+      "cleared": true
+    }
+  ],
+  "elapsedSec": 2.3699770999992325,
+  "alivePeak": 39,
+  "overkillDamage": 9985.043162258664,
+  "aoeAverageActualHits": 2.423841059602649,
+  "groundEffectiveShootingWindowSec": 6669.400000006732,
+  "airEffectiveShootingWindowSec": 261.2999999999909,
+  "slowCoveredEnemySec": 2620.499999998712
+}

@@ -27,10 +27,10 @@ namespace FTProject
         public const string LogicalName = "Range_Ring";
 
         /// <summary>常亮射程圈颜色：偏冷的浅蓝 —— 与减速的语义呼应，也和白色射程提示圈区分开</summary>
-        private static readonly Color RingColor = new Color(0.55f, 0.8f, 1f, 0.30f);
+        private static readonly Color RingColor = new Color(0.55f, 0.8f, 1f, 0.06f);
 
         /// <summary>脉冲时叠加到的亮度（0~1 之间插值）</summary>
-        private static readonly Color PulseColor = new Color(0.75f, 0.92f, 1f, 0.72f);
+        private static readonly Color PulseColor = new Color(0.75f, 0.92f, 1f, 0.26f);
 
         /// <summary>排序：压在格子之上、怪物之下（与 RangeIndicator 同一层，避免穿帮）</summary>
         private const int SortingOrder = BoardSorting.RangeIndicator;

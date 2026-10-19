@@ -61,10 +61,12 @@ namespace FTProject
             _manualSimulation = true; _cachedDelta = 0f;
             return new ManualSimulationScope();
         }
-        public static void StepManualFrame(float unscaledDelta)
+        public static void StepManualFrame(double unscaledDelta)
         {
             if (!_manualSimulation) throw new System.InvalidOperationException("BeginManualSimulation must be called first");
-            _cachedDelta = _background || Time.timeScale <= 0f ? 0f : Mathf.Max(0f, unscaledDelta) * _speed;
+            // Preserve the requested fixed simulation step when replay divides it
+            // by 3x speed; round once, at the same float DeltaTime boundary as play.
+            _cachedDelta = _background || Time.timeScale <= 0f ? 0f : (float)(System.Math.Max(0d, unscaledDelta) * _speed);
             if (_levelTimerRunning) _levelElapsed += _cachedDelta;
             if (_combatTimerRunning) _combatElapsed += _cachedDelta;
         }

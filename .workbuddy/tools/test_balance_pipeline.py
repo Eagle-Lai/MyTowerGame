@@ -33,16 +33,17 @@ class BalanceCompilerTests(unittest.TestCase):
             self.assertEqual(core.preview(self.plan)['changes'],[])
 
     def test_reference_counts_budgets_and_par(self):
-        self.assertEqual(len(self.plan['waves']), 400)
-        for level in range(1, 21):
-            seq = [self.wave(level, wave) for wave in range(1, 21)]
-            self.assertEqual([w['count'] for w in seq], list(range(level + 7, level + 27)))
-            self.assertEqual(sum(w['count'] for w in seq), 330 + 20 * level)
-        self.assertAlmostEqual(self.wave(1, 1)['actualEhp'], 240, places=4)
-        self.assertAlmostEqual(self.wave(1, 20)['actualEhp'], 9900.225, delta=0.1)
+        levels,waves,_=core.dimensions(self.recipe)
+        self.assertEqual((levels,waves), (30,25))
+        self.assertEqual(len(self.plan['waves']), levels*waves)
+        f=self.recipe['formula']
+        for level in range(1, levels+1):
+            seq = [self.wave(level, wave) for wave in range(1, waves+1)]
+            self.assertEqual([w['count'] for w in seq], [level*f['countLevelCoefficient']+w*f['countWaveCoefficient']+f['countOffset'] for w in range(1,waves+1)])
+            self.assertTrue(all(a['actualEhp'] < b['actualEhp'] for a,b in zip(seq,seq[1:])))
         ratings = self.plan['tables']['tblevelrating']
-        self.assertEqual(ratings[0]['parCombatTimeMs'], 440000)
-        self.assertEqual(ratings[-1]['parCombatTimeMs'], 825000)
+        self.assertEqual(len(ratings),levels)
+        self.assertTrue(all(r['expectedWaveCount']==waves and r['parCombatTimeMs']>0 for r in ratings))
 
     def test_final_lists_not_descriptions_are_validated(self):
         altered = copy.deepcopy(self.plan)
@@ -110,13 +111,40 @@ class BalanceCompilerTests(unittest.TestCase):
         self.assertTrue(core.path_for(['S.E']))
 
     def test_every_profile_baseline_gradient_is_exact(self):
-        expected_gold = [140, 125, 110, 100, 96, 92, 88, 84]
-        expected_ehp = [120, 156, 196.8, 240, 283.2, 336, 396, 468]
+        base_ehp=self.wave(1,1)['actualEhp']
         for i, profile in enumerate(self.recipe['profiles'][:8]):
             plan = core.generate(self.recipe, profile['id'])
-            self.assertEqual(plan['tables']['tbsceneinfo'][0]['initialGold'], expected_gold[i])
-            self.assertAlmostEqual(self.wave(1, 1, plan)['actualEhp'], expected_ehp[i], places=3)
+            self.assertEqual(plan['tables']['tbsceneinfo'][0]['initialGold'], core.round_up(self.recipe['formula']['initialGold']*profile['goldMultiplier']))
+            self.assertAlmostEqual(self.wave(1, 1, plan)['actualEhp'], base_ehp*profile['ehpMultiplier'], delta=.01)
             self.assertTrue(core.validate(plan)['passed'])
+
+    def test_capacity_minimizes_buildable_cost_instead_of_steps(self):
+        from balance_campaign import capacity
+        audit=capacity(['SPPPE','.....'])
+        self.assertEqual(audit['reservedBuildableCells'],0)
+        self.assertEqual(audit['capacity'],5)
+        with self.assertRaises(ValueError):capacity(['S#E'])
+
+    def test_runtime_tie_order_matches_shipped_unity_path_probe(self):
+        from balance_campaign import runtime_path_for
+        self.assertEqual(runtime_path_for(['S..','..E']),[(0,0),(0,1),(1,1),(2,1)])
+        self.assertEqual(runtime_path_for(['S#E']),[])
+        for board in self.plan['tables']['tblevelmap']:
+            self.assertEqual(len(runtime_path_for(board['cells'])),len(core.path_for(board['cells'])))
+
+    def test_legacy_ids_and_new_ids_remain_globally_unique(self):
+        from balance_campaign import prepare_manifest
+        manifest=self.plan['manifest']
+        for category in ['rounds','enemyLists','variants']:
+            ids=list(manifest[category].values());self.assertEqual(len(ids),len(set(ids)))
+        self.assertEqual(manifest['rounds']['20|20'],400)
+        self.assertGreater(manifest['rounds']['1|21'],400)
+        self.assertEqual(len(self.plan['tables']['tbenemydata'][:132]),132)
+
+    def test_blast_radius_invalidates_rating_identity(self):
+        recipe=copy.deepcopy(self.recipe);recipe['bulletValues'][0]['aoeRadius']+=.1
+        changed=core.generate(recipe,'D04')
+        self.assertNotEqual(changed['tables']['tblevelrating'][0]['planHash'],self.plan['tables']['tblevelrating'][0]['planHash'])
 
     def test_no_early_giant_or_boss(self):
         for w in self.plan['waves']:

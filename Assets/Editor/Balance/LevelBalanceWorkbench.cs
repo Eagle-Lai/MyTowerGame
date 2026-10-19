@@ -26,6 +26,7 @@ namespace FTProject.EditorTools
         private string _field = "targetEhp", _value = "1.1";
         private int _preset = 3, _level = 1, _wave = 1, _scope, _lastWave = 20, _operation = 1, _tab, _curve;
         private int _strategy = 2;
+        private int _comparisonPolicy;
         private int _target, _towerId = 1;
         private float _step = 0.05f;
         private int _seed = 42;
@@ -37,6 +38,8 @@ namespace FTProject.EditorTools
         private double _dirtyAt = -1;
         private readonly Dictionary<string, bool> _folds = new Dictionary<string, bool>();
         private string Root { get { return BalanceWorkbenchProcess.ProjectRoot; } }
+        private int CampaignLevels { get { return _recipe != null && _recipe["campaignLevelCount"].AsInt > 0 ? _recipe["campaignLevelCount"].AsInt : 20; } }
+        private int CampaignWaves { get { return _recipe != null && _recipe["wavesPerLevel"].AsInt > 0 ? _recipe["wavesPerLevel"].AsInt : 20; } }
         private string Local { get { return Path.Combine(Root, LocalRel); } }
         private string DraftPath { get { return Path.Combine(Local, "draft.json"); } }
         private string ProfileId
@@ -170,8 +173,8 @@ namespace FTProject.EditorTools
                     BeforeEdit("切换数值预设"); _preset = chosen;
                     _recipe["selectedProfileId"] = ProfileId; Changed();
                 }
-                _level = EditorGUILayout.IntSlider("关卡", _level, 1, 20);
-                _wave = EditorGUILayout.IntSlider("波", _wave, 1, 20);
+                _level = EditorGUILayout.IntSlider("关卡", _level, 1, CampaignLevels);
+                _wave = EditorGUILayout.IntSlider("波", _wave, 1, CampaignWaves);
             }
             string formal = "尚未读取正式版本";
             string ratings = Path.Combine(Root, "Assets/ConfigJson/tblevelrating.json");
@@ -194,16 +197,28 @@ namespace FTProject.EditorTools
             if (w != null)
             {
                 EditorGUILayout.Space(7);
-                EditorGUILayout.LabelField("本波候选", "L" + _level + " · " + _wave + "/20 · " + w["count"] + " 只");
+                EditorGUILayout.LabelField("本波候选", "L" + _level + " · " + _wave + "/" + CampaignWaves + " · " + w["count"] + " 只");
                 EditorGUILayout.LabelField("EHP / 出怪间隔", w["actualEhp"].AsDouble.ToString("F2") + " / " + w["spawnIntervalMs"] + " ms");
                 EditorGUILayout.LabelField("击杀金 / 清场奖", w["killGold"] + " / " + w["rewardGold"]);
                 EditorGUILayout.LabelField("飞行 / 重型 / 精英 / 首领", w["flyingCount"] + " / " + w["heavyCount"] + " / " + w["eliteCount"] + " / " + w["bossCount"]);
                 DrawComposition(w);
+                if (_plan != null)
+                    foreach (var pair in _plan["capacityEconomy"])
+                        if (pair.Value["levelId"].AsInt == _level)
+                        {
+                            var audit = pair.Value;
+                            EditorGUILayout.LabelField("可建 B / 合法容量 C", audit["buildableCells"] + " / " + audit["capacity"]);
+                            EditorGUILayout.LabelField("一级混合 F / 末波前收入上限", audit["mixedLevelOneCost"] + " / " + audit["perfectIncomeBeforeFinalWave"]);
+                            EditorGUILayout.LabelField("旧 85% 占用对照", audit["legacyOccupancyComparisonTowers"] + " 座（长路线优先，不作为达标条件）");
+                            EditorGUILayout.LabelField("长路线参考 / 重复覆盖塔", audit["mazePathLength"] + " 步 / " + audit["mazeRepeatedCoverageTowers"] + " 座");
+                            EditorGUILayout.LabelField("路线施工塔数 / 一级预算", audit["mazeTowerCount"] + " / " + audit["mazeLevelOneCost"]);
+                            EditorGUILayout.HelpBox("先比较真实 S→E 路径和同塔分段复用，再比较资金与战斗贡献；参考图不自动落塔，实际结果须匹配当前 hash。", MessageType.Info);
+                        }
             }
             EditorGUILayout.Space(10);
             EditorGUILayout.LabelField("精确覆盖 · 后设置的更细作用域优先", EditorStyles.boldLabel);
             _scope = EditorGUILayout.Popup("作用域", _scope, new[] { "单波", "本关连续波段", "整关", "全战役" });
-            if (_scope == 1) _lastWave = EditorGUILayout.IntSlider("至第几波", _lastWave, _wave, 20);
+            if (_scope == 1) _lastWave = EditorGUILayout.IntSlider("至第几波", _lastWave, _wave, CampaignWaves);
             _target = EditorGUILayout.Popup("对象", _target, new[] { "波次 wave", "关卡经济 level", "评级 rating", "塔 tower" });
             if (_target == 3) _towerId = EditorGUILayout.IntSlider("塔配置 ID", _towerId, 1, 9);
             _field = EditorGUILayout.TextField("字段", _field);
@@ -379,8 +394,9 @@ namespace FTProject.EditorTools
         private void DrawComparison()
         {
             if (_preview == null) return;
-            _curve = GUILayout.Toolbar(_curve, new[] { "数量", "有效生命", "间隔 ms", "收益", "出生跨度 ms", "预测余额", "预测清场 ms" });
-            string field = new[] { "count", "actualEhp", "spawnIntervalMs", "killGold", "plannedSpawnSpanMs", "balance", "combatElapsedMs" }[_curve];
+            _curve = GUILayout.Toolbar(_curve, new[] { "数量", "有效生命", "间隔", "收益", "出生跨度", "余额", "清场", "占用", "塔数", "支出", "路线", "复用" });
+            string field = new[] { "count", "actualEhp", "spawnIntervalMs", "killGold", "plannedSpawnSpanMs", "balance", "combatElapsedMs", "occupancy", "towerCount", "spent", "pathLength", "repeatedCoverageTowers" }[_curve];
+            _comparisonPolicy = EditorGUILayout.Popup("布防对照", _comparisonPolicy, new[] { "三类常规策略", "长路线扩建", "Ksmall 稀疏", "Klow 稀疏", "旧密铺对照" });
             _overlayProfiles = EditorGUILayout.Toggle("叠加八档报告", _overlayProfiles);
             if (GUILayout.Button("重新读取已生成的对比报告")) _comparisonFiles.Clear();
             if (_curve >= 5) EditorGUILayout.HelpBox("余额/清场曲线来自最近离线 " + new[] { "normal", "power", "mixed" }[_strategy] + " 策略，绑定该次 planHash。缺失或过期时不画预测曲线，请先生成对应策略报告。", MessageType.Info);
@@ -390,11 +406,12 @@ namespace FTProject.EditorTools
             foreach (string profile in _overlayProfiles ? Enumerable.Range(1, 8).Select(i => "D" + i.ToString("00")) : new[] { ProfileId })
             {
                 JSONNode source;
-                if (_curve < 5) source = profile == ProfileId ? _preview["waves"] : ComparisonFile(Path.Combine(Root, "Luban/BalanceDesign/Reports", profile, "waves.json"));
+                if (_curve < 5) source = profile == ProfileId ? _preview["waves"] : ComparisonFile(Path.Combine(Root, "Luban/BalanceDesign/Evidence30x25/Reports", profile, "waves.json"));
                 else
                 {
-                    string strategy = new[] { "normal", "power", "mixed" }[_strategy];
-                    source = ComparisonFile(Path.Combine(Root, "Luban/BalanceDesign/Simulation", strategy, profile, "L" + _level.ToString("00") + "-" + strategy, "result.json"));
+                    string strategy = _comparisonPolicy == 0 ? new[] { "normal", "power", "mixed" }[_strategy] : "mixed";
+                    string policy = new[] { "baseline", "maze", "small", "low", "high" }[_comparisonPolicy];
+                    source = ComparisonFile(Path.Combine(Root, "Luban/BalanceDesign/Evidence30x25/Simulation", policy, profile, strategy, "L" + _level.ToString("00") + "-" + strategy, "result.json"));
                     if (source != null && profile == ProfileId)
                     {
                         string hash = "";
@@ -426,7 +443,7 @@ namespace FTProject.EditorTools
                 }
             }
             Handles.EndGUI();
-            EditorGUILayout.LabelField("L" + _level + " · 1—20 波 · max " + max.ToString("F2"));
+            EditorGUILayout.LabelField("L" + _level + " · 1—" + CampaignWaves + " 波 · max " + max.ToString("F2"));
             EditorGUILayout.LabelField("已显示报告快照", string.Join(" / ", series.Keys));
             EditorGUILayout.LabelField("字段差异（源表/行/字段/修改前→修改后）", EditorStyles.boldLabel);
             int shown = 0;
@@ -452,7 +469,7 @@ namespace FTProject.EditorTools
             _strategy = EditorGUILayout.Popup("可复现策略", _strategy, new[] { "普通塔为主 normal", "火力聚怪 power", "减速混合 mixed" });
             _step = EditorGUILayout.Slider("固定步长 秒", _step, .01f, .1f);
             _seed = EditorGUILayout.IntField("固定种子", _seed);
-            _allProfiles = EditorGUILayout.Toggle("八档×20关", _allProfiles);
+            _allProfiles = EditorGUILayout.Toggle("八档×" + CampaignLevels + "关", _allProfiles);
             EditorGUILayout.HelpBox("离线输出标为预测。真实回放从合法初始余额开始，使用隔离测试存档；单波调试不作为通关证据。正式应用和已有对局间以新局为重载边界。", MessageType.Info);
             using (new EditorGUI.DisabledScope(BalanceWorkbenchProcess.Running))
             {

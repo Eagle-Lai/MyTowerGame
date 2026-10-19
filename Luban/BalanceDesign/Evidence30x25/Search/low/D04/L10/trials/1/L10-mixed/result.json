@@ -1,0 +1,307 @@
+{
+  "profileId" : "D04",
+  "levelId" : 10,
+  "planHash" : "8d07b1b872860bd31d90bdb132d5467a2b28b2557425bbae294dea9cd49025d0",
+  "strategyId" : "mixed",
+  "strategyRevision" : "spatial-fixed-step-30x25-maze-v6-astar",
+  "policy" : {
+    "preferredCells" : [
+      [
+        8,
+        4
+      ],
+      [
+        11,
+        2
+      ],
+      [
+        4,
+        6
+      ],
+      [
+        12,
+        3
+      ],
+      [
+        10,
+        4
+      ],
+      [
+        3,
+        3
+      ],
+      [
+        6,
+        2
+      ],
+      [
+        5,
+        7
+      ],
+      [
+        11,
+        6
+      ],
+      [
+        12,
+        6
+      ]
+    ],
+    "types" : [
+      1,
+      1,
+      7,
+      4,
+      1
+    ],
+    "targetCount" : 36,
+    "maxTowers" : 36,
+    "upgradeAfter" : 3,
+    "preferUpgrade" : true,
+    "cheapFallback" : true,
+    "midwaveUpgrades" : true,
+    "midwaveAfter" : 4,
+    "relocationWaves" : []
+  },
+  "stepMs" : 100,
+  "seed" : 20261029,
+  "coverage" : "offline_prediction_only",
+  "approximations" : [
+    "Four-direction path search mirrors shipped AStarWrapper insertion ties; battle timing still approximate",
+    "Fixed-step movement then tower attacks instead of Unity frame scheduling",
+    "Float64 arithmetic instead of Unity float32; near-threshold results need Unity comparison",
+    "No visual/camera/touch validation; no certification of five-star reachability",
+    "Build and upgrade operations only at wave boundaries; no borrowing future kill income"
+  ],
+  "result" : "predicted_failure",
+  "error" : null,
+  "predictionStars" : 0,
+  "ratingStatus" : "C# LevelRatingEvaluator; offline prediction, not Unity reachability certification",
+  "combatToParRatio" : 0.0317307692307694,
+  "balance" : 16,
+  "leaked" : 20,
+  "metrics" : {
+    "runId" : "offline:D04:L10:mixed:spatial-fixed-step-30x25-maze-v6-astar",
+    "profileId" : "D04",
+    "profileRevision" : "2",
+    "balanceRevision" : "balance-30x25-maze-v3",
+    "ratingRevision" : "five-stars-v1",
+    "planHash" : "8d07b1b872860bd31d90bdb132d5467a2b28b2557425bbae294dea9cd49025d0",
+    "expectedWaveCount" : 25,
+    "completedWaveCount" : 0,
+    "expectedEnemyCount" : 1275,
+    "successfulSpawned" : 27,
+    "killed" : 0,
+    "leaked" : 20,
+    "bossLeaked" : 0,
+    "criticalLeaked" : 0,
+    "hp" : 0,
+    "maxHp" : 20,
+    "combatElapsedMs" : 33000,
+    "levelElapsedMs" : 33000,
+    "combatElapsedSeconds" : 33.0000000000002,
+    "levelElapsedSeconds" : 33.0000000000002,
+    "debugOverride" : false,
+    "statisticsValid" : true,
+    "timingValid" : true,
+    "victory" : false,
+    "waves" : [
+      {
+        "ordinal" : 1,
+        "expected" : 27,
+        "successfulSpawned" : 27,
+        "killed" : 0,
+        "leaked" : 20,
+        "bossLeaked" : 0,
+        "criticalLeaked" : 0,
+        "gold" : 16,
+        "hp" : 0,
+        "killGold" : 0,
+        "clearGold" : 0,
+        "peakAlive" : 27,
+        "combatStartSeconds" : 0,
+        "combatEndSeconds" : 33,
+        "levelEndSeconds" : 33
+      }
+    ]
+  },
+  "ratingProfile" : {
+    "id" : 10,
+    "difficultyTier" : 2,
+    "profileId" : "D04",
+    "profileRevision" : "2",
+    "expectedWaveCount" : 25,
+    "expectedEnemyCount" : 1275,
+    "twoStarHpPermille" : 500,
+    "threeStarHpPermille" : 750,
+    "fourStarHpPermille" : 900,
+    "maxFourStarLeaks" : 2,
+    "fourStarTimePermille" : 1250,
+    "parCombatTimeMs" : 1040000,
+    "bossVariantIds" : [],
+    "criticalVariantIds" : [
+      3488566,
+      3498566,
+      10017499
+    ],
+    "balanceRevision" : "balance-30x25-maze-v3",
+    "ratingRevision" : "five-stars-v1",
+    "calibrationStatus" : "pending_unity_reference",
+    "runtimeContentHash" : "",
+    "planHash" : "8d07b1b872860bd31d90bdb132d5467a2b28b2557425bbae294dea9cd49025d0"
+  },
+  "operations" : [
+    {
+      "waveOrdinal" : 1,
+      "timeMs" : 0,
+      "action" : "build",
+      "row" : 4,
+      "col" : 8,
+      "towerId" : 1,
+      "cost" : 25,
+      "balanceAfter" : 171
+    },
+    {
+      "waveOrdinal" : 1,
+      "timeMs" : 0,
+      "action" : "build",
+      "row" : 2,
+      "col" : 11,
+      "towerId" : 1,
+      "cost" : 25,
+      "balanceAfter" : 146
+    },
+    {
+      "waveOrdinal" : 1,
+      "timeMs" : 0,
+      "action" : "build",
+      "row" : 6,
+      "col" : 4,
+      "towerId" : 7,
+      "cost" : 25,
+      "balanceAfter" : 121
+    },
+    {
+      "waveOrdinal" : 1,
+      "timeMs" : 0,
+      "action" : "upgrade",
+      "row" : 6,
+      "col" : 4,
+      "towerId" : 8,
+      "cost" : 40,
+      "balanceAfter" : 81
+    },
+    {
+      "waveOrdinal" : 1,
+      "timeMs" : 0,
+      "action" : "upgrade",
+      "row" : 6,
+      "col" : 4,
+      "towerId" : 9,
+      "cost" : 65,
+      "balanceAfter" : 16
+    }
+  ],
+  "waves" : [
+    {
+      "waveOrdinal" : 1,
+      "planned" : 27,
+      "successfulSpawned" : 27,
+      "totalEhp" : 815.724,
+      "towerCount" : 3,
+      "capacity" : 120,
+      "occupancy" : 0.025,
+      "leakedByRole" : {
+        "normal" : 20
+      },
+      "pathLength" : 21,
+      "spawnDeferredCount" : 0,
+      "layout" : [
+        {
+          "row" : 4,
+          "col" : 8,
+          "towerId" : 1
+        },
+        {
+          "row" : 2,
+          "col" : 11,
+          "towerId" : 1
+        },
+        {
+          "row" : 6,
+          "col" : 4,
+          "towerId" : 9
+        }
+      ],
+      "repeatedCoverageTowers" : 0,
+      "flyingCount" : 0,
+      "heavyCount" : 0,
+      "eliteCount" : 0,
+      "bossCount" : 0,
+      "killed" : 0,
+      "leaked" : 20,
+      "bossLeaked" : 0,
+      "criticalLeaked" : 0,
+      "killGold" : 0,
+      "clearReward" : 0,
+      "goldBeforePurchases" : 196,
+      "spent" : 180,
+      "balance" : 16,
+      "hp" : 0,
+      "towerComposition" : {
+        "1" : 2,
+        "9" : 1
+      },
+      "combatElapsedMs" : 33000,
+      "levelElapsedMs" : 33000,
+      "alivePeak" : 27,
+      "groundEffectiveShootingWindowSec" : 0,
+      "airEffectiveShootingWindowSec" : 0,
+      "overkillDamage" : 0,
+      "cleared" : false
+    }
+  ],
+  "elapsedSec" : 0.0312353999979678,
+  "alivePeak" : 27,
+  "overkillDamage" : 0,
+  "aoeAverageActualHits" : 0,
+  "groundEffectiveShootingWindowSec" : 0,
+  "airEffectiveShootingWindowSec" : 0,
+  "slowCoveredEnemySec" : 167.399999999995,
+  "towerContributions" : [
+    {
+      "row" : 4,
+      "col" : 8,
+      "towerId" : 1,
+      "damage" : 0,
+      "hits" : 0,
+      "airHits" : 0,
+      "slowApplications" : 0,
+      "repeatAttackEnemies" : 0,
+      "coveragePasses" : 1
+    },
+    {
+      "row" : 2,
+      "col" : 11,
+      "towerId" : 1,
+      "damage" : 0,
+      "hits" : 0,
+      "airHits" : 0,
+      "slowApplications" : 0,
+      "repeatAttackEnemies" : 0,
+      "coveragePasses" : 0
+    },
+    {
+      "row" : 6,
+      "col" : 4,
+      "towerId" : 9,
+      "damage" : 0,
+      "hits" : 0,
+      "airHits" : 0,
+      "slowApplications" : 558,
+      "repeatAttackEnemies" : 0,
+      "coveragePasses" : 1
+    }
+  ],
+  "ratingResult" : {"stars":0,"valid":false,"victory":false,"fiveStarConditions":false,"fourStarConditions":false,"threeStarConditions":false,"twoStarConditions":false,"reasons":["Defense failed","Incomplete waves","Spawn count mismatch","Enemy accounting mismatch","Invalid rating evidence"],"versionKey":"D04|balance-30x25-maze-v3|five-stars-v1|8d07b1b872860bd31d90bdb132d5467a2b28b2557425bbae294dea9cd49025d0","metrics":{"runId":"offline:D04:L10:mixed:spatial-fixed-step-30x25-maze-v6-astar","profileId":"D04","profileRevision":"2","balanceRevision":"balance-30x25-maze-v3","ratingRevision":"five-stars-v1","planHash":"8d07b1b872860bd31d90bdb132d5467a2b28b2557425bbae294dea9cd49025d0","expectedWaveCount":25,"completedWaveCount":0,"expectedEnemyCount":1275,"successfulSpawned":27,"killed":0,"leaked":20,"bossLeaked":0,"criticalLeaked":0,"hp":0,"maxHp":20,"victory":false,"debugOverride":false,"statisticsValid":true,"timingValid":true,"combatElapsedSeconds":33.0000000000002,"levelElapsedSeconds":33.0000000000002,"waves":[{"ordinal":1,"expected":27,"successfulSpawned":27,"killed":0,"leaked":20,"bossLeaked":0,"criticalLeaked":0,"gold":16,"hp":0,"killGold":0,"clearGold":0,"peakAlive":27,"spawnDeferredCount":0,"combatStartSeconds":0,"combatEndSeconds":33,"levelEndSeconds":33}]},"profile":{"id":10,"difficultyTier":2,"expectedWaveCount":25,"expectedEnemyCount":1275,"profileId":"D04","profileRevision":"2","balanceRevision":"balance-30x25-maze-v3","ratingRevision":"five-stars-v1","planHash":"8d07b1b872860bd31d90bdb132d5467a2b28b2557425bbae294dea9cd49025d0","runtimeContentHash":"","calibrationStatus":"pending_unity_reference","twoStarHpPermille":500,"threeStarHpPermille":750,"fourStarHpPermille":900,"maxFourStarLeaks":2,"fourStarTimePermille":1250,"parCombatTimeMs":1040000,"bossVariantIds":[],"criticalVariantIds":[3488566,3498566,10017499]}}
+}

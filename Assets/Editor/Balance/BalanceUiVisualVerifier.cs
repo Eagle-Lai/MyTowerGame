@@ -2,10 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
+using System.Linq;
 using SimpleJSON;
 using TMPro;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace FTProject.EditorTools
 {
@@ -54,10 +56,11 @@ namespace FTProject.EditorTools
                         foreach (Language language in new[] { Language.English, Language.ChineseSimplified, Language.ChineseTraditional })
                         {
                             LanguageManager.SetLanguage(language);
-                            foreach (string scenario in new[] { "detail-L20", "clear-five", "clear-low", "clear-save-pending" })
+                            foreach (string scenario in new[] { "select-first", "select-last", "detail-L" + Configs.LevelTable.DataList.Max(l => l.Id), "clear-five", "clear-low", "clear-save-pending" })
                             {
                                 bool detail = scenario.StartsWith("detail", StringComparison.Ordinal);
-                                string prefabName = detail ? "LevelDetailView" : "LevelClearView";
+                                bool select = scenario.StartsWith("select", StringComparison.Ordinal);
+                                string prefabName = select ? "SelectView" : detail ? "LevelDetailView" : "LevelClearView";
                                 var prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/UI/" + prefabName + ".prefab");
                                 if (prefab == null) throw new FileNotFoundException("Actual prefab missing: " + prefabName);
                                 GameObject instance = UnityEngine.Object.Instantiate(prefab, canvasRect, false);
@@ -67,8 +70,17 @@ namespace FTProject.EditorTools
                                     var root = instance.GetComponent<RectTransform>();
                                     root.anchorMin = Vector2.zero; root.anchorMax = Vector2.one;
                                     root.offsetMin = Vector2.zero; root.offsetMax = Vector2.zero;
-                                    if (detail) FillDetail.Invoke(instance.GetComponent<LevelDetailView>(), new object[] { 20 });
-                                    else instance.GetComponent<LevelClearView>().Show(CreateClearFixture(scenario));
+                                    if (detail) FillDetail.Invoke(instance.GetComponent<LevelDetailView>(), new object[] { Configs.LevelTable.DataList.Max(l => l.Id) });
+                                    else if (!select) instance.GetComponent<LevelClearView>().Show(CreateClearFixture(scenario));
+                                    if (select)
+                                    {
+                                        Canvas.ForceUpdateCanvases();
+                                        var view = instance.GetComponent<SelectView>();
+                                        typeof(SelectView).GetMethod("LateUpdate", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(view, null);
+                                        typeof(SelectView).GetMethod("CenterOnIndexInstant", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(view,
+                                            new object[] { scenario == "select-last" ? Configs.LevelTable.DataList.Count - 1 : 0 });
+                                        typeof(SelectView).GetMethod("LateUpdate", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(view, null);
+                                    }
                                     Canvas.ForceUpdateCanvases();
                                     foreach (var text in instance.GetComponentsInChildren<TMP_Text>(false)) text.ForceMeshUpdate(true, true);
                                     Canvas.ForceUpdateCanvases();
@@ -85,6 +97,7 @@ namespace FTProject.EditorTools
                                     entry["scenario"] = scenario; entry["language"] = language.ToCode();
                                     entry["width"] = size.x; entry["height"] = size.y; entry["image"] = file;
                                     entry["prefab"] = AssetDatabase.GetAssetPath(prefab);
+                                    if (select) { entry["campaignLevelCount"] = Configs.LevelTable.DataList.Count; entry["maximumStars"] = Configs.LevelTable.DataList.Count * 5; }
                                     results.Add(entry);
                                 }
                                 finally { UnityEngine.Object.DestroyImmediate(instance); }
@@ -113,8 +126,9 @@ namespace FTProject.EditorTools
 
         private static LevelClearInfo CreateClearFixture(string scenario)
         {
-            var profile = Configs.GetLevelRating(20);
-            if (profile == null) throw new InvalidOperationException("Level 20 rating is missing");
+            int lastLevel = Configs.LevelTable.DataList.Max(l => l.Id);
+            var profile = Configs.GetLevelRating(lastLevel);
+            if (profile == null) throw new InvalidOperationException("Final level rating is missing");
             bool low = scenario == "clear-low", pending = scenario == "clear-save-pending";
             var metrics = new LevelRunMetrics
             {
@@ -140,7 +154,7 @@ namespace FTProject.EditorTools
             var rating = LevelRatingEvaluator.Evaluate(profile, metrics);
             if (!rating.valid) throw new InvalidOperationException("UI fixture is invalid: " + string.Join(", ", rating.reasons));
             if (pending) rating.reasons = new[] { "Record could not be saved; retry save" };
-            return new LevelClearInfo { victory = true, levelId = 20, levelName = Localization.LevelName(20, "Level 20"),
+            return new LevelClearInfo { victory = true, levelId = lastLevel, levelName = Localization.LevelName(lastLevel, "Level " + lastLevel),
                 stars = rating.stars, previousBest = low ? 5 : 3, newRecord = !low && !pending,
                 hp = metrics.hp, maxHp = metrics.maxHp, killed = metrics.killed, leaked = metrics.leaked,
                 ratingResult = rating, progressSaved = !pending, savePending = pending,
@@ -158,20 +172,43 @@ namespace FTProject.EditorTools
                     foreach (char c in text.GetParsedText())
                         if (!char.IsWhiteSpace(c) && !text.font.HasCharacter(c, true, false)) missing.Add(c);
                 var corners = new Vector3[4]; text.rectTransform.GetWorldCorners(corners);
-                bool outside = false;
-                foreach (var corner in corners)
+                Rect visibleBounds = ViewportBounds(corners, camera);
+                bool clipped = false;
+                for (Transform parent = text.transform.parent; parent != null; parent = parent.parent)
                 {
-                    Vector3 p = camera.WorldToViewportPoint(corner);
-                    if (p.x < -.003f || p.x > 1.003f || p.y < -.003f || p.y > 1.003f) outside = true;
+                    var mask = parent.GetComponent<RectMask2D>();
+                    var stencil = parent.GetComponent<Mask>();
+                    if ((mask == null || !mask.isActiveAndEnabled) && (stencil == null || !stencil.isActiveAndEnabled)) continue;
+                    var rect = parent as RectTransform;
+                    if (rect == null) continue;
+                    rect.GetWorldCorners(corners);
+                    Rect clip = ViewportBounds(corners, camera);
+                    visibleBounds = Rect.MinMaxRect(Mathf.Max(visibleBounds.xMin, clip.xMin), Mathf.Max(visibleBounds.yMin, clip.yMin),
+                        Mathf.Min(visibleBounds.xMax, clip.xMax), Mathf.Min(visibleBounds.yMax, clip.yMax));
+                    clipped = true;
                 }
+                bool visible = visibleBounds.width > 0 && visibleBounds.height > 0;
+                bool outside = visible && (visibleBounds.xMin < -.003f || visibleBounds.xMax > 1.003f || visibleBounds.yMin < -.003f || visibleBounds.yMax > 1.003f);
                 JSONNode row = new JSONObject(); row["path"] = AnimationUtility.CalculateTransformPath(text.transform, instance.transform);
                 row["text"] = text.text; row["fontSize"] = text.fontSize; row["overflow"] = text.isTextOverflowing;
                 row["outsideViewport"] = outside; row["missingGlyphs"] = new string(new List<char>(missing).ToArray());
-                if (text.isTextOverflowing || outside || missing.Count > 0) issues++;
+                row["visibleAfterMasks"] = visible; row["ancestorMaskApplied"] = clipped;
+                if (visible && (text.isTextOverflowing || outside || missing.Count > 0)) issues++;
                 entry["texts"].Add(row);
             }
             entry["issueCount"] = issues;
             return entry;
+        }
+
+        private static Rect ViewportBounds(Vector3[] corners, Camera camera)
+        {
+            Vector2 min = new Vector2(float.PositiveInfinity, float.PositiveInfinity), max = new Vector2(float.NegativeInfinity, float.NegativeInfinity);
+            foreach (var corner in corners)
+            {
+                Vector3 p = camera.WorldToViewportPoint(corner);
+                min = Vector2.Min(min, p); max = Vector2.Max(max, p);
+            }
+            return Rect.MinMaxRect(min.x, min.y, max.x, max.y);
         }
 
         private static void SetLayer(Transform root)

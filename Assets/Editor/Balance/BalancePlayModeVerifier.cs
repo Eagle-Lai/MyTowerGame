@@ -22,6 +22,9 @@ namespace FTProject.EditorTools
         private static readonly List<JSONNode> Runs = new List<JSONNode>();
         private static readonly List<JSONNode> Operations = new List<JSONNode>();
         private static readonly List<JSONNode> Results = new List<JSONNode>();
+        private static readonly List<JSONNode> Boundaries = new List<JSONNode>();
+        private static readonly List<double> StepCosts = new List<double>();
+        private static long _allocatedStart;
         private static string _out, _requestPath, _loadedCandidate, _oldStartScene;
         private static int _runIndex, _shopWave = -1;
         private static double _startWall, _runWall;
@@ -31,6 +34,9 @@ namespace FTProject.EditorTools
         private static JSONNode _plannedOperations;
         private static string _operationError;
         private static bool _waitForFunds;
+        private static bool _performanceScreensCaptured;
+        private static string _pendingScreenshot;
+        private static int _pendingScreenshotWave;
         private static readonly HashSet<int> ReplayedOperations = new HashSet<int>();
         private static int _teardownFrame = -1;
         private static readonly FieldInfo RunField = typeof(GameFlowManager).GetField("_run", BindingFlags.Instance | BindingFlags.NonPublic);
@@ -145,6 +151,7 @@ namespace FTProject.EditorTools
                     _flowLate = (Action)Delegate.CreateDelegate(typeof(Action), flow,
                         typeof(GameFlowManager).GetMethod("StepManualSimulation", BindingFlags.Instance | BindingFlags.Public));
                     _manualClock = GameClock.BeginManualSimulation();
+                    BaseTower.EvidenceTrackReentry = true;
                     _initialized = true;
                 }
                 if (_runIndex >= Runs.Count) { Finish("complete"); return; }
@@ -179,8 +186,13 @@ namespace FTProject.EditorTools
                     if (flow.State != GameFlowState.Preparing) throw new InvalidOperationException("Level did not enter Preparing");
                     GameClock.Speed = run["speed"].AsFloat > 0 ? run["speed"].AsFloat : 1;
                     Time.timeScale = 1; GameClock.SetBackground(false);
-                    _shopWave = -1; Operations.Clear(); _levelInitialized = true;
+                    _shopWave = -1; Operations.Clear(); Boundaries.Clear(); StepCosts.Clear();
+                    BalanceRenderSampler.Reset();
+                    _performanceScreensCaptured = false;
+                    BaseTower.EvidenceTrackReentry = !_request["renderedPerformance"].AsBool;
+                    _allocatedStart = GC.GetTotalMemory(false); _levelInitialized = true;
                     _operationError = null;
+                    _pendingScreenshot = null;
                     _waitForFunds = run["waitForFunds"].AsBool;
                     ReplayedOperations.Clear();
                     _plannedOperations = File.Exists(run["operationsPath"].Value) ? JSON.Parse(File.ReadAllText(run["operationsPath"].Value)) : null;
@@ -202,11 +214,29 @@ namespace FTProject.EditorTools
                     return;
                 }
                 int count = Math.Max(1, _request["stepsPerUpdate"].AsInt);
+                if (_request["renderedPerformance"].AsBool && BalanceRenderSampler.Completed && !_performanceScreensCaptured)
+                {
+                    _performanceScreensCaptured = true;
+                    BalanceGameplayCapture.Begin(Path.Combine(_out, "Gameplay-" + run["profileId"].Value + "-L" + run["levelId"].AsInt + "-" + run["strategy"].Value));
+                }
+                if (BalanceGameplayCapture.Running) return;
+                if (_request["renderedPerformance"].AsBool && !BalanceRenderSampler.Active && !BalanceRenderSampler.Completed &&
+                    flow.CurrentRoundIndex >= 20 && CombatSystem.Instance.AliveEnemyCount >= 12)
+                    BalanceRenderSampler.Begin(flow);
+                bool sampling = BalanceRenderSampler.Active;
+                if (sampling) { if (!BalanceRenderSampler.NextRenderedFrame()) return; count = 1; }
                 float step = _request["stepSeconds"].AsFloat;
                 if (step <= 0 || step > .1f) throw new InvalidOperationException("Step must be in (0,.1]");
                 for (int i = 0; i < count; i++)
                 {
                     if (!BalanceCheckpointVerifier.BeforeStep(flow)) break;
+                    if (!string.IsNullOrEmpty(_pendingScreenshot) && flow.State == GameFlowState.RoundRunning &&
+                        flow.CurrentRoundIndex == _pendingScreenshotWave && flow.RunMetrics.waves.Count > 0 &&
+                        flow.RunMetrics.waves[flow.RunMetrics.waves.Count - 1].successfulSpawned > 0)
+                    {
+                        ScreenCapture.CaptureScreenshot(_pendingScreenshot); _pendingScreenshot = null;
+                        WriteStatus("rendering_wave_screenshot"); return;
+                    }
                     int rollbackWave = BalanceCheckpointVerifier.ConsumeOperationRollbackWave();
                     if (rollbackWave > 0 && _plannedOperations != null)
                     {
@@ -234,6 +264,7 @@ namespace FTProject.EditorTools
                             if (!ReplayOperations(nextWave, 0, true)) { RecordResult(flow, run, "operation_rejected"); return; }
                         }
                         else Shop(flow, run["strategy"].Value, nextWave);
+                        CaptureBoundary(nextWave, run);
                         if (nextWave == 1) EventDispatcher.TriggerEvent(EventName.StartRoundRequestEvent);
                         // Later waves retain the actual configured 5 second automatic waiting time.
                     }
@@ -246,12 +277,14 @@ namespace FTProject.EditorTools
                         { RecordResult(flow, run, "operation_rejected"); return; }
                     }
                     // Fixed game-time step permits meaningful 1x/2x/3x comparisons.
+                    double stepStart = EditorApplication.timeSinceStartup;
                     GameClock.SetBackground(false);
-                    GameClock.StepManualFrame(step / GameClock.Speed);
+                    GameClock.StepManualFrame(step / (double)GameClock.Speed);
                     TimerManager.Instance.Update(step);
                     EventDispatcher.TriggerEvent(EventName.UpdateEvent);
                     _flowLate();
                     BalanceCheckpointVerifier.AfterStep(flow);
+                    StepCosts.Add((EditorApplication.timeSinceStartup - stepStart) * 1000);
                 }
                 UnityEngine.Rendering.SortingGroup.UpdateAllSortingGroups();
                 WriteStatus("running");
@@ -430,8 +463,66 @@ namespace FTProject.EditorTools
                 ? LevelRunMetrics.ToMilliseconds(GameClock.CombatElapsedSeconds - metrics.waves[metrics.waves.Count - 1].combatStartSeconds) : 0;
             op["action"] = action; op["row"] = row; op["col"] = col;
             op["towerId"] = towerId; op["cost"] = cost; op["balanceAfter"] = PlayerDataManager.Instance.Gold;
-            op["pathLength"] = AStarManager.Instance.CurrentPathLength;
+            op["pathLength"] = Math.Max(0, AStarManager.Instance.CurrentPathLength - 1);
             Operations.Add(op);
+        }
+
+        private static JSONNode TowerContributions()
+        {
+            JSONNode result = new JSONArray();
+            foreach (var tower in TowerManager.Instance.Towers)
+            {
+                if (tower == null) continue;
+                JSONNode row = new JSONObject(); row["row"] = tower.Cell.Row; row["col"] = tower.Cell.Col;
+                row["towerId"] = tower.Config.Id; row["damage"] = tower.EvidenceDamage;
+                row["overkill"] = tower.EvidenceOverkill; row["hits"] = tower.EvidenceHits;
+                row["airHits"] = tower.EvidenceAirHits; row["slowApplications"] = tower.EvidenceSlowApplications;
+                row["repeatEffectEnemies"] = tower.EvidenceRepeatedEnemyEffects;
+                row["repeatEffectDefinition"] = "Same spawned enemy affected, observed leaving circular range, then affected after reentry; pooled spawn serials are distinct";
+                var path = AStarManager.Instance.GetPath();
+                int passes = 0; bool previousInside = false;
+                if (path != null)
+                    foreach (var point in path)
+                    {
+                        bool inside = (point.Center - tower.Position).sqrMagnitude <= tower.Config.RadiusWorld * tower.Config.RadiusWorld;
+                        if (inside && !previousInside) passes++;
+                        previousInside = inside;
+                    }
+                row["coveragePasses"] = passes;
+                var wall = tower.Cell.Point;
+                try
+                {
+                    wall.IsWall = false; var shortcut = AStarManager.Instance.GetPath();
+                    row["shortcutPreventedSteps"] = path != null && shortcut != null ? path.Count - shortcut.Count : 0;
+                }
+                finally { wall.IsWall = true; }
+                row["participated"] = tower.EvidenceHits > 0 || tower.EvidenceSlowApplications > 0;
+                result.Add(row);
+            }
+            return result;
+        }
+
+        private static void CaptureBoundary(int wave, JSONNode run)
+        {
+            JSONNode row = new JSONObject(); row["beforeWave"] = wave;
+            row["towerCount"] = TowerManager.Instance.Count; row["cash"] = PlayerDataManager.Instance.Gold;
+            row["capacity"] = run["capacity"].AsInt;
+            row["occupancy"] = run["capacity"].AsInt > 0 ? (double)TowerManager.Instance.Count / run["capacity"].AsInt : 0;
+            row["buildSpent"] = Operations.Where(op => op["action"].Value == "build").Sum(op => op["cost"].AsInt);
+            row["upgradeSpent"] = Operations.Where(op => op["action"].Value == "upgrade").Sum(op => op["cost"].AsInt);
+            row["pathLength"] = Math.Max(0, AStarManager.Instance.CurrentPathLength - 1);
+            row["pathCells"] = new JSONArray();
+            var groundPath = AStarManager.Instance.GetPath();
+            if (groundPath != null) foreach (var point in groundPath)
+            { var coordinate = new JSONArray(); coordinate.Add(point.X); coordinate.Add(point.Y); row["pathCells"].Add(coordinate); }
+            row["layout"] = TowerContributions(); Boundaries.Add(row);
+            if (run["screenshots"].AsBool && (wave == 1 || wave == 10 || wave == 25))
+            {
+                string path = Path.Combine(_out, run["profileId"].Value + "-L" + run["levelId"].AsInt + "-wave" + wave + ".png");
+                _pendingScreenshot = path; _pendingScreenshotWave = wave;
+                row["screenshot"] = path;
+                row["screenshotTiming"] = "Queued at boundary; capture after this wave first successful spawn; yield simulation for the rendered HUD";
+            }
         }
 
         private static void RecordResult(GameFlowManager flow, JSONNode run, string state)
@@ -458,6 +549,18 @@ namespace FTProject.EditorTools
             entry["wallSeconds"] = EditorApplication.timeSinceStartup - _runWall;
             entry["operations"] = new JSONArray(); foreach (var op in Operations) entry["operations"].Add(op);
             entry["finalGold"] = PlayerDataManager.Instance.Gold;
+            entry["waveBoundaries"] = new JSONArray(); foreach (var boundary in Boundaries) entry["waveBoundaries"].Add(boundary);
+            entry["towerContributions"] = TowerContributions();
+            StepCosts.Sort();
+            entry["performance"]["sampleKind"] = "Editor manual simulation CPU steps including editor reentry evidence, presentation frames excluded; not device FPS";
+            entry["performance"]["samples"] = StepCosts.Count;
+            entry["performance"]["medianStepMs"] = StepCosts.Count == 0 ? 0 : StepCosts[StepCosts.Count / 2];
+            entry["performance"]["p95StepMs"] = StepCosts.Count == 0 ? 0 : StepCosts[Math.Min(StepCosts.Count - 1, (int)(StepCosts.Count * .95))];
+            entry["performance"]["managedHeapDeltaBytes"] = GC.GetTotalMemory(false) - _allocatedStart;
+            entry["performance"]["processor"] = SystemInfo.processorType;
+            entry["performance"]["gpu"] = SystemInfo.graphicsDeviceName;
+            entry["performance"]["width"] = Screen.width; entry["performance"]["height"] = Screen.height;
+            if (_request["renderedPerformance"].AsBool) entry["renderedPerformance"] = BalanceRenderSampler.Report();
             if (!string.IsNullOrEmpty(_operationError)) entry["operationError"] = _operationError;
             entry["storagePath"] = SaveManager.Instance.StorageLocation;
             entry["checkpointChecks"] = BalanceCheckpointVerifier.Complete(flow);
@@ -495,6 +598,8 @@ namespace FTProject.EditorTools
             bool keepPlaying = phase == "complete" && _request != null && _request["keepPlaying"].AsBool;
             WriteStatus(phase); WriteResults();
             if (_manualClock != null) { _manualClock.Dispose(); _manualClock = null; }
+            BaseTower.EvidenceTrackReentry = false;
+            BalanceRenderSampler.Dispose();
             if (Launcher.Instance != null) Launcher.Instance.enabled = _launcherEnabled;
             if (GameFlowManager.Instance != null) GameFlowManager.Instance.enabled = _flowEnabled;
             _request = null;

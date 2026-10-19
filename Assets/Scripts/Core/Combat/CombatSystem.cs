@@ -312,6 +312,11 @@ namespace FTProject
                     _towers.RemoveAt(i);
                     continue;
                 }
+#if UNITY_EDITOR
+                if (BaseTower.EvidenceTrackReentry)
+                    for (int k = 0; k < _enemies.Count; k++)
+                        if (_enemies[k] != null) t.ObserveEvidenceRange(_enemies[k]);
+#endif
                 t.TickAttack(dt);
                 t.TickVisual(dt);   // 光环脉冲渐隐等纯表现，必须每帧推进
             }

@@ -596,7 +596,7 @@ namespace FTProject
             _roundArg = arg;
             _roundFallback = fallbackFormat;
             LevelConfig level = Configs.GetLevel(PlayerDataManager.Instance.CurrentLevelId);
-            int total = level != null ? level.RoundCount : 20;
+            int total = level != null ? level.RoundCount : 0;
             SetText(_roundText, Localization.Get(key, arg, total) ?? string.Format(fallbackFormat, arg, total));
             LanguageManager.ApplyFont(_roundText);
         }

@@ -4,7 +4,7 @@ Explicit output only; this command never applies Excel/runtime data. Historical
 results with another plan hash are counted as unmatched and never certify a plan.
 """
 import argparse,collections,copy,os,pathlib,re
-from balance_pipeline import ROOT,DEFAULT_RECIPE,read_json,write_json,generate,export_reports,seconds_to_ms,unity_trajectory_finished
+from balance_pipeline import ROOT,DEFAULT_RECIPE,read_json,write_json,generate,dimensions,export_reports,seconds_to_ms,unity_trajectory_finished
 
 
 def relative(path):
@@ -31,6 +31,7 @@ def main():
             if not isinstance(r,dict) or not r.get('metrics') or not r.get('planHash'):continue
             key=(r.get('profileId'),r.get('levelId'),r['planHash'])
             runs[key].append({'kind':'offline','path':relative(path),'record':r});offline_count+=1
+    level_count=dimensions(recipe)[0];total_levels=level_count*len(recipe['profiles'])
     combined=[];coverage=[];reference_index=[];matched_runtime=0;matched_offline=0
     for profile in recipe['profiles']:
         plan=generate(recipe,profile['id'])
@@ -98,21 +99,21 @@ def main():
               'unityLowerStarClear':bool(lower),'offlineLowerStarClear':bool(offline_lower),
               'offlineFiveStarPrediction':any(x['kind']=='offline' and x['valid'] and x['stars']==5 for x in level_runs)})
         export_reports(plan,out/profile['id']);combined.extend(plan['waves'])
-    write_json(out/'all_waves_3200.json',combined);write_json(out/'coverage.json',coverage)
+    write_json(out/f'all_waves_{len(combined)}.json',combined);write_json(out/'coverage.json',coverage)
     write_json(out/'reference_index.json',reference_index)
     write_json(out/'evidence_index.json',{'runtimeRecords':runtime_count,'matchedRuntimeRecords':matched_runtime,
       'unmatchedRuntimeRecords':runtime_count-matched_runtime,'offlineRecords':offline_count,'matchedOfflineRecords':matched_offline,
       'unmatchedOfflineRecords':offline_count-matched_offline,'verifiedUnityLevels':sum(r['unityFiveStar'] for r in coverage),
-      'totalProfileLevels':160,'waveCount':len(combined),'productionApplied':False})
+      'totalProfileLevels':total_levels,'waveCount':len(combined),'productionApplied':False})
     lines=['# 数值与参考证据入口','',
-      f'八档共 160 关、{len(combined)} 波；匹配真实运行 {matched_runtime}/{runtime_count} 条、离线运行 {matched_offline}/{offline_count} 条。',
-      f'真实五星严格认证 {sum(r["unityFiveStar"] for r in coverage)}/160 关；其余关卡保留离线参考和待验证标记。',
+      f'八档共 {total_levels} 关、{len(combined)} 波；匹配真实运行 {matched_runtime}/{runtime_count} 条、离线运行 {matched_offline}/{offline_count} 条。',
+      f'真实五星严格认证 {sum(r["unityFiveStar"] for r in coverage)}/{total_levels} 关；其余关卡保留离线参考和待验证标记。',
       '', '`reference_index.json` 的 `preferredFiveStarReference` 优先指向同版本、完整操作的真实五星；否则明确使用离线预测。',
-      '`coverage.json` 分别记录静态计划、离线与真实覆盖；`all_waves_3200.json` 为逐波完整数据，各档另有 JSON、CSV、地图、资源清单与可读 Markdown。',
+      '`coverage.json` 分别记录静态计划、离线与真实覆盖；all_waves 文件为逐波完整数据，各档另有 JSON、CSV、地图、资源清单与可读 Markdown。',
       '', '|预设|真实五星关卡|真实有效低星关卡|离线有效低星关卡|', '|---|---:|---:|---:|']
     for profile in recipe['profiles']:
         subset=[r for r in coverage if r['profileId']==profile['id']]
-        lines.append(f'|{profile["id"]} {profile["name"]}|{sum(r["unityFiveStar"] for r in subset)}/20|{sum(r["unityLowerStarClear"] for r in subset)}/20|{sum(r["offlineLowerStarClear"] for r in subset)}/20|')
+        lines.append(f'|{profile["id"]} {profile["name"]}|{sum(r["unityFiveStar"] for r in subset)}/{level_count}|{sum(r["unityLowerStarClear"] for r in subset)}/{level_count}|{sum(r["offlineLowerStarClear"] for r in subset)}/{level_count}|')
     lines+=['','## D04 正式预设逐关参考','', '|关卡|参考覆盖|星|战斗/Par|操作|', '|---:|---|---:|---:|---|']
     for row in [r for r in reference_index if r['profileId']=='D04']:
         ref=row['preferredFiveStarReference']

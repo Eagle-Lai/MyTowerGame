@@ -1,5 +1,7 @@
 # 20×20 关卡数据、八档配方与证据
 
+> 历史版本：原始结果保留。当前 30×25 的数据和长路线规则见 [新版验收报告](BalanceEvidence/30x25/acceptance.md)。
+
 正式应用 D04「中等」，保留 20 个关卡 ID，每关 20 个独立 Round，每 Round 恰好一个 EnemyList。关卡等级、战役阶段 I—V、八档开发调参预设和本局 1—5 星分别存储。玩家没有新增八档选择流程。
 
 权威输入为 `Luban/BalanceDesign/balance_design.json`；唯一公式与计划编译器为 `.workbuddy/tools/balance_pipeline.py`。原始资源和非管理字段的基线在 `baseline_data.json`，不会从已经应用的倍率结果反向生成，防止切档复利。工作台直接异步调用同一 CLI。

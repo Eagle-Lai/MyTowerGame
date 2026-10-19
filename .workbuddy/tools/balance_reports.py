@@ -29,10 +29,10 @@ def main():
         rows.append(row)
     baselines=[r for r in rows if r['matrixGroup'] in ['normal','power','mixed']]
     lower=[r for r in rows if r['matrixGroup']=='lower-star']
-    write_json(base/'matrix_480.json',baselines)
-    write_json(base/'matrix_all_800.json',[r for r in rows if r['matrixGroup']!='lower-star'])
+    write_json(base/f'matrix_{len(baselines)}.json',baselines)
+    write_json(base/'matrix_references.json',[r for r in rows if r['matrixGroup']!='lower-star'])
     if lower:
-        write_json(base/'matrix_lower_160.json',lower);write_json(base/'matrix_all_960.json',rows)
+        write_json(base/'matrix_lower.json',lower);write_json(base/'matrix_all.json',rows)
     summary={}
     for profile in ['D%02d'%i for i in range(1,9)]:
         subset=[r for r in baselines if r['profileId']==profile]
@@ -45,7 +45,7 @@ def main():
     write_json(base/'summary.json',summary)
     # These are candidates for the C# unique evaluator, not independent star awards.
     references=[]
-    for level in range(1,21):
+    for level in sorted(set(r['levelId'] for r in rows if r['profileId']=='D04')):
         options=[r for r in rows if r['profileId']=='D04' and r['levelId']==level]
         best=min(options,key=lambda r:(not r['metrics']['victory'],r['leaked'],max(0,r['combatToParRatio']-1),r['combatToParRatio']))
         strategy=best['strategyId'];p=(ROOT/best['artifactPath']).parent

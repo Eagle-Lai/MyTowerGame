@@ -39,6 +39,25 @@ namespace FTProject.Tests
             { var metrics = Metrics(); invalidate(metrics); var result = LevelRatingEvaluator.Evaluate(Profile(), metrics); Assert.That(result.valid, Is.False); Assert.That(result.stars, Is.Zero); }
         }
         [Test]
+        public void NewCampaignRequiresAll25WavesAndRejectsOld20WaveCheckpoint()
+        {
+            var old = Metrics(); var profile = Profile();
+            profile.expectedWaveCount = 25; profile.expectedEnemyCount = 25;
+            profile.balanceRevision = "balance-30x25-economy-v2";
+            Assert.That(LevelRatingEvaluator.Evaluate(profile, old).valid, Is.False);
+            var current = Metrics(); current.balanceRevision = profile.balanceRevision;
+            current.expectedWaveCount = current.completedWaveCount = 25;
+            current.expectedEnemyCount = current.successfulSpawned = current.killed = 25;
+            for (int i = 20; i < 25; i++) current.waves.Add(new WaveRunMetrics { ordinal = i + 1, expected = 1, successfulSpawned = 1, killed = 1, combatStartSeconds = i, combatEndSeconds = i + 1 });
+            Assert.That(LevelRatingEvaluator.Evaluate(profile, current).stars, Is.EqualTo(5));
+            current.waves.RemoveAt(24);
+            Assert.That(LevelRatingEvaluator.Evaluate(profile, current).valid, Is.False);
+            var snapshot = new LevelSnapshot { valid = true, formatVersion = 2, levelId = 1, roundCursor = 20, hp = 20, maxHp = 20, gold = 100, metrics = old, ratingProfile = Profile(), levelTimerStarted = true };
+            string reason;
+            Assert.That(LevelCheckpointValidator.IsCompatible(snapshot, profile, 25, out reason), Is.False);
+        }
+
+        [Test]
         public void MigrationPreservesUnlockAndLegacyWithoutMultiplyingStars()
         {
             var p = new LevelProgress { levelId = 1, stars = 3, clearCount = 7, bestTimeMs = 123456, bestHpLeft = 20 };
@@ -64,6 +83,31 @@ namespace FTProject.Tests
                 GameClock.SetBackground(false); GameClock.SetCombatRunning(false); GameClock.StepManualFrame(2f); Assert.That(GameClock.CombatElapsedSeconds, Is.EqualTo(before));
             }
             GameClock.StopLevelTimer(); GameClock.Reset();
+        }
+        [TestCase(.05f)] [TestCase(1f / 60f)]
+        public void FixedReplayStepMatchesRawClocksAtEverySpeed(float step)
+        {
+            float priorScale = Time.timeScale;
+            try
+            {
+                Time.timeScale = 1f;
+                foreach (float speed in GameClock.Tiers)
+                {
+                    GameClock.Reset(); GameClock.ResetLevelTimer(); GameClock.Speed = speed;
+                    using (GameClock.BeginManualSimulation())
+                    {
+                        GameClock.StartLevelTimer(); GameClock.SetCombatRunning(true);
+                        for (int i = 0; i < 1000; i++)
+                        {
+                            GameClock.StepManualFrame(step / (double)speed);
+                            Assert.That(GameClock.DeltaTime, Is.EqualTo(step));
+                        }
+                        Assert.That(GameClock.CombatElapsedSeconds, Is.EqualTo((double)step * 1000));
+                        Assert.That(GameClock.LevelElapsedSeconds, Is.EqualTo((double)step * 1000));
+                    }
+                }
+            }
+            finally { Time.timeScale = priorScale; GameClock.StopLevelTimer(); GameClock.Reset(); }
         }
         [TestCase(1f)] [TestCase(2f)] [TestCase(3f)]
         public void TimeScalePauseAndResumeCannotAccrueOrCatchUpEitherTimer(float speed)

@@ -33,6 +33,10 @@ namespace FTProject
     /// </summary>
     public class BaseEnemy : MonoBehaviour
     {
+#if UNITY_EDITOR
+        private static long _evidenceSpawnSequence;
+        public long EvidenceSpawnSerial { get; private set; }
+#endif
         // ---- 运行时状态 ----
         public bool IsAlive { get; private set; }
         /// <summary>是否已完成回收（CombatSystem 据此从列表移除）</summary>
@@ -160,6 +164,9 @@ namespace FTProject
         /// </summary>
         public void Init(EnemyConfig cfg, List<Point> path)
         {
+#if UNITY_EDITOR
+            EvidenceSpawnSerial = ++_evidenceSpawnSequence;
+#endif
             Config = cfg;
             _speed = cfg.Speed;
             TotalHp = cfg.Hp;

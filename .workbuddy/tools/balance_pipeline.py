@@ -11,6 +11,7 @@ import struct, subprocess, sys, time, traceback, uuid
 from datetime import datetime,timezone
 from contextlib import contextmanager
 from decimal import Decimal, ROUND_CEILING
+from balance_campaign import dimensions, prepare_manifest, allocate, economy
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 DESIGN = ROOT / 'Luban/BalanceDesign'
@@ -115,15 +116,16 @@ def composition(recipe,L,w,n):
     """Fixed schedule, exact slots, no runtime randomness. New mechanics arrive one at a time."""
     slots=[]
     # First four waves always small ground, including later campaign levels.
-    air1={7:1,8:1,9:2,10:2,11:0,12:1,13:2,14:2,15:2,16:0,17:2,18:3,19:3,20:3}
+    final_wave=dimensions(recipe)[1]
+    air1={7:1,8:1,9:2,10:2,11:0,12:1,13:2,14:2,15:2,16:0,17:2,18:3,19:3,20:3,21:2,22:3,23:4,24:4,25:5}
     air=air1.get(w,0) if L==1 else (0 if w<=5 or w in (11,16) else max(1,math.floor(n*(.08 if w<=10 else .12))))
-    if w==20:air=min(air,math.floor(n*.2))
+    if w==final_wave:air=min(air,math.floor(n*.2))
     pool=available(recipe,L,w,'air')
     for i in range(air): slots.append((pool[(w+i)%len(pool)],'air'))
-    if w==20:
+    if w==final_wave:
         bosses=available(recipe,L,w,'boss')
         slots.append((bosses[-1] if bosses else 123,'boss' if bosses else 'elite'))
-    elif w==15 and L>=5: slots.append((available(recipe,L,w,'heavy')[-1],'elite'))
+    elif w in (15,20) and L>=5: slots.append((available(recipe,L,w,'heavy')[-1],'elite'))
     for role,ratio,start in [('heavy',.10,11),('fast',.12,6),('medium',.15,5),('swarm',.28,3)]:
         pool=available(recipe,L,w,role)
         if not pool or w<start:continue
@@ -154,7 +156,7 @@ def applies(o,L,w):
     scope=o.get('scope','global')
     if scope=='global':return True
     if o.get('levelId')!=L:return False
-    return scope=='level' or (o.get('waveStart',o.get('waveOrdinal',1))<=w<=o.get('waveEnd',o.get('waveOrdinal',20)))
+    return scope=='level' or (o.get('waveStart',o.get('waveOrdinal',1))<=w<=o.get('waveEnd',o.get('waveOrdinal',2147483647)))
 def override_value(values,key,o):
     if o.get('mode','replace')=='multiply':
         if not isinstance(values.get(key),(int,float)): raise ValueError('Cannot multiply '+key)
@@ -194,6 +196,13 @@ def path_for(cells,blocked=()):
 
 def make_maps(baseline,recipe):
     maps=copy.deepcopy(baseline['tblevelmap'])
+    for definition in recipe.get('mapDefinitions',[]):
+        existing=next((m for m in maps if m['id']==definition['id']),None)
+        if existing is None:
+            existing=copy.deepcopy(maps[-1]);existing.update(id=definition['id'],levelId=definition['id']);maps.append(existing)
+        existing.update(copy.deepcopy(definition))
+        existing.update(rows=len(existing['cells']),cols=len(existing['cells'][0]))
+    maps=[m for m in maps if m['levelId']<=dimensions(recipe)[0]]
     for m in maps:
         L=m['levelId']
         if L==1 and recipe.get('maps',{}).get('expandTutorial'):
@@ -263,15 +272,16 @@ def bind_calibration_evidence(plan):
             for key in ['profileId','profileRevision','balanceRevision','ratingRevision','planHash']:
                 if str(profile.get(key,''))!=str(rating[key]) or str(metrics.get(key,''))!=str(rating[key]):reasons.append('identity_'+key)
             if metrics.get('statisticsValid') is not True or metrics.get('timingValid') is not True or metrics.get('debugOverride') is not False:reasons.append('invalid_evidence_flags')
-            if metrics.get('expectedWaveCount')!=20 or metrics.get('completedWaveCount')!=20:reasons.append('incomplete_wave_count')
+            expected_waves=rating['expectedWaveCount']
+            if metrics.get('expectedWaveCount')!=expected_waves or metrics.get('completedWaveCount')!=expected_waves:reasons.append('incomplete_wave_count')
             total=rating['expectedEnemyCount']
             if metrics.get('expectedEnemyCount')!=total or metrics.get('successfulSpawned')!=total or metrics.get('killed')!=total or metrics.get('leaked')!=0:reasons.append('incomplete_enemy_inventory')
             waves=metrics.get('waves',[])
-            if len(waves)!=20 or [w.get('ordinal') for w in waves]!=list(range(1,21)):
+            if len(waves)!=expected_waves or [w.get('ordinal') for w in waves]!=list(range(1,expected_waves+1)):
                 reasons.append('incomplete_wave_evidence')
             elif any(w.get('successfulSpawned')!=w.get('expected') or w.get('killed')!=w.get('expected') or w.get('leaked')!=0 for w in waves):
                 reasons.append('incomplete_wave_inventory')
-            if len(waves)==20:
+            if len(waves)==expected_waves:
                 previous_combat=previous_level=0.0
                 for ordinal,actual in enumerate(waves,1):
                     expected=next(w for w in plan['waves'] if w['levelId']==L and w['waveOrdinal']==ordinal)['count']
@@ -318,6 +328,21 @@ def generate(recipe,profile_id,manifest=None):
     for idx in range(8):manifest['profiles'].setdefault(f'D{idx+1:02}',idx)
     if profile_id not in manifest['profiles']:manifest['profiles'][profile_id]=len(manifest['profiles'])
     pidx=manifest['profiles'][profile_id]
+    level_count,wave_count,per_tier=dimensions(recipe)
+    manifest=prepare_manifest(manifest,baseline)
+    # Reserve additions for all profiles in canonical order before resolving one profile.
+    # This makes D01 -> D08 -> D04 identical to generating D04 first.
+    for L in range(1,level_count+1):
+        for w in range(1,wave_count+1):
+            for category in ['rounds','enemyLists']:
+                allocate(manifest,category,f'{L}|{w}')
+    for preset in sorted(manifest['profiles']):
+        for L in range(1,level_count+1):
+            for w in range(1,wave_count+1):
+                if L<=20 and w<=20:continue
+                n=f.get('countLevelCoefficient',1)*L+f.get('countWaveCoefficient',1)*w+f['countOffset']
+                for cid,role in sorted(set(composition(recipe,L,w,n))):
+                    allocate(manifest,'variants',f'{preset}|{L}|{w}|{cid}|{role}')
     maps=make_maps(baseline,recipe)
     towers=copy.deepcopy(baseline['tbtowerinfo'])
     for t in towers:
@@ -334,24 +359,27 @@ def generate(recipe,profile_id,manifest=None):
         t['sellPrice']=math.floor(total*.7);t['desc']=f'Incremental cost {t["prices"]}; cumulative {total}; '+('slow aura; DPS=0' if t['type']==3 else f'continuous theoretical DPS={t["power"]*1000/t["CD"]:.6g}')
     measurements=load_measurements()
     waves=[];variants=[];rounds=[];lists=[];levels=copy.deepcopy(baseline['tbsceneinfo']);ratings=[]
+    for L in range(len(levels)+1,level_count+1):
+        template=copy.deepcopy(levels[-1]);template.update(id=L,mapId=L,name=f'Level {L}',RoundList=[]);levels.append(template)
+    levels=[level for level in levels if level['id']<=level_count]
     budgets={};variant_lookup={};level_reports=[]
-    for L in range(1,21):
-        stage=1+(L-1)//4;gold=max(1,round_up((f['initialGold']+f['goldPerLevel']*(L-1))*profile['goldMultiplier']))
+    for L in range(1,level_count+1):
+        stage=1+(L-1)//per_tier;gold=max(1,round_up((f['initialGold']+f['goldPerLevel']*(L-1))*profile['goldMultiplier']))
         level_values={'initialGold':gold,'initialHp':f['initialHp']}
         level_sources=apply_overrides(level_values,recipe,profile_id,L,1,'level')
         level_waves=[]
-        for w in range(1,21):
-            n=L+w+f['countOffset'];x=w-1
+        for w in range(1,wave_count+1):
+            n=f.get('countLevelCoefficient',1)*L+f.get('countWaveCoefficient',1)*w+f['countOffset'];x=w-1
             raw=Decimal(str(n))*Decimal(str(f['baseEhpPerUnit']))*(1+Decimal(str(f['levelEhpGrowth']))*(L-1))*(1+Decimal(str(f['waveLinear']))*x+Decimal(str(f['waveQuadratic']))*x*x)
-            raw*=Decimal(str(f['finalMultiplier'] if w==20 else f['pressureMultiplier'] if w in [5,10,15] else 1))
+            raw*=Decimal(str(f['finalMultiplier'] if w==wave_count else f['pressureMultiplier'] if w%5==0 else 1))
             candidates=[raw]
             for k in [(L,w-1),(L-1,w)]:
                 if k in budgets:candidates.append((budgets[k]*Decimal(str(f['minBudgetGrowth']))).to_integral_value(rounding=ROUND_CEILING))
             budgets[L,w]=max(candidates)
             gap=max(f['minSpawnMs'],min(f['maxSpawnMs'],f['spawnBaseMs']-f['spawnWaveReductionMs']*x-f['spawnLevelReductionMs']*(L-1)))
             v={'count':n,'targetEhp':float(budgets[L,w])*profile['ehpMultiplier'],
-               'spawnIntervalMs':max(350,min(1100,round_up(gap*profile['gapMultiplier']))),
-               'speedMultiplier':profile['speedMultiplier'],'rewardGold':f['rewardBase']+x//f['rewardWaveBlock'],
+                'spawnIntervalMs':max(100,min(1500,round_up(gap*profile['gapMultiplier']))),
+                'speedMultiplier':profile['speedMultiplier'],'rewardGold':round_up((f['rewardBase']+x//f['rewardWaveBlock']*f.get('rewardBlockIncrement',1))*profile['goldMultiplier']),
                'roleRatios':{},'composition':[], 'hpOverrides':{}}
             sources=apply_overrides(v,recipe,profile_id,L,w,'wave')
             n=positive_int(v['count'],f'L{L} W{w} count');v['spawnIntervalMs']=positive_int(v['spawnIntervalMs'],'spawnIntervalMs')
@@ -379,17 +407,15 @@ def generate(recipe,profile_id,manifest=None):
                 unlocks=[u for u in recipe['unlockSchedule'] if u['canonicalId']==cid]
                 if not unlocks or (L,w)<min((u['level'],u['wave']) for u in unlocks):
                     raise ValueError(f'Resource {cid} is not unlocked at L{L} W{w}')
-                if role=='boss' and (L<12 or w!=20):raise ValueError('Bosses unlock only in final waves from level 12')
+                if role=='boss' and (L<12 or w!=wave_count):raise ValueError('Bosses unlock only in final waves from level 12')
                 if L==1 and w<7 and role=='air':raise ValueError('First flying mechanic is L1 W7')
                 key=f'{profile_id}|{L}|{w}|{cid}|{role}'
-                vid=100000+pidx*1000000+(L-1)*40000+(w-1)*2000+cid*8+ROLE_ORDER.index(role)
+                legacy_id=100000+pidx*1000000+(L-1)*40000+(w-1)*2000+cid*8+ROLE_ORDER.index(role) if pidx<9 and L<=20 and w<=20 else None
+                vid=allocate(manifest,'variants',key,legacy_id)
                 if vid in proto:raise ValueError('Variant ID conflicts with existing original')
-                old=manifest['variants'].get(key)
-                if old and old!=vid:raise ValueError('Stable manifest ID changed '+key)
-                manifest['variants'][key]=vid
                 r=roles[role];e=copy.deepcopy(proto[cid]);e.update(id=vid,hp=v['targetEhp']*r['weight']/q*(1-r['armor']),
                     speed=r['speed']*(1+f['speedLevelGrowth']*(L-1)+f['speedWaveGrowth']*x)*v['speedMultiplier'],
-                    armor=r['armor'],reward=r['reward'],damageToPlayer=r['damage'],type=r['type'],isFlying=int(role=='air'),
+                    armor=r['armor'],reward=max(1,round_up(r['reward']*profile['goldMultiplier'])),damageToPlayer=r['damage'],type=r['type'],isFlying=int(role=='air'),
                     scale=.5,bodyRadius=.4,desc=f'Balance variant; canonical={cid}; role={role}; profile={profile_id}; level={L}; wave={w}')
                 if role=='air' and not proto[cid].get('isFlying'):raise ValueError(f'{cid} has no validated flight identity')
                 if role=='boss':
@@ -409,8 +435,8 @@ def generate(recipe,profile_id,manifest=None):
             enemy_ids=[pair_id[p] for p in slots]
             actual=sum(variant_lookup[i]['hp']/(1-variant_lookup[i]['armor']) for i in enemy_ids)
             if abs(actual-v['targetEhp'])/v['targetEhp']>.005:raise ValueError(f'Single HP override conflicts with wave EHP L{L} W{w}: actual {actual}, target {v["targetEhp"]}')
-            rid=(L-1)*20+w
-            wave={'profileId':profile_id,'levelId':L,'waveOrdinal':w,'roundId':rid,'enemyListId':rid,
+            rid=manifest['rounds'][f'{L}|{w}'];list_id=manifest['enemyLists'][f'{L}|{w}']
+            wave={'profileId':profile_id,'levelId':L,'waveOrdinal':w,'roundId':rid,'enemyListId':list_id,
               'count':n,'targetEhp':v['targetEhp'],'actualEhp':actual,'spawnIntervalMs':v['spawnIntervalMs'],
               'rewardGold':int(v['rewardGold']),'killGold':sum(variant_lookup[i]['reward'] for i in enemy_ids),
               'composition':comps,'enemyIds':enemy_ids,'overrideSources':sources,
@@ -420,17 +446,23 @@ def generate(recipe,profile_id,manifest=None):
               'bossCount':sum(c['count'] for c in comps if c['role']=='boss'),
               'plannedSpawnSpanMs':(n-1)*v['spawnIntervalMs'],
               'unityMeasuredCombatMs':None,'unityLeaked':None,'unityStars':None,'calibrationStatus':'pending_unity_reference'}
-            desc=f'L{L} W{w}/20; N={n}; EHP={actual:.6f}; '+','.join(f'{c["role"]}:{c["canonicalEnemyId"]}x{c["count"]}' for c in comps)
-            lists.append({'id':rid,'EnemyIndexs':enemy_ids,'interval':0,'enemyInterval':v['spawnIntervalMs'],'desc':desc})
-            rounds.append({'id':rid,'EnemyIndexs':[rid],'interval':0,'name':f'第 {w}/20 波','rewardGold':int(v['rewardGold'])})
+            desc=f'L{L} W{w}/{wave_count}; N={n}; EHP={actual:.6f}; '+','.join(f'{c["role"]}:{c["canonicalEnemyId"]}x{c["count"]}' for c in comps)
+            lists.append({'id':list_id,'EnemyIndexs':enemy_ids,'interval':0,'enemyInterval':v['spawnIntervalMs'],'desc':desc})
+            rounds.append({'id':rid,'EnemyIndexs':[list_id],'interval':0,'name':f'第 {w}/{wave_count} 波','rewardGold':int(v['rewardGold'])})
             waves.append(wave);level_waves.append(wave)
         level=next(z for z in levels if z['id']==L)
-        level.update(RoundList=[(L-1)*20+w for w in range(1,21)],initialGold=positive_int(level_values['initialGold'],'initialGold'),
+        level.update(RoundList=[wave['roundId'] for wave in level_waves],initialGold=positive_int(level_values['initialGold'],'initialGold'),
           initialHp=positive_int(level_values['initialHp'],'initialHp'),difficulty=stage,waveIntervalMs=f['autoNextRoundDelayMs'])
-        m=next(z for z in maps if z['id']==level['mapId']);level['desc']=m['desc']+f'; stage={stage}; preset={profile["name"]}; 20 clearable waves'
+        m=next(z for z in maps if z['id']==level['mapId']);level['desc']=m['desc']+f'; stage={stage}; preset={profile["name"]}; {wave_count} clearable waves'
+        combat_basis={'profile':profile,'level':level,'waves':level_waves,'map':m,'towers':towers,
+            'bullets':recipe.get('bulletValues',[]),'globalTiming':{k:f[k] for k in ['autoNextRoundDelayMs','autoStartRoundDelayMs']}}
+        basis_hash=digest(combat_basis)
         par=5000*math.ceil(sum(z['plannedSpawnSpanMs']+f['tailBaseMs']+f['tailTierGrowthMs']*(stage-1) for z in level_waves)/5000)
+        timing=recipe.get('parCalibration',{}).get(profile_id,{}).get(str(L),{})
+        timing_matches=bool(timing and timing.get('combatBasisHash')==basis_hash)
+        if timing_matches:par=positive_int(timing['parCombatTimeMs'],'parCombatTimeMs')
         rating={'id':L,'difficultyTier':stage,'profileId':profile_id,'profileRevision':str(profile['revision']),
-          'expectedWaveCount':20,'expectedEnemyCount':sum(z['count'] for z in level_waves),**recipe['rating'],
+          'expectedWaveCount':wave_count,'expectedEnemyCount':sum(z['count'] for z in level_waves),**recipe['rating'],
           'parCombatTimeMs':par,'bossVariantIds':sorted(c['variantId'] for z in level_waves for c in z['composition'] if c['role']=='boss'),
           'criticalVariantIds':sorted(c['variantId'] for z in level_waves for c in z['composition'] if c['role'] in ['elite','boss']),
           'balanceRevision':recipe['balanceRevision'],'ratingRevision':recipe['ratingRevision'],
@@ -439,36 +471,43 @@ def generate(recipe,profile_id,manifest=None):
         # Hash excludes itself and includes everything affecting comparable results.
         rating_for_hash={k:v for k,v in rating.items() if k!='runtimeContentHash'}
         rating['planHash']=digest({'profile':profile,'balanceRevision':recipe['balanceRevision'],'ratingRevision':recipe['ratingRevision'],
-          'level':level,'waves':level_waves,'map':m,'towers':towers,'rating':rating_for_hash,
+          'level':level,'waves':level_waves,'map':m,'towers':towers,'bullets':recipe.get('bulletValues',[]),'rating':rating_for_hash,
           'globalTiming':{k:f[k] for k in ['autoNextRoundDelayMs','autoStartRoundDelayMs']}})
         ratings.append(rating)
         level_reports.append({'levelId':L,'difficultyTier':stage,'initialGold':level['initialGold'],
           'expectedEnemyCount':rating['expectedEnemyCount'],'parCombatTimeMs':rating['parCombatTimeMs'],
+          'combatBasisHash':basis_hash,'parCalibrationCurrent':timing_matches,
+          'parBasis':timing.get('method') if timing_matches else 'provisional spawn span plus formula tail; uncalibrated',
           'planHash':rating['planHash'],'calibrationStatus':rating['calibrationStatus'],'overrideSources':level_sources})
     glob=copy.deepcopy(baseline['tbglobal']);glob[0].update(autoNextRoundDelayMs=f['autoNextRoundDelayMs'],autoStartRoundDelayMs=f['autoStartRoundDelayMs'],sellRefundRate=1,defaultSearchIntervalMs=100)
+    bullets=copy.deepcopy(baseline['tbbulletdata'])
+    for bullet in bullets:
+        bullet.update(next((value for value in recipe.get('bulletValues',[]) if value['id']==bullet['id']),{}))
     tables={'tbenemydata':copy.deepcopy(baseline['tbenemydata'])+variants,'tbenemylist':lists,'tbrounddata':rounds,
       'tbsceneinfo':levels,'tbtowerinfo':towers,'tbglobal':glob,'tblevelmap':maps,
-      'tbbulletdata':copy.deepcopy(baseline['tbbulletdata']),'tblevelrating':ratings}
+      'tbbulletdata':bullets,'tblevelrating':ratings}
     recipe.pop('_profile',None)
     plan={'schemaVersion':1,'profileId':profile_id,'profileName':profile['name'],'customized':any(o.get('profileId',profile_id)==profile_id for o in recipe.get('overrides',[])),
-      'levelCount':20,'waveCount':400,'variantCount':len(variants),'recipe':recipe,'tables':tables,'waves':waves,
+      'levelCount':level_count,'wavesPerLevel':wave_count,'waveCount':level_count*wave_count,'variantCount':len(variants),'recipe':recipe,'tables':tables,'waves':waves,
       'levels':level_reports,'manifest':manifest,'sourceHashes':source_hashes()}
+    plan['capacityEconomy']=economy(plan)
     return bind_calibration_evidence(plan)
 
 def validate(plan,export_dir=None):
+    level_count,wave_count,per_tier=dimensions(plan['recipe'])
     tables=plan['tables'] if not export_dir else {k:read_json(pathlib.Path(export_dir)/(k+'.json'),[]) for k in plan['tables']}
     errors=[];warnings=[]
     def check(b,msg):
         if not b:errors.append(msg)
     by={k:{r['id']:r for r in rows} for k,rows in tables.items()}
     for k,rows in tables.items():check(len(by[k])==len(rows),'Duplicate IDs '+k)
-    check(len(tables['tbsceneinfo'])==20,'Must keep 20 levels')
-    check(len(tables['tbrounddata'])==400,'Must have 400 independent rounds')
-    check(len(tables['tbenemylist'])==400,'Must have 400 independent enemy lists')
-    check(len(tables['tblevelrating'])==20,'Must have 20 ratings')
+    check(len(tables['tbsceneinfo'])==level_count,f'Must have {level_count} levels')
+    check(len(tables['tbrounddata'])==level_count*wave_count,'Independent round cardinality mismatch')
+    check(len(tables['tbenemylist'])==level_count*wave_count,'Independent enemy list cardinality mismatch')
+    check(len(tables['tblevelrating'])==level_count,'Rating cardinality mismatch')
     counts={};ehps={};used=[]
     for level in tables['tbsceneinfo']:
-        L=level['id'];check(len(level['RoundList'])==20 and len(set(level['RoundList']))==20,f'L{L} round cardinality')
+        L=level['id'];check(len(level['RoundList'])==wave_count and len(set(level['RoundList']))==wave_count,f'L{L} round cardinality')
         total=0
         for w,rid in enumerate(level['RoundList'],1):
             r=by['tbrounddata'].get(rid);check(bool(r),f'Missing round {rid}')
@@ -488,9 +527,9 @@ def validate(plan,export_dir=None):
             check(abs(actual-expected['targetEhp'])/expected['targetEhp']<=.005,f'L{L} W{w} exported EHP outside .5%')
             check(r['interval']==0 and wave['interval']==0,f'L{L} W{w} must have zero start delays')
         rating=by['tblevelrating'].get(L,{})
-        check(rating.get('difficultyTier')==level['difficulty']==1+(L-1)//4,f'L{L} stage mismatch')
+        check(rating.get('difficultyTier')==level['difficulty']==1+(L-1)//per_tier,f'L{L} stage mismatch')
         check(rating.get('expectedEnemyCount')==total,f'L{L} expected total mismatch')
-        check(rating.get('expectedWaveCount')==20,f'L{L} expected waves mismatch')
+        check(rating.get('expectedWaveCount')==wave_count,f'L{L} expected waves mismatch')
         span=sum(z['plannedSpawnSpanMs'] for z in plan['waves'] if z['levelId']==L)
         check(rating.get('parCombatTimeMs',0)>span,f'L{L} Par must exceed spawn span')
         check(rating.get('planHash')==next(z for z in plan['tables']['tblevelrating'] if z['id']==L)['planHash'],f'L{L} rating hash mismatch')
@@ -527,8 +566,8 @@ def validate(plan,export_dir=None):
             check(rating.get('runtimeContentHash')==actual_hash,f'Runtime content hash mismatch L{rating["id"]}')
             check(rating.get('calibrationStatus')==expected_status.get(rating['id']),f'Calibration evidence status mismatch L{rating["id"]}')
     verified=plan.get('calibrationEvidence',{}).get('verifiedLevelIds',[])
-    pending=plan.get('calibrationEvidence',{}).get('pendingLevelIds',list(range(1,21)))
-    if pending:warnings.append(f'Hash-matched finished Unity five-star references cover {len(verified)}/20 levels; {len(pending)} remain pending. Static checks do not certify reachability.')
+    pending=plan.get('calibrationEvidence',{}).get('pendingLevelIds',list(range(1,level_count+1)))
+    if pending:warnings.append(f'Hash-matched finished Unity five-star references cover {len(verified)}/{level_count} levels; {len(pending)} remain pending. Static checks do not certify reachability.')
     # Flag individual role changes honestly; aggregate EHP is the hard monotonic invariant.
     prev={};drops=[]
     for z in plan['waves']:
@@ -538,7 +577,7 @@ def validate(plan,export_dir=None):
             prev[k]=(z['waveOrdinal'],c['hp'])
     return {'passed':not errors,'errors':errors,'warnings':warnings,'individualHpDropsOver10Percent':drops,
       'verifiedUnityLevelIds':verified,'pendingUnityLevelIds':pending,
-      'checkedLevels':20,'checkedWaves':400,'checkedUniqueResources':len(resources),'exportedJsonChecked':bool(export_dir)}
+      'checkedLevels':level_count,'checkedWaves':level_count*wave_count,'checkedUniqueResources':len(resources),'exportedJsonChecked':bool(export_dir)}
 
 def same_runtime_value(table,field,before,after):
     if before==after:return True
@@ -595,6 +634,7 @@ def excel_write(stage,plan):
         for row_index,row in enumerate(rows):
             if row_index%128==0:check_cancel(stage)
             r=existing.get(row['id'])
+            new_row=r is None
             if r is None:
                 if free_rows:r=free_rows.popleft();reused+=1
                 else:r=next_row;next_row+=1;appended+=1
@@ -602,7 +642,7 @@ def excel_write(stage,plan):
                 existing[row['id']]=r
             for field,value in row.items():
                 if field not in headers:continue
-                if table in OWNED_FIELDS and field!='id' and field not in OWNED_FIELDS[table]:continue
+                if not new_row and table in OWNED_FIELDS and field!='id' and field not in OWNED_FIELDS[table]:continue
                 # Preserve all original prototype values, and unknown existing columns.
                 if table=='tbenemydata' and row['id']<100000:continue
                 if isinstance(value,list):value=('|' if field=='cells' else ',').join(map(str,value))
@@ -701,7 +741,16 @@ def restore_transaction(journal):
     for e in reversed(journal['entries']):
         dst=ROOT/e['path']
         if file_hash(dst)==e['before']:continue
-        if e['backup']:shutil.copy2(e['backup'],dst)
+        if e['backup']:
+            # Windows can keep the destination memory-mapped after Luban/Unity
+            # reads it. Replacing a staged file avoids truncating that live map.
+            temporary=dst.with_name(dst.name+'.rollback-'+uuid.uuid4().hex+'.tmp')
+            try:
+                shutil.copy2(e['backup'],temporary)
+                if file_hash(dst) not in [e['before'],e['after']]:
+                    raise RuntimeError('External modification during rollback: '+e['path'])
+                os.replace(temporary,dst)
+            finally:temporary.unlink(missing_ok=True)
         elif file_hash(dst)==e['after']:dst.unlink(missing_ok=True)
 
 def assert_sources(expected):
@@ -835,17 +884,22 @@ def export_reports(plan,out):
         writer=csv.DictWriter(f,fieldnames=fields,extrasaction='ignore');writer.writeheader();writer.writerows(plan['waves'])
     maps=[]
     for m in plan['tables']['tblevelmap']:
-        p=path_for(m['cells']);counts=collections.Counter(''.join(m['cells']));blocked=[]
-        for y,row in enumerate(m['cells']):
-            for x,c in enumerate(row):
-                if c=='.' and any((x-px)**2+(y-py)**2<=9 for px,py in p) and path_for(m['cells'],blocked+[(x,y)]):
-                    blocked.append((x,y))
-                    if len(blocked)>=4:break
-            if len(blocked)>=4:break
+        p=path_for(m['cells']);counts=collections.Counter(''.join(m['cells']))
+        reference=plan['recipe'].get('referencePolicy',{})
+        maze=read_json(ROOT/reference.get('mazeDirectory','Library/BalanceWorkbench/no-maze')/f'L{m["levelId"]:02}.json')
+        if maze and maze.get('mapCells')!=m['cells']:maze=None
+        blocked=[(t['col'],t['row']) for t in maze['layout']] if maze else []
+        from balance_campaign import runtime_path_for
+        from balance_maze import intervals
+        route=runtime_path_for(m['cells'],blocked)
+        radius=next(t['radius'] for t in plan['tables']['tbtowerinfo'] if t['id']==1)
         maps.append({'levelId':m['levelId'],'cols':m['cols'],'rows':m['rows'],'obstacleCells':counts['#']+counts['X'],
           'noBuildCells':counts['P'],'buildableCells':counts['.'],'emptyShortestPath':p,'emptyPathLength':len(p)-1,
-          'exampleLegalTowerCells':blocked,'examplePath':path_for(m['cells'],blocked),
-          'coverageZones':[{'cell':c,'radius':3,'pathCellsCovered':sum((c[0]-x)**2+(c[1]-y)**2<=9 for x,y in p)} for c in blocked]})
+          'exampleLegalTowerCells':blocked,'examplePath':route,'examplePathLength':len(route)-1,
+          'exampleSource':'searched legal maze blueprint; actual construction and damage are in Unity replay waveBoundaries',
+          'searchKind':maze['searchKind'] if maze else 'no blueprint',
+          'coverageZones':[{'cell':c,'radius':radius,'coveragePasses':intervals(c,route,radius),
+            'pathCellsCovered':sum((c[0]-x)**2+(c[1]-y)**2<=radius**2 for x,y in route)} for c in blocked]})
     write_json(out/'maps.json',maps)
     baseline=read_json(DESIGN/'baseline_data.json');measurements=load_measurements();first={};selected=collections.defaultdict(set);selected_ids=collections.defaultdict(set)
     for z in plan['waves']:
@@ -863,7 +917,8 @@ def export_reports(plan,out):
           'firstAppearance':first.get(e['resName']),'selected':e['resName'] in first,'isFlying':bool(e.get('isFlying')),
           'prefabExists':(ROOT/'Assets/Prefabs/Enemy'/(e['resName']+'.prefab')).exists()})
     write_json(out/'monster_catalog_119.json',catalog)
-    markdown=[f'# {plan["profileId"]} {plan["profileName"]} · 20 关 × 20 波',
+    write_json(out/'capacity_economy.json',economy(plan))
+    markdown=[f'# {plan["profileId"]} {plan["profileName"]} · {plan["levelCount"]} 关 × {plan["wavesPerLevel"]} 波',
       '', '本报告由权威配方编译器生成；每个 Round 独立清场。离线预测和真实 Unity 证据分列，未匹配同一 planHash 的实测不认证五星可达。',
       '',f'- 变体数：{plan["variantCount"]}；完整波数：{len(plan["waves"])}。',
       '- 关卡等级 L、战役阶段 I—V、调参预设和本局 1—5 星分别存储。',
@@ -901,15 +956,13 @@ def main(argv=None):
     parser.add_argument('command',choices=['inspect','generate','preview','validate','apply','rollback','simulate','all-profiles','init'])
     parser.add_argument('--profile',default=None);parser.add_argument('--recipe',default=str(DEFAULT_RECIPE));parser.add_argument('--out',default=None)
     parser.add_argument('--plan');parser.add_argument('--dry-run',action='store_true');parser.add_argument('--transaction')
-    parser.add_argument('--level-min',type=int,default=1);parser.add_argument('--level-max',type=int,default=20)
-    parser.add_argument('--wave-min',type=int,default=1);parser.add_argument('--wave-max',type=int,default=20)
+    parser.add_argument('--level-min',type=int,default=1);parser.add_argument('--level-max',type=int,default=None)
+    parser.add_argument('--wave-min',type=int,default=1);parser.add_argument('--wave-max',type=int,default=None)
     parser.add_argument('--strategy',default='mixed');parser.add_argument('--step-ms',type=int,default=100)
     parser.add_argument('--step',type=float);parser.add_argument('--seed',type=int,default=42)
     parser.add_argument('--all-profiles',action='store_true');parser.add_argument('--backup')
     parser.add_argument('--export-dir')
     args=parser.parse_args(argv);start=time.perf_counter()
-    if not 1<=args.level_min<=args.level_max<=20:parser.error('level range must satisfy 1 <= min <= max <= 20')
-    if not 1<=args.wave_min<=args.wave_max<=20:parser.error('wave range must satisfy 1 <= min <= max <= 20')
     if args.step_ms<=0 or (args.step is not None and (not math.isfinite(args.step) or args.step<=0)):
         parser.error('simulation step must be a positive finite duration')
     if args.command=='init':
@@ -919,6 +972,10 @@ def main(argv=None):
         result=rollback(args.transaction or args.backup or args.out);progress('complete',result=result);return
     recipe=read_json(args.recipe)
     if not recipe:raise RuntimeError('Recipe not found; run init')
+    level_count,wave_count,_=dimensions(recipe)
+    args.level_max=args.level_max or level_count;args.wave_max=args.wave_max or wave_count
+    if not 1<=args.level_min<=args.level_max<=level_count:parser.error('level range exceeds campaign dimensions')
+    if not 1<=args.wave_min<=args.wave_max<=wave_count:parser.error('wave range exceeds campaign dimensions')
     profile=args.profile or recipe['selectedProfileId'];out=pathlib.Path(args.out or JOBS/(args.command+'-'+uuid.uuid4().hex[:12]))
     if args.command=='all-profiles':
         plans=[];manifest=read_json(MANIFEST,{'schemaVersion':1,'profiles':{},'variants':{}})
@@ -928,8 +985,8 @@ def main(argv=None):
             data=write_candidate(plan,out/p['id']) if (ROOT/'Library') in out.resolve().parents else None
             result=validate(plan,data);write_json(out/p['id']/'validation.json',result);export_reports(plan,out/p['id']);plans.append(plan)
             if not result['passed']:raise RuntimeError(canonical(result['errors']))
-        for L in range(1,21):
-            for w in range(1,21):
+        for L in range(1,level_count+1):
+            for w in range(1,wave_count+1):
                 seq=[next(z for z in p['waves'] if z['levelId']==L and z['waveOrdinal']==w) for p in plans]
                 if any(seq[i]['targetEhp']>seq[i+1]['targetEhp'] for i in range(len(seq)-1)):raise RuntimeError('Eight-profile EHP gradient failure')
                 if any(seq[i]['spawnIntervalMs']<seq[i+1]['spawnIntervalMs'] for i in range(len(seq)-1)):raise RuntimeError('Eight-profile interval gradient failure')
@@ -937,14 +994,14 @@ def main(argv=None):
                     speeds_a={(c['canonicalEnemyId'],c['role']):c['speed'] for c in seq[i]['composition']}
                     speeds_b={(c['canonicalEnemyId'],c['role']):c['speed'] for c in seq[i+1]['composition']}
                     if any(speeds_a[k]>speeds_b[k] for k in speeds_a.keys()&speeds_b.keys()):raise RuntimeError('Eight-profile speed gradient failure')
-        if any(plans[i]['levels'][L-1]['initialGold']<plans[i+1]['levels'][L-1]['initialGold'] for i in range(len(plans)-1) for L in range(1,21)):
+        if any(plans[i]['levels'][L-1]['initialGold']<plans[i+1]['levels'][L-1]['initialGold'] for i in range(len(plans)-1) for L in range(1,level_count+1)):
             raise RuntimeError('Eight-profile gold gradient failure')
-        write_json(out/'all_waves_3200.json',[z for p in plans for z in p['waves']]);write_json(out/'variant_manifest.json',manifest)
-        write_json(out/'validation.json',{'passed':True,'profiles':len(plans),'levels':160,'waves':3200,'elapsedSec':time.perf_counter()-start,
+        write_json(out/f'all_waves_{len(plans)*level_count*wave_count}.json',[z for p in plans for z in p['waves']]);write_json(out/'variant_manifest.json',manifest)
+        write_json(out/'validation.json',{'passed':True,'profiles':len(plans),'levels':len(plans)*level_count,'waves':len(plans)*level_count*wave_count,'elapsedSec':time.perf_counter()-start,
           'unityReferenceRuns':'Hash-matched finished PlayMode evidence is counted separately from static checks',
           'verifiedUnityProfileLevels':sum(len(p['calibrationEvidence']['verifiedLevelIds']) for p in plans),
           'pendingUnityProfileLevels':sum(len(p['calibrationEvidence']['pendingLevelIds']) for p in plans)})
-        progress('complete',passed=True,out=str(out),waves=3200);return
+        progress('complete',passed=True,out=str(out),waves=len(plans)*level_count*wave_count);return
     plan=read_json(args.plan) if args.plan else generate(recipe,profile)
     if args.command=='inspect':
         result={'profiles':recipe['profiles'],'applied':read_json(STATE),'sourceHashes':plan['sourceHashes'],'python':sys.executable,'openpyxlAvailable':__import__('importlib.util').util.find_spec('openpyxl') is not None}

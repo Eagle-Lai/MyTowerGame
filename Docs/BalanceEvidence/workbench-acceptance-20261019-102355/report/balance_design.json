@@ -1,0 +1,3429 @@
+{
+  "schemaVersion": 2,
+  "balanceRevision": "balance-30x25-maze-v3",
+  "ratingRevision": "five-stars-v1",
+  "selectedProfileId": "ACCEPTANCE_20261019102355",
+  "profiles": [
+    {
+      "id": "D01",
+      "name": "非常容易",
+      "revision": "2",
+      "ehpMultiplier": 0.5,
+      "speedMultiplier": 0.9,
+      "gapMultiplier": 1.1,
+      "goldMultiplier": 1.4
+    },
+    {
+      "id": "D02",
+      "name": "容易",
+      "revision": "2",
+      "ehpMultiplier": 0.65,
+      "speedMultiplier": 0.94,
+      "gapMultiplier": 1.07,
+      "goldMultiplier": 1.25
+    },
+    {
+      "id": "D03",
+      "name": "中等偏下",
+      "revision": "2",
+      "ehpMultiplier": 0.82,
+      "speedMultiplier": 0.97,
+      "gapMultiplier": 1.04,
+      "goldMultiplier": 1.1
+    },
+    {
+      "id": "D04",
+      "name": "中等",
+      "revision": "2",
+      "ehpMultiplier": 1,
+      "speedMultiplier": 1,
+      "gapMultiplier": 1,
+      "goldMultiplier": 1
+    },
+    {
+      "id": "D05",
+      "name": "中等偏上",
+      "revision": "2",
+      "ehpMultiplier": 1.12,
+      "speedMultiplier": 1.015,
+      "gapMultiplier": 0.985,
+      "goldMultiplier": 0.99
+    },
+    {
+      "id": "D06",
+      "name": "困难",
+      "revision": "2",
+      "ehpMultiplier": 1.26,
+      "speedMultiplier": 1.03,
+      "gapMultiplier": 0.97,
+      "goldMultiplier": 0.98
+    },
+    {
+      "id": "D07",
+      "name": "非常困难",
+      "revision": "2",
+      "ehpMultiplier": 1.42,
+      "speedMultiplier": 1.045,
+      "gapMultiplier": 0.955,
+      "goldMultiplier": 0.97
+    },
+    {
+      "id": "D08",
+      "name": "极度困难",
+      "revision": "2",
+      "ehpMultiplier": 1.6,
+      "speedMultiplier": 1.06,
+      "gapMultiplier": 0.94,
+      "goldMultiplier": 0.96
+    },
+    {
+      "id": "ACCEPTANCE_20261019102355",
+      "name": "自定义 ACCEPTANCE_20261019102355",
+      "revision": "2",
+      "ehpMultiplier": 1,
+      "speedMultiplier": 1,
+      "gapMultiplier": 1,
+      "goldMultiplier": 1
+    }
+  ],
+  "formula": {
+    "countOffset": 15,
+    "baseEhpPerUnit": 26,
+    "levelEhpGrowth": 0.018,
+    "waveLinear": 0.1,
+    "waveQuadratic": 0.01,
+    "minBudgetGrowth": 1.025,
+    "pressureMultiplier": 1.1,
+    "finalMultiplier": 1.18,
+    "spawnBaseMs": 650,
+    "spawnWaveReductionMs": 8,
+    "spawnLevelReductionMs": 2,
+    "minSpawnMs": 360,
+    "maxSpawnMs": 650,
+    "speedLevelGrowth": 0.001,
+    "speedWaveGrowth": 0.001,
+    "initialGold": 160,
+    "goldPerLevel": 4,
+    "initialHp": 20,
+    "rewardBase": 8,
+    "rewardWaveBlock": 5,
+    "autoNextRoundDelayMs": 5000,
+    "autoStartRoundDelayMs": 0,
+    "tailBaseMs": 18000,
+    "tailTierGrowthMs": 1500,
+    "countLevelCoefficient": 1,
+    "countWaveCoefficient": 2,
+    "rewardBlockIncrement": 2
+  },
+  "roles": {
+    "normal": {
+      "weight": 1,
+      "speed": 1.1,
+      "armor": 0,
+      "reward": 3,
+      "damage": 1,
+      "type": 1
+    },
+    "swarm": {
+      "weight": 0.65,
+      "speed": 1.05,
+      "armor": 0,
+      "reward": 2,
+      "damage": 1,
+      "type": 1
+    },
+    "fast": {
+      "weight": 0.85,
+      "speed": 1.6,
+      "armor": 0,
+      "reward": 3,
+      "damage": 1,
+      "type": 2
+    },
+    "air": {
+      "weight": 1.05,
+      "speed": 1.3,
+      "armor": 0,
+      "reward": 4,
+      "damage": 1,
+      "type": 4
+    },
+    "medium": {
+      "weight": 2,
+      "speed": 1,
+      "armor": 0.08,
+      "reward": 4,
+      "damage": 1,
+      "type": 1
+    },
+    "heavy": {
+      "weight": 4,
+      "speed": 0.8,
+      "armor": 0.18,
+      "reward": 6,
+      "damage": 2,
+      "type": 3
+    },
+    "elite": {
+      "weight": 7,
+      "speed": 0.75,
+      "armor": 0.22,
+      "reward": 10,
+      "damage": 2,
+      "type": 3
+    },
+    "boss": {
+      "weight": 6,
+      "speed": 0.65,
+      "armor": 0.25,
+      "reward": 30,
+      "damage": 4,
+      "type": 5
+    }
+  },
+  "unlockSchedule": [
+    {
+      "canonicalId": 17,
+      "level": 1,
+      "wave": 1,
+      "role": "normal"
+    },
+    {
+      "canonicalId": 18,
+      "level": 1,
+      "wave": 2,
+      "role": "normal"
+    },
+    {
+      "canonicalId": 84,
+      "level": 1,
+      "wave": 3,
+      "role": "swarm"
+    },
+    {
+      "canonicalId": 83,
+      "level": 1,
+      "wave": 5,
+      "role": "medium"
+    },
+    {
+      "canonicalId": 13,
+      "level": 1,
+      "wave": 7,
+      "role": "air"
+    },
+    {
+      "canonicalId": 11,
+      "level": 1,
+      "wave": 8,
+      "role": "air"
+    },
+    {
+      "canonicalId": 14,
+      "level": 1,
+      "wave": 10,
+      "role": "air"
+    },
+    {
+      "canonicalId": 88,
+      "level": 1,
+      "wave": 11,
+      "role": "heavy"
+    },
+    {
+      "canonicalId": 123,
+      "level": 1,
+      "wave": 15,
+      "role": "medium"
+    },
+    {
+      "canonicalId": 30,
+      "level": 2,
+      "wave": 11,
+      "role": "fast"
+    },
+    {
+      "canonicalId": 108,
+      "level": 2,
+      "wave": 15,
+      "role": "medium"
+    },
+    {
+      "canonicalId": 98,
+      "level": 3,
+      "wave": 11,
+      "role": "fast"
+    },
+    {
+      "canonicalId": 80,
+      "level": 4,
+      "wave": 11,
+      "role": "heavy"
+    },
+    {
+      "canonicalId": 86,
+      "level": 4,
+      "wave": 15,
+      "role": "heavy"
+    },
+    {
+      "canonicalId": 31,
+      "level": 5,
+      "wave": 11,
+      "role": "heavy"
+    },
+    {
+      "canonicalId": 40,
+      "level": 6,
+      "wave": 11,
+      "role": "heavy"
+    },
+    {
+      "canonicalId": 58,
+      "level": 7,
+      "wave": 11,
+      "role": "fast"
+    },
+    {
+      "canonicalId": 127,
+      "level": 8,
+      "wave": 11,
+      "role": "heavy"
+    },
+    {
+      "canonicalId": 64,
+      "level": 9,
+      "wave": 11,
+      "role": "fast"
+    },
+    {
+      "canonicalId": 70,
+      "level": 10,
+      "wave": 11,
+      "role": "heavy"
+    },
+    {
+      "canonicalId": 67,
+      "level": 11,
+      "wave": 11,
+      "role": "heavy"
+    },
+    {
+      "canonicalId": 129,
+      "level": 12,
+      "wave": 25,
+      "role": "boss"
+    },
+    {
+      "canonicalId": 130,
+      "level": 13,
+      "wave": 25,
+      "role": "boss"
+    },
+    {
+      "canonicalId": 131,
+      "level": 14,
+      "wave": 25,
+      "role": "boss"
+    },
+    {
+      "canonicalId": 132,
+      "level": 15,
+      "wave": 25,
+      "role": "boss"
+    }
+  ],
+  "towerValues": [
+    {
+      "id": 1,
+      "power": 6,
+      "CD": 450,
+      "radius": 2,
+      "prices": 25,
+      "effectValue": 0,
+      "canAttackAir": 1,
+      "searchIntervalMs": 100
+    },
+    {
+      "id": 2,
+      "power": 10,
+      "CD": 450,
+      "radius": 2,
+      "prices": 45,
+      "effectValue": 0,
+      "canAttackAir": 1,
+      "searchIntervalMs": 100
+    },
+    {
+      "id": 3,
+      "power": 14,
+      "CD": 450,
+      "radius": 2,
+      "prices": 75,
+      "effectValue": 0,
+      "canAttackAir": 1,
+      "searchIntervalMs": 100
+    },
+    {
+      "id": 4,
+      "power": 16,
+      "CD": 1000,
+      "radius": 2,
+      "prices": 35,
+      "effectValue": 0,
+      "canAttackAir": 0,
+      "searchIntervalMs": 100
+    },
+    {
+      "id": 5,
+      "power": 24,
+      "CD": 1000,
+      "radius": 2,
+      "prices": 60,
+      "effectValue": 0,
+      "canAttackAir": 0,
+      "searchIntervalMs": 100
+    },
+    {
+      "id": 6,
+      "power": 32,
+      "CD": 1000,
+      "radius": 2,
+      "prices": 95,
+      "effectValue": 0,
+      "canAttackAir": 0,
+      "searchIntervalMs": 100
+    },
+    {
+      "id": 7,
+      "power": 0,
+      "CD": 250,
+      "radius": 2,
+      "prices": 25,
+      "effectValue": 0.16,
+      "canAttackAir": 1,
+      "searchIntervalMs": 100
+    },
+    {
+      "id": 8,
+      "power": 0,
+      "CD": 250,
+      "radius": 2,
+      "prices": 40,
+      "effectValue": 0.24,
+      "canAttackAir": 1,
+      "searchIntervalMs": 100
+    },
+    {
+      "id": 9,
+      "power": 0,
+      "CD": 250,
+      "radius": 2,
+      "prices": 65,
+      "effectValue": 0.32,
+      "canAttackAir": 1,
+      "searchIntervalMs": 100
+    }
+  ],
+  "rating": {
+    "twoStarHpPermille": 500,
+    "threeStarHpPermille": 750,
+    "fourStarHpPermille": 900,
+    "maxFourStarLeaks": 2,
+    "fourStarTimePermille": 1250
+  },
+  "maps": {
+    "expandTutorial": true,
+    "sparseObstacles": true,
+    "longAirCorridors": true
+  },
+  "overrides": [
+    {
+      "id": "edit-188e46afbea7",
+      "target": "wave",
+      "profileId": "D04",
+      "field": "targetEhp",
+      "mode": "multiply",
+      "value": 1.01,
+      "scope": "wave",
+      "levelId": 1,
+      "waveOrdinal": 2
+    },
+    {
+      "id": "edit-e491fad8b961",
+      "target": "wave",
+      "profileId": "D04",
+      "field": "targetEhp",
+      "mode": "multiply",
+      "value": 1.001,
+      "scope": "range",
+      "levelId": 1,
+      "waveStart": 3,
+      "waveEnd": 4
+    },
+    {
+      "id": "edit-9547aa4103c0",
+      "target": "wave",
+      "profileId": "D04",
+      "field": "targetEhp",
+      "mode": "multiply",
+      "value": 1.001,
+      "scope": "level",
+      "levelId": 2
+    },
+    {
+      "id": "edit-b880005f7e83",
+      "target": "tower",
+      "profileId": "D04",
+      "field": "power",
+      "mode": "replace",
+      "value": 7,
+      "scope": "global",
+      "levelId": 2,
+      "targetId": 1
+    },
+    {
+      "id": "edit-188e46afbea7-ACCEPTANCE_20261019102355",
+      "target": "wave",
+      "profileId": "ACCEPTANCE_20261019102355",
+      "field": "targetEhp",
+      "mode": "multiply",
+      "value": 1.01,
+      "scope": "wave",
+      "levelId": 1,
+      "waveOrdinal": 2
+    },
+    {
+      "id": "edit-e491fad8b961-ACCEPTANCE_20261019102355",
+      "target": "wave",
+      "profileId": "ACCEPTANCE_20261019102355",
+      "field": "targetEhp",
+      "mode": "multiply",
+      "value": 1.001,
+      "scope": "range",
+      "levelId": 1,
+      "waveStart": 3,
+      "waveEnd": 4
+    },
+    {
+      "id": "edit-9547aa4103c0-ACCEPTANCE_20261019102355",
+      "target": "wave",
+      "profileId": "ACCEPTANCE_20261019102355",
+      "field": "targetEhp",
+      "mode": "multiply",
+      "value": 1.001,
+      "scope": "level",
+      "levelId": 2
+    },
+    {
+      "id": "edit-b880005f7e83-ACCEPTANCE_20261019102355",
+      "target": "tower",
+      "profileId": "ACCEPTANCE_20261019102355",
+      "field": "power",
+      "mode": "replace",
+      "value": 7,
+      "scope": "global",
+      "levelId": 2,
+      "targetId": 1
+    }
+  ],
+  "calibrationEvidence": [
+    "Docs/BalanceEvidence/30x25/final-ablations/unity-results.json",
+    "Docs/BalanceEvidence/30x25/final-reference/unity-results.json"
+  ],
+  "campaignLevelCount": 30,
+  "wavesPerLevel": 25,
+  "levelsPerTier": 6,
+  "bulletValues": [
+    {
+      "id": 2,
+      "aoeRadius": 0.75
+    }
+  ],
+  "mapDefinitions": [
+    {
+      "id": 21,
+      "levelId": 21,
+      "cells": [
+        "..............#..",
+        "S................",
+        "................E",
+        ".................",
+        ".#......#........",
+        ".................",
+        ".................",
+        "...............#.",
+        "..#.............."
+      ],
+      "desc": "L21: offset entrance/exit, sparse obstacles, open space for several firing zones"
+    },
+    {
+      "id": 22,
+      "levelId": 22,
+      "cells": [
+        ".................",
+        ".................",
+        "..#...........#..",
+        ".................",
+        ".................",
+        ".................",
+        "................E",
+        "S.......#........",
+        "...............#."
+      ],
+      "desc": "L22: offset entrance/exit, sparse obstacles, open space for several firing zones"
+    },
+    {
+      "id": 23,
+      "levelId": 23,
+      "cells": [
+        ".#...............",
+        "........#........",
+        "S................",
+        "................E",
+        ".................",
+        ".................",
+        ".................",
+        "...#..........#..",
+        "................."
+      ],
+      "desc": "L23: offset entrance/exit, sparse obstacles, open space for several firing zones"
+    },
+    {
+      "id": 24,
+      "levelId": 24,
+      "cells": [
+        "#................",
+        ".................",
+        ".................",
+        ".#...............",
+        "................E",
+        ".................",
+        "S......#.........",
+        "...............#.",
+        "..........#......"
+      ],
+      "desc": "L24: offset entrance/exit, sparse obstacles, open space for several firing zones"
+    },
+    {
+      "id": 25,
+      "levelId": 25,
+      "cells": [
+        ".................",
+        "..#......#.......",
+        "...............#.",
+        "S................",
+        ".................",
+        "................E",
+        ".................",
+        ".................",
+        "..#.............."
+      ],
+      "desc": "L25: offset entrance/exit, sparse obstacles, open space for several firing zones"
+    },
+    {
+      "id": 26,
+      "levelId": 26,
+      "cells": [
+        "#................",
+        "....#............",
+        ".............#...",
+        ".................",
+        ".................",
+        "S................",
+        "................E",
+        ".......#.........",
+        "...............#."
+      ],
+      "desc": "L26: offset entrance/exit, sparse obstacles, open space for several firing zones"
+    },
+    {
+      "id": 27,
+      "levelId": 27,
+      "cells": [
+        "...............#.",
+        "S........#.......",
+        ".................",
+        "................E",
+        ".................",
+        ".................",
+        ".................",
+        "..#...........#..",
+        "................."
+      ],
+      "desc": "L27: offset entrance/exit, sparse obstacles, open space for several firing zones"
+    },
+    {
+      "id": 28,
+      "levelId": 28,
+      "cells": [
+        "#................",
+        "................E",
+        ".................",
+        ".................",
+        "..#............#.",
+        ".................",
+        ".................",
+        "S................",
+        ".........#......."
+      ],
+      "desc": "L28: offset entrance/exit, sparse obstacles, open space for several firing zones"
+    },
+    {
+      "id": 29,
+      "levelId": 29,
+      "cells": [
+        ".................",
+        ".................",
+        "..............#..",
+        ".................",
+        "S................",
+        ".................",
+        "................E",
+        ".#.....#.........",
+        "...............#."
+      ],
+      "desc": "L29: offset entrance/exit, sparse obstacles, open space for several firing zones"
+    },
+    {
+      "id": 30,
+      "levelId": 30,
+      "cells": [
+        ".#...............",
+        ".................",
+        "S..........#.....",
+        ".................",
+        ".................",
+        "................E",
+        "..#..............",
+        ".................",
+        "...............#."
+      ],
+      "desc": "L30: offset entrance/exit, sparse obstacles, open space for several firing zones"
+    }
+  ],
+  "referencePolicy": {
+    "upgradeShare": 0.55,
+    "layoutObjective": "longest traversable shortest S-E route, then repeated tower firing segments",
+    "occupancyEnforced": false,
+    "legacyOccupancyComparison": 0.85,
+    "authorization": "User 2026-10-19: prioritize long routes and fire reuse; occupancy may be below 85%",
+    "mazeDirectory": "Luban/BalanceDesign/Evidence30x25/Mazes"
+  },
+  "parCalibration": {
+    "D01": {
+      "1": {
+        "combatBasisHash": "cd3775d073136fd4aca6f840ae49f467a08b5e815085e9a3a5eb0f26f0673590",
+        "parCombatTimeMs": 720000,
+        "method": "measured 25-wave spawn span + actual legal maze clear tails, 6% scheduling margin, rounded up to 5s",
+        "spawnSpanMs": 601765,
+        "clearTailMs": 74685,
+        "observedCombatMs": 676450,
+        "measured": true,
+        "sourceFile": "Docs\\BalanceEvidence\\30x25\\maze-other-par\\unity-results.json",
+        "sourceIndex": 1,
+        "sourcePlanHash": "0337a8ef6b5994139682ed2bd279c1fdf38f79b7701107d53160bf6cb8b85119"
+      },
+      "2": {
+        "combatBasisHash": "f3667d4703c2166978493caba334396f49f484c733ef72f86854512277859cf9",
+        "parCombatTimeMs": 720000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 614680,
+        "clearTailMs": 60717.9502121327,
+        "observedCombatMs": 675397.950212133,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 0.31289848086644
+      },
+      "3": {
+        "combatBasisHash": "a3b1b003bf9a34d40a9fa96a5ac90281054b7951facca7c8651f4dd9d5b2feb6",
+        "parCombatTimeMs": 745000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 627475,
+        "clearTailMs": 74031.7805729998,
+        "observedCombatMs": 701506.780573,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 0.31289848086644
+      },
+      "4": {
+        "combatBasisHash": "fe6de7efad49da7c149ca3c3eae80fc0b5f4307d63abf3018879a10c25138cd1",
+        "parCombatTimeMs": 770000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 640200,
+        "clearTailMs": 84685.973846502,
+        "observedCombatMs": 724885.973846502,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 0.31289848086644
+      },
+      "5": {
+        "combatBasisHash": "253cde0cc9afed41cddb000d2b0be168588fbeaf1a6a5c5309b5ead2cc394eeb",
+        "parCombatTimeMs": 770000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 652805,
+        "clearTailMs": 70918.4406883787,
+        "observedCombatMs": 723723.440688379,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 0.31289848086644
+      },
+      "6": {
+        "combatBasisHash": "0c10e82612b2cbda12db8a6e01472532e3e3840a74b5a3053c18811b047496d9",
+        "parCombatTimeMs": 835000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 665290,
+        "clearTailMs": 121404.610576179,
+        "observedCombatMs": 786694.610576179,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 0.31289848086644
+      },
+      "7": {
+        "combatBasisHash": "3df4d9e019be6cf2e5371a655b80f86afb5e7904c185aeb88ac6af0d3fda67ae",
+        "parCombatTimeMs": 830000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 677655,
+        "clearTailMs": 104977.440330691,
+        "observedCombatMs": 782632.440330691,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 0.31289848086644
+      },
+      "8": {
+        "combatBasisHash": "0966743045ee18396d05134b864182402afa1020eb927c108dad34e0ee8d7eef",
+        "parCombatTimeMs": 835000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 689900,
+        "clearTailMs": 93541.0008550223,
+        "observedCombatMs": 783441.000855022,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 0.31289848086644
+      },
+      "9": {
+        "combatBasisHash": "325cc0c5418d6542b3d1b35a31001189c002fcf5ae00cad340743dfa1f566239",
+        "parCombatTimeMs": 860000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 702075,
+        "clearTailMs": 105525.012672207,
+        "observedCombatMs": 807600.012672207,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 0.31289848086644
+      },
+      "10": {
+        "combatBasisHash": "5d48598291a6181325e96aff49fc30363cf64070527ec6cb855b4919c9383e4d",
+        "parCombatTimeMs": 865000,
+        "method": "measured 25-wave spawn span + actual legal maze clear tails, 6% scheduling margin, rounded up to 5s",
+        "spawnSpanMs": 714130,
+        "clearTailMs": 99170,
+        "observedCombatMs": 813300,
+        "measured": true,
+        "sourceFile": "Docs\\BalanceEvidence\\30x25\\maze-other-par\\unity-results.json",
+        "sourceIndex": 2,
+        "sourcePlanHash": "0df129517e17ba642baca3416d9e592b77caef66e63cc706618b4ebaa46a67a8"
+      },
+      "11": {
+        "combatBasisHash": "2f231381da5e221666f3066d2fb5f9d92f176c6c25596f4716548be7e0af0bf5",
+        "parCombatTimeMs": 865000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 726065,
+        "clearTailMs": 87908.8281994264,
+        "observedCombatMs": 813973.828199426,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 0.31289848086644
+      },
+      "12": {
+        "combatBasisHash": "a3f95d04d1d8e294d3545f89ee3cf89168947ebf583c510379cdba6e02e5522d",
+        "parCombatTimeMs": 855000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 737880,
+        "clearTailMs": 67163.6589179814,
+        "observedCombatMs": 805043.658917981,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 0.31289848086644
+      },
+      "13": {
+        "combatBasisHash": "3f333a6203344ef1d37ab975fcb92cfb8081b0407588cbc623a31725dc8c7acb",
+        "parCombatTimeMs": 900000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 749575,
+        "clearTailMs": 96263.2176385603,
+        "observedCombatMs": 845838.21763856,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 0.31289848086644
+      },
+      "14": {
+        "combatBasisHash": "82b6115e10ff103a05bd122158c6a4fb363525d7e2ad7547813a4de83d773280",
+        "parCombatTimeMs": 920000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 761200,
+        "clearTailMs": 106635.802279283,
+        "observedCombatMs": 867835.802279283,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 0.31289848086644
+      },
+      "15": {
+        "combatBasisHash": "5beed17a1faaec743dcea6e5885aab9d9075d9810a6c321cfc75cd3ab541ccba",
+        "parCombatTimeMs": 935000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 772705,
+        "clearTailMs": 105368.563431774,
+        "observedCombatMs": 878073.563431774,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 0.31289848086644
+      },
+      "16": {
+        "combatBasisHash": "93bca2751f4c65cca9114bd6d879da882f0dce778f6d166c21fbd456102ac8b6",
+        "parCombatTimeMs": 930000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 784090,
+        "clearTailMs": 93024.7183615927,
+        "observedCombatMs": 877114.718361593,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 0.31289848086644
+      },
+      "17": {
+        "combatBasisHash": "3dbe2fceaa007e5002a5b5011189dd26d45f078207513d317199604bf6b06dcc",
+        "parCombatTimeMs": 930000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 795355,
+        "clearTailMs": 81729.0832023142,
+        "observedCombatMs": 877084.083202314,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 0.31289848086644
+      },
+      "18": {
+        "combatBasisHash": "1387a9833eecc0acab18e949670c83b881bb6125005c3804f8787485b055e028",
+        "parCombatTimeMs": 950000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 806500,
+        "clearTailMs": 88190.4368322062,
+        "observedCombatMs": 894690.436832206,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 0.31289848086644
+      },
+      "19": {
+        "combatBasisHash": "41cbed2992dfa6e153e5d9825b7d3a2cf8edbfc3543280afbecf43d35d2b205e",
+        "parCombatTimeMs": 980000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 817575,
+        "clearTailMs": 105196.469267297,
+        "observedCombatMs": 922771.469267297,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 0.31289848086644
+      },
+      "20": {
+        "combatBasisHash": "efe77ee364a3ef27907df7624103a02c6de72f89d130a90aed70515d1c48d65e",
+        "parCombatTimeMs": 1010000,
+        "method": "measured 25-wave spawn span + actual legal maze clear tails, 6% scheduling margin, rounded up to 5s",
+        "spawnSpanMs": 828530,
+        "clearTailMs": 121320,
+        "observedCombatMs": 949850,
+        "measured": true,
+        "sourceFile": "Docs\\BalanceEvidence\\30x25\\maze-other-par\\unity-results.json",
+        "sourceIndex": 3,
+        "sourcePlanHash": "fbe7c03931e6cb25e07eb083c535445ac58034c9e27ccaed757785985444cdff"
+      },
+      "21": {
+        "combatBasisHash": "6367cd85809a75d05d7f6deb66e945cf4deb47e07eb45eb72d01a346e1730afe",
+        "parCombatTimeMs": 1005000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 839365,
+        "clearTailMs": 104961.795406647,
+        "observedCombatMs": 944326.795406647,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 0.31289848086644
+      },
+      "22": {
+        "combatBasisHash": "72d1f730623f63d20b958f0fbe57d910127a28b47469593249d205c1e4e4b491",
+        "parCombatTimeMs": 1005000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 850080,
+        "clearTailMs": 97092.3986128564,
+        "observedCombatMs": 947172.398612856,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 0.31289848086644
+      },
+      "23": {
+        "combatBasisHash": "b2bc4832439e000d1fd6987ed4273f5d7aa183ab6c7c7193ab3589f2c7f85a24",
+        "parCombatTimeMs": 1040000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 860675,
+        "clearTailMs": 115975.821933146,
+        "observedCombatMs": 976650.821933146,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 0.31289848086644
+      },
+      "24": {
+        "combatBasisHash": "9bea7ed2a27a367187ff08e1f1275cc51e447df5c90909bd80f93c01243d958a",
+        "parCombatTimeMs": 1030000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 871200,
+        "clearTailMs": 98140.608523759,
+        "observedCombatMs": 969340.608523759,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 0.31289848086644
+      },
+      "25": {
+        "combatBasisHash": "e8bfa4726efcf0621aaf73e6cb6184e0eb8ebdfaac120195a4c90867db4456f8",
+        "parCombatTimeMs": 1065000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 881605,
+        "clearTailMs": 121967.827841738,
+        "observedCombatMs": 1003572.82784174,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 0.31289848086644
+      },
+      "26": {
+        "combatBasisHash": "889716414eb23be532a7700ab4bb7482718c32980ae98e688aa5f2e013739c1b",
+        "parCombatTimeMs": 1035000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 891890,
+        "clearTailMs": 84185.3362771157,
+        "observedCombatMs": 976075.336277116,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 0.31289848086644
+      },
+      "27": {
+        "combatBasisHash": "a541c76f493bbd3205cb42f2669f2d0fbbbe725e0e37351da51a1ec8dffcfd30",
+        "parCombatTimeMs": 1095000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 902055,
+        "clearTailMs": 128038.058370547,
+        "observedCombatMs": 1030093.05837055,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 0.31289848086644
+      },
+      "28": {
+        "combatBasisHash": "bcc756b018f2782f1e688d63022eea5a05c54407d7421f8bec3661262e296797",
+        "parCombatTimeMs": 1120000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 912100,
+        "clearTailMs": 144214.909831342,
+        "observedCombatMs": 1056314.90983134,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 0.31289848086644
+      },
+      "29": {
+        "combatBasisHash": "7cc9bc6f4120d5667ad4d50b258b93eff24634e0abf49ca0213a962a903b6724",
+        "parCombatTimeMs": 1125000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 922075,
+        "clearTailMs": 137972.585138057,
+        "observedCombatMs": 1060047.58513806,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 0.31289848086644
+      },
+      "30": {
+        "combatBasisHash": "dce460b0b857b55f997ddf28f5e8d85630f61f12a8f1713080adf3eca3f91a33",
+        "parCombatTimeMs": 1065000,
+        "method": "measured 25-wave spawn span + actual legal maze clear tails, 6% scheduling margin, rounded up to 5s",
+        "spawnSpanMs": 931930,
+        "clearTailMs": 71670,
+        "observedCombatMs": 1003600,
+        "measured": true,
+        "sourceFile": "Docs\\BalanceEvidence\\30x25\\maze-other-par\\unity-results.json",
+        "sourceIndex": 4,
+        "sourcePlanHash": "fb2b3aec0e83abb514590177f0f1b1eb33d849733a7addb70c18da11f473a399"
+      }
+    },
+    "D02": {
+      "1": {
+        "combatBasisHash": "150051401890d42b1b321ef1a8a968c7eea0a07fcd3c75b470b543f0ba5600ac",
+        "parCombatTimeMs": 755000,
+        "method": "measured 25-wave spawn span + actual legal maze clear tails, 6% scheduling margin, rounded up to 5s",
+        "spawnSpanMs": 585360,
+        "clearTailMs": 126040,
+        "observedCombatMs": 711400,
+        "measured": true,
+        "sourceFile": "Docs\\BalanceEvidence\\30x25\\maze-other-par\\unity-results.json",
+        "sourceIndex": 5,
+        "sourcePlanHash": "0c268226e8e01cf921c40559aa5266629cfecc4f01caed1a98e27fcd715affe8"
+      },
+      "2": {
+        "combatBasisHash": "a2f32f922775cd3521b604960a05f09e5400e6f2f698f31cfb90ff9ba950a748",
+        "parCombatTimeMs": 740000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 597916,
+        "clearTailMs": 97852.2345483422,
+        "observedCombatMs": 695768.234548342,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 0.50426299689947
+      },
+      "3": {
+        "combatBasisHash": "bd83bd1b64606b5e8ba750db064432ea410d39a69b20bccda824e1562de8ec2e",
+        "parCombatTimeMs": 775000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 610395,
+        "clearTailMs": 119308.625066415,
+        "observedCombatMs": 729703.625066415,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 0.50426299689947
+      },
+      "4": {
+        "combatBasisHash": "5490ec4c393fa231c93c1d997757f243c25390a967f192022b6240583b5bbf3b",
+        "parCombatTimeMs": 805000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 622740,
+        "clearTailMs": 136478.780110842,
+        "observedCombatMs": 759218.780110842,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 0.50426299689947
+      },
+      "5": {
+        "combatBasisHash": "ddc1ed97768d0a17c769aadf8990a8235478c6abdc6cf80709ee17f40c20be56",
+        "parCombatTimeMs": 795000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 635034,
+        "clearTailMs": 114291.208247265,
+        "observedCombatMs": 749325.208247265,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 0.50426299689947
+      },
+      "6": {
+        "combatBasisHash": "6da5938bd8c459ed8e47f2d80866c9f7a3636f3116444d8bbf366527b2f8fbdc",
+        "parCombatTimeMs": 895000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 647118,
+        "clearTailMs": 195654.042796994,
+        "observedCombatMs": 842772.042796994,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 0.50426299689947
+      },
+      "7": {
+        "combatBasisHash": "ef49cd810dff98b6e7457774f885111a3305f783a031544bdf9599a46c232bd9",
+        "parCombatTimeMs": 880000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 659177,
+        "clearTailMs": 169180.235459772,
+        "observedCombatMs": 828357.235459772,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 0.50426299689947
+      },
+      "8": {
+        "combatBasisHash": "0138678ed3458d9ba3f94f4c7422a46ada42450b687aef180f7a33c79b2e2c64",
+        "parCombatTimeMs": 875000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 671100,
+        "clearTailMs": 150749.422923097,
+        "observedCombatMs": 821849.422923097,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 0.50426299689947
+      },
+      "9": {
+        "combatBasisHash": "289276c1a3252c1edd3f797a59260b4ef8b640ec3de5144ecc4016952285503a",
+        "parCombatTimeMs": 905000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 682974,
+        "clearTailMs": 170062.695704346,
+        "observedCombatMs": 853036.695704346,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 0.50426299689947
+      },
+      "10": {
+        "combatBasisHash": "6bdbbe2b926b4c4affad39cd2652a2cd9ca6336334e9a7dc7cbc43f8c3994223",
+        "parCombatTimeMs": 895000,
+        "method": "measured 25-wave spawn span + actual legal maze clear tails, 6% scheduling margin, rounded up to 5s",
+        "spawnSpanMs": 694636,
+        "clearTailMs": 145464,
+        "observedCombatMs": 840100,
+        "measured": true,
+        "sourceFile": "Docs\\BalanceEvidence\\30x25\\maze-other-par\\unity-results.json",
+        "sourceIndex": 6,
+        "sourcePlanHash": "dda601a783ae26e3bdbdac2b848975498bbcb16ae6c2b5fc7146c7999fa4dca0"
+      },
+      "11": {
+        "combatBasisHash": "40d5edcc7531c3ca52b3330f91e092103fe7401f3f0bc49bf1cd5ac3f3c12a42",
+        "parCombatTimeMs": 900000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 706275,
+        "clearTailMs": 141672.688978906,
+        "observedCombatMs": 847947.688978906,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 0.50426299689947
+      },
+      "12": {
+        "combatBasisHash": "6de009dbaef18dbf517a408d2e6c6b57391661e5048eb9bc1733f606c6b11675",
+        "parCombatTimeMs": 880000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 717776,
+        "clearTailMs": 108240.052284471,
+        "observedCombatMs": 826016.052284471,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 0.50426299689947
+      },
+      "13": {
+        "combatBasisHash": "3bd2c783035d2aa899a585dc7da2a8da1f5fa907d855037497fc546e6a8560e3",
+        "parCombatTimeMs": 940000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 729180,
+        "clearTailMs": 155136.510996122,
+        "observedCombatMs": 884316.510996122,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 0.50426299689947
+      },
+      "14": {
+        "combatBasisHash": "d42e095e2ba2d5c97cf9e43a129760946962aaba408f2bea475d58bb932db3a8",
+        "parCombatTimeMs": 970000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 740420,
+        "clearTailMs": 171852.829343339,
+        "observedCombatMs": 912272.829343339,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 0.50426299689947
+      },
+      "15": {
+        "combatBasisHash": "9e596b8d6ca5fb10bb3e287191125232ea971fb6af1815232d3ebbe6a3a5c6c6",
+        "parCombatTimeMs": 980000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 751639,
+        "clearTailMs": 169810.564205897,
+        "observedCombatMs": 921449.564205897,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 0.50426299689947
+      },
+      "16": {
+        "combatBasisHash": "a672c3d8539e72d03712fa358d8773fc9a40ae825243922af4ba728aa0904e5d",
+        "parCombatTimeMs": 970000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 762718,
+        "clearTailMs": 149917.388978212,
+        "observedCombatMs": 912635.388978212,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 0.50426299689947
+      },
+      "17": {
+        "combatBasisHash": "d0c704bb2250e1406e097c58b34ddf35b8a0d3adea30714fe2b0dfd360a4c6e6",
+        "parCombatTimeMs": 960000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 773702,
+        "clearTailMs": 131713.494790142,
+        "observedCombatMs": 905415.494790142,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 0.50426299689947
+      },
+      "18": {
+        "combatBasisHash": "cf4daa3716a0c483d81bd9fe7b30f79833d95d12f0c572089c4973c5cb7e90f8",
+        "parCombatTimeMs": 985000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 784520,
+        "clearTailMs": 142126.525676116,
+        "observedCombatMs": 926646.525676116,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 0.50426299689947
+      },
+      "19": {
+        "combatBasisHash": "9a3400cbae90a7cff8295c467dfebd0ebc76a7889bdbae2e87d20f5bc13f6b74",
+        "parCombatTimeMs": 1025000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 795319,
+        "clearTailMs": 169533.219557602,
+        "observedCombatMs": 964852.219557602,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 0.50426299689947
+      },
+      "20": {
+        "combatBasisHash": "1cf26779a85176c1ad29307ef36ceb0e247f930b24f1747af8f73358c75c4098",
+        "parCombatTimeMs": 1040000,
+        "method": "measured 25-wave spawn span + actual legal maze clear tails, 6% scheduling margin, rounded up to 5s",
+        "spawnSpanMs": 805926,
+        "clearTailMs": 171524,
+        "observedCombatMs": 977450,
+        "measured": true,
+        "sourceFile": "Docs\\BalanceEvidence\\30x25\\maze-other-par\\unity-results.json",
+        "sourceIndex": 7,
+        "sourcePlanHash": "ded5de7416653d446c688f864b8d71ce9a7cb8bd8a25837a8081e6c347fdd634"
+      },
+      "21": {
+        "combatBasisHash": "86e4a68d2e2e741cf8f540fdc9f5a51b698a56184f27cb083c3384dafffc5776",
+        "parCombatTimeMs": 1045000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 816490,
+        "clearTailMs": 169155.022309927,
+        "observedCombatMs": 985645.022309927,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 0.50426299689947
+      },
+      "22": {
+        "combatBasisHash": "ecc17333d17d2cca5d02036101fec5329d71e4f78d794e769becc77fec3d977c",
+        "parCombatTimeMs": 1045000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 826886,
+        "clearTailMs": 156472.807937906,
+        "observedCombatMs": 983358.807937906,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 0.50426299689947
+      },
+      "23": {
+        "combatBasisHash": "6bb71a3c40c24f9b3afbcfc1454fddb0d36a58775aeb819a50a97f1dd0122335",
+        "parCombatTimeMs": 1090000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 837265,
+        "clearTailMs": 186905.079800789,
+        "observedCombatMs": 1024170.07980079,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 0.50426299689947
+      },
+      "24": {
+        "combatBasisHash": "764b4e2c891b9c9833418d15ece52bf64172416fbbecf61d989f5667d044960c",
+        "parCombatTimeMs": 1070000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 847450,
+        "clearTailMs": 158162.088977519,
+        "observedCombatMs": 1005612.08897752,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 0.50426299689947
+      },
+      "25": {
+        "combatBasisHash": "1ce0952de66621a3c1aaf5cb74c65abe01f68082d45ae0e228dce1fea0ee83cf",
+        "parCombatTimeMs": 1120000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 857594,
+        "clearTailMs": 196561.716191413,
+        "observedCombatMs": 1054155.71619141,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 0.50426299689947
+      },
+      "26": {
+        "combatBasisHash": "76d15556e52a5c0fcc5cd5e2c286eca5532c2f384fd8718bed14b8abac22912a",
+        "parCombatTimeMs": 1065000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 867568,
+        "clearTailMs": 135671.959315802,
+        "observedCombatMs": 1003239.9593158,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 0.50426299689947
+      },
+      "27": {
+        "combatBasisHash": "1990f9282f553746b18ca9a966dabfa627bc14f375c26a7d141571516968abf2",
+        "parCombatTimeMs": 1150000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 877477,
+        "clearTailMs": 206344.418331263,
+        "observedCombatMs": 1083821.41833126,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 0.50426299689947
+      },
+      "28": {
+        "combatBasisHash": "545a69aef14a26a0058d5e7a7dcd528b020e1cdaea0bafb844532ab2a1f19a94",
+        "parCombatTimeMs": 1190000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 887240,
+        "clearTailMs": 232414.815270966,
+        "observedCombatMs": 1119654.81527097,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 0.50426299689947
+      },
+      "29": {
+        "combatBasisHash": "6583af433c7ec39ed1dc3a8e5a5ce98eabc62d75090c696fa7f963d0fa1dfc3d",
+        "parCombatTimeMs": 1190000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 896964,
+        "clearTailMs": 222354.768482821,
+        "observedCombatMs": 1119318.76848282,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 0.50426299689947
+      },
+      "30": {
+        "combatBasisHash": "cff5d79e835cbc6387ddbeb9051d0676a9c631f53d33e6eed688ba681387ed1f",
+        "parCombatTimeMs": 1105000,
+        "method": "measured 25-wave spawn span + actual legal maze clear tails, 6% scheduling margin, rounded up to 5s",
+        "spawnSpanMs": 906516,
+        "clearTailMs": 135684,
+        "observedCombatMs": 1042200,
+        "measured": true,
+        "sourceFile": "Docs\\BalanceEvidence\\30x25\\maze-other-par\\unity-results.json",
+        "sourceIndex": 8,
+        "sourcePlanHash": "e77c876a67a1de9a4bb1a00a875fed0cca7c6ca8d23c643cfb3191db78d63172"
+      }
+    },
+    "D03": {
+      "1": {
+        "combatBasisHash": "720dfef0aa554266328190c23e9ae473a2ea635c762a5f7c5cc5065ccbe84dfb",
+        "parCombatTimeMs": 815000,
+        "method": "measured 25-wave spawn span + actual legal maze clear tails, 6% scheduling margin, rounded up to 5s",
+        "spawnSpanMs": 568944,
+        "clearTailMs": 196356,
+        "observedCombatMs": 765300,
+        "measured": true,
+        "sourceFile": "Docs\\BalanceEvidence\\30x25\\maze-other-par\\unity-results.json",
+        "sourceIndex": 9,
+        "sourcePlanHash": "d13a5b3bd6ce0770983b310679419cf89eb87e4bd92f1247cc432584f133e120"
+      },
+      "2": {
+        "combatBasisHash": "a8034329f87628d7757a819835ccf00ffdcc3c2a60a84806bd1e90ba2418080b",
+        "parCombatTimeMs": 795000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 581150,
+        "clearTailMs": 167213.844788577,
+        "observedCombatMs": 748363.844788577,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 0.861704946089035
+      },
+      "3": {
+        "combatBasisHash": "2524c41cc4ededd4f67ea6f28bfeed5193147ea6e73b25cc0dbb16e0e0701dc1",
+        "parCombatTimeMs": 845000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 593228,
+        "clearTailMs": 203879.390244666,
+        "observedCombatMs": 797107.390244666,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 0.861704946089035
+      },
+      "4": {
+        "combatBasisHash": "965f2410b1c27d44aca6fcadb5476809fbf0de5db4df6ca6726e182ef35d2e53",
+        "parCombatTimeMs": 890000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 605278,
+        "clearTailMs": 233220.443658997,
+        "observedCombatMs": 838498.443658997,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 0.861704946089035
+      },
+      "5": {
+        "combatBasisHash": "016ae624d723a84f3e855e8b5d6802aba50c08306ea8c04886cb3fc7d2e3981c",
+        "parCombatTimeMs": 865000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 617200,
+        "clearTailMs": 195305.42603108,
+        "observedCombatMs": 812505.42603108,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 0.861704946089035
+      },
+      "6": {
+        "combatBasisHash": "84862e4b8e910544b7b2ac0b1ba07d08bebae85a1f314dff00acb06105f8e705",
+        "parCombatTimeMs": 1025000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 628994,
+        "clearTailMs": 334341.519082545,
+        "observedCombatMs": 963335.519082545,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 0.861704946089035
+      },
+      "7": {
+        "combatBasisHash": "5351b09678075261bdf978d38c93be5a58b99b146b17be646d462498cba4e8f2",
+        "parCombatTimeMs": 990000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 640660,
+        "clearTailMs": 289102.009412871,
+        "observedCombatMs": 929762.009412871,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 0.861704946089035
+      },
+      "8": {
+        "combatBasisHash": "f99d1fb72240b5cd0030320e183a10ddaa3e04d0f9359c2bfdb2d1e44ce456df",
+        "parCombatTimeMs": 965000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 652298,
+        "clearTailMs": 257606.693633317,
+        "observedCombatMs": 909904.693633317,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 0.861704946089035
+      },
+      "9": {
+        "combatBasisHash": "2ba87043d91a4aa2a2f0eaece71f9fe9a01d98b1c3b241a9bd0ee3a782044dc6",
+        "parCombatTimeMs": 1015000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 663808,
+        "clearTailMs": 290609.993068527,
+        "observedCombatMs": 954417.993068527,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 0.861704946089035
+      },
+      "10": {
+        "combatBasisHash": "644e22d0bbe436dc1b120ed07f286f3c142588c159487a261d3a0170e6761e5c",
+        "parCombatTimeMs": 1005000,
+        "method": "measured 25-wave spawn span + actual legal maze clear tails, 6% scheduling margin, rounded up to 5s",
+        "spawnSpanMs": 675190,
+        "clearTailMs": 271660,
+        "observedCombatMs": 946850,
+        "measured": true,
+        "sourceFile": "Docs\\BalanceEvidence\\30x25\\maze-other-par\\unity-results.json",
+        "sourceIndex": 10,
+        "sourcePlanHash": "c37eb0bdaaa30fb217ad3f8383c9a54acc3c5b91f32151cc4d7561e4231c933e"
+      },
+      "11": {
+        "combatBasisHash": "5c9e89f60dcb3a52b34814e55eba85540d93506fdb1b8bda5983ff0bc2548b65",
+        "parCombatTimeMs": 985000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 686444,
+        "clearTailMs": 242096.004603714,
+        "observedCombatMs": 928540.004603714,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 0.861704946089035
+      },
+      "12": {
+        "combatBasisHash": "5a0d383434c6e0725a3d87b6f34c400b5dc60076f208aee2d496780ef1e2ea5f",
+        "parCombatTimeMs": 940000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 697620,
+        "clearTailMs": 184964.966678011,
+        "observedCombatMs": 882584.966678011,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 0.861704946089035
+      },
+      "13": {
+        "combatBasisHash": "bf5201a30771c638eb1e56b66c90d42217e1795d6b8f3c9ee34c84c24805d423",
+        "parCombatTimeMs": 1035000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 708718,
+        "clearTailMs": 265103.526664292,
+        "observedCombatMs": 973821.526664292,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 0.861704946089035
+      },
+      "14": {
+        "combatBasisHash": "4826980d5726195a8d13b0d590756526be7f9a0c871339ec526182eeb4ca7a64",
+        "parCombatTimeMs": 1075000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 719688,
+        "clearTailMs": 293669.045627143,
+        "observedCombatMs": 1013357.04562714,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 0.861704946089035
+      },
+      "15": {
+        "combatBasisHash": "5824e120d88966f1a71615db045ed3043cb4da2f3d661297abaada85a3fac948",
+        "parCombatTimeMs": 1085000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 730530,
+        "clearTailMs": 290179.140595482,
+        "observedCombatMs": 1020709.14059548,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 0.861704946089035
+      },
+      "16": {
+        "combatBasisHash": "09efe0aa820e6fcd1e08a4550eec0929e6cbe1b90940d5d97ffdebfa2b5646e3",
+        "parCombatTimeMs": 1060000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 741294,
+        "clearTailMs": 256184.88047227,
+        "observedCombatMs": 997478.88047227,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 0.861704946089035
+      },
+      "17": {
+        "combatBasisHash": "4fb547340ce927243a8debd3fa3f78ae9692f2af7430c3a085bad3f73f87aebb",
+        "parCombatTimeMs": 1040000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 751980,
+        "clearTailMs": 225077.331918456,
+        "observedCombatMs": 977057.331918456,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 0.861704946089035
+      },
+      "18": {
+        "combatBasisHash": "7abe3d969211ac6c54e966e16207d735e72cc7fbf5e47260eccbcf0b5bf0d006",
+        "parCombatTimeMs": 1070000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 762538,
+        "clearTailMs": 242871.539055194,
+        "observedCombatMs": 1005409.53905519,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 0.861704946089035
+      },
+      "19": {
+        "combatBasisHash": "49a17a2954982505e25393eab5ae767964e51a25c3a0d861b82b7fc1c9561365",
+        "parCombatTimeMs": 1130000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 772968,
+        "clearTailMs": 289705.202875133,
+        "observedCombatMs": 1062673.20287513,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 0.861704946089035
+      },
+      "20": {
+        "combatBasisHash": "a7109acae967203d1bb4586c78046ab35a69d67247620fe0c5f21d03811ee2bc",
+        "parCombatTimeMs": 1110000,
+        "method": "measured 25-wave spawn span + actual legal maze clear tails, 6% scheduling margin, rounded up to 5s",
+        "spawnSpanMs": 783320,
+        "clearTailMs": 262130,
+        "observedCombatMs": 1045450,
+        "measured": true,
+        "sourceFile": "Docs\\BalanceEvidence\\30x25\\maze-other-par\\unity-results.json",
+        "sourceIndex": 11,
+        "sourcePlanHash": "1b420fb4843781825f899c7858fc9c7e0d563b87e7bd7a17ecce92c167239d14"
+      },
+      "21": {
+        "combatBasisHash": "e21ba6886c2c20df84d41c94509f520b9ed4d4bdb2811eb4ebe953175ae9f46c",
+        "parCombatTimeMs": 1150000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 793594,
+        "clearTailMs": 289058.924165567,
+        "observedCombatMs": 1082652.92416557,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 0.861704946089035
+      },
+      "22": {
+        "combatBasisHash": "cb0e508d39332908cee41e54b334cff94b0756185c29d5bc33974c28114c3fc2",
+        "parCombatTimeMs": 1140000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 803740,
+        "clearTailMs": 267387.044771427,
+        "observedCombatMs": 1071127.04477143,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 0.861704946089035
+      },
+      "23": {
+        "combatBasisHash": "da50d85301c6b53bc571ea0d31cd89c5b200b9b3df387f494d149df644683502",
+        "parCombatTimeMs": 1205000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 813758,
+        "clearTailMs": 319390.938267901,
+        "observedCombatMs": 1133148.9382679,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 0.861704946089035
+      },
+      "24": {
+        "combatBasisHash": "b445f88a822c98dfa0aa22423bc285f986e397485e00ab6b0fd71a2a5cec823c",
+        "parCombatTimeMs": 1160000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 823648,
+        "clearTailMs": 270273.756340826,
+        "observedCombatMs": 1093921.75634083,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 0.861704946089035
+      },
+      "25": {
+        "combatBasisHash": "59300ce544bc31f763c10853cc4e510a8678e6d27251787a0540bd62e20ad961",
+        "parCombatTimeMs": 1240000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 833510,
+        "clearTailMs": 335892.587985506,
+        "observedCombatMs": 1169402.58798551,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 0.861704946089035
+      },
+      "26": {
+        "combatBasisHash": "104e1c80f6a66ac17916fb8fbf489979ab3ee2013f37a3cc2c90094269d49813",
+        "parCombatTimeMs": 1140000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 843244,
+        "clearTailMs": 231841.715745255,
+        "observedCombatMs": 1075085.71574525,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 0.861704946089035
+      },
+      "27": {
+        "combatBasisHash": "ebfea848259c268a02cfc178f41cfa9ec5507fe187dcbb6644d239e43e2cab52",
+        "parCombatTimeMs": 1280000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 852850,
+        "clearTailMs": 352609.663939633,
+        "observedCombatMs": 1205459.66393963,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 0.861704946089035
+      },
+      "28": {
+        "combatBasisHash": "fb7684b33852d44adbbd763cb57666750392b93d7d42d04dc80149372dc96477",
+        "parCombatTimeMs": 1340000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 862328,
+        "clearTailMs": 397159.809652436,
+        "observedCombatMs": 1259487.80965244,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 0.861704946089035
+      },
+      "29": {
+        "combatBasisHash": "88217b01d20f23c16207fbdd0620eec0fb31c8f6a87bfbf2b2d87f51eda2e4f7",
+        "parCombatTimeMs": 1330000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 871778,
+        "clearTailMs": 379968.79597796,
+        "observedCombatMs": 1251746.79597796,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 0.861704946089035
+      },
+      "30": {
+        "combatBasisHash": "c83dd8f4ee6d9228694009adfd18d78c1d01e8f3b016778e9c09fc9928f38be0",
+        "parCombatTimeMs": 1210000,
+        "method": "measured 25-wave spawn span + actual legal maze clear tails, 6% scheduling margin, rounded up to 5s",
+        "spawnSpanMs": 881100,
+        "clearTailMs": 256200,
+        "observedCombatMs": 1137300,
+        "measured": true,
+        "sourceFile": "Docs\\BalanceEvidence\\30x25\\maze-other-par\\unity-results.json",
+        "sourceIndex": 12,
+        "sourcePlanHash": "26f2e3e05bed01a87e18cb4539b4813e0907de661cce6c3b4e3e67842ead4298"
+      }
+    },
+    "D04": {
+      "1": {
+        "combatBasisHash": "10be03f117460b8a2fc05b7c5c6f88998814984a742f1f0ce8e5960945785bf8",
+        "parCombatTimeMs": 825000,
+        "method": "measured 25-wave spawn span + actual legal maze clear tails, 6% scheduling margin, rounded up to 5s",
+        "spawnSpanMs": 547050,
+        "clearTailMs": 230150,
+        "observedCombatMs": 777200,
+        "measured": true,
+        "sourceFile": "Docs\\BalanceEvidence\\30x25\\maze-par-calibration\\unity-results.json",
+        "sourceIndex": 0,
+        "sourcePlanHash": "c72c4f142dab1c5e589ab3d032ac24301ca8bb3e548fb1c5f66f9e81c788fbfb"
+      },
+      "2": {
+        "combatBasisHash": "69086e47a8c90e4401ecf6eeda51862e784186f022d006440199cd7ee8ead5b8",
+        "parCombatTimeMs": 800000,
+        "method": "measured 25-wave spawn span + actual legal maze clear tails, 6% scheduling margin, rounded up to 5s",
+        "spawnSpanMs": 558800,
+        "clearTailMs": 194050,
+        "observedCombatMs": 752850,
+        "measured": true,
+        "sourceFile": "Docs\\BalanceEvidence\\30x25\\maze-par-calibration\\unity-results.json",
+        "sourceIndex": 1,
+        "sourcePlanHash": "30ca69050059b144b4e5e4e0ced277782ce61d3b332239cffc2762eeae9e3ea5"
+      },
+      "3": {
+        "combatBasisHash": "6b560883503d3e87917dcc6d01e74148deff280519d68730be3734b2999b42a9",
+        "parCombatTimeMs": 860000,
+        "method": "measured 25-wave spawn span + actual legal maze clear tails, 6% scheduling margin, rounded up to 5s",
+        "spawnSpanMs": 570450,
+        "clearTailMs": 236600,
+        "observedCombatMs": 807050,
+        "measured": true,
+        "sourceFile": "Docs\\BalanceEvidence\\30x25\\maze-par-calibration\\unity-results.json",
+        "sourceIndex": 2,
+        "sourcePlanHash": "472626418832b9aa20faee5253513f5df0126dfdf9012906ccfc54a97d87eca6"
+      },
+      "4": {
+        "combatBasisHash": "6007783dc0492b894c4f1a8253f6dc7e76daff625a1d4c504eb02a3b72afa0fe",
+        "parCombatTimeMs": 905000,
+        "method": "measured 25-wave spawn span + actual legal maze clear tails, 6% scheduling margin, rounded up to 5s",
+        "spawnSpanMs": 582000,
+        "clearTailMs": 270650,
+        "observedCombatMs": 852650,
+        "measured": true,
+        "sourceFile": "Docs\\BalanceEvidence\\30x25\\maze-par-correction\\unity-results.json",
+        "sourceIndex": 0,
+        "sourcePlanHash": "439d343d73e236c6d8e65924d296ffd4f1b47eca108d9bd3a35a39ce6ca2a34b"
+      },
+      "5": {
+        "combatBasisHash": "79e84df436502b08df02c063c165d63f61a5746549bed294277e4b3b440fa414",
+        "parCombatTimeMs": 870000,
+        "method": "measured 25-wave spawn span + actual legal maze clear tails, 6% scheduling margin, rounded up to 5s",
+        "spawnSpanMs": 593450,
+        "clearTailMs": 226650,
+        "observedCombatMs": 820100,
+        "measured": true,
+        "sourceFile": "Docs\\BalanceEvidence\\30x25\\maze-par-calibration\\unity-results.json",
+        "sourceIndex": 3,
+        "sourcePlanHash": "83ca418f9227330f39a97dec502f1cc6be8a76fdac91b7de3d0a7b1ee4e6d506"
+      },
+      "6": {
+        "combatBasisHash": "5237f16ebec84a1e5e1bcc196035d3d24782d84f33750e63c73afdaea041aa66",
+        "parCombatTimeMs": 1055000,
+        "method": "measured 25-wave spawn span + actual legal maze clear tails, 6% scheduling margin, rounded up to 5s",
+        "spawnSpanMs": 604800,
+        "clearTailMs": 388000,
+        "observedCombatMs": 992800,
+        "measured": true,
+        "sourceFile": "Docs\\BalanceEvidence\\30x25\\maze-par-correction\\unity-results.json",
+        "sourceIndex": 1,
+        "sourcePlanHash": "8b226230de1a341237298e0a1d83318abdb1914397d036fcff072499d6c796d1"
+      },
+      "7": {
+        "combatBasisHash": "87484740c14f17cadb98bb65178aebed37c59e54d5d6157f20920f04d7b86034",
+        "parCombatTimeMs": 1010000,
+        "method": "measured 25-wave spawn span + actual legal maze clear tails, 6% scheduling margin, rounded up to 5s",
+        "spawnSpanMs": 616050,
+        "clearTailMs": 335500,
+        "observedCombatMs": 951550,
+        "measured": true,
+        "sourceFile": "Docs\\BalanceEvidence\\30x25\\maze-par-calibration\\unity-results.json",
+        "sourceIndex": 5,
+        "sourcePlanHash": "177c36f0c7485d672cc06eb47218e9d85a401ce4547340d60fdaeb1581d55dfe"
+      },
+      "8": {
+        "combatBasisHash": "3576b0ced5ce61b56ccdc9cf521b89c68ea86edebdbf74161c7720d570c13b5f",
+        "parCombatTimeMs": 985000,
+        "method": "measured 25-wave spawn span + actual legal maze clear tails, 6% scheduling margin, rounded up to 5s",
+        "spawnSpanMs": 627200,
+        "clearTailMs": 298950,
+        "observedCombatMs": 926150,
+        "measured": true,
+        "sourceFile": "Docs\\BalanceEvidence\\30x25\\maze-par-calibration\\unity-results.json",
+        "sourceIndex": 6,
+        "sourcePlanHash": "35b79c0bef642a6ee582dbb2b3c7bb15011e747bfa7ad3483ec4a228fdc70f5c"
+      },
+      "9": {
+        "combatBasisHash": "a4bab544e96fdda32defcacf3027e39504de7e74309c1a200cb07ba0468563f3",
+        "parCombatTimeMs": 1035000,
+        "method": "measured 25-wave spawn span + actual legal maze clear tails, 6% scheduling margin, rounded up to 5s",
+        "spawnSpanMs": 638250,
+        "clearTailMs": 337250,
+        "observedCombatMs": 975500,
+        "measured": true,
+        "sourceFile": "Docs\\BalanceEvidence\\30x25\\maze-other-par\\unity-results.json",
+        "sourceIndex": 0,
+        "sourcePlanHash": "e27d8c431ec3e734564a72e3dbae0b374682372bb9bbb4d08fb379302a634c61"
+      },
+      "10": {
+        "combatBasisHash": "a16402f82790c76fbfcd114dd1da7f19e663d2d2cb325dc3a9d7b1d473cbc8c8",
+        "parCombatTimeMs": 1040000,
+        "method": "measured 25-wave spawn span + actual legal maze clear tails, 6% scheduling margin, rounded up to 5s",
+        "spawnSpanMs": 649200,
+        "clearTailMs": 329150,
+        "observedCombatMs": 978350,
+        "measured": true,
+        "sourceFile": "Docs\\BalanceEvidence\\30x25\\maze-par-correction\\unity-results.json",
+        "sourceIndex": 3,
+        "sourcePlanHash": "be9d2d87ca15d388d169ce8ec222c1051dc7bfbc4a7e58005c9041d5266cb794"
+      },
+      "11": {
+        "combatBasisHash": "a46044182af6d5c1ba875945566f34de20ad4d784284602ae2a65c7e403a44d4",
+        "parCombatTimeMs": 1000000,
+        "method": "measured 25-wave spawn span + actual legal maze clear tails, 6% scheduling margin, rounded up to 5s",
+        "spawnSpanMs": 660050,
+        "clearTailMs": 280950,
+        "observedCombatMs": 941000,
+        "measured": true,
+        "sourceFile": "Docs\\BalanceEvidence\\30x25\\maze-par-calibration\\unity-results.json",
+        "sourceIndex": 8,
+        "sourcePlanHash": "65dbefdbec03b64e995a376b41011ec2b68f117cea0503548a937512d9cb87b8"
+      },
+      "12": {
+        "combatBasisHash": "d9ab4e902746e7edb67e1909caa9964cf1d15a09b8749bd1aab71dcc3ce8e0f3",
+        "parCombatTimeMs": 940000,
+        "method": "measured 25-wave spawn span + actual legal maze clear tails, 6% scheduling margin, rounded up to 5s",
+        "spawnSpanMs": 670800,
+        "clearTailMs": 214650,
+        "observedCombatMs": 885450,
+        "measured": true,
+        "sourceFile": "Docs\\BalanceEvidence\\30x25\\maze-par-calibration\\unity-results.json",
+        "sourceIndex": 9,
+        "sourcePlanHash": "4c60c0a51c3e327f9f647ee609f63da4e3c4ce22cb86a6f5418416f29b54aa1a"
+      },
+      "13": {
+        "combatBasisHash": "a852dfcee21dc14ec3d7e19ed3742c13d87d61eca829422303cc9af78fa8ffb5",
+        "parCombatTimeMs": 1050000,
+        "method": "measured 25-wave spawn span + actual legal maze clear tails, 6% scheduling margin, rounded up to 5s",
+        "spawnSpanMs": 681450,
+        "clearTailMs": 307650,
+        "observedCombatMs": 989100,
+        "measured": true,
+        "sourceFile": "Docs\\BalanceEvidence\\30x25\\maze-par-calibration\\unity-results.json",
+        "sourceIndex": 10,
+        "sourcePlanHash": "004e56c07cf8f52781defd16cae9fe8066ca72a969b6e076a07449a49c638bdc"
+      },
+      "14": {
+        "combatBasisHash": "7db61efae3419683c29621b0833d9a2ef7f013a3ddb492c1a9219c975dac1451",
+        "parCombatTimeMs": 1095000,
+        "method": "measured 25-wave spawn span + actual legal maze clear tails, 6% scheduling margin, rounded up to 5s",
+        "spawnSpanMs": 692000,
+        "clearTailMs": 340800,
+        "observedCombatMs": 1032800,
+        "measured": true,
+        "sourceFile": "Docs\\BalanceEvidence\\30x25\\maze-par-calibration\\unity-results.json",
+        "sourceIndex": 11,
+        "sourcePlanHash": "69894eab5b25416ab446a88f71ed16b14a86a56779b266340b6f54ce8992176d"
+      },
+      "15": {
+        "combatBasisHash": "7ac9baf64d2e490fd802b7e896d88d34e577caf17dbdaff7b878578ee78eb136",
+        "parCombatTimeMs": 1105000,
+        "method": "measured 25-wave spawn span + actual legal maze clear tails, 6% scheduling margin, rounded up to 5s",
+        "spawnSpanMs": 702450,
+        "clearTailMs": 336750,
+        "observedCombatMs": 1039200,
+        "measured": true,
+        "sourceFile": "Docs\\BalanceEvidence\\30x25\\maze-par-correction\\unity-results.json",
+        "sourceIndex": 4,
+        "sourcePlanHash": "2a496c5494d00f64ba08de81af48f69a318e5881bda6b4a8993457d1529e2c4e"
+      },
+      "16": {
+        "combatBasisHash": "f6b808a82a6b1e44e516e481c260a94c3142b106658232cb664fec72a56bf692",
+        "parCombatTimeMs": 1075000,
+        "method": "measured 25-wave spawn span + actual legal maze clear tails, 6% scheduling margin, rounded up to 5s",
+        "spawnSpanMs": 712800,
+        "clearTailMs": 297300,
+        "observedCombatMs": 1010100,
+        "measured": true,
+        "sourceFile": "Docs\\BalanceEvidence\\30x25\\maze-par-calibration\\unity-results.json",
+        "sourceIndex": 13,
+        "sourcePlanHash": "1ed6779b3d880833448d512174e8ab31c40aca76b96deea963e0f6a2c5da655d"
+      },
+      "17": {
+        "combatBasisHash": "22ebdfda3acc4eda7d4bfae524ef695b78e45619ada2dc49468a4937f1da7097",
+        "parCombatTimeMs": 1045000,
+        "method": "measured 25-wave spawn span + actual legal maze clear tails, 6% scheduling margin, rounded up to 5s",
+        "spawnSpanMs": 723050,
+        "clearTailMs": 261200,
+        "observedCombatMs": 984250,
+        "measured": true,
+        "sourceFile": "Docs\\BalanceEvidence\\30x25\\maze-par-calibration\\unity-results.json",
+        "sourceIndex": 14,
+        "sourcePlanHash": "e69c29b7a8de53138f7ff2d3aac878151563e5eee4ad9d1d7dc3336a9697dd3e"
+      },
+      "18": {
+        "combatBasisHash": "4926382567c684aeac97e1d0a1f0b06190f298a82acd128700ba8c1642cbca61",
+        "parCombatTimeMs": 1080000,
+        "method": "measured 25-wave spawn span + actual legal maze clear tails, 6% scheduling margin, rounded up to 5s",
+        "spawnSpanMs": 733200,
+        "clearTailMs": 281850,
+        "observedCombatMs": 1015050,
+        "measured": true,
+        "sourceFile": "Docs\\BalanceEvidence\\30x25\\maze-par-calibration\\unity-results.json",
+        "sourceIndex": 15,
+        "sourcePlanHash": "5934204813b1a31faa481277bafb6d417a3b71f423b627342f8373c734b931bb"
+      },
+      "19": {
+        "combatBasisHash": "5d42bd4bf2c5432e0c36bc00d6d93b59260c630bf5a4d2eb6366ce32f77702f8",
+        "parCombatTimeMs": 1145000,
+        "method": "measured 25-wave spawn span + actual legal maze clear tails, 6% scheduling margin, rounded up to 5s",
+        "spawnSpanMs": 743250,
+        "clearTailMs": 336200,
+        "observedCombatMs": 1079450,
+        "measured": true,
+        "sourceFile": "Docs\\BalanceEvidence\\30x25\\maze-par-calibration\\unity-results.json",
+        "sourceIndex": 16,
+        "sourcePlanHash": "08c9a4d56e77e2bb21bd8b5b31dfde01f4c12284f59d9c077ef729f0afbb8cac"
+      },
+      "20": {
+        "combatBasisHash": "bbdaa7f0239ebeda4f009016c54a0c9765e0c8e24b0ad1fe6cf057c568100b9a",
+        "parCombatTimeMs": 1100000,
+        "method": "measured 25-wave spawn span + actual legal maze clear tails, 6% scheduling margin, rounded up to 5s",
+        "spawnSpanMs": 753200,
+        "clearTailMs": 280350,
+        "observedCombatMs": 1033550,
+        "measured": true,
+        "sourceFile": "Docs\\BalanceEvidence\\30x25\\maze-par-calibration\\unity-results.json",
+        "sourceIndex": 17,
+        "sourcePlanHash": "4558708a4921b977f4551fc9a19deb68bb5172c1f2b3395a5b9220e6aee70c2c"
+      },
+      "21": {
+        "combatBasisHash": "613aacdc9d6d8326b107b2adb45902157f8c4f0bb4983f16b69668bcf4a1e05e",
+        "parCombatTimeMs": 1165000,
+        "method": "measured 25-wave spawn span + actual legal maze clear tails, 6% scheduling margin, rounded up to 5s",
+        "spawnSpanMs": 763050,
+        "clearTailMs": 335450,
+        "observedCombatMs": 1098500,
+        "measured": true,
+        "sourceFile": "Docs\\BalanceEvidence\\30x25\\maze-par-calibration\\unity-results.json",
+        "sourceIndex": 18,
+        "sourcePlanHash": "ef201116bfeee09a901157edfbe247a5e0054156e50c7d59a8c821eea73270c5"
+      },
+      "22": {
+        "combatBasisHash": "c6140fa4288b3c9b3a1471855e9815563d3939073a5b79732e9a005b32ebd060",
+        "parCombatTimeMs": 1150000,
+        "method": "measured 25-wave spawn span + actual legal maze clear tails, 6% scheduling margin, rounded up to 5s",
+        "spawnSpanMs": 772800,
+        "clearTailMs": 310300,
+        "observedCombatMs": 1083100,
+        "measured": true,
+        "sourceFile": "Docs\\BalanceEvidence\\30x25\\maze-par-calibration\\unity-results.json",
+        "sourceIndex": 19,
+        "sourcePlanHash": "3a45c37c487280d3ec8c76e107971421fb97404b00e215b7cb264f2d13389496"
+      },
+      "23": {
+        "combatBasisHash": "5a56e9227141b94b1c8da2f0f66e4c9c1b920034b151f0b52c64dfe34fae859d",
+        "parCombatTimeMs": 1225000,
+        "method": "measured 25-wave spawn span + actual legal maze clear tails, 6% scheduling margin, rounded up to 5s",
+        "spawnSpanMs": 782450,
+        "clearTailMs": 370650,
+        "observedCombatMs": 1153100,
+        "measured": true,
+        "sourceFile": "Docs\\BalanceEvidence\\30x25\\maze-par-calibration\\unity-results.json",
+        "sourceIndex": 20,
+        "sourcePlanHash": "4860e5eeb10bc7015e0d5c8b90e2031bd7873246e8fc4c4be21b0b9704c7cd5d"
+      },
+      "24": {
+        "combatBasisHash": "4a3b67f92845833bfb2dc4c32248b0dd7c2fbd91f0f7e04bdc34bec673aa824d",
+        "parCombatTimeMs": 1175000,
+        "method": "measured 25-wave spawn span + actual legal maze clear tails, 6% scheduling margin, rounded up to 5s",
+        "spawnSpanMs": 792000,
+        "clearTailMs": 313650,
+        "observedCombatMs": 1105650,
+        "measured": true,
+        "sourceFile": "Docs\\BalanceEvidence\\30x25\\maze-par-calibration\\unity-results.json",
+        "sourceIndex": 21,
+        "sourcePlanHash": "f5bac65e19b62132b66f62bad0c606da44935959a2ebfce4ed531a68da8f1867"
+      },
+      "25": {
+        "combatBasisHash": "0871ab04a52e423144b5aa23c5fa6d2c9bc73e0292c28954c14779c97480abda",
+        "parCombatTimeMs": 1265000,
+        "method": "measured 25-wave spawn span + actual legal maze clear tails, 6% scheduling margin, rounded up to 5s",
+        "spawnSpanMs": 801450,
+        "clearTailMs": 389800,
+        "observedCombatMs": 1191250,
+        "measured": true,
+        "sourceFile": "Docs\\BalanceEvidence\\30x25\\maze-par-calibration\\unity-results.json",
+        "sourceIndex": 22,
+        "sourcePlanHash": "5ee4baad0a1d643d7c7e6cd6f73d6e1ee5ab6dd9e2a4fec3657c3aaa4ebc3ca0"
+      },
+      "26": {
+        "combatBasisHash": "dca43498a1935973986903243fbc730f4eda1c15cb5131c4b9e94e94460cb7b1",
+        "parCombatTimeMs": 1145000,
+        "method": "measured 25-wave spawn span + actual legal maze clear tails, 6% scheduling margin, rounded up to 5s",
+        "spawnSpanMs": 810800,
+        "clearTailMs": 269050,
+        "observedCombatMs": 1079850,
+        "measured": true,
+        "sourceFile": "Docs\\BalanceEvidence\\30x25\\maze-par-calibration\\unity-results.json",
+        "sourceIndex": 23,
+        "sourcePlanHash": "a3178963b9c364c3d7691514494c1c7dbfbd1cdfe9bee5c4047741af3578fdc8"
+      },
+      "27": {
+        "combatBasisHash": "6f7d7110cdec5abf16ee816a853ec1677a13a77083aad8db371ddc12fde68292",
+        "parCombatTimeMs": 1305000,
+        "method": "measured 25-wave spawn span + actual legal maze clear tails, 6% scheduling margin, rounded up to 5s",
+        "spawnSpanMs": 820050,
+        "clearTailMs": 409200,
+        "observedCombatMs": 1229250,
+        "measured": true,
+        "sourceFile": "Docs\\BalanceEvidence\\30x25\\maze-par-calibration\\unity-results.json",
+        "sourceIndex": 24,
+        "sourcePlanHash": "aa7efa38fb0d505f60b0a96d917c978a4441b6f8b1b578af766827f12a4f2189"
+      },
+      "28": {
+        "combatBasisHash": "966da04921305cb4bbc577366b7f5e7d35d00dba5b535ae03f6f0f3c4d8ff62f",
+        "parCombatTimeMs": 1370000,
+        "method": "measured 25-wave spawn span + actual legal maze clear tails, 6% scheduling margin, rounded up to 5s",
+        "spawnSpanMs": 829200,
+        "clearTailMs": 460900,
+        "observedCombatMs": 1290100,
+        "measured": true,
+        "sourceFile": "Docs\\BalanceEvidence\\30x25\\maze-par-correction\\unity-results.json",
+        "sourceIndex": 5,
+        "sourcePlanHash": "1cde196410bcd4bc2e6356cc3bd0130345e1046e82d70b7171de084c8111c9cf"
+      },
+      "29": {
+        "combatBasisHash": "85b8bf8a4cde9b8fc44b9ccd9a86326550f0573bd5304eba2eb9d0dbeaf0507c",
+        "parCombatTimeMs": 1360000,
+        "method": "measured 25-wave spawn span + actual legal maze clear tails, 6% scheduling margin, rounded up to 5s",
+        "spawnSpanMs": 838250,
+        "clearTailMs": 440950,
+        "observedCombatMs": 1279200,
+        "measured": true,
+        "sourceFile": "Docs\\BalanceEvidence\\30x25\\maze-par-calibration\\unity-results.json",
+        "sourceIndex": 26,
+        "sourcePlanHash": "bc99e58da9c22efc07dad2b8e9d91128b000cd1fb11935a37a60351014f74608"
+      },
+      "30": {
+        "combatBasisHash": "901470e155c1dfa163ebbbb0ec5516b3cf1701f92da7fbc218f1bb0b2db6ebb6",
+        "parCombatTimeMs": 1215000,
+        "method": "measured 25-wave spawn span + actual legal maze clear tails, 6% scheduling margin, rounded up to 5s",
+        "spawnSpanMs": 847200,
+        "clearTailMs": 294400,
+        "observedCombatMs": 1141600,
+        "measured": true,
+        "sourceFile": "Docs\\BalanceEvidence\\30x25\\maze-par-calibration\\unity-results.json",
+        "sourceIndex": 27,
+        "sourcePlanHash": "a4d217b1f841fcf9c1f9b63c9dd1ab828e7885f47739eece00be41c4c1055fd7"
+      }
+    },
+    "D05": {
+      "1": {
+        "combatBasisHash": "ab732df5478d495344b3ea5fe8f8a5ee4eed7e941f3a78d3a6f03f3a75feb0b4",
+        "parCombatTimeMs": 905000,
+        "method": "measured 25-wave spawn span + actual legal maze clear tails, 6% scheduling margin, rounded up to 5s",
+        "spawnSpanMs": 538856,
+        "clearTailMs": 311044,
+        "observedCombatMs": 849900,
+        "measured": true,
+        "sourceFile": "Docs\\BalanceEvidence\\30x25\\maze-other-par\\unity-results.json",
+        "sourceIndex": 13,
+        "sourcePlanHash": "8c8e1646d0e0767afe4c386c8c7c3658f984ec75db0b71192d139f4786ae31ff"
+      },
+      "2": {
+        "combatBasisHash": "20cbc037f043c9f03b0fff64e0cb4d1a700d284abf3e4f5d6eb86f575cab85fd",
+        "parCombatTimeMs": 875000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 550420,
+        "clearTailMs": 270778.653113886,
+        "observedCombatMs": 821198.653113886,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.39540661228491
+      },
+      "3": {
+        "combatBasisHash": "17137ac403779ae0c4f6f462ddd120aeb4491192767b549cca23fbcd62329aa3",
+        "parCombatTimeMs": 950000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 561902,
+        "clearTailMs": 330153.204466609,
+        "observedCombatMs": 892055.204466609,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.39540661228491
+      },
+      "4": {
+        "combatBasisHash": "0b7787aa0b9dc319ccde0ac6ce89c74f261cfd388416efa63b5f912aa17a5e88",
+        "parCombatTimeMs": 1010000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 573302,
+        "clearTailMs": 377666.79961491,
+        "observedCombatMs": 950968.79961491,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.39540661228491
+      },
+      "5": {
+        "combatBasisHash": "210b7d9d2d62717e917e5bb1a22626ec1d34564de36d51331b2e64fd83f5bb18",
+        "parCombatTimeMs": 955000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 584547,
+        "clearTailMs": 316268.908674374,
+        "observedCombatMs": 900815.908674374,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.39540661228491
+      },
+      "6": {
+        "combatBasisHash": "c7b2f11404cad3c37bdb1c9cd43a215ff097f5b3864100a9a89cefaeef8d2501",
+        "parCombatTimeMs": 1210000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 595716,
+        "clearTailMs": 541417.765566544,
+        "observedCombatMs": 1137133.76556654,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.39540661228491
+      },
+      "7": {
+        "combatBasisHash": "924b0af70ae8256ae820cfc8773caaa8ff70c0c7b9b58ec9f1d4b6edd1c65d24",
+        "parCombatTimeMs": 1140000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 606803,
+        "clearTailMs": 468158.918421586,
+        "observedCombatMs": 1074961.91842159,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.39540661228491
+      },
+      "8": {
+        "combatBasisHash": "6d657570b26402533509a9522104750852c8587fc2f3cd86f282a3d23fa3aa07",
+        "parCombatTimeMs": 1100000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 617808,
+        "clearTailMs": 417156.806742573,
+        "observedCombatMs": 1034964.80674257,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.39540661228491
+      },
+      "9": {
+        "combatBasisHash": "332c5c1db4c8cc399d63611620bb55a68e1cc68bbe86775e014a41a7f793feb2",
+        "parCombatTimeMs": 1170000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 628656,
+        "clearTailMs": 470600.879993085,
+        "observedCombatMs": 1099256.87999308,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.39540661228491
+      },
+      "10": {
+        "combatBasisHash": "69a598f9ec67a23f12b85e3e86655875a09894596a96e0df87dcf4472b96a166",
+        "parCombatTimeMs": 1075000,
+        "method": "measured 25-wave spawn span + actual legal maze clear tails, 6% scheduling margin, rounded up to 5s",
+        "spawnSpanMs": 639430,
+        "clearTailMs": 371570,
+        "observedCombatMs": 1011000,
+        "measured": true,
+        "sourceFile": "Docs\\BalanceEvidence\\30x25\\maze-other-par\\unity-results.json",
+        "sourceIndex": 14,
+        "sourcePlanHash": "7f47b7740c74b1527efaf52ec4904ad780f34edc2de1729322ceb69799b9b23d"
+      },
+      "11": {
+        "combatBasisHash": "142c18e5baeb8d6a0802a70cd48fa178bd3eba1e68adb2896350951768b76afa",
+        "parCombatTimeMs": 1105000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 650122,
+        "clearTailMs": 392039.487721444,
+        "observedCombatMs": 1042161.48772144,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.39540661228491
+      },
+      "12": {
+        "combatBasisHash": "9198defaeed4acdf3e82ea264db02c57b1c586b879f807346712160c2cc2864d",
+        "parCombatTimeMs": 1020000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 660732,
+        "clearTailMs": 299524.029326955,
+        "observedCombatMs": 960256.029326955,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.39540661228491
+      },
+      "13": {
+        "combatBasisHash": "beea3e96f8ba3dc975acfb3fc85fe9bd1680db299c2bcad5c59a4a7a3ea2df4a",
+        "parCombatTimeMs": 1170000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 671183,
+        "clearTailMs": 429296.844269451,
+        "observedCombatMs": 1100479.84426945,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.39540661228491
+      },
+      "14": {
+        "combatBasisHash": "abf9e869fbaa69db2182a4f352a2b2b6108dc7b6c844cc2873e7f9b6f8aaa5ce",
+        "parCombatTimeMs": 1230000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 681612,
+        "clearTailMs": 475554.573466696,
+        "observedCombatMs": 1157166.5734667,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.39540661228491
+      },
+      "15": {
+        "combatBasisHash": "b6941f22953934090f1a8079ea851e1debb80fd8df6c637178f4c52aca49d6ea",
+        "parCombatTimeMs": 1235000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 691909,
+        "clearTailMs": 469903.176686942,
+        "observedCombatMs": 1161812.17668694,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.39540661228491
+      },
+      "16": {
+        "combatBasisHash": "d7cc281f27fd1393406635365b5d9fcc2e4daa99b8d4fc174fb94553cbfaa73f",
+        "parCombatTimeMs": 1185000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 702124,
+        "clearTailMs": 414854.385832303,
+        "observedCombatMs": 1116978.3858323,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.39540661228491
+      },
+      "17": {
+        "combatBasisHash": "fe8f580844fab8346477664a403ef114c39c7f25c8b3a1a75e00f79dbb93d224",
+        "parCombatTimeMs": 1145000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 712178,
+        "clearTailMs": 364480.207128818,
+        "observedCombatMs": 1076658.20712882,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.39540661228491
+      },
+      "18": {
+        "combatBasisHash": "96a5042deedd72568eca94bdc1682098e4a8b1b92a45916e750bf769542bb0ca",
+        "parCombatTimeMs": 1185000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 722212,
+        "clearTailMs": 393295.353672501,
+        "observedCombatMs": 1115507.3536725,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.39540661228491
+      },
+      "19": {
+        "combatBasisHash": "7056ec0e10a7c77224aa970d67f6f7d81214489d8bde663d38d4249fd01032a0",
+        "parCombatTimeMs": 1275000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 732114,
+        "clearTailMs": 469135.703050185,
+        "observedCombatMs": 1201249.70305019,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.39540661228491
+      },
+      "20": {
+        "combatBasisHash": "0159a29c510eaefdba1ccded4089ea84fec47a2d4467976404321b0d07d3cc19",
+        "parCombatTimeMs": 1215000,
+        "method": "measured 25-wave spawn span + actual legal maze clear tails, 6% scheduling margin, rounded up to 5s",
+        "spawnSpanMs": 741934,
+        "clearTailMs": 403516,
+        "observedCombatMs": 1145450,
+        "measured": true,
+        "sourceFile": "Docs\\BalanceEvidence\\30x25\\maze-other-par\\unity-results.json",
+        "sourceIndex": 15,
+        "sourcePlanHash": "eb1bc3f41e37d4cb728239a1f347d216f5bc99618810803b930118880136d2c9"
+      },
+      "21": {
+        "combatBasisHash": "afa935490e64ae66b8183eca8fcb382269a563ac78f32517ec7f25bef93bd196",
+        "parCombatTimeMs": 1295000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 751591,
+        "clearTailMs": 468089.148090972,
+        "observedCombatMs": 1219680.14809097,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.39540661228491
+      },
+      "22": {
+        "combatBasisHash": "ab90e86e00dc488d5f6c3c6f52bfd015bc4302add680b3fcc3163db5a648cef7",
+        "parCombatTimeMs": 1270000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 761230,
+        "clearTailMs": 432994.671792006,
+        "observedCombatMs": 1194224.67179201,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.39540661228491
+      },
+      "23": {
+        "combatBasisHash": "584657c6be0c443f4be5f4e53911eff7087256912954a2a38c1101b5774c7f13",
+        "parCombatTimeMs": 1370000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 770737,
+        "clearTailMs": 517207.460843401,
+        "observedCombatMs": 1287944.4608434,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.39540661228491
+      },
+      "24": {
+        "combatBasisHash": "6718a22ca35cb1739175ee8790635e94e8fc3dc656feeac70d0c2285baf54605",
+        "parCombatTimeMs": 1295000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 780162,
+        "clearTailMs": 437669.283943161,
+        "observedCombatMs": 1217831.28394316,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.39540661228491
+      },
+      "25": {
+        "combatBasisHash": "e108f5bb930497e374a6917bb985edacb8144891104c31e6a03df776531ed723",
+        "parCombatTimeMs": 1415000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 789422,
+        "clearTailMs": 543929.497468657,
+        "observedCombatMs": 1333351.49746866,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.39540661228491
+      },
+      "26": {
+        "combatBasisHash": "20337e938973ca4c6e18cc6d42eda87d03c56357a475109bf39d067892bfc4ce",
+        "parCombatTimeMs": 1245000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 798666,
+        "clearTailMs": 375434.149035254,
+        "observedCombatMs": 1174100.14903525,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.39540661228491
+      },
+      "27": {
+        "combatBasisHash": "9fce459c065d9de25e2783f644eaead34b129ac9d3aa8230989188559ac2dcc1",
+        "parCombatTimeMs": 1465000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 807778,
+        "clearTailMs": 571000.385746984,
+        "observedCombatMs": 1378778.38574698,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.39540661228491
+      },
+      "28": {
+        "combatBasisHash": "ff842f1f4f946c70e9b763e5a5586d91a1ed269493acb859c155ff601c23128a",
+        "parCombatTimeMs": 1550000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 816808,
+        "clearTailMs": 643142.907602113,
+        "observedCombatMs": 1459950.90760211,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.39540661228491
+      },
+      "29": {
+        "combatBasisHash": "86c7b0727b49cad27742078fb19fbad273947c243d7ddb78a18603769a1b4991",
+        "parCombatTimeMs": 1530000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 825671,
+        "clearTailMs": 615304.545687029,
+        "observedCombatMs": 1440975.54568703,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.39540661228491
+      },
+      "30": {
+        "combatBasisHash": "5b08c498f6426fb35019c835014154c08995b06e9d7593b3aadbba0b7a44a44e",
+        "parCombatTimeMs": 1345000,
+        "method": "measured 25-wave spawn span + actual legal maze clear tails, 6% scheduling margin, rounded up to 5s",
+        "spawnSpanMs": 834520,
+        "clearTailMs": 434180,
+        "observedCombatMs": 1268700,
+        "measured": true,
+        "sourceFile": "Docs\\BalanceEvidence\\30x25\\maze-other-par\\unity-results.json",
+        "sourceIndex": 16,
+        "sourcePlanHash": "63dfb3c846e6be8c7e496fc86c03f9017fb9ae2bef7f0ad863f8a21e68056dae"
+      }
+    },
+    "D06": {
+      "1": {
+        "combatBasisHash": "f6f349731f2e5c6af1e9110dcfe0dc8946f2226fab7ba19d08710406fcb484c8",
+        "parCombatTimeMs": 935000,
+        "method": "measured 25-wave spawn span + actual legal maze clear tails, 6% scheduling margin, rounded up to 5s",
+        "spawnSpanMs": 530655,
+        "clearTailMs": 347145,
+        "observedCombatMs": 877800,
+        "measured": true,
+        "sourceFile": "Docs\\BalanceEvidence\\30x25\\maze-other-par\\unity-results.json",
+        "sourceIndex": 17,
+        "sourcePlanHash": "e339b5f260f5a449548a495f6b2f994b66d458b6b5fe1f81588f44ef511884cf"
+      },
+      "2": {
+        "combatBasisHash": "af998de1ba0d09fb486b42c5b4878a96135ab9497085ec009d2ddf134e51fbba",
+        "parCombatTimeMs": 905000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 542016,
+        "clearTailMs": 309067.206549543,
+        "observedCombatMs": 851083.206549543,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.59271943596776
+      },
+      "3": {
+        "combatBasisHash": "7d9b9135fdd293c18680aa2e586d936bc4c486e1737f6df38d2140e202b1da92",
+        "parCombatTimeMs": 990000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 553330,
+        "clearTailMs": 376837.418549971,
+        "observedCombatMs": 930167.418549971,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.59271943596776
+      },
+      "4": {
+        "combatBasisHash": "f0c7a010a1b221b11f49515db89837ffd2331bf4009893ef9056ff2b707596c3",
+        "parCombatTimeMs": 1060000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 564520,
+        "clearTailMs": 431069.515344673,
+        "observedCombatMs": 995589.515344674,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.59271943596776
+      },
+      "5": {
+        "combatBasisHash": "43d84be07cb36f998fbc738652c6aab9ab6c6b68d7a15b724f2f5f72cebebb44",
+        "parCombatTimeMs": 995000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 575689,
+        "clearTailMs": 360989.860162092,
+        "observedCombatMs": 936678.860162092,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.59271943596776
+      },
+      "6": {
+        "combatBasisHash": "ec2b57c40ff8d86c5190991e4ed7b78ca974d14993fac604ff33036112f6a71e",
+        "parCombatTimeMs": 1280000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 586658,
+        "clearTailMs": 617975.14115549,
+        "observedCombatMs": 1204633.14115549,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.59271943596776
+      },
+      "7": {
+        "combatBasisHash": "f6ce0c2f94f3231282aa62dfb5fc9ba2b7c6694ec07cfdabe36c77f74f59b6b0",
+        "parCombatTimeMs": 1200000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 597582,
+        "clearTailMs": 534357.370767183,
+        "observedCombatMs": 1131939.37076718,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.59271943596776
+      },
+      "8": {
+        "combatBasisHash": "2cb2c7b7ee41611f088d5539933222317aaeffc968949e172b83a52b581f001b",
+        "parCombatTimeMs": 1150000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 608380,
+        "clearTailMs": 476143.475382561,
+        "observedCombatMs": 1084523.47538256,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.59271943596776
+      },
+      "9": {
+        "combatBasisHash": "480dfd2fa49c56635cc3fb5eada0aca865e5acbf13d4dafe6bfb0476b4bdc293",
+        "parCombatTimeMs": 1230000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 619159,
+        "clearTailMs": 537144.629780126,
+        "observedCombatMs": 1156303.62978013,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.59271943596776
+      },
+      "10": {
+        "combatBasisHash": "f5d3e8a42da783a5c70abe78a80edab601fbb8af6e2393304ba452e62902c472",
+        "parCombatTimeMs": 1180000,
+        "method": "measured 25-wave spawn span + actual legal maze clear tails, 6% scheduling margin, rounded up to 5s",
+        "spawnSpanMs": 629736,
+        "clearTailMs": 482864,
+        "observedCombatMs": 1112600,
+        "measured": true,
+        "sourceFile": "Docs\\BalanceEvidence\\30x25\\maze-other-par\\unity-results.json",
+        "sourceIndex": 18,
+        "sourcePlanHash": "81782c6ada523f5f69c9aaa59e9d31cc79121ddb329cf6a8b30d77e345623d52"
+      },
+      "11": {
+        "combatBasisHash": "409a93125ba8fc58ea7950e7e180f9fbc81ff46c65aeb5383cb724aba5e004fc",
+        "parCombatTimeMs": 1155000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 640270,
+        "clearTailMs": 447474.525535141,
+        "observedCombatMs": 1087744.52553514,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.59271943596776
+      },
+      "12": {
+        "combatBasisHash": "ffde4de7d6078e26d41206e053e6e46bf233cd3f5539b23e2783258542281a79",
+        "parCombatTimeMs": 1055000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 650676,
+        "clearTailMs": 341877.226930479,
+        "observedCombatMs": 992553.226930479,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.59271943596776
+      },
+      "13": {
+        "combatBasisHash": "f2f5c242387ec7c8f973c3db38e6d5b13b3a954b22b87286842aa79f05be5d14",
+        "parCombatTimeMs": 1225000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 661065,
+        "clearTailMs": 490000.134475481,
+        "observedCombatMs": 1151065.13447548,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.59271943596776
+      },
+      "14": {
+        "combatBasisHash": "a5d4d3014d4a1ffd41613959231464b531032de22aad17d5a70e7d32f1c20e19",
+        "parCombatTimeMs": 1290000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 671250,
+        "clearTailMs": 542798.783777812,
+        "observedCombatMs": 1214048.78377781,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.59271943596776
+      },
+      "15": {
+        "combatBasisHash": "e0ddbc9b502f947d59f1eb71cca1b0211f11a65c4fb456497da1e4fd7248a1be",
+        "parCombatTimeMs": 1295000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 681394,
+        "clearTailMs": 536348.270062142,
+        "observedCombatMs": 1217742.27006214,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.59271943596776
+      },
+      "16": {
+        "combatBasisHash": "d4a7807e3a61dcf4a8a897823334a770d95c9b7e1ea2e48e2837e91b03e0f369",
+        "parCombatTimeMs": 1235000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 691408,
+        "clearTailMs": 473515.488313214,
+        "observedCombatMs": 1164923.48831321,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.59271943596776
+      },
+      "17": {
+        "combatBasisHash": "83faa77d778a963df4e0f91beaba98c1c5e8db81d0e0e12063f7072d722e2326",
+        "parCombatTimeMs": 1185000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 701407,
+        "clearTailMs": 416018.316674778,
+        "observedCombatMs": 1117425.31667478,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.59271943596776
+      },
+      "18": {
+        "combatBasisHash": "9effaf791a5cc69d35b875e6f99acca5f69219dfbcf1cea3ee5fde426a9ca37f",
+        "parCombatTimeMs": 1230000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 711200,
+        "clearTailMs": 448907.973027512,
+        "observedCombatMs": 1160107.97302751,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.59271943596776
+      },
+      "19": {
+        "combatBasisHash": "11a71d420e211214f55949788b5f3b8e7239b41d38dcf4adda3c52948852b521",
+        "parCombatTimeMs": 1335000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 720954,
+        "clearTailMs": 535472.27437236,
+        "observedCombatMs": 1256426.27437236,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.59271943596776
+      },
+      "20": {
+        "combatBasisHash": "138c4ff476e596f5177c41429c3ae44f3353a27cacd6a608e04955a517e6afae",
+        "parCombatTimeMs": 1275000,
+        "method": "measured 25-wave spawn span + actual legal maze clear tails, 6% scheduling margin, rounded up to 5s",
+        "spawnSpanMs": 730576,
+        "clearTailMs": 470174,
+        "observedCombatMs": 1200750,
+        "measured": true,
+        "sourceFile": "Docs\\BalanceEvidence\\30x25\\maze-other-par\\unity-results.json",
+        "sourceIndex": 19,
+        "sourcePlanHash": "e459090e0a5e61d13b183da7d9c68faa684d06c7bb98995a70b39f6ca67c4537"
+      },
+      "21": {
+        "combatBasisHash": "c1f51b48909348490af2f2f1fdd6a9cd1ac5a50185108120d5a6da5013dfec13",
+        "parCombatTimeMs": 1355000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 740185,
+        "clearTailMs": 534277.734795384,
+        "observedCombatMs": 1274462.73479538,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.59271943596776
+      },
+      "22": {
+        "combatBasisHash": "e642417756d678941d93173aae3b8c55e7f1aaa97e708bc149c61b034673231b",
+        "parCombatTimeMs": 1320000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 749636,
+        "clearTailMs": 494220.840980795,
+        "observedCombatMs": 1243856.8409808,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.59271943596776
+      },
+      "23": {
+        "combatBasisHash": "0c101abbc89a7d6db83704018909bd1ce02a86cf86c742dafb5629ff87339bfc",
+        "parCombatTimeMs": 1435000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 759000,
+        "clearTailMs": 590341.458941449,
+        "observedCombatMs": 1349341.45894145,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.59271943596776
+      },
+      "24": {
+        "combatBasisHash": "a13f1e1b70719b94499d76da928b03ff478493f80ae6f4a80f25b164e96f3f8b",
+        "parCombatTimeMs": 1345000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 768230,
+        "clearTailMs": 499556.451091287,
+        "observedCombatMs": 1267786.45109129,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.59271943596776
+      },
+      "25": {
+        "combatBasisHash": "ed7257b2f0c158c37aa67e958626e8177da61c1ac1da027bb4fd841ff724c042",
+        "parCombatTimeMs": 1485000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 777449,
+        "clearTailMs": 620842.036140232,
+        "observedCombatMs": 1398291.03614023,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.59271943596776
+      },
+      "26": {
+        "combatBasisHash": "9b44954a07a5f51a05ce0776146d956f3d165db71526c629a4a29b9266e1420d",
+        "parCombatTimeMs": 1290000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 786508,
+        "clearTailMs": 428521.164247125,
+        "observedCombatMs": 1215029.16424713,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.59271943596776
+      },
+      "27": {
+        "combatBasisHash": "beb474b5baaf1c6d1420d7c673f81f5aa9a30296735312812f537233c69ccd31",
+        "parCombatTimeMs": 1535000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 795482,
+        "clearTailMs": 651740.793198006,
+        "observedCombatMs": 1447222.79319801,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.59271943596776
+      },
+      "28": {
+        "combatBasisHash": "f2f8db4b19dca5d64d951615004243d85a2d73fd9e0d333a9080d7114b25224b",
+        "parCombatTimeMs": 1635000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 804320,
+        "clearTailMs": 734084.388037539,
+        "observedCombatMs": 1538404.38803754,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.59271943596776
+      },
+      "29": {
+        "combatBasisHash": "918dd32475c9bcd7711830d72e637d3c2f5075cce5a33c6822521827f4f99df9",
+        "parCombatTimeMs": 1610000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 813149,
+        "clearTailMs": 702309.635289983,
+        "observedCombatMs": 1515458.63528998,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.59271943596776
+      },
+      "30": {
+        "combatBasisHash": "f8e2e41bc680b577fe17a6537776446b332efaebf87b7a36a55ebad6066f0075",
+        "parCombatTimeMs": 1425000,
+        "method": "measured 25-wave spawn span + actual legal maze clear tails, 6% scheduling margin, rounded up to 5s",
+        "spawnSpanMs": 821816,
+        "clearTailMs": 521884,
+        "observedCombatMs": 1343700,
+        "measured": true,
+        "sourceFile": "Docs\\BalanceEvidence\\30x25\\maze-other-par\\unity-results.json",
+        "sourceIndex": 20,
+        "sourcePlanHash": "734e5edce0f24bb1cab479ba9a534b6bdc8de4df3584f9dcb27421a606db2721"
+      }
+    },
+    "D07": {
+      "1": {
+        "combatBasisHash": "ed377afe6fa829ef4f0150e34dd880468d16dc5cf9fedfc544177c3e2f728862",
+        "parCombatTimeMs": 930000,
+        "method": "measured 25-wave spawn span + actual legal maze clear tails, 6% scheduling margin, rounded up to 5s",
+        "spawnSpanMs": 522441,
+        "clearTailMs": 352359,
+        "observedCombatMs": 874800,
+        "measured": true,
+        "sourceFile": "Docs\\BalanceEvidence\\30x25\\maze-D07-repair\\unity-results.json",
+        "sourceIndex": 0,
+        "sourcePlanHash": "9f4ed46cf0635cf81e031291d1646c89bb57cb7f159fbfd93346b5dac9f433bd"
+      },
+      "2": {
+        "combatBasisHash": "3aa17f81c9ead649ff24eab32529c48dc4f1ceecb8aa5446d893a4af0990a00e",
+        "parCombatTimeMs": 930000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 533634,
+        "clearTailMs": 343628.054868726,
+        "observedCombatMs": 877262.054868726,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.77082223586048
+      },
+      "3": {
+        "combatBasisHash": "db699067b9b958f562f4f32ae18ffa998677c800925c73a509e50aab9c3ba4ff",
+        "parCombatTimeMs": 1025000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 544769,
+        "clearTailMs": 418976.541004589,
+        "observedCombatMs": 963745.541004589,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.77082223586048
+      },
+      "4": {
+        "combatBasisHash": "5d38814f6620a6947a7f6c2e977417b5cf86dcefbb575a12a92a6ab405996287",
+        "parCombatTimeMs": 1100000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 555852,
+        "clearTailMs": 479273.038135638,
+        "observedCombatMs": 1035125.03813564,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.77082223586048
+      },
+      "5": {
+        "combatBasisHash": "dbb1f26ae70187d7a7189396aba2249195621742e66b9786213c68daea3ca15b",
+        "parCombatTimeMs": 1030000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 566766,
+        "clearTailMs": 401356.859757777,
+        "observedCombatMs": 968122.859757777,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.77082223586048
+      },
+      "6": {
+        "combatBasisHash": "06acdcc5c1b57bdf6504c8342b6e3a7fe725bcb47aa6ead81e89af80faef492c",
+        "parCombatTimeMs": 1345000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 577572,
+        "clearTailMs": 687079.027513865,
+        "observedCombatMs": 1264651.02751387,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.77082223586048
+      },
+      "7": {
+        "combatBasisHash": "40ab0ac95c85542533c7d66bbda740203a628585a17bc86e149894a44ebff78e",
+        "parCombatTimeMs": 1255000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 588320,
+        "clearTailMs": 594110.86013119,
+        "observedCombatMs": 1182430.86013119,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.77082223586048
+      },
+      "8": {
+        "combatBasisHash": "a389e3a21b924c5282e63c9594ae89a6b2e6734e64df4326ffbe7463d4113606",
+        "parCombatTimeMs": 1200000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 599018,
+        "clearTailMs": 529387.30741049,
+        "observedCombatMs": 1128405.30741049,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.77082223586048
+      },
+      "9": {
+        "combatBasisHash": "7632e2ae2198deaac2de04b42b0d6b094f4c95a966bee4f83b4cf1e0a973bcd9",
+        "parCombatTimeMs": 1280000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 609545,
+        "clearTailMs": 597209.799043946,
+        "observedCombatMs": 1206754.79904395,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.77082223586048
+      },
+      "10": {
+        "combatBasisHash": "a87191fbfb44dc3e9278277755ffa7b671d591d3fb0a9421332451062f2db3fc",
+        "parCombatTimeMs": 1215000,
+        "method": "measured 25-wave spawn span + actual legal maze clear tails, 6% scheduling margin, rounded up to 5s",
+        "spawnSpanMs": 619964,
+        "clearTailMs": 525736,
+        "observedCombatMs": 1145700,
+        "measured": true,
+        "sourceFile": "Docs\\BalanceEvidence\\30x25\\maze-other-par\\unity-results.json",
+        "sourceIndex": 22,
+        "sourcePlanHash": "dd3d9c30dae700457d084f5f9d78459b8ff6055cf3ae5ffc39ef7de7d94ee337"
+      },
+      "11": {
+        "combatBasisHash": "9297e403d4406891c3c309ced3e411edf55cf3163405d850cddf3c5c9849a583",
+        "parCombatTimeMs": 1200000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 630325,
+        "clearTailMs": 497512.507165001,
+        "observedCombatMs": 1127837.507165,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.77082223586048
+      },
+      "12": {
+        "combatBasisHash": "1a7c7fdf213f9feef54571ce3a72c1eb9b99060ae36d34eb0e6528814a60e6ad",
+        "parCombatTimeMs": 1085000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 640638,
+        "clearTailMs": 380106.992927451,
+        "observedCombatMs": 1020744.99292745,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.77082223586048
+      },
+      "13": {
+        "combatBasisHash": "3145be7a5f82ac306e793002f2306cad561252d7fdb0d4792060c6cc462cd539",
+        "parCombatTimeMs": 1270000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 650778,
+        "clearTailMs": 544793.460862476,
+        "observedCombatMs": 1195571.46086248,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.77082223586048
+      },
+      "14": {
+        "combatBasisHash": "a0433ae945dc90584ceb01264325ebf25442167d4396f580ddff8409b8075d53",
+        "parCombatTimeMs": 1345000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 660860,
+        "clearTailMs": 603496.217981251,
+        "observedCombatMs": 1264356.21798125,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.77082223586048
+      },
+      "15": {
+        "combatBasisHash": "83926b64df989297b9be2c6c635ed4e2ac48754151316bd57b2a6f675559a500",
+        "parCombatTimeMs": 1345000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 670834,
+        "clearTailMs": 596324.387926016,
+        "observedCombatMs": 1267158.38792602,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.77082223586048
+      },
+      "16": {
+        "combatBasisHash": "45a86fda2af453ab041e838ab13f8abe474dc8a8fbc52506f0418e468a6b13c9",
+        "parCombatTimeMs": 1280000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 680762,
+        "clearTailMs": 526465.45072132,
+        "observedCombatMs": 1207227.45072132,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.77082223586048
+      },
+      "17": {
+        "combatBasisHash": "624f8fc23bf12a7c3cdc364081e98b587f3ac3713ca978788e758647ebbf3073",
+        "parCombatTimeMs": 1225000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 690515,
+        "clearTailMs": 462538.768006757,
+        "observedCombatMs": 1153053.76800676,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.77082223586048
+      },
+      "18": {
+        "combatBasisHash": "6e32d32094ee44f4e395d3046ecca4497a19d6cb2be23cca0bf9dd50ea9cec1f",
+        "parCombatTimeMs": 1275000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 700210,
+        "clearTailMs": 499106.247177275,
+        "observedCombatMs": 1199316.24717728,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.77082223586048
+      },
+      "19": {
+        "combatBasisHash": "c8d5fb419a966afabb413bc6a728666b330fff12a39d6e213292fa2f87a4d4c5",
+        "parCombatTimeMs": 1385000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 709797,
+        "clearTailMs": 595350.435696292,
+        "observedCombatMs": 1305147.43569629,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.77082223586048
+      },
+      "20": {
+        "combatBasisHash": "9da97375dec6cdcd8024a6bfd8875aa70751fbc9978e16805d0ff51e5406e1c0",
+        "parCombatTimeMs": 1345000,
+        "method": "measured 25-wave spawn span + actual legal maze clear tails, 6% scheduling margin, rounded up to 5s",
+        "spawnSpanMs": 719340,
+        "clearTailMs": 545110,
+        "observedCombatMs": 1264450,
+        "measured": true,
+        "sourceFile": "Docs\\BalanceEvidence\\30x25\\maze-other-par\\unity-results.json",
+        "sourceIndex": 23,
+        "sourcePlanHash": "c46a48c58be725ad32e3c8d330c628cf679b55e4b675f8b01add1e92dcdd4284"
+      },
+      "21": {
+        "combatBasisHash": "98ad89851f70d9768583153af2cca22af62ef05c7d57c80ecc35f7ad7a5b1c73",
+        "parCombatTimeMs": 1405000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 728706,
+        "clearTailMs": 594022.319019397,
+        "observedCombatMs": 1322728.3190194,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.77082223586048
+      },
+      "22": {
+        "combatBasisHash": "a40819c054249cde820fbac899a60082e0e0fbfb706a513f32cadba9926793df",
+        "parCombatTimeMs": 1365000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 738014,
+        "clearTailMs": 549486.139787506,
+        "observedCombatMs": 1287500.13978751,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.77082223586048
+      },
+      "23": {
+        "combatBasisHash": "f67c59a44ceb6883226ac9d58ad8f69db05d531a2a041bc3fe3acad89d2edac4",
+        "parCombatTimeMs": 1490000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 747214,
+        "clearTailMs": 656355.261721686,
+        "observedCombatMs": 1403569.26172169,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.77082223586048
+      },
+      "24": {
+        "combatBasisHash": "d44756528670c8c6b0610e80d835e6528aa89cfb45e1f6e34e16fd7fa0da0f30",
+        "parCombatTimeMs": 1395000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 756372,
+        "clearTailMs": 555418.394277639,
+        "observedCombatMs": 1311790.39427764,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.77082223586048
+      },
+      "25": {
+        "combatBasisHash": "cb1048ec507740ca3c4805cb8a47c7c01b33a7bc83b517514ea5742a35ede879",
+        "parCombatTimeMs": 1545000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 765401,
+        "clearTailMs": 690266.507538414,
+        "observedCombatMs": 1455667.50753841,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.77082223586048
+      },
+      "26": {
+        "combatBasisHash": "6af972c1ea62a287453205f2c7c796ff7efcc7d31ee363d1ab25be4679e0e42f",
+        "parCombatTimeMs": 1330000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 774322,
+        "clearTailMs": 476439.722558261,
+        "observedCombatMs": 1250761.72255826,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.77082223586048
+      },
+      "27": {
+        "combatBasisHash": "b68614ae6c4a633026d611307641efd746cabc5e053aac054908fa30b2f51d98",
+        "parCombatTimeMs": 1600000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 783135,
+        "clearTailMs": 724620.458914107,
+        "observedCombatMs": 1507755.45891411,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.77082223586048
+      },
+      "28": {
+        "combatBasisHash": "016a995689f0e1565599e775038d982dc72d3c337b57aa1ba1c129926b10b28e",
+        "parCombatTimeMs": 1705000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 791908,
+        "clearTailMs": 816171.968508094,
+        "observedCombatMs": 1608079.96850809,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.77082223586048
+      },
+      "29": {
+        "combatBasisHash": "a1e4e529eedf01f552243119deb9a293030577899535485cebf054783b94b1a8",
+        "parCombatTimeMs": 1680000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 800550,
+        "clearTailMs": 780844.064902677,
+        "observedCombatMs": 1581394.06490268,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.77082223586048
+      },
+      "30": {
+        "combatBasisHash": "61ff54a625788e432ce18d03a653368ade2eedce195d478f70da1bf09e0b52da",
+        "parCombatTimeMs": 1505000,
+        "method": "measured 25-wave spawn span + actual legal maze clear tails, 6% scheduling margin, rounded up to 5s",
+        "spawnSpanMs": 809084,
+        "clearTailMs": 608566,
+        "observedCombatMs": 1417650,
+        "measured": true,
+        "sourceFile": "Docs\\BalanceEvidence\\30x25\\maze-other-par\\unity-results.json",
+        "sourceIndex": 24,
+        "sourcePlanHash": "a87ce8fdf8810144d46e3f9369297c964d1077917e5b66827b635a73555c6919"
+      }
+    },
+    "D08": {
+      "1": {
+        "combatBasisHash": "7cd249079f658be65abe3169661b59c24b1652cdf67a26b06de4e2f61635cc0c",
+        "parCombatTimeMs": 995000,
+        "method": "measured 25-wave spawn span + actual legal maze clear tails, 6% scheduling margin, rounded up to 5s",
+        "spawnSpanMs": 514279,
+        "clearTailMs": 420271,
+        "observedCombatMs": 934550,
+        "measured": true,
+        "sourceFile": "Docs\\BalanceEvidence\\30x25\\maze-other-par\\unity-results.json",
+        "sourceIndex": 25,
+        "sourcePlanHash": "008b7e09cae4596795e9e1e1d61dc79d982efae8fd4ea3b0d5dd2402d4d86785"
+      },
+      "2": {
+        "combatBasisHash": "2db0afa02e183e58322f33a9228bc396ee5d9132dac78cf591c2517144fa2585",
+        "parCombatTimeMs": 955000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 525270,
+        "clearTailMs": 372875.898026904,
+        "observedCombatMs": 898145.898026904,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.92154546780162
+      },
+      "3": {
+        "combatBasisHash": "5c9ed2b8ece700e1d44741ec25531deb3f4918c9a6834c2763af18b0d1da638c",
+        "parCombatTimeMs": 1055000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 536203,
+        "clearTailMs": 454637.657681863,
+        "observedCombatMs": 990840.657681863,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.92154546780162
+      },
+      "4": {
+        "combatBasisHash": "6c9302db5f84596cb2f6460771c39f80f9d6892f1ae134d40d32531f2fa6d9b5",
+        "parCombatTimeMs": 1135000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 547078,
+        "clearTailMs": 520066.280860508,
+        "observedCombatMs": 1067144.28086051,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.92154546780162
+      },
+      "5": {
+        "combatBasisHash": "3ebbd4b97cd1de384b84ca66737122fb737a0545c6d6c3903f718ab50bea2705",
+        "parCombatTimeMs": 1055000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 557895,
+        "clearTailMs": 435518.280277236,
+        "observedCombatMs": 993413.280277236,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.92154546780162
+      },
+      "6": {
+        "combatBasisHash": "7bd5d8cd7106c978bbdc8eb24c8d76f683525f293ed163ae888c78e747d1b0b6",
+        "parCombatTimeMs": 1395000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 568504,
+        "clearTailMs": 745559.641507027,
+        "observedCombatMs": 1314063.64150703,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.92154546780162
+      },
+      "7": {
+        "combatBasisHash": "3081534a43da7ce9e4a45af56fc4ab6b09a94efcbca94319913d8698d74b7702",
+        "parCombatTimeMs": 1300000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 579055,
+        "clearTailMs": 644678.504447442,
+        "observedCombatMs": 1223733.50444744,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.92154546780162
+      },
+      "8": {
+        "combatBasisHash": "fa99aea68a36004f739b484da126fab785c3bdbf1327ee707ffb6cb3196847a6",
+        "parCombatTimeMs": 1235000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 589548,
+        "clearTailMs": 574446.017599293,
+        "observedCombatMs": 1163994.01759929,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.92154546780162
+      },
+      "9": {
+        "combatBasisHash": "c68f862869c161a830c9157b1decda9bd9fe4312f6b42e9872acc5d83a6adfe4",
+        "parCombatTimeMs": 1325000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 599983,
+        "clearTailMs": 648041.209016095,
+        "observedCombatMs": 1248024.2090161,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.92154546780162
+      },
+      "10": {
+        "combatBasisHash": "a251a0bafdb942d2c6b128c31f6ee58886076ad903fa3a13eb0d13955800e50f",
+        "parCombatTimeMs": 1290000,
+        "method": "measured 25-wave spawn span + actual legal maze clear tails, 6% scheduling margin, rounded up to 5s",
+        "spawnSpanMs": 610260,
+        "clearTailMs": 605390,
+        "observedCombatMs": 1215650,
+        "measured": true,
+        "sourceFile": "Docs\\BalanceEvidence\\30x25\\maze-other-par\\unity-results.json",
+        "sourceIndex": 26,
+        "sourcePlanHash": "b270697de92b595a76e5f8ed52c35c5a00fbde4efb4c53d945e46e48e469312f"
+      },
+      "11": {
+        "combatBasisHash": "116a09d6fb1a91c4a1f7bea1a3b1f214ed9662dc46a2e76c2f69a93d1e4e9efd",
+        "parCombatTimeMs": 1230000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 620429,
+        "clearTailMs": 539858.199178864,
+        "observedCombatMs": 1160287.19917886,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.92154546780162
+      },
+      "12": {
+        "combatBasisHash": "b96760aa6db67df8fef1c7bbda04cca7ac9de1f0349a8562aa21df875dbde5bb",
+        "parCombatTimeMs": 1110000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 630540,
+        "clearTailMs": 412459.734663617,
+        "observedCombatMs": 1042999.73466362,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.92154546780162
+      },
+      "13": {
+        "combatBasisHash": "b5d3b25b6995c718a7bd48960d0939156827056e319830eab68bbeed63da9cef",
+        "parCombatTimeMs": 1310000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 640593,
+        "clearTailMs": 591163.463169167,
+        "observedCombatMs": 1231756.46316917,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.92154546780162
+      },
+      "14": {
+        "combatBasisHash": "517cc1bbaf24fa8ad823af42a754c60dd85859f6b23fdc34feafe34920d3a059",
+        "parCombatTimeMs": 1385000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 650488,
+        "clearTailMs": 654862.695426791,
+        "observedCombatMs": 1305350.69542679,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.92154546780162
+      },
+      "15": {
+        "combatBasisHash": "19c018f18e915f08e00e53e1421b1b54136e78b296400405e58fc8bf825967ff",
+        "parCombatTimeMs": 1390000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 660275,
+        "clearTailMs": 647080.436282194,
+        "observedCombatMs": 1307355.43628219,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.92154546780162
+      },
+      "16": {
+        "combatBasisHash": "574e1bec80f76df5867411361d08b38253c907fc32f1049751e595fd082d515c",
+        "parCombatTimeMs": 1320000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 670004,
+        "clearTailMs": 571275.467577421,
+        "observedCombatMs": 1241279.46757742,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.92154546780162
+      },
+      "17": {
+        "combatBasisHash": "83fde5902d04311ddc008234f435c6f48d355bc0a55f05fec1c67fb971ff0057",
+        "parCombatTimeMs": 1255000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 679675,
+        "clearTailMs": 501907.676189782,
+        "observedCombatMs": 1181582.67618978,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.92154546780162
+      },
+      "18": {
+        "combatBasisHash": "91695a28671a8434adf95141463f29c2c92512b980e40c6a6f070de87f18996b",
+        "parCombatTimeMs": 1305000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 689238,
+        "clearTailMs": 541587.590099886,
+        "observedCombatMs": 1230825.59009989,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.92154546780162
+      },
+      "19": {
+        "combatBasisHash": "94c8a2461689c8553c567bdb64328f88887b8b6d93ef7c881ca6c3d3d2775010",
+        "parCombatTimeMs": 1430000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 698643,
+        "clearTailMs": 646023.586274904,
+        "observedCombatMs": 1344666.5862749,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.92154546780162
+      },
+      "20": {
+        "combatBasisHash": "4a99191e53a04bc5b4ca2b02b2da9485321c040e39727f71242c5b7035616827",
+        "parCombatTimeMs": 1410000,
+        "method": "measured 25-wave spawn span + actual legal maze clear tails, 6% scheduling margin, rounded up to 5s",
+        "spawnSpanMs": 707990,
+        "clearTailMs": 618810,
+        "observedCombatMs": 1326800,
+        "measured": true,
+        "sourceFile": "Docs\\BalanceEvidence\\30x25\\maze-other-par\\unity-results.json",
+        "sourceIndex": 27,
+        "sourcePlanHash": "630c9733cd66e0202bca500f1b945bc1170e3541c05aa2bd1bdb55925bf14686"
+      },
+      "21": {
+        "combatBasisHash": "c4a68dfb43582c123b326e766d521359d5d7576b100da2434189bdca4f6cb3b1",
+        "parCombatTimeMs": 1445000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 717279,
+        "clearTailMs": 644582.427174052,
+        "observedCombatMs": 1361861.42717405,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.92154546780162
+      },
+      "22": {
+        "combatBasisHash": "07805e6e3afb3a130ed412f9b43dd5dfcb0d26a44d171c0eb2d5fd0b72c01445",
+        "parCombatTimeMs": 1405000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 726460,
+        "clearTailMs": 596255.558658842,
+        "observedCombatMs": 1322715.55865884,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.92154546780162
+      },
+      "23": {
+        "combatBasisHash": "133938667cf04571ca16673d1ca1f24e08b18e4a505bcaa79c26e9b461db1e01",
+        "parCombatTimeMs": 1535000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 735483,
+        "clearTailMs": 712220.827640669,
+        "observedCombatMs": 1447703.82764067,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.92154546780162
+      },
+      "24": {
+        "combatBasisHash": "5b4bf442630e952d2b02ee17d6efd81ace12b8c5330935f18794b10c501783af",
+        "parCombatTimeMs": 1430000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 744448,
+        "clearTailMs": 602692.735975977,
+        "observedCombatMs": 1347140.73597598,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.92154546780162
+      },
+      "25": {
+        "combatBasisHash": "1247df789b46b1517189cf213841d17633bba56171abcc204edd81457102bc57",
+        "parCombatTimeMs": 1595000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 753355,
+        "clearTailMs": 749018.42334907,
+        "observedCombatMs": 1502373.42334907,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.92154546780162
+      },
+      "26": {
+        "combatBasisHash": "b9a699ddec82f9c760f8811a5a2373e5e570bbe82383661e5c3d955d06df3d85",
+        "parCombatTimeMs": 1360000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 762204,
+        "clearTailMs": 516991.808112025,
+        "observedCombatMs": 1279195.80811203,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.92154546780162
+      },
+      "27": {
+        "combatBasisHash": "45401c2a6877260eca4ebe9ab8000016f069fd510b174367bc277e315906ca29",
+        "parCombatTimeMs": 1655000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 770845,
+        "clearTailMs": 786296.405424422,
+        "observedCombatMs": 1557141.40542442,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.92154546780162
+      },
+      "28": {
+        "combatBasisHash": "217adfc48babc440a959b13aac6d51fcbee538ee9e7b289e9e86f70ba1359991",
+        "parCombatTimeMs": 1765000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 779428,
+        "clearTailMs": 885640.306109765,
+        "observedCombatMs": 1665068.30610977,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.92154546780162
+      },
+      "29": {
+        "combatBasisHash": "e64aebb951d7bc4b3fcb09cf4743cde379963ae5e922ce97adb4a144b1bf8f4e",
+        "parCombatTimeMs": 1735000,
+        "method": "estimate: this level D04 measured tail times median representative profile tail ratio; pending full-level Unity timing",
+        "spawnSpanMs": 787953,
+        "clearTailMs": 847305.474027123,
+        "observedCombatMs": 1635258.47402712,
+        "measured": false,
+        "referenceProfile": "D04",
+        "tailScale": 1.92154546780162
+      },
+      "30": {
+        "combatBasisHash": "17fdaebeefb5fc61b53b10cf40724f5398c21da0ad887deb9c1955c37ed398b5",
+        "parCombatTimeMs": 1470000,
+        "method": "measured 25-wave spawn span + actual legal maze clear tails, 6% scheduling margin, rounded up to 5s",
+        "spawnSpanMs": 796420,
+        "clearTailMs": 589930,
+        "observedCombatMs": 1386350,
+        "measured": true,
+        "sourceFile": "Docs\\BalanceEvidence\\30x25\\maze-other-par\\unity-results.json",
+        "sourceIndex": 28,
+        "sourcePlanHash": "d69e1a0e47c897de45569f8f760336631d7af0eba2c88a52bd2c9ce532a54bb7"
+      }
+    }
+  }
+}

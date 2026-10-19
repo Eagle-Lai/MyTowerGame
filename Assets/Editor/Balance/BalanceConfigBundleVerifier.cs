@@ -21,12 +21,17 @@ namespace FTProject.EditorTools
             string directory = Path.Combine(BalanceWorkbenchProcess.ProjectRoot,
                 "Library/BalanceWorkbench/config-bundle-" + DateTime.UtcNow.ToString("yyyyMMdd-HHmmss-fff"));
             Directory.CreateDirectory(directory);
-            string evidence = Path.Combine(BalanceWorkbenchProcess.ProjectRoot, "Docs/BalanceEvidence/config-bundle.json");
+            string evidence = Path.Combine(BalanceWorkbenchProcess.ProjectRoot, "Docs/BalanceEvidence/30x25/config-bundle.json");
+            Directory.CreateDirectory(Path.GetDirectoryName(evidence));
             var state = new JSONObject(); state["phase"] = "queued"; state["passed"] = false;
             state["output"] = directory; state["target"] = EditorUserBuildSettings.activeBuildTarget.ToString();
             state["startedUtc"] = DateTime.UtcNow.ToString("O");
             File.WriteAllText(evidence, state.ToString(2));
-            EditorApplication.delayCall += () => Verify(directory, evidence, state);
+            // Background editors still pump update while inspector delayCall can
+            // remain pending until a layout pass. Run exactly once on update.
+            EditorApplication.CallbackFunction deferred = null;
+            deferred = () => { EditorApplication.update -= deferred; Verify(directory, evidence, state); };
+            EditorApplication.update += deferred;
             return evidence;
         }
 
@@ -63,8 +68,10 @@ namespace FTProject.EditorTools
                 var rating = new cfg.TBLevelRating(JSON.Parse(json["tblevelrating"]));
                 var calculate = typeof(Configs).GetMethod("CalculateRuntimeContentHash", BindingFlags.Static | BindingFlags.NonPublic);
                 string hash = (string)calculate.Invoke(null, new object[] { json, rating.DataList });
-                if (rating.DataList.Count != 20 || rating.DataList.Any(r => r.RuntimeContentHash != hash))
-                    throw new InvalidDataException("Loaded bundle rating/content identity does not match its 20 rating rows.");
+                var scenes = new cfg.TBSceneInfo(JSON.Parse(json["tbsceneinfo"]));
+                if (rating.DataList.Count != scenes.DataList.Count || rating.DataList.Any(r => r.RuntimeContentHash != hash ||
+                    !scenes.DataList.Any(level => level.Id == r.Id && level.RoundList.Count == r.ExpectedWaveCount)))
+                    throw new InvalidDataException("Loaded bundle ratings, level wave inventories, and content identity differ.");
                 state["runtimeContentHash"] = hash; state["ratingRows"] = rating.DataList.Count;
                 state["tableCount"] = json.Count; state["phase"] = "complete"; state["passed"] = true;
                 state["coverage"] = "Real active-target config AssetBundle build, runtime address lookup, every TextAsset compared with formal JSON, runtime hash calculated by the production Configs method. This does not certify a full Android player/device run.";

@@ -14,7 +14,9 @@ namespace FTProject
         public int maxFourStarLeaks = 2, fourStarTimePermille = 1250, parCombatTimeMs;
         public List<int> bossVariantIds = new List<int>(), criticalVariantIds = new List<int>();
         public string versionKey { get { return string.Join("|", profileId, balanceRevision, ratingRevision, planHash); } }
-        public bool IsValid { get { return id > 0 && expectedWaveCount >= 20 && expectedEnemyCount > 0 && parCombatTimeMs > 0 && !string.IsNullOrEmpty(profileId) && !string.IsNullOrEmpty(profileRevision) && !string.IsNullOrEmpty(balanceRevision) && !string.IsNullOrEmpty(ratingRevision) && !string.IsNullOrEmpty(planHash) && twoStarHpPermille > 0 && twoStarHpPermille <= threeStarHpPermille && threeStarHpPermille <= fourStarHpPermille && fourStarHpPermille <= 1000 && fourStarTimePermille >= 1000 && maxFourStarLeaks >= 0; } }
+        // The exact count is verified against this level's RoundList by Configs;
+        // completed inventory is then checked again by the sole evaluator below.
+        public bool IsValid { get { return id > 0 && expectedWaveCount > 0 && expectedEnemyCount > 0 && parCombatTimeMs > 0 && !string.IsNullOrEmpty(profileId) && !string.IsNullOrEmpty(profileRevision) && !string.IsNullOrEmpty(balanceRevision) && !string.IsNullOrEmpty(ratingRevision) && !string.IsNullOrEmpty(planHash) && twoStarHpPermille > 0 && twoStarHpPermille <= threeStarHpPermille && threeStarHpPermille <= fourStarHpPermille && fourStarHpPermille <= 1000 && fourStarTimePermille >= 1000 && maxFourStarLeaks >= 0; } }
         public LevelRatingProfile Clone() { return JsonUtility.FromJson<LevelRatingProfile>(JsonUtility.ToJson(this)); }
         public static LevelRatingProfile From(cfg.LevelRating r)
         {
@@ -27,7 +29,7 @@ namespace FTProject
     public sealed class WaveRunMetrics
     {
         public int ordinal, expected, successfulSpawned, killed, leaked, bossLeaked, criticalLeaked;
-        public int gold, hp, killGold, clearGold, peakAlive;
+        public int gold, hp, killGold, clearGold, peakAlive, spawnDeferredCount;
         public double combatStartSeconds, combatEndSeconds, levelEndSeconds;
     }
 

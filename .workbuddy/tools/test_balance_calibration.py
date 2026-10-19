@@ -8,16 +8,17 @@ class CalibrationEvidenceTests(unittest.TestCase):
     def setUpClass(cls):
         cls.recipe=core.read_json(core.DEFAULT_RECIPE);cls.recipe.pop('calibrationEvidence',None)
         cls.plan=core.generate(cls.recipe,'D04');p=cls.plan['tables']['tblevelrating'][0]
-        waves=[{'ordinal':w,'expected':w+7,'successfulSpawned':w+7,'killed':w+7,'leaked':0,
+        counts=[w['count'] for w in cls.plan['waves'] if w['levelId']==1]
+        waves=[{'ordinal':w,'expected':counts[w-1],'successfulSpawned':counts[w-1],'killed':counts[w-1],'leaked':0,
                 'combatStartSeconds':(w-1)*15.,'combatEndSeconds':w*15.,'levelEndSeconds':w*15.+(w-1)*5.,
-                'gold':30,'hp':20,'peakAlive':4} for w in range(1,21)]
+                'gold':30,'hp':20,'peakAlive':4} for w in range(1,p['expectedWaveCount']+1)]
         cls.record={'levelId':1,'profileId':'D04','stars':5,'valid':True,'victory':True,'fiveStarConditions':True,
             'state':'finished','operations':[{'kind':'build','waveOrdinal':1,'combatTimeMs':0}],
             'coverage':'Unity PlayMode test fixture','strategy':'fixture','profile':copy.deepcopy(p),
             'metrics':{k:p[k] for k in ['profileId','profileRevision','balanceRevision','ratingRevision','planHash']}}
-        cls.record['metrics'].update(runId='fixture',expectedWaveCount=20,completedWaveCount=20,expectedEnemyCount=350,
-            successfulSpawned=350,killed=350,leaked=0,victory=True,statisticsValid=True,timingValid=True,debugOverride=False,
-            combatElapsedSeconds=300.,levelElapsedSeconds=395.,waves=waves)
+        cls.record['metrics'].update(runId='fixture',expectedWaveCount=len(counts),completedWaveCount=len(counts),expectedEnemyCount=sum(counts),
+            successfulSpawned=sum(counts),killed=sum(counts),leaked=0,victory=True,statisticsValid=True,timingValid=True,debugOverride=False,
+            combatElapsedSeconds=waves[-1]['combatEndSeconds'],levelElapsedSeconds=waves[-1]['levelEndSeconds'],waves=waves)
 
     def bound(self,record):
         with tempfile.TemporaryDirectory() as td:
@@ -25,17 +26,36 @@ class CalibrationEvidenceTests(unittest.TestCase):
             recipe=copy.deepcopy(self.recipe);recipe['calibrationEvidence']=[str(p)]
             return core.generate(recipe,'D04')
 
-    def test_matching_csharp_decision_binds_all_20_waves_without_hash_change(self):
+    def test_matching_csharp_decision_binds_complete_wave_inventory_without_hash_change(self):
         plan=self.bound(self.record)
         self.assertEqual(plan['tables']['tblevelrating'][0]['calibrationStatus'],'verified_unity_reference')
         self.assertEqual(plan['tables']['tblevelrating'][0]['planHash'],self.plan['tables']['tblevelrating'][0]['planHash'])
-        self.assertEqual([w['unityKilled'] for w in plan['waves'][:20]],list(range(8,28)))
+        count=self.plan['wavesPerLevel']
+        self.assertEqual([w['unityKilled'] for w in plan['waves'][:count]],[w['count'] for w in self.plan['waves'][:count]])
         self.assertEqual(plan['calibrationEvidence']['verifiedLevelIds'],[1])
-        self.assertEqual(len(plan['calibrationEvidence']['pendingLevelIds']),19)
+        self.assertEqual(len(plan['calibrationEvidence']['pendingLevelIds']),self.plan['levelCount']-1)
+
+    def test_old_20_wave_snapshot_cannot_certify_new_campaign(self):
+        record=copy.deepcopy(self.record);record['metrics']['waves']=record['metrics']['waves'][:20]
+        record['metrics'].update(expectedWaveCount=20,completedWaveCount=20)
+        self.assertEqual(self.bound(record)['calibrationEvidence']['verifiedLevelIds'],[])
 
     def test_stale_hash_is_not_certified(self):
         record=copy.deepcopy(self.record);record['metrics']['planHash']='stale'
         plan=self.bound(record);self.assertEqual(plan['calibrationEvidence']['verifiedLevelIds'],[])
+
+    def test_measured_par_is_bound_to_combat_inputs_and_invalidates_on_tower_edit(self):
+        recipe=copy.deepcopy(self.recipe);level=self.plan['levels'][0]
+        original=self.plan['tables']['tblevelrating'][0]['parCombatTimeMs']
+        recipe['parCalibration']={'D04':{'1':{'combatBasisHash':level['combatBasisHash'],
+            'parCombatTimeMs':original+5000,'method':'explicit timing witness fixture'}}}
+        bound=core.generate(recipe,'D04')
+        self.assertTrue(bound['levels'][0]['parCalibrationCurrent'])
+        self.assertEqual(bound['tables']['tblevelrating'][0]['parCombatTimeMs'],original+5000)
+        recipe['towerValues'][0]['power']+=1
+        changed=core.generate(recipe,'D04')
+        self.assertFalse(changed['levels'][0]['parCalibrationCurrent'])
+        self.assertNotEqual(changed['tables']['tblevelrating'][0]['planHash'],bound['tables']['tblevelrating'][0]['planHash'])
 
     def test_partial_wave_inventory_is_not_certified(self):
         record=copy.deepcopy(self.record);record['metrics']['waves'][-1]['killed']-=1

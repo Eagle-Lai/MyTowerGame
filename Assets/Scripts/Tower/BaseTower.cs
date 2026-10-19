@@ -46,6 +46,45 @@ namespace FTProject
         /// <summary>自检计数（CombatSystem 汇总，用于验证"空放为 0"）</summary>
         public int SearchCount { get; set; }
         public int FireCount { get; set; }
+#if UNITY_EDITOR
+        // Evidence counters never participate in combat or rating decisions.
+        public double EvidenceDamage, EvidenceOverkill;
+        public int EvidenceHits, EvidenceSlowApplications, EvidenceAirHits;
+        public static bool EvidenceTrackReentry;
+        public int EvidenceRepeatedEnemyEffects;
+        private struct RangeEvidence { public bool inside; public int entry, affectedEntry; }
+        private Dictionary<long, RangeEvidence> _rangeEvidence = new Dictionary<long, RangeEvidence>();
+        private HashSet<long> _repeatedEvidence = new HashSet<long>();
+
+        internal void CopyRangeEvidenceFrom(BaseTower old)
+        {
+            EvidenceRepeatedEnemyEffects = old.EvidenceRepeatedEnemyEffects;
+            _rangeEvidence = new Dictionary<long, RangeEvidence>(old._rangeEvidence);
+            _repeatedEvidence = new HashSet<long>(old._repeatedEvidence);
+        }
+
+        public void ObserveEvidenceRange(BaseEnemy enemy)
+        {
+            if (!enemy.IsAlive) return;
+            RangeEvidence state;
+            _rangeEvidence.TryGetValue(enemy.EvidenceSpawnSerial, out state);
+            bool inside = InRange(enemy);
+            if (inside && !state.inside) state.entry++;
+            state.inside = inside;
+            _rangeEvidence[enemy.EvidenceSpawnSerial] = state;
+        }
+
+        private void RecordEvidenceEffect(BaseEnemy enemy)
+        {
+            if (!EvidenceTrackReentry) return;
+            RangeEvidence state;
+            if (!_rangeEvidence.TryGetValue(enemy.EvidenceSpawnSerial, out state)) return;
+            if (state.affectedEntry > 0 && state.entry > state.affectedEntry && _repeatedEvidence.Add(enemy.EvidenceSpawnSerial))
+                EvidenceRepeatedEnemyEffects++;
+            state.affectedEntry = state.entry;
+            _rangeEvidence[enemy.EvidenceSpawnSerial] = state;
+        }
+#endif
 
         private BaseEnemy _target;
         private float _fireTimer;
@@ -61,10 +100,10 @@ namespace FTProject
         // ---- 减速光环（Slow / 美术名 Retard）----
         /// <summary>
         /// 减速时长的额外余量（秒）：实际时长 = 塔的冷却间隔 + 本值。
-        /// 取 0.3s，让"走出光环后还带一小会儿减速"有肉眼可见的缓冲，
+        /// 取 0.1s，刷新周期之外只保留短暂的离场缓冲，
         /// 又不至于让玩家觉得"明明出圈了还慢"。
         /// </summary>
-        private const float SlowAuraLingerSec = 0.3f;
+        private const float SlowAuraLingerSec = 0.1f;
 
         /// <summary>光环命中时的视觉脉冲时长（秒），每次结算触发一次。</summary>
         private const float AuraPulseSec = 0.15f;
@@ -115,6 +154,11 @@ namespace FTProject
             _target = null;
             SearchCount = 0;
             FireCount = 0;
+#if UNITY_EDITOR
+            EvidenceDamage = EvidenceOverkill = 0;
+            EvidenceHits = EvidenceSlowApplications = EvidenceAirHits = 0;
+            EvidenceRepeatedEnemyEffects = 0; _rangeEvidence.Clear(); _repeatedEvidence.Clear();
+#endif
 
             if (_renderers == null)
             {
@@ -334,6 +378,10 @@ namespace FTProject
                     continue;
                 }
                 e.ApplySlow(ratio, duration);
+#if UNITY_EDITOR
+                EvidenceSlowApplications++;
+                RecordEvidenceEffect(e);
+#endif
                 applied++;
             }
 
@@ -578,6 +626,14 @@ namespace FTProject
             {
                 return;
             }
+#if UNITY_EDITOR
+            float effective = damage * (1f - e.Config.Armor);
+            EvidenceDamage += Mathf.Min(e.CurrentHp, effective);
+            EvidenceOverkill += Mathf.Max(0, effective - e.CurrentHp);
+            EvidenceHits++;
+            RecordEvidenceEffect(e);
+            if (e.Config.IsFlying) EvidenceAirHits++;
+#endif
             e.Hurt(damage);
             CombatSystem.Instance.AddHitCount(1);
             ApplyHitEffect(e, bulletCfg.Effect,
@@ -965,6 +1021,12 @@ namespace FTProject
             CombatSystem.Instance.UnregisterTower(old);
 
             tower.Init(nextCfg, cell);
+#if UNITY_EDITOR
+            tower.EvidenceDamage = old.EvidenceDamage; tower.EvidenceOverkill = old.EvidenceOverkill;
+            tower.EvidenceHits = old.EvidenceHits; tower.EvidenceSlowApplications = old.EvidenceSlowApplications;
+            tower.EvidenceAirHits = old.EvidenceAirHits;
+            tower.CopyRangeEvidenceFrom(old);
+#endif
             tower.SnapToCell(cell);
 
             cell.Tower = tower;

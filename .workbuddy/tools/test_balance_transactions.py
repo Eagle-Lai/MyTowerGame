@@ -84,6 +84,38 @@ class TransactionFaultTests(unittest.TestCase):
         core.restore_transaction(journal); self.assertEqual(before, self.formal_hashes())
         core.restore_transaction(journal); self.assertEqual(before, self.formal_hashes())
 
+    def test_restore_mapped_destination_stages_before_atomic_replace(self):
+        files = self.files(); before = self.formal_hashes()
+        journal = core.commit_files(files, self.jobs / 'job', {'profileId': 'D04'})
+        real_copy = core.shutil.copy2
+        destinations = []
+        def mapped_copy(src, dst, *args, **kwargs):
+            destination = pathlib.Path(dst)
+            if destination in [pair[1] for pair in files]:
+                raise OSError(1224, 'destination has a live mapped view')
+            destinations.append(destination)
+            return real_copy(src, dst, *args, **kwargs)
+        with mock.patch.object(core.shutil, 'copy2', side_effect=mapped_copy):
+            core.restore_transaction(journal)
+            core.restore_transaction(journal)
+        self.assertEqual(before, self.formal_hashes())
+        self.assertEqual(2, len(destinations))
+        self.assertTrue(all('.rollback-' in p.name for p in destinations))
+        self.assertFalse(list(self.formal.glob('*.rollback-*.tmp')))
+
+    def test_restore_staging_failure_preserves_mapped_destination_and_cleans_temp(self):
+        files = self.files()
+        journal = core.commit_files(files, self.jobs / 'job', {'profileId': 'D04'})
+        after = self.formal_hashes()
+        def partial_copy(src, dst):
+            pathlib.Path(dst).write_bytes(b'incomplete backup copy')
+            raise OSError('injected backup staging failure')
+        with mock.patch.object(core.shutil, 'copy2', side_effect=partial_copy):
+            with self.assertRaisesRegex(OSError, 'backup staging failure'):
+                core.restore_transaction(journal)
+        self.assertEqual(after, self.formal_hashes())
+        self.assertFalse(list(self.formal.glob('*.rollback-*.tmp')))
+
     def test_public_rollback_rejects_external_changes_without_touching_other_files(self):
         files = self.files(); core.commit_files(files, self.jobs / 'job', {'profileId': 'D04'})
         (self.formal / 'a').write_bytes(b'another task edited this after apply')

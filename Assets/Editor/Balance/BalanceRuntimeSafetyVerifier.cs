@@ -38,6 +38,7 @@ namespace FTProject.EditorTools
             try
             {
                 Scenario(results, "capacity_deferral_first_success_clock", Capacity);
+                Scenario(results, "pause_and_speed_real_flow", PauseAndSpeed);
                 Scenario(results, "missing_resource_invalidates_without_reward", MissingResource);
                 Scenario(results, "f2_debug_victory_cannot_save", DebugVictory);
                 Scenario(results, "incomplete_wave_cannot_reward_or_save", IncompleteWave);
@@ -150,6 +151,29 @@ namespace FTProject.EditorTools
             Step(.0625f);
             Check(GameClock.CombatElapsedSeconds == .0625d, "Next frame accrues combat once");
             NoClear("Capacity fixture");
+        }
+
+        private static void PauseAndSpeed()
+        {
+            var flow = GameFlowManager.Instance;
+            StartWave(); Step(FirstSpawnTime() + .0625f);
+            foreach (float speed in GameClock.Tiers)
+            {
+                GameClock.Speed = speed;
+                double combat = GameClock.CombatElapsedSeconds, level = GameClock.LevelElapsedSeconds;
+                int gold = PlayerDataManager.Instance.Gold, count = flow.RunMetrics.successfulSpawned;
+                EventDispatcher.TriggerEvent(EventName.PauseToggleRequestEvent);
+                Check(GameClock.IsPaused && Time.timeScale == 0f, "real pause event freezes timeScale");
+                for (int i = 0; i < 4; i++) { Step(.0625f); EventDispatcher.TriggerEvent(EventName.UpdateEvent); }
+                Check(GameClock.CombatElapsedSeconds == combat && GameClock.LevelElapsedSeconds == level &&
+                    PlayerDataManager.Instance.Gold == gold && flow.RunMetrics.successfulSpawned == count,
+                    "pause freezes both clocks, spawning and money at each speed");
+                EventDispatcher.TriggerEvent(EventName.ResumeRequestEvent);
+                Step(.0625f);
+                Check(GameClock.CombatElapsedSeconds == combat + .0625d * speed &&
+                    GameClock.LevelElapsedSeconds == level + .0625d * speed, "resume adds exactly the next step without catch-up");
+            }
+            GameClock.Speed = 1; NoClear("Pause/speed fixture");
         }
 
         private static void MissingResource()

@@ -131,9 +131,9 @@ namespace FTProject.EditorTools
                           waves.Where(n => n["overrideSources"]["targetEhp"]["id"].Value == rangeId).All(n => n["levelId"].AsInt == 1 && (n["waveOrdinal"].AsInt == 3 || n["waveOrdinal"].AsInt == 4)),
                         "resolved shared core applies the range to exactly L1 W3 and W4");
                     string levelId = state["levelOverrideId"].Value + suffix;
-                    Check(waves.Count(n => n["overrideSources"]["targetEhp"]["id"].Value == levelId) == 20 &&
+                    Check(waves.Count(n => n["overrideSources"]["targetEhp"]["id"].Value == levelId) == plan["wavesPerLevel"].AsInt &&
                           waves.Where(n => n["overrideSources"]["targetEhp"]["id"].Value == levelId).All(n => n["levelId"].AsInt == 2),
-                        "resolved shared core applies the level override to all 20 waves of L2 only");
+                        "resolved shared core applies the level override to the complete configured inventory of L2 only");
                     state["candidatePlanHash"] = plan["tables"]["tblevelrating"][0]["planHash"].Value;
                     Check(state["candidatePlanHash"].Value != state["initialPlanHash"].Value, "custom candidate changes rating content identity");
                     Check(Equal(FormalHashes(), state["formalBefore"]), "preview does not change Excel, Gen, ConfigJson or authority recipe");

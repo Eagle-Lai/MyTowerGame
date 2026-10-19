@@ -1,6 +1,8 @@
 # 关卡数值工作台：操作与恢复
 
-本轮正式内容为 D04「中等」，20 个原关卡 ID、每关 20 个独立清场波次。阶段 I—V、八档调参预设、单局 1—5 星分别存储。数据公式只在 `.workbuddy/tools/balance_pipeline.py` 与权威配方 `Luban/BalanceDesign/balance_design.json` 定义；窗口不复制成长公式。
+本轮正式内容为 D04「中等」，30 关、每关 25 个独立清场波次，总计 150 星。原 1—20 关的稳定 ID 保留；阶段 I—V 每阶段 6 关，八档调参预设、单局 1—5 星分别存储。数据公式只在 `.workbuddy/tools/balance_pipeline.py` 与权威配方 `Luban/BalanceDesign/balance_design.json` 定义；窗口不复制成长公式。
+
+按用户补充规则，优先延长合法 S→E 路线和同塔离圈后再次攻击。85% 占用率只作历史对照，塔数和路线长度不参与评分。地图蓝图、真实逐波施工、战斗贡献与少塔反例见 [30×25 验收报告](BalanceEvidence/30x25/acceptance.md) 和 [路线查看器](BalanceEvidence/30x25/routes.html)。有限搜索给出最好已找到路线，不代表证明全局最长。
 
 ## 从改动到回放
 
@@ -30,7 +32,7 @@ $balancePython = 'C:\Users\Administrator\.cache\codex-runtimes\codex-primary-run
 & $balancePython .workbuddy/tools/balance_pipeline.py preview --profile D04 --out Library/BalanceWorkbench/cli-preview --dry-run
 & $balancePython .workbuddy/tools/balance_pipeline.py validate --profile D04 --export-dir Assets/ConfigJson --out Library/BalanceWorkbench/cli-validate
 & $balancePython .workbuddy/tools/balance_pipeline.py all-profiles --out Library/BalanceWorkbench/cli-eight
-& $balancePython .workbuddy/tools/balance_pipeline.py simulate --profile D04 --strategy mixed --level-min 1 --level-max 20 --step-ms 100 --out Library/BalanceWorkbench/cli-simulation
+& $balancePython .workbuddy/tools/balance_pipeline.py simulate --profile D04 --strategy mixed --level-min 1 --level-max 30 --step-ms 100 --out Library/BalanceWorkbench/cli-simulation
 & $balancePython .workbuddy/tools/test_balance_pipeline.py
 & $balancePython .workbuddy/tools/check_ui_contract.py
 ```
@@ -58,7 +60,13 @@ Excel 被占用、Python/openpyxl 缺失、Luban 失败、源哈希变化或校�
 
 当前活动局冻结配置、评分参数和 hash。正式应用只影响后续新局；编辑器候选重载要求先拆卸当前局且处于隔离测试存储。资源包运行还需重建实际 config 包，不能把磁盘 JSON 更新当作设备端已更新。
 
-## 实际操作验收
+## 当前 30×25 操作验收
+
+2026-10-19 的 [工作台完整操作验收](BalanceEvidence/workbench-acceptance-20261019-102656/result.json) 已通过，耗时 **65.014 秒**。覆盖暂存、真实 Luban 应用、新局读取新 hash、报告导出、整批回滚；正式 D04 文件、原存档和密钥分片均恢复一致。首次验收的 Windows 映射文件错误保留在 [失败记录](BalanceEvidence/workbench-acceptance-20261019-102355/result.json)；回滚现采用同目录暂存后原子替换，并通过故障注入测试。
+
+新版 [验收报告](BalanceEvidence/30x25/acceptance.md) 和 [交互路线查看器](BalanceEvidence/30x25/routes.html) 包含真实长路线、逐波资金、火力复用、数值对照和少塔反例。实际战斗性能另见报告所链的渲染帧采样，编辑器结果不代表 Android 设备帧率。
+
+## 旧 20×20 操作验收历史
 
 2026-10-17 的 [工作台完整操作验收](BalanceEvidence/workbench-acceptance-20261017-105107/result.json) 已通过，总耗时 **22.942 秒**。执行窗口的同一处理入口，覆盖单波、波段、单关及塔修改、Undo/Redo、D01→D04 切档、预设另存、关闭重开草稿、差异与快速校验、暂存 Excel 和真实 Luban、正式应用、隔离新 PlayMode 局加载应用后的 planHash/runtimeContentHash、JSON/CSV/Markdown 报告导出与整批回滚。最终 `formalHashesRestored=true`、`officialSaveHashesUnchanged=true`、`keyShardUnchanged=true`。
 
