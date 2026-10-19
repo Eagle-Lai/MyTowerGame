@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using UnityEngine;
+using UnityEngine.Networking;
 using UnityEngine.SceneManagement;
 using YooAsset;
 
@@ -64,6 +65,14 @@ namespace FTProject
 
         /// <summary>当前 YooAsset 包裹（后续做资源更新/下载时从这里拿）</summary>
         public ResourcePackage CurrentPackage { get { return _package; } }
+
+        public string Diagnostics()
+        {
+            int references = 0;
+            foreach (var value in _refCount.Values) references += value;
+            return "handles=" + _handles.Count + " locations=" + _locations.Count
+                + " bundleRefs=" + references + " checking=" + _checking + " downloading=" + IsDownloading;
+        }
 
         /// <summary>加载前的公共准备结果（同步/异步两条路径共用）</summary>
         private sealed class ResolveResult
@@ -192,31 +201,34 @@ namespace FTProject
             // ------------------------------------------------------------------
             // ② 请求包裹版本。版本是"加载清单"的必需入参。
             // ------------------------------------------------------------------
-            RequestPackageVersionOperation versionOp = StartRequestVersion(out startError);
-            if (versionOp == null)
+            string version;
+#if !UNITY_EDITOR || FORCE_AB
+            // A real release version belongs only to real AB mode. The virtual editor
+            // manifest has its own generated version, even if a release was selected earlier.
+            if (FTProject.AOT.BootReleaseStore.Selected != null)
             {
-                Fail(string.Format("[Res] YooAsset 请求包裹版本无法启动：{0}", startError));
-                FinishInit(onDone);
-                yield break;
+                version = FTProject.AOT.BootReleaseStore.Selected.resourceVersion;
+            }
+            else
+#endif
+            {
+                RequestPackageVersionOperation versionOp = StartRequestVersion(out startError);
+                if (versionOp == null) { Fail("Resource version: " + startError); FinishInit(onDone); yield break; }
+                yield return WaitOpCo(versionOp, "Resource version");
+                if (versionOp.Status != EOperationStatus.Succeeded) { Fail(versionOp.Error); FinishInit(onDone); yield break; }
+                version = versionOp.PackageVersion;
             }
 
-            yield return WaitOpCo(versionOp, "请求包裹版本");
-
-            if (versionOp.Status != EOperationStatus.Succeeded)
-            {
-                Fail(string.Format(
-                    "[Res] YooAsset 包裹「{0}」请求版本失败：{1}\n" +
-                    "  排查：编辑器模拟模式下版本来自模拟清单目录里的 <包裹名>.version 文件，\n" +
-                    "        该文件由「构建模拟清单」产出 —— 先跑一次向导的第 ③ 步。",
-                    PackageName, versionOp.Error));
-                FinishInit(onDone);
-                yield break;
-            }
-
-            string version = versionOp.PackageVersion;
-
-            // ② 版本就绪 = 70%
             ReportInitProgress(0.7f);
+
+#if FT_HOTUPDATE && (!UNITY_EDITOR || FORCE_AB)
+            // Host mode reads its manifest from the sandbox, not the builtin filesystem.
+            // Seed the verified APK manifest AFTER sandbox initialization (which may clear
+            // manifests on a new install), so a genuinely offline first launch needs no HTTP.
+            string builtinError = null;
+            yield return CacheBuiltinManifestCo(version, reason => builtinError = reason);
+            if (builtinError != null) { Fail(builtinError); FinishInit(onDone); yield break; }
+#endif
 
             // ------------------------------------------------------------------
             // ③ 按版本加载清单 —— **这一步才会真正 SetActiveManifest**。
@@ -242,10 +254,74 @@ namespace FTProject
                 yield break;
             }
 
+            // The descriptor binds the entire DLL set to the exact binary manifest, even if
+            // a server accidentally serves an unrelated package under the same version label.
+#if !UNITY_EDITOR || FORCE_AB
+            var selectedRelease = FTProject.AOT.BootReleaseStore.Selected;
+            if (selectedRelease != null)
+            {
+                string manifestPath = Path.Combine(ManifestCacheDirectory, PackageName + "_" + version + ".bytes");
+                if (!FTProject.AOT.BootReleaseStore.Matches(manifestPath, selectedRelease.manifestMd5))
+                {
+                    Fail("Pinned DLL/resource manifest checksum mismatch. Restore the matching release and restart.");
+                    FinishInit(onDone);
+                    yield break;
+                }
+            }
+#endif
             _ready = true;
             LogReady();
             FinishInit(onDone);
         }
+
+        private static string ManifestCacheDirectory
+        {
+            get
+            {
+#if UNITY_EDITOR
+                string root = "Library";
+#else
+                string root = Application.persistentDataPath;
+#endif
+                return Path.Combine(root, YooAssetConfiguration.GetYooFolderName(), PackageName, "ManifestFiles");
+            }
+        }
+
+#if FT_HOTUPDATE && (!UNITY_EDITOR || FORCE_AB)
+        private static IEnumerator CacheBuiltinManifestCo(string version, Action<string> onError)
+        {
+            if (!FTProject.AOT.BootReleaseStore.UsesBuiltinManifest) yield break;
+            foreach (string extension in new[] { ".bytes", ".hash" })
+            {
+                string name = PackageName + "_" + version + extension;
+                string path = Application.streamingAssetsPath + "/yoo/" + PackageName + "/" + name;
+                string url = path.Contains("://") ? path : new Uri(path).AbsoluteUri;
+                string error = null;
+                using (var request = UnityWebRequest.Get(url))
+                {
+                    request.timeout = 15;
+                    yield return request.SendWebRequest();
+                    try
+                    {
+                        if (request.result != UnityWebRequest.Result.Success)
+                            throw new IOException("APK manifest: " + request.error);
+                        Directory.CreateDirectory(ManifestCacheDirectory);
+                        string target = Path.Combine(ManifestCacheDirectory, name);
+                        File.WriteAllBytes(target + ".tmp", request.downloadHandler.data);
+                        if (extension == ".bytes" && !FTProject.AOT.BootReleaseStore.Matches(target + ".tmp",
+                            FTProject.AOT.BootReleaseStore.Selected.manifestMd5))
+                            throw new IOException("APK manifest checksum mismatch");
+                        if (extension == ".hash" && string.IsNullOrWhiteSpace(request.downloadHandler.text))
+                            throw new IOException("APK manifest hash missing");
+                        FTProject.AOT.BootReleaseStore.AtomicMove(target + ".tmp", target);
+                    }
+                    catch (Exception e) { error = e.Message; }
+                }
+                if (error != null) { onError(error); yield break; }
+            }
+            Debug.Log("[Res] Verified APK manifest available locally: " + version);
+        }
+#endif
 
         private void FinishInit(Action onDone)
         {
@@ -532,7 +608,7 @@ namespace FTProject
             bool bootReachable = FTProject.AOT.BootServerSelection.RemoteHotUpdateAllowed;
             if (hotEnabled == false
                 || ResServerConfig.IsValidServerUrl(serverUrl) == false
-                || bootReachable == false)
+                || (bootReachable == false && FTProject.AOT.BootReleaseStore.Selected == null))
             {
                 // 【降级而不是报错】退回离线模式，至少让游戏能进得去 ——
                 // 玩家玩到的是随包版本，而不是黑屏或无限等待。
@@ -570,7 +646,8 @@ namespace FTProject
                     serverUrl, serverUrl, PackageName));
             }
 
-            FTRemoteService remoteService = new FTRemoteService(serverUrl);
+            FTRemoteService remoteService = new FTRemoteService(FTProject.AOT.BootReleaseStore.Selected != null
+                ? FTProject.AOT.BootReleaseStore.ResourceRoot : serverUrl);
 
             HostPlayModeOptions hostOptions = new HostPlayModeOptions();
             hostOptions.BuiltinFileSystemParameters =
@@ -1306,7 +1383,9 @@ namespace FTProject
             Action<string> onError,
             Action<bool> onDone)
         {
-            ResLoaderRunner.Start(CheckUpdateCo(onPhase, onProgress, onBytes, onError, onDone));
+            if (_checking) { onError?.Invoke("Resource check already running"); return; }
+            _checking = true;
+            ResLoaderRunner.Start(CheckUpdateGuarded(onPhase, onProgress, onBytes, onError, onDone));
         }
 
         /// <summary>
@@ -1314,6 +1393,14 @@ namespace FTProject
         /// 回调语义：<paramref name="onDone"/> 的参数 = **本次是否真的下载过内容**。
         /// 出错时只调 <paramref name="onError"/>（不调 onDone），由界面决定是否重试。
         /// </summary>
+        private bool _checking;
+        private IEnumerator CheckUpdateGuarded(Action<string> phase, Action<int, int> progress, Action<long, long> bytes, Action<string> error, Action<bool> done)
+        {
+            // Reset before terminal callbacks: a caller may schedule a retry from that callback.
+            try { yield return CheckUpdateCo(phase, progress, bytes, value => { _checking = false; error?.Invoke(value); }, value => { _checking = false; done?.Invoke(value); }); }
+            finally { _checking = false; }
+        }
+
         public IEnumerator CheckUpdateCo(
             Action<string> onPhase,
             Action<int, int> onProgress,
@@ -1330,101 +1417,21 @@ namespace FTProject
                 yield break;
             }
 
-            // ---- ⓪ 前置闸门（2026-10-15）：服务器不可达 / 热更未配置时，
-            //      **不发起任何远端请求**，直接按"无需更新"放行，用本地资源继续启动。
-            //      与 CreateInitOptions 的离线降级同源（那边保证包按离线模式初始化，
-            //      这边连"检查"都跳过）—— 双保险：任何路径都不会再出现
-            //      "检查更新"长时间等待（此前版本请求默认 60s 超时且硬失败）。
-            if (ResServerConfig.IsRemoteHotUpdateAllowed() == false)
+            // Editor simulate skips transfer; players always verify the complete pinned manifest.
+#if UNITY_EDITOR && !FORCE_AB
+            if (onPhase != null) onPhase("Editor resources");
+            if (onDone != null) onDone(false);
+            yield break;
+#else
+            var release = FTProject.AOT.BootReleaseStore.Selected;
+            if (release == null || _package.GetPackageVersion() != release.resourceVersion)
             {
-                if (onPhase != null) onPhase("当前模式：无需更新资源");
-                Debug.Log("[Res] 跳过资源更新检查：远端热更未启用（服务器不可达 / 未配置），直接使用本地资源。");
-                yield return null;   // 让阶段文案至少显示一帧，避免界面一闪而过看不出原因
-                if (onDone != null) onDone(false);
+                onError?.Invoke("Resource version does not match the loaded DLL release. Restart required.");
                 yield break;
             }
-
-            // ---- ① 请求最新版本 -------------------------------------------------
-            if (onPhase != null) onPhase("正在检查更新...");
-
-            string startError;
-            RequestPackageVersionOperation versionOp = StartRequestVersion(out startError);
-            if (versionOp == null)
-            {
-                if (onError != null) onError("请求资源版本失败：" + startError);
-                yield break;
-            }
-
-            yield return WaitOpCo(versionOp, "检查更新-请求版本");
-
-            if (versionOp.Status != EOperationStatus.Succeeded)
-            {
-                if (onError != null) onError("请求资源版本失败：" + versionOp.Error);
-                yield break;
-            }
-
-            string latestVersion = versionOp.PackageVersion;
+            string latestVersion = release.resourceVersion;
             string currentVersion = _package.GetPackageVersion();
-
-            // 【版本日志（P：版本号显示与日志）】无论是否需要更新，都把
-            // "当前版本 → 远端最新版本" 打出来 —— 这是排查"真机到底跑的哪个资源版本"
-            // 时最常看的一条日志，只在版本变化时打会漏掉"版本相同但文件缺失"的情形。
-            Debug.Log(string.Format(
-                "[Version][Res] 检查更新：当前资源版本={0}，远端最新版本={1}",
-                string.IsNullOrEmpty(currentVersion) ? "(未知)" : currentVersion,
-                string.IsNullOrEmpty(latestVersion) ? "(未知)" : latestVersion));
-
-            // ---- ② 比对版本 -----------------------------------------------------
-            if (onPhase != null) onPhase("正在比对资源版本...");
-            yield return null;   // 让 PhaseText 至少显示一帧，否则"比对"会被瞬间跳过看不见
-
-            bool versionChanged = !string.IsNullOrEmpty(latestVersion) && latestVersion != currentVersion;
-            if (versionChanged)
-            {
-                Debug.Log(string.Format("[Res] 发现新资源版本：{0} → {1}，开始更新。",
-                    string.IsNullOrEmpty(currentVersion) ? "(未知)" : currentVersion, latestVersion));
-
-                // ---- ③ 加载（必要时下载）新清单并激活 ----------------------------
-                // ⚠️ 这一步等价于 2.x 的 UpdatePackageManifest，**必须**做：
-                //    只下 bundle 不换清单，之后所有加载都会按旧清单去找 → 找不到新资源。
-                if (onPhase != null) onPhase("正在加载资源清单...");
-
-                LoadPackageManifestOperation manifestOp = StartLoadManifest(latestVersion, out startError);
-                if (manifestOp == null)
-                {
-                    if (onError != null) onError("加载资源清单失败：" + startError);
-                    yield break;
-                }
-
-                yield return WaitOpCo(manifestOp, "检查更新-加载清单");
-
-                if (manifestOp.Status != EOperationStatus.Succeeded)
-                {
-                    if (onError != null) onError("加载资源清单失败：" + manifestOp.Error);
-                    yield break;
-                }
-            }
-            else
-            {
-                // 【2026-10-14 修复】版本号相同 ≠ 文件齐全，必须继续走 ④ 校验缺失。
-                //
-                // 反例（本次踩坑）：HostPlayMode 下"同步加载一个既不在沙盒、也不在内置包
-                // 里的 bundle"会**立即失败**——SandboxFileSystem 无法在同步上下文里等待
-                // 远端下载，只能把下载转后台继续（见 SFSDownloadBundleOperation 的
-                // continueDownloadInBackground 分支），本次加载返回错误。
-                // 典型受害者：**本次热更新增、而 APK 内置包没有的资源** —— 首次启动时
-                // 用同步接口去加载它们必然失败一次（要等下一轮加载才命中缓存）。
-                // 旧逻辑"版本相同 → 资源已是最新 → 直接返回"会让这些文件永远补不上：
-                // 启动时没人负责把差异下载进沙盒（场景走异步加载能自愈，普通同步加载不能）。
-                //
-                // 所以版本相同时也继续走到 ④：用下载器把"清单 vs 沙盒缓存"的缺失差异
-                // 补齐。**内置包已有的文件会被自动识别并走本地导入，不产生网络流量**；
-                // 真正的下载量只有"新增资源"那部分（通常很小）。
-                if (onPhase != null) onPhase("正在校验资源完整性...");
-                yield return null;   // 让 PhaseText 至少显示一帧
-            }
-
-            // ---- ④ 差异下载（版本相同也执行；无缺失时 TotalDownloadCount == 0 自然短路）----
+            if (onPhase != null) onPhase("Verifying all resource bundles and dependencies");
             ResourceDownloaderOperation downloader;
             try
             {
@@ -1449,6 +1456,11 @@ namespace FTProject
                 yield break;
             }
 
+            if (FTProject.AOT.BootReleaseStore.Offline)
+            {
+                onError?.Invoke("Offline resources incomplete: " + downloader.TotalDownloadCount + " bundles missing. Restore the server and restart.");
+                yield break;
+            }
             if (onPhase != null) onPhase("正在下载资源...");
 
             _downloader = downloader;
@@ -1470,24 +1482,12 @@ namespace FTProject
 
             downloader.StartDownload();
 
-            // ---- 总超时保护（需求 5："整个更新流程需设置总超时"）------------------
-            // 【为什么 YooAsset 自己不管这个】
-            //   看源码 DownloadAndCacheFileOperation 的注释写得很明确：
-            //     `int timeout = 0; //注意：文件下载不做超时检测`
-            //   它只提供 DownloadWatchdogTimeout（卡死检测），不提供整批下载的上限。
-            //   所以"整批多久没下完就放弃"必须由调用方算。
-            //
-            // 【超时后的行为 —— 关键：不阻断启动】
-            //   调用 CancelDownload() 让下载器收敛（它会 abort 所有在途请求），
-            //   然后用 onError 通知界面。此时**已下完的那部分 bundle 是有效的**
-            //   （YooAsset 是逐文件落缓存 + 逐个校验，不是整批原子提交），
-            //   下次启动会从这里继续（断点续传已开启）。
-            //   ⇒ 最坏情况 = 这次少更了一部分资源，但游戏仍能用**上一次的完整清单**启动。
-            //     （清单是最后才 SetActiveManifest 的，没下完就不会切清单 —— 安全。）
+            // Incomplete downloads never enter Main. Verified partial files remain available for retry.
             float deadline = Time.realtimeSinceStartup + TotalDownloadTimeoutSeconds;
 
             while (downloader.IsDone == false)
             {
+                if (IsPaused) deadline += Time.unscaledDeltaTime;
                 if (Time.realtimeSinceStartup >= deadline && timedOut == false)
                 {
                     timedOut = true;
@@ -1514,7 +1514,7 @@ namespace FTProject
                 if (onError != null)
                 {
                     onError(string.Format(
-                        "资源下载超时（超过 {0} 秒）。已下载部分已保留，可稍后重试或直接使用当前版本。",
+                        "资源下载超时（超过 {0} 秒）。已下载部分已保留，请恢复网络后重试。",
                         TotalDownloadTimeoutSeconds));
                 }
                 yield break;
@@ -1548,6 +1548,7 @@ namespace FTProject
 
             if (onPhase != null) onPhase("更新完成");
             if (onDone != null) onDone(true);
+#endif
         }
 
         /// <summary>

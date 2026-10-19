@@ -1,6 +1,8 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using FTProject.AOT;
 using System.Net;
 using System.Text;
 using UnityEditor;
@@ -14,13 +16,13 @@ namespace FTProject.EditorTools
         /// <summary>本机绝对路径（dll 侧通常是 StreamingAssets/HybridCLR/…）。</summary>
         public string SourcePath;
 
-        /// <summary>相对服务器根的路径，统一用 '/'（AB 平铺在根，dll 在 &lt;平台&gt;/HybridCLR/）。</summary>
+        /// <summary>相对服务器根的路径：releases/{id}/… 或最后激活的 release.json。</summary>
         public string RelativePath;
 
         public long Size;
         public string Md5;
 
-        /// <summary>true = 热更 dll 侧文件（要进 &lt;平台&gt;/HybridCLR/）。</summary>
+        /// <summary>true = 不可变 release 的 HybridCLR/ 下热更 DLL 与校验清单。</summary>
         public bool IsDll;
     }
 
@@ -99,20 +101,8 @@ namespace FTProject.EditorTools
     }
 
     /// <summary>
-    /// 一键热更的"落地"部分：生成清单 ▸ 本地部署 ▸ 远端上传 ▸ 校验。
-    ///
-    /// 【部署布局 —— 与 deploy_free_tower_cdn.py 完全一致，不要"优化"成分目录】
-    ///   {服务器根}/FreeTower.version          版本号（客户端请求最新版本的入口）
-    ///   {服务器根}/FreeTower_{版本}.hash       清单哈希
-    ///   {服务器根}/FreeTower_{版本}.bytes      清单本体
-    ///   {服务器根}/{哈希}.bundle               全量资源包（EFileNameStyle.HashName → 平铺）
-    ///   {服务器根}/{32位裸哈希}                unitymonos / unityshaders 特殊包（**无 .bundle**）
-    ///   {服务器根}/{平台}/HybridCLR/*.dll+md5.txt
-    /// 漏掉裸哈希文件 → 跨版本加载场景 404（2026-10-16 实测踩过）。
-    ///
-    /// 【上传协议】远端只支持 HTTP PUT（对象存储/静态托管网关的通用做法）。
-    ///   若服务器不支持 PUT，会明确报 405 —— 那种情况请继续用本地部署 + 自有运维通道，
-    ///   不要在这里偷偷改成"假装成功"。
+    /// Publish immutable releases/{id}/ payloads and activate release.json last.
+    /// HTTP validation downloads and hashes the real served bytes, including extensionless bundles.
     /// </summary>
     public static class HotUpdateDeployer
     {
@@ -129,136 +119,61 @@ namespace FTProject.EditorTools
         public static HotUpdatePlan BuildPlan(string version, string buildDir, string dllDir,
             string platform, EditorUtil.Report report)
         {
-            HotUpdatePlan plan = new HotUpdatePlan();
-            plan.Version = version;
-            plan.Platform = platform;
-            plan.BuildDir = buildDir;
-
-            report.Head("生成热更清单（版本 " + version + "）");
-
-            if (!Directory.Exists(buildDir))
+            try
             {
-                report.Error("AB 输出目录不存在：" + buildDir);
-                return plan;
+                string stage = Path.Combine("Library", "FTBootReleaseStage", version);
+                BootReleaseBuilder.Publish(version, stage, false);
+                return PlanForRelease(stage, platform, report);
             }
-
-            string[] files = Directory.GetFiles(buildDir);
-            int skipped = 0;
-            for (int i = 0; i < files.Length; i++)
+            catch (Exception e)
             {
-                string name = Path.GetFileName(files[i]);
-                if (!ShouldDeployBundleFile(name, version))
-                {
-                    skipped++;
-                    continue;
-                }
-                AddFile(plan, files[i], name, false, report);
+                report.Error("Release staging failed: " + e.Message);
+                return new HotUpdatePlan { Version = version, Platform = platform };
             }
-
-            AddDllFiles(plan, dllDir, platform, report);
-
-            if (plan.Files.Count == 0)
-            {
-                report.Error("清单为空：AB 目录和 dll 目录都没有可部署文件。");
-            }
-            else
-            {
-                report.Skip(string.Format("跳过非部署文件 {0} 个（.report / link.xml / .meta 等）", skipped));
-                report.Ok(plan.Describe());
-            }
-            return plan;
         }
 
-        /// <summary>
-        /// 「仅本地验证」模式用：不依赖 AB 构建目录，直接按服务器根**已有**文件建清单。
-        /// 这样即使换机 / 清过 Bundles，也能验证"服务器上现在这一版到底完不完整"。
-        /// </summary>
         public static HotUpdatePlan BuildPlanFromCdn(string version, string cdnRoot, string dllDir,
             string platform, EditorUtil.Report report)
         {
-            HotUpdatePlan plan = new HotUpdatePlan();
-            plan.Version = version;
-            plan.Platform = platform;
-            plan.BuildDir = "";
-
-            report.Head("按服务器根现有文件生成清单（版本 " + version + "）");
-
-            if (!Directory.Exists(cdnRoot))
+            try { return PlanForRelease(cdnRoot, platform, report); }
+            catch (Exception e)
             {
-                report.Error("服务器根目录不存在：" + cdnRoot);
-                return plan;
+                report.Error("No complete release descriptor: " + e.Message);
+                return new HotUpdatePlan { Version = version, Platform = platform };
             }
+        }
 
-            if (string.IsNullOrEmpty(version))
+        private static HotUpdatePlan PlanForRelease(string root, string platform, EditorUtil.Report report)
+        {
+            string pointer = Path.Combine(root, "release.json");
+            var release = JsonUtility.FromJson<BootRelease>(File.ReadAllText(pointer));
+            if (!BootReleaseStore.Valid(release)) throw new IOException("Invalid release.json");
+            var plan = new HotUpdatePlan { Version = release.resourceVersion, Platform = platform, BuildDir = root };
+            string payload = Path.Combine(root, release.contentRoot);
+            var inventory = JsonUtility.FromJson<HotUpdateManifestDto>(File.ReadAllText(Path.Combine(payload, "payloads.json")));
+            if (inventory == null || inventory.files == null || inventory.version != release.resourceVersion)
+                throw new IOException("Release inventory missing or invalid");
+            foreach (var entry in inventory.files)
             {
-                report.Error("服务器根没有 " + HotUpdatePaths.VersionFileName + "，无法确定要验证的版本。");
-                return plan;
+                if (string.IsNullOrEmpty(entry.path) || entry.path.Contains("..") || entry.path.Contains(":") || entry.path.StartsWith("/"))
+                    throw new IOException("Invalid inventory path");
+                string path = Path.Combine(payload, entry.path);
+                if (!File.Exists(path) || new FileInfo(path).Length != entry.size || HotUpdateFileUtil.Md5(path) != entry.md5)
+                    throw new IOException("Inventory checksum mismatch: " + entry.path);
+                string relative = release.contentRoot + "/" + entry.path;
+                AddFile(plan, path, relative, relative.Contains("/HybridCLR/"), report);
             }
-
-            // ① AB 侧：根目录平铺文件（跳过清单自身/日志/子目录）
-            string[] files = Directory.GetFiles(cdnRoot);
-            for (int i = 0; i < files.Length; i++)
-            {
-                string name = Path.GetFileName(files[i]);
-                if (!ShouldDeployBundleFile(name, version))
-                {
-                    continue;
-                }
-                AddFile(plan, files[i], name, false, report);
-            }
-
-            // ② dll 侧
-            AddDllFiles(plan, dllDir, platform, report);
-
+            foreach (var dll in release.dlls)
+                if (!BootReleaseStore.Matches(Path.Combine(payload, "HybridCLR", dll.name), dll.md5))
+                    throw new IOException("Release DLL missing or checksum mismatch: " + dll.name);
+            if (!BootReleaseStore.Matches(Path.Combine(payload, "FreeTower_" + release.resourceVersion + ".bytes"), release.manifestMd5))
+                throw new IOException("Release manifest checksum mismatch");
+            AddFile(plan, Path.Combine(payload, "payloads.json"), release.contentRoot + "/payloads.json", false, report);
+            AddFile(plan, Path.Combine(payload, "release.json"), release.contentRoot + "/release.json", false, report);
+            // The only mutable activation pointer is always the last operation.
+            AddFile(plan, pointer, "release.json", false, report);
             report.Ok(plan.Describe());
             return plan;
-        }
-
-        /// <summary>
-        /// 哪些文件属于"客户端会请求的 AB 产物"。
-        /// 判定：版本文件 / 本版清单 hash+bytes / *.bundle / 32 位裸哈希特殊包。
-        /// </summary>
-        private static bool ShouldDeployBundleFile(string name, string version)
-        {
-            if (string.IsNullOrEmpty(name))
-            {
-                return false;
-            }
-            if (name == HotUpdatePaths.VersionFileName)
-            {
-                return true;
-            }
-            if (name == "FreeTower_" + version + ".hash" || name == "FreeTower_" + version + ".bytes")
-            {
-                return true;
-            }
-            if (name.EndsWith(".bundle", StringComparison.OrdinalIgnoreCase))
-            {
-                return true;
-            }
-            return HotUpdateFileUtil.IsBareHashFile(name);
-        }
-
-        private static void AddDllFiles(HotUpdatePlan plan, string dllDir, string platform, EditorUtil.Report report)
-        {
-            if (!Directory.Exists(dllDir))
-            {
-                report.Error("随包 dll 目录不存在：" + dllDir);
-                return;
-            }
-
-            string[] files = Directory.GetFiles(dllDir);
-            for (int i = 0; i < files.Length; i++)
-            {
-                string name = Path.GetFileName(files[i]);
-                bool isDll = name.EndsWith(".dll", StringComparison.OrdinalIgnoreCase);
-                bool isMd5 = string.Equals(name, Md5ListName, StringComparison.OrdinalIgnoreCase);
-                if (!isDll && !isMd5)
-                {
-                    continue;
-                }
-                AddFile(plan, files[i], platform + "/" + HotUpdatePaths.DllFolderName + "/" + name, true, report);
-            }
         }
 
         private static void AddFile(HotUpdatePlan plan, string fullPath, string relative, bool isDll,
@@ -330,89 +245,32 @@ namespace FTProject.EditorTools
         // 本地部署
         // ==================================================================
 
-        /// <summary>
-        /// 把清单里的文件铺到本地服务器根（= HTTP 8000 发布的目录）。
-        ///
-        /// 【dll 目录是 junction 时跳过拷贝】HotUpdateServer/Android/HybridCLR 指向
-        /// Assets/StreamingAssets/HybridCLR，往 junction 写就是往源目录写；源 == 目标
-        /// 会抛 IOException。此时文件本来就在目标位置上，跳过即可。
-        /// </summary>
+        /// <summary>Copy immutable payloads with MD5 checks, then atomically replace release.json.
+        /// No legacy flat paths or StreamingAssets junctions are written.</summary>
         public static bool DeployLocal(HotUpdatePlan plan, string cdnRoot, EditorUtil.Report report)
         {
-            report.Head("部署到本地资源服务器：" + cdnRoot);
-
             try
             {
-                Directory.CreateDirectory(cdnRoot);
-
-                string dllServerDir = Path.Combine(cdnRoot, plan.Platform, HotUpdatePaths.DllFolderName);
-                bool dllIsJunction = HotUpdateFileUtil.IsReparsePoint(dllServerDir);
-                if (dllIsJunction)
+                if (!plan.Files.Any(x => x.RelativePath == "release.json")) throw new IOException("Activation descriptor missing");
+                foreach (var file in plan.Files.OrderBy(x => x.RelativePath == "release.json"))
                 {
-                    report.Skip("dll 目录是 junction（直连 StreamingAssets/HybridCLR），无需拷贝：" + dllServerDir);
-                }
-                else if (plan.DllCount > 0)
-                {
-                    Directory.CreateDirectory(dllServerDir);
-                }
-
-                int copied = 0;
-                int skipped = 0;
-                for (int i = 0; i < plan.Files.Count; i++)
-                {
-                    HotUpdatePlanFile file = plan.Files[i];
-                    string target;
-                    if (file.IsDll)
+                    string target = Path.Combine(cdnRoot, file.RelativePath.Replace('/', Path.DirectorySeparatorChar));
+                    Directory.CreateDirectory(Path.GetDirectoryName(target));
+                    if (IsSamePath(file.SourcePath, target)) continue;
+                    if (file.RelativePath != "release.json" && File.Exists(target))
                     {
-                        if (dllIsJunction)
-                        {
-                            skipped++;
-                            continue;
-                        }
-                        target = Path.Combine(dllServerDir, Path.GetFileName(file.RelativePath));
-                    }
-                    else
-                    {
-                        target = Path.Combine(cdnRoot, Path.GetFileName(file.RelativePath));
-                    }
-
-                    if (IsSamePath(file.SourcePath, target))
-                    {
-                        skipped++;
+                        if (HotUpdateFileUtil.Md5(target) != file.Md5) throw new IOException("Immutable collision: " + file.RelativePath);
                         continue;
                     }
-
-                    File.Copy(file.SourcePath, target, true);
-                    copied++;
+                    File.Copy(file.SourcePath, target + ".tmp", true);
+                    if (HotUpdateFileUtil.Md5(target + ".tmp") != file.Md5) throw new IOException("Copy checksum: " + file.RelativePath);
+                    BootReleaseStore.AtomicMove(target + ".tmp", target);
                 }
-
-                // 版本号文件：内容必须是纯版本号（客户端直接 trim 后当版本用）
-                HotUpdateFileUtil.WriteText(
-                    Path.Combine(cdnRoot, HotUpdatePaths.VersionFileName), plan.Version);
-
-                // 清单：先写本机历史，再拷一份到服务器根
-                string historyDir = Path.Combine(HotUpdatePaths.StateDir, "history");
-                Directory.CreateDirectory(historyDir);
-                string historyFile = Path.Combine(historyDir, plan.Version + ".json");
-                if (!WriteManifest(plan, historyFile, "本地部署", report))
-                {
-                    return false;
-                }
-                File.Copy(historyFile, Path.Combine(cdnRoot, HotUpdatePaths.ManifestFileName), true);
-
-                HotUpdateFileUtil.WriteText(
-                    Path.Combine(HotUpdatePaths.StateDir, "last_version.txt"), plan.Version);
-
-                report.Ok(string.Format("拷贝 {0} 个文件（跳过 {1} 个：junction/同位文件）", copied, skipped));
-                report.Ok("版本号文件已更新：" + HotUpdatePaths.VersionFileName + " = " + plan.Version);
-                report.Ok("部署完成：" + plan.Describe());
+                HotUpdateFileUtil.WriteText(Path.Combine(HotUpdatePaths.StateDir, "last_version.txt"), plan.Version);
+                report.Ok("Immutable payloads verified; release.json activated last. " + plan.Describe());
                 return true;
             }
-            catch (Exception e)
-            {
-                report.Error("本地部署失败：" + e.Message);
-                return false;
-            }
+            catch (Exception e) { report.Error("Local deployment failed: " + e.Message); return false; }
         }
 
         private static bool IsSamePath(string a, string b)
@@ -454,7 +312,7 @@ namespace FTProject.EditorTools
                 return false;
             }
 
-            List<HotUpdatePlanFile> all = new List<HotUpdatePlanFile>(plan.Files);
+            List<HotUpdatePlanFile> all = new List<HotUpdatePlanFile>(plan.Files.Where(x => x.RelativePath != "release.json"));
             if (!string.IsNullOrEmpty(plan.ManifestPath) && File.Exists(plan.ManifestPath))
             {
                 HotUpdatePlanFile manifest = new HotUpdatePlanFile();
@@ -465,6 +323,9 @@ namespace FTProject.EditorTools
                 all.Add(manifest);
             }
 
+            var pointer = plan.Files.FirstOrDefault(x => x.RelativePath == "release.json");
+            if (pointer == null) { error = "Activation descriptor missing"; return false; }
+            all.Add(pointer);
             int total = all.Count;
             for (int i = 0; i < total; i++)
             {
@@ -476,10 +337,12 @@ namespace FTProject.EditorTools
                     error = string.Format("上传失败（{0}/{1}）{2}\n  {3}", i + 1, total, file.RelativePath, fileError);
                     return false;
                 }
-                if (progress != null)
+                if (!VerifyHttpFile(file, baseUrl, out fileError))
                 {
-                    progress(i + 1, total);
+                    error = "HTTP content verification failed: " + file.RelativePath + " " + fileError;
+                    return false;
                 }
+                if (progress != null) progress(i + 1, total);
             }
 
             return true;
@@ -571,175 +434,17 @@ namespace FTProject.EditorTools
 
         /// <summary>
         /// 校验"服务器目录里的东西确实是这一版、且和构建产物一模一样"。
-        /// 校验对象 = 清单里的每个文件（存在 + 大小一致），外加 dll 的 md5 清单一致性。
+        /// 校验对象 = 清单里的每个文件（存在 + 大小 + MD5 一致）。
         /// </summary>
         public static void VerifyLocalFiles(HotUpdatePlan plan, string cdnRoot, bool deployedLocally,
             HotUpdateVerifyResult result)
         {
-            // ① 版本号文件
-            if (deployedLocally)
+            foreach (var file in plan.Files)
             {
-                string versionFile = Path.Combine(cdnRoot, HotUpdatePaths.VersionFileName);
+                string path = deployedLocally ? Path.Combine(cdnRoot, file.RelativePath) : file.SourcePath;
                 result.Checked++;
-                if (!File.Exists(versionFile))
-                {
-                    result.Failures.Add("服务器根缺少 " + HotUpdatePaths.VersionFileName);
-                }
-                else
-                {
-                    string content = File.ReadAllText(versionFile).Trim();
-                    if (content != plan.Version)
-                    {
-                        result.Failures.Add(string.Format(
-                            "版本号文件内容不符：{0}（期望 {1}）", content, plan.Version));
-                    }
-                }
-            }
-
-            // ② 每个文件：存在 + 大小
-            for (int i = 0; i < plan.Files.Count; i++)
-            {
-                HotUpdatePlanFile file = plan.Files[i];
-                string path = deployedLocally
-                    ? Path.Combine(cdnRoot, file.RelativePath.Replace('/', Path.DirectorySeparatorChar))
-                    : file.SourcePath;
-
-                result.Checked++;
-                if (!File.Exists(path))
-                {
-                    result.Failures.Add("文件缺失：" + file.RelativePath + "（" + path + "）");
-                    continue;
-                }
-                long size = new FileInfo(path).Length;
-                if (size != file.Size)
-                {
-                    result.Failures.Add(string.Format(
-                        "文件大小不符：{0}（{1} vs {2}）", file.RelativePath, size, file.Size));
-                }
-            }
-
-            // ③ dll 的 md5 清单：清单里的每一项都要和实际文件对得上，且计划里的 dll 都要在清单里
-            VerifyDllMd5List(plan, result);
-
-            // ④ 若服务器根有上一版清单，顺手核对（能抓出"部署到一半"）
-            VerifyExistingManifest(plan, cdnRoot, result);
-        }
-
-        private static void VerifyDllMd5List(HotUpdatePlan plan, HotUpdateVerifyResult result)
-        {
-            string dllDir = HotUpdatePaths.DllDir;
-            string listFile = Path.Combine(dllDir, Md5ListName);
-            result.Checked++;
-            if (!File.Exists(listFile))
-            {
-                result.Failures.Add("缺少 dll md5 清单：" + listFile);
-                return;
-            }
-
-            Dictionary<string, string> listed = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-            foreach (string line in File.ReadAllLines(listFile))
-            {
-                string text = line.Trim();
-                if (text.Length == 0 || text.StartsWith("#"))
-                {
-                    continue;
-                }
-                int split = text.IndexOf("  ", StringComparison.Ordinal);
-                if (split <= 0)
-                {
-                    continue;
-                }
-                string md5 = text.Substring(0, split).Trim();
-                string name = text.Substring(split + 2).Trim();
-                if (name.Length > 0)
-                {
-                    listed[name] = md5;
-                }
-            }
-
-            if (listed.Count == 0)
-            {
-                result.Failures.Add("dll md5 清单为空：" + listFile);
-                return;
-            }
-
-            // 清单里的条目必须和实际文件一致（防止"清单是旧的、dll 是新的"）
-            foreach (KeyValuePair<string, string> kv in listed)
-            {
-                string path = Path.Combine(dllDir, kv.Key);
-                result.Checked++;
-                if (!File.Exists(path))
-                {
-                    result.Failures.Add("md5 清单里的 dll 不存在：" + kv.Key);
-                    continue;
-                }
-                string actual = HotUpdateFileUtil.Md5(path);
-                if (!string.Equals(actual, kv.Value, StringComparison.OrdinalIgnoreCase))
-                {
-                    result.Failures.Add(string.Format("dll md5 不符：{0}（实际 {1} vs 清单 {2}）",
-                        kv.Key, actual, kv.Value));
-                }
-            }
-
-            // 计划里的热更 dll 必须都进了清单（漏登记 = 客户端跳过更新）
-            for (int i = 0; i < plan.Files.Count; i++)
-            {
-                HotUpdatePlanFile file = plan.Files[i];
-                if (!file.IsDll)
-                {
-                    continue;
-                }
-                string name = Path.GetFileName(file.RelativePath);
-                if (string.Equals(name, Md5ListName, StringComparison.OrdinalIgnoreCase))
-                {
-                    continue;
-                }
-                if (!listed.ContainsKey(name))
-                {
-                    result.Warnings.Add("md5 清单未包含：" + name + "（客户端不会更新它）");
-                }
-            }
-        }
-
-        private static void VerifyExistingManifest(HotUpdatePlan plan, string cdnRoot, HotUpdateVerifyResult result)
-        {
-            string path = Path.Combine(cdnRoot, HotUpdatePaths.ManifestFileName);
-            if (!File.Exists(path))
-            {
-                result.Warnings.Add("服务器根没有 " + HotUpdatePaths.ManifestFileName + "（旧部署遗留，可忽略）");
-                return;
-            }
-
-            try
-            {
-                HotUpdateManifestDto dto = JsonUtility.FromJson<HotUpdateManifestDto>(File.ReadAllText(path));
-                if (dto == null || dto.files == null)
-                {
-                    result.Warnings.Add("服务器根的清单无法解析（可能不是本工具写的）");
-                    return;
-                }
-
-                for (int i = 0; i < dto.files.Length; i++)
-                {
-                    HotUpdateFileEntryDto entry = dto.files[i];
-                    string file = Path.Combine(cdnRoot, entry.path.Replace('/', Path.DirectorySeparatorChar));
-                    result.Checked++;
-                    if (!File.Exists(file))
-                    {
-                        result.Failures.Add("清单登记但服务器上不存在：" + entry.path);
-                        continue;
-                    }
-                    long size = new FileInfo(file).Length;
-                    if (entry.size > 0 && size != entry.size)
-                    {
-                        result.Failures.Add(string.Format("清单大小不符：{0}（{1} vs {2}）",
-                            entry.path, size, entry.size));
-                    }
-                }
-            }
-            catch (Exception e)
-            {
-                result.Warnings.Add("核对服务器清单异常：" + e.Message);
+                if (!File.Exists(path) || new FileInfo(path).Length != file.Size || HotUpdateFileUtil.Md5(path) != file.Md5)
+                    result.Failures.Add("Payload missing or checksum mismatch: " + file.RelativePath);
             }
         }
 
@@ -748,53 +453,38 @@ namespace FTProject.EditorTools
         // ==================================================================
 
         /// <summary>
-        /// 用**和客户端完全一样的 URL** 请求一遍：版本文件 → 清单 hash/bytes → 每个 bundle/dll。
-        /// 只做 HEAD（拿到 200 + Content-Length 即证明"这个路径真的能下到"）；
-        /// 版本文件用 GET 读内容，确认版本号确实是本次要发布的。
+        /// GET every descriptor, manifest, DLL and bundle through the real HTTP path and compare MD5.
         /// 阻塞调用（由流水线放到后台线程），不碰任何 Unity API。
         /// </summary>
         public static void VerifyHttp(HotUpdatePlan plan, string baseUrl,
             Action<int, int> progress, HotUpdateVerifyResult result)
         {
-            baseUrl = baseUrl.TrimEnd('/');
-            int total = plan.Files.Count + 1;
             int done = 0;
-
-            // ① 版本号文件（GET 读内容）
-            string versionError;
-            string versionBody;
-            result.Checked++;
-            if (!TryGetText(baseUrl + "/" + HotUpdatePaths.VersionFileName, out versionBody, out versionError))
+            foreach (var file in plan.Files)
             {
-                result.Failures.Add("GET " + HotUpdatePaths.VersionFileName + " 失败：" + versionError);
-            }
-            else if (versionBody.Trim() != plan.Version)
-            {
-                result.Failures.Add(string.Format("HTTP 上的版本号是 {0}，期望 {1}", versionBody.Trim(), plan.Version));
-            }
-            done++;
-            if (progress != null) progress(done, total);
-
-            // ② 每个文件 HEAD
-            for (int i = 0; i < plan.Files.Count; i++)
-            {
-                HotUpdatePlanFile file = plan.Files[i];
-                string url = baseUrl + "/" + file.RelativePath;
-                long length;
-                string error;
                 result.Checked++;
-                if (!TryHead(url, out length, out error))
-                {
-                    result.Failures.Add("HEAD " + file.RelativePath + " 失败：" + error);
-                }
-                else if (length >= 0 && file.Size > 0 && length != file.Size)
-                {
-                    result.Failures.Add(string.Format("HTTP 文件大小不符：{0}（{1} vs {2}）",
-                        file.RelativePath, length, file.Size));
-                }
-                done++;
-                if (progress != null) progress(done, total);
+                if (!VerifyHttpFile(file, baseUrl.TrimEnd('/'), out string error))
+                    result.Failures.Add("GET " + file.RelativePath + ": " + error);
+                progress?.Invoke(++done, plan.Files.Count);
             }
+        }
+
+        private static bool VerifyHttpFile(HotUpdatePlanFile file, string baseUrl, out string error)
+        {
+            error = null;
+            try
+            {
+                var request = CreateRequest(baseUrl.TrimEnd('/') + "/" + file.RelativePath + "?verify=" + DateTime.UtcNow.Ticks, "GET");
+                using (var response = (HttpWebResponse)request.GetResponse())
+                using (var stream = response.GetResponseStream())
+                using (var md5 = System.Security.Cryptography.MD5.Create())
+                {
+                    string hash = BitConverter.ToString(md5.ComputeHash(stream)).Replace("-", "").ToLowerInvariant();
+                    if (hash != file.Md5) { error = "MD5 mismatch: " + hash + " expected " + file.Md5; return false; }
+                }
+                return true;
+            }
+            catch (Exception e) { error = e.Message; return false; }
         }
 
         /// <summary>探测某个地址上的版本号（用于"端口被别的服务占着"时判断能不能复用）。</summary>
@@ -802,10 +492,12 @@ namespace FTProject.EditorTools
         {
             version = "";
             string body;
-            if (!TryGetText(baseUrl.TrimEnd('/') + "/" + HotUpdatePaths.VersionFileName, out body, out error))
+            if (TryGetText(baseUrl.TrimEnd('/') + "/release.json", out body, out error))
             {
-                return false;
+                var release = JsonUtility.FromJson<BootRelease>(body);
+                if (release != null && !string.IsNullOrEmpty(release.resourceVersion)) { version = release.resourceVersion; return true; }
             }
+            if (!TryGetText(baseUrl.TrimEnd('/') + "/" + HotUpdatePaths.VersionFileName, out body, out error)) return false;
             version = body.Trim();
             return true;
         }
@@ -821,72 +513,6 @@ namespace FTProject.EditorTools
                 using (StreamReader reader = new StreamReader(response.GetResponseStream(), Encoding.UTF8))
                 {
                     body = reader.ReadToEnd();
-                }
-                return true;
-            }
-            catch (WebException e)
-            {
-                error = DescribeWebException(e);
-                return false;
-            }
-            catch (Exception e)
-            {
-                error = e.Message;
-                return false;
-            }
-        }
-
-        private static bool TryHead(string url, out long length, out string error)
-        {
-            length = -1;
-            error = null;
-            try
-            {
-                HttpWebRequest request = CreateRequest(url, "HEAD");
-                using (HttpWebResponse response = (HttpWebResponse)request.GetResponse())
-                {
-                    length = response.ContentLength;
-                    return true;
-                }
-            }
-            catch (WebException e)
-            {
-                // 少数静态服务不实现 HEAD（405/501）：退回 GET 只读 1 字节验证可达性
-                HttpWebResponse resp = e.Response as HttpWebResponse;
-                if (resp != null)
-                {
-                    int code = (int)resp.StatusCode;
-                    if (code == 405 || code == 501)
-                    {
-                        return TryGetLength(url, out length, out error);
-                    }
-                }
-                error = DescribeWebException(e);
-                return false;
-            }
-            catch (Exception e)
-            {
-                error = e.Message;
-                return false;
-            }
-        }
-
-        private static bool TryGetLength(string url, out long length, out string error)
-        {
-            length = -1;
-            error = null;
-            try
-            {
-                HttpWebRequest request = CreateRequest(url, "GET");
-                request.AddRange(0, 0);
-                using (HttpWebResponse response = (HttpWebResponse)request.GetResponse())
-                {
-                    length = response.ContentLength;
-                    // 206 时 ContentLength 是分片长度（=1），不做大小比较
-                    if ((int)response.StatusCode == 206)
-                    {
-                        length = -1;
-                    }
                 }
                 return true;
             }

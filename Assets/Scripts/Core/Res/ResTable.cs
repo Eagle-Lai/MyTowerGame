@@ -145,17 +145,13 @@ namespace FTProject
             // UI 补全（策划案 §3）：启动链 3 + 内容 3 + 弹窗 3
             // ------------------------------------------------------------------
             // 逻辑名一律与 prefab 名逐字相同（UIManager.Open 直接传这个字符串）。
-            // SplashView / LoadingView / HotUpdateView（引导期三件套）也在此登记：
-            //   它们挂的 View 脚本在热更程序集里，真机上 Resources 加载必然 missing
-            //   （HybridCLR：挂热更脚本的资源必须 AB 打包）。真机时序下 main 场景
-            //   加载前 ResLoader.Init 已完成（HotUpdateEntry.EnterMainScene 保证），
-            //   所以 UIManager.Open 能走 ResTable 正常链路从 AB 实例化。
-            //   `Resources/BootUI/` 兜底仅剩"编辑器未 Init"一种场景（见 UIManager.Open）。
+            // Loading/Splash 通过 YooAsset；HotUpdate 仅用于 AOT 本地外壳恢复。
             // 卡片类资产（TowerCodexItem / MonsterCodexItem）同理**不登记**：
             // 它们只被已登记的 View prefab 直接引用、由 LoopListView2 按 prefab 引用池化克隆，
             // YooAsset 收集整目录树时依赖会自然进同包 —— 与 SelectLevelItem 同理。
-            { "SplashView",    new ResAddress(ResBundle.BootUi, "SplashView",    "Assets/Resources/BootUI/SplashView.prefab") },
-            { "LoadingView",   new ResAddress(ResBundle.BootUi, "LoadingView",   "Assets/Resources/BootUI/LoadingView.prefab") },
+            { "LocalizationSettings", new ResAddress(ResBundle.BootUi, "LocalizationSettings", "Assets/Localization/LocalizationSettings.asset") },
+            { "SplashView",    new ResAddress(ResBundle.BootUi, "SplashView",    "Assets/HotUpdateUI/SplashView.prefab") },
+            { "LoadingView",   new ResAddress(ResBundle.BootUi, "LoadingView",   "Assets/HotUpdateUI/LoadingView.prefab") },
             { "HotUpdateView", new ResAddress(ResBundle.BootUi, "HotUpdateView", "Assets/Resources/BootUI/HotUpdateView.prefab") },
             { "MainMenuView",    new ResAddress(ResBundle.UiHud, "MainMenuView",    "Assets/Prefabs/UI/MainMenuView.prefab") },
             { "TowerCodexView",  new ResAddress(ResBundle.UiHud, "TowerCodexView",  "Assets/Prefabs/UI/TowerCodexView.prefab") },

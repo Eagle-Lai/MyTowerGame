@@ -8,53 +8,11 @@ using UnityEngine.Networking;
 namespace FTProject.AOT
 {
     /// <summary>
-    /// 热更 dll 的**独立下载器**（AOT 侧，零热更依赖）。
-    ///
-    /// ==================================================================
-    /// 【为什么这件事必须由 AOT 侧自己做，不能交给 YooAsset】
-    ///   这是整条热更链路上最容易踩的**时序死结**：
-    ///
-    ///     热更 dll 要在 Boot 场景加载（早）
-    ///     而 YooAsset 的资源系统在 main 场景的 Launcher 里才初始化（晚）
-    ///
-    ///   想让 YooAsset 去下 dll，就得先把 YooAsset 初始化；
-    ///   可 YooAsset 的初始化代码本身就在热更 dll 里（FTProject.Runtime）——
-    ///   变成"要用 dll 才能下 dll"。
-    ///
-    ///   所以：**dll 的下载走一条独立的、不依赖 YooAsset 的 HTTP 通道**
-    ///   （就是本类），下载到 persistentDataPath/HybridCLR/ 之后，
-    ///   下一行的 HotUpdateAssembler.ReadDllBytes 就会优先读到它。
-    ///   而 **AB 资源**的下载仍然交给 YooAsset（它擅长做差异、哈希校验、断点续传）。
-    ///
-    ///   —— 两条通道各管一摊，互不阻塞，是 HybridCLR + YooAsset 的标准组合方式。
-    ///
-    /// 【目录约定】服务器上 dll 放在：
-    ///     {服务器根}/{平台}/HybridCLR/{dll 文件名}
-    ///   例如：
-    ///     http://192.168.43.100:8000/Android/HybridCLR/FTProject.Runtime.dll
-    ///   同目录下**必须**有一份校验清单：
-    ///     {服务器根}/{平台}/HybridCLR/md5.txt
-    ///   内容格式（每行一条，`#` 开头为注释）：
-    ///     <32位小写md5>  <文件名>
-    ///   例：d41d8cd98f00b204e9800998ecf8427e  FTProject.Runtime.dll
-    ///   （该文件由编辑器菜单「Tools ▸ 塔防 ▸ HybridCLR ▸ 4. 生成 md5 校验清单」产出，
-    ///     与 dll 一起上传服务器。抓不到 md5.txt = 无法校验 = 全部按"跳过更新"处理，
-    ///     **绝不盲写**。）
-    ///
-    /// 【下载策略（对应需求的 3 / 4 两条）】
-    ///   ① **先探测**（由 BootLoader 负责）：不可达直接不调用本类。
-    ///   ② **先比 md5**：本地已有且 md5 与远端一致 → 跳过，**不下载**（省流量，秒级完成）。
-    ///   ③ **临时文件 + 断点续传**：写 `<target>.part`，中断后下次用 `Range: bytes=N-` 续传。
-    ///   ④ **完整性校验**：下完先算 md5，与清单比对；不一致 → 丢弃，**绝不替换**。
-    ///   ⑤ **原子替换**：校验通过才 `File.Delete(target)` + `File.Move(part, target)`。
-    ///   ⑥ **重试**：单文件最多 <see cref="MaxRetryPerFile"/> 次，指数退避；404 不重试。
-    ///   ⑦ **总超时**：整个批次有 <see cref="TotalTimeoutSeconds"/> 的硬上限，超时收敛并回退。
-    ///
-    /// 【下载失败的策略：静默回退，绝不阻断启动】
-    ///   任何环节失败都只打 Warning，继续用包内 / 上次热更的版本。
-    ///   只有"全部成功"才算热更成功，结论通过 onDone 交出去（供日志/UI）。
-    ///   **任何情况下都不会留下半个 dll** —— 这是本类最重要的不变量。
-    /// ==================================================================
+    /// AOT HTTP downloader for the DLL set pinned by BootReleaseStore.Selected.
+    /// Payloads live at releases/{id}/HybridCLR and stage in a descriptor-specific directory.
+    /// Range transfers and bounded retries preserve partial downloads; MD5 validation precedes
+    /// atomic replacement. Any missing or failed DLL blocks assembly loading and shows Retry.
+    /// AOT metadata is always supplied by the matching APK and is never remotely replaced.
     /// </summary>
     public static class HotUpdateDllDownloader
     {
@@ -69,7 +27,7 @@ namespace FTProject.AOT
 
         /// <summary>
         /// **整批下载的总超时（秒）**。超过这个时间无论进行到哪一步都收敛退出，
-        /// 用当前已成功的结果继续启动。需求第 5 条明确要求"整个更新流程需设置总超时"。
+        /// 未完成的 DLL 集合会停留在更新页，已验证文件留待重试。
         /// </summary>
         private const int TotalTimeoutSeconds = 90;
 
@@ -100,9 +58,9 @@ namespace FTProject.AOT
             public int Downloaded;
             /// <summary>因 md5 一致（已是最新）而跳过的文件数</summary>
             public int UpToDate;
-            /// <summary>服务器上没有、按"无需更新"处理的文件数</summary>
+            /// <summary>服务器明确返回 404 的文件数（该发布失败）</summary>
             public int Skipped;
-            /// <summary>出错的条目摘要（换行分隔，出错不阻断启动，只记录）</summary>
+            /// <summary>出错条目摘要（换行分隔，非空即阻止加载）</summary>
             public string ErrorSummary;
             /// <summary>本批次是否因**总超时**而提前收敛</summary>
             public bool TimedOut;
@@ -121,7 +79,7 @@ namespace FTProject.AOT
         }
 
         /// <summary>
-        /// 把热更 dll（热更集 + AOT 补充元数据）从服务器同步到本地可写目录。
+        /// 把当前发布的热更 DLL 集合同步到独立暂存目录。
         /// <paramref name="onProgress"/> 参数为 (已完成数, 总数)，用于 Boot 界面进度条。
         /// 本方法**永不抛异常**（全部内部消化为日志 + Result）。
         /// </summary>
@@ -144,7 +102,7 @@ namespace FTProject.AOT
 
             string root = serverRoot.TrimEnd('/');
             string platform = GetPlatformFolder();
-            string targetDir = Path.Combine(Application.persistentDataPath, RemoteSubDir);
+            string targetDir = BootReleaseStore.DllDirectory;
 
             try
             {
@@ -160,24 +118,10 @@ namespace FTProject.AOT
                 yield break;
             }
 
-            // ---------- ① 拉取校验清单（拿不到就不做任何更新，见类注释） ----------
-            Dictionary<string, string> md5Map = null;
-            string md5Url = string.Format("{0}/{1}/{2}/{3}", root, platform, RemoteSubDir, Md5ListFileName);
+            // ---------- ① 使用已固定描述符内的完整校验清单 ----------
+            var md5Map = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var file in BootReleaseStore.Selected.dlls) md5Map.Add(file.name, file.md5);
 
-            yield return FetchMd5ListCo(md5Url, map => md5Map = map);
-
-            if (md5Map == null)
-            {
-                // 没有清单 = 无法判断"是否已最新"、更无法校验完整性。
-                // 此时**宁可什么都不做**：盲写风险远大于"这次不更新"的代价。
-                result.ErrorSummary = "未能获取 " + Md5ListFileName
-                    + "（服务器未部署或不可读）；本次跳过 dll 更新，继续使用本地版本。";
-                result.Skipped = names.Length;
-                Finish(result, onProgress, onDone);
-                yield break;
-            }
-
-            // ---------- ② 总超时起点 ----------
             float deadline = Time.realtimeSinceStartup + TotalTimeoutSeconds;
 
             // ---------- ③ 逐文件同步 ----------
@@ -201,10 +145,9 @@ namespace FTProject.AOT
 
                 if (hasExpected == false)
                 {
-                    // 清单里没有这个文件 → 服务器未部署它，按"无需更新"处理
-                    result.Skipped++;
-                    Report(onProgress, i + 1, names.Length);
-                    continue;
+                    // 缺失校验值意味着描述符不完整，禁止加载
+                    result.ErrorSummary = AppendLine(result.ErrorSummary, "Missing checksum: " + fileName);
+                    break;
                 }
 
                 // 本地已是最新？→ 跳过下载
@@ -216,7 +159,7 @@ namespace FTProject.AOT
                 }
 
                 // 真正下载（带重试 / 续传 / 校验 / 原子替换）
-                string url = string.Format("{0}/{1}/{2}/{3}", root, platform, RemoteSubDir, fileName);
+                string url = BootReleaseStore.ResourceRoot + "/HybridCLR/" + fileName;
                 FileOutcome outcome = FileOutcome.Failed;
                 string error = null;
 
@@ -231,7 +174,7 @@ namespace FTProject.AOT
                         result.Downloaded++;
                         break;
                     case FileOutcome.NotFound:
-                        result.Skipped++;
+                        result.ErrorSummary = AppendLine(result.ErrorSummary, "HTTP 404: " + fileName);
                         break;
                     case FileOutcome.UpToDate:
                         result.UpToDate++;
@@ -253,7 +196,7 @@ namespace FTProject.AOT
         {
             /// <summary>已下载、校验通过、原子替换成功</summary>
             Downloaded,
-            /// <summary>服务器 404（或清单声明但实际不存在），按无需更新处理</summary>
+            /// <summary>服务器 404：发布不完整，禁止加载</summary>
             NotFound,
             /// <summary>md5 一致，本地已是最新</summary>
             UpToDate,
@@ -390,7 +333,7 @@ namespace FTProject.AOT
 
                 if (httpCode == 404)
                 {
-                    // 服务器上确实没有 → 无需更新，且清掉可能残留的 .part
+                    // 服务器文件缺失：报告失败，清理该请求残留的 .part
                     CleanupPart(partPath);
                     onResult(FileOutcome.NotFound);
                     onRetryable(false);
@@ -445,11 +388,7 @@ namespace FTProject.AOT
                 // ---------- ⑤ 原子替换 ----------
                 try
                 {
-                    if (File.Exists(target))
-                    {
-                        File.Delete(target);
-                    }
-                    File.Move(partPath, target);
+                    BootReleaseStore.AtomicMove(partPath, target);
 
                     long size = new FileInfo(target).Length;
                     Debug.Log(string.Format(
@@ -650,16 +589,10 @@ namespace FTProject.AOT
             return string.IsNullOrEmpty(existing) ? line : (existing + "\n" + line);
         }
 
-        /// <summary>要同步的 dll 全名单 = 热更 dll + AOT 补充元数据 dll</summary>
+        /// <summary>要同步的完整热更 DLL 名单；不包含 AOT 元数据</summary>
         private static string[] BuildFileList()
         {
-            string[] hot = HotUpdateAssembler.HotUpdateAssemblies;
-            string[] aot = HotUpdateAssembler.AOTMetaAssemblies;
-
-            string[] all = new string[hot.Length + aot.Length];
-            Array.Copy(hot, 0, all, 0, hot.Length);
-            Array.Copy(aot, 0, all, hot.Length, aot.Length);
-            return all;
+            return HotUpdateAssembler.HotUpdateAssemblies;
         }
 
         /// <summary>

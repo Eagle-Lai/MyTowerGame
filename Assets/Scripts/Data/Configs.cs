@@ -53,6 +53,8 @@ namespace FTProject
         private static readonly Dictionary<string, string> LoadedJson = new Dictionary<string, string>();
         public static bool RatingContentVerified { get; private set; }
 
+        private static bool _preloadHeld;
+
         private static readonly string[] ConfigKeys =
         {
             "tbenemydata", "tbtowerinfo", "tbbulletdata", "tbenemylist",
@@ -80,7 +82,11 @@ namespace FTProject
         /// </summary>
         public static void LoadAsync(Action<int, int> onStep, Action<bool> onDone)
         {
-            if (IsLoaded)
+            // 【2026-10-19】早退条件从「IsLoaded」收紧为「加载成功过」。
+            // 原实现里失败也会置 IsLoaded=true（表全是 null、FailedTables 非空），
+            // 之后任何一次 LoadAsync 都会直接回调 true —— 上层想重试也重试不了，
+            // 还会拿到"假成功"。现在只有全表成功才走短路；失败后再调用会重走完整加载。
+            if (IsLoaded && FailedTables.Count == 0)
             {
                 if (onStep != null)
                 {
@@ -93,19 +99,10 @@ namespace FTProject
                 return;
             }
 
-            // 先整包预热，顺带做一次"资源是否存在"的自检
-            ResLoader.Instance.Preload(ConfigKeys,
-                progress =>
-                {
-                    if (onStep != null)
-                    {
-                        int done = Mathf.Clamp(
-                            Mathf.RoundToInt(progress * ConfigKeys.Length), 0, ConfigKeys.Length);
-                        onStep(done, ConfigKeys.Length);
-                    }
-                },
-                () =>
-                {
+            // The config service owns one preload reference for its entire lifetime.
+            // Failed parses retry the same assets without acquiring extra bundle references.
+            Action loadTables = () =>
+            {
                     FailedTables.Clear();
                     LoadedJson.Clear();
 
@@ -148,7 +145,7 @@ namespace FTProject
                 bool ok = FailedTables.Count == 0;
                 RatingContentVerified = ok && VerifyRatingContent();
                 if (!RatingContentVerified) { FailedTables.Add("tblevelrating(content hash mismatch)"); ok = false; }
-                IsLoaded = true;
+                IsLoaded = FailedTables.Count == 0;
 
                 LogSummary(ok);
                 if (ok)
@@ -161,7 +158,12 @@ namespace FTProject
                 {
                     onDone(ok);
                 }
-            });
+            };
+            if (_preloadHeld) { loadTables(); return; }
+            _preloadHeld = true;
+            ResLoader.Instance.Preload(ConfigKeys,
+                progress => onStep?.Invoke(Mathf.Clamp(Mathf.RoundToInt(progress * ConfigKeys.Length), 0, ConfigKeys.Length), ConfigKeys.Length),
+                loadTables);
         }
 
         /// <summary>读取并解析单张表；失败返回 null 并记录</summary>

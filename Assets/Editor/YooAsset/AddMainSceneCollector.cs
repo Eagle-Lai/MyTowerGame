@@ -26,7 +26,8 @@ namespace FTProject.EditorTools
         private static readonly string[][] Plan =
         {
             new[] { ScenePath, "Scene" },
-            new[] { "Assets/Resources/BootUI", "BootUI" },
+            new[] { "Assets/HotUpdateUI", "BootUI" },
+            new[] { "Assets/Localization", "Localization" },
             // 【2026-10-14】Reporter 运行时图标：Reporter 为运行时动态挂载，
             // Initialize 时经 ResTable Reporter_* 逻辑名动态加载图片，必须被 AB 覆盖
             // （真机从热更服务器下发；见 GameSceneLauncher.EnsureReporter 说明）。

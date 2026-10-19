@@ -18,8 +18,8 @@ namespace FTProject
     /// </summary>
     public static class LanguageManager
     {
-        /// <summary>配置资产在 Resources 下的相对路径（不带扩展名）。</summary>
-        private const string SettingsPath = "Localization/LocalizationSettings";
+        /// <summary>ResTable/YooAsset 中的本地化配置逻辑地址。</summary>
+        private const string SettingsPath = "LocalizationSettings";
 
         private static LocalizationSettings _settings;
         private static LocalizationLookup _lookup;
@@ -48,6 +48,31 @@ namespace FTProject
         /// 调用时机：`Launcher` 里 `Configs.LoadAsync` 完成之后、广播 ConfigLoadedEvent 之前。
         /// </summary>
         /// <param name="save">存档管理器（可空）。有玩家显式选择时优先用存档里的语言。</param>
+        public static bool PrepareStartup()
+        {
+            if (!ResLoader.Instance.IsReady) return false;
+            _settings = ResLoader.Instance.Load<LocalizationSettings>(SettingsPath);
+            var table = ResLoader.Instance.Load<TextAsset>("tblocalization");
+            if (_settings == null || table == null) return false;
+            try
+            {
+                var raw = new cfg.TBLocalization(SimpleJSON.JSONNode.Parse(table.text));
+                _lookup = new LocalizationLookup();
+                _lookup.Build(raw);
+                FTProject.AOT.BootLocalization.Initialize();
+                Current = FTProject.AOT.BootLocalization.HasSelection ? FTProject.AOT.BootLocalization.Current : SafeLanguage(_settings.defaultLanguage);
+                IsReady = true;
+                _warned.Clear();
+                EventDispatcher.TriggerEvent<int>(EventName.LanguageChangedEvent, (int)Current);
+                Debug.Log("[BootSequence] LocalizationReady " + Current + " entries=" + _lookup.Count);
+                if (Debug.isDebugBuild) Debug.Log("[Localization] default=" + _settings.defaultLanguage
+                    + " saved=" + FTProject.AOT.BootLocalization.HasSelection + " font=" + GetFont(Current)?.name
+                    + " supported=" + (_settings.supportedLanguages == null ? "(fallback)" : string.Join(",", _settings.supportedLanguages)));
+                return true;
+            }
+            catch (System.Exception e) { Debug.LogWarning("[Loc] Startup table invalid: " + e.Message); return false; }
+        }
+
         public static void Initialize(SaveManager save)
         {
             EnsureSettings();
@@ -66,6 +91,7 @@ namespace FTProject
 
             RefreshLookup();
             IsReady = true;
+            EventDispatcher.TriggerEvent<int>(EventName.LanguageChangedEvent, (int)Current);
 
             Debug.Log(string.Format("[Loc] 语言初始化完成：{0}（多语言表 {1} 条）",
                 Current, _lookup != null ? _lookup.Count : 0));
@@ -87,11 +113,13 @@ namespace FTProject
         /// </summary>
         public static void SetLanguage(Language lang)
         {
+            lang = SafeLanguage(lang);
             if (Current == lang)
             {
                 return;
             }
             Current = lang;
+            FTProject.AOT.BootLocalization.Remember(lang);
 
             SaveManager sm = SaveManager.Instance;
             if (sm != null)
@@ -150,7 +178,12 @@ namespace FTProject
             catch (System.FormatException)
             {
                 Debug.LogWarning(string.Format("[Loc] 文案 key「{0}」占位符与参数不匹配：{1}", key, fmt));
-                return fmt;
+                if (_lookup != null && _lookup.TryGet(key, out LocEntry fallback) && !string.IsNullOrEmpty(fallback.En))
+                {
+                    try { return string.Format(fallback.En, args); }
+                    catch (System.FormatException) { }
+                }
+                return null;
             }
         }
 
@@ -162,7 +195,7 @@ namespace FTProject
         public static TMP_FontAsset GetFont(Language lang)
         {
             EnsureSettings();
-            return _settings != null ? _settings.GetFont(lang) : null;
+            return _settings != null ? (_settings.GetFont(lang) ?? _settings.GetFont(Language.English)) : null;
         }
 
         /// <summary>
@@ -212,13 +245,12 @@ namespace FTProject
             {
                 return;
             }
-            _settings = Resources.Load<LocalizationSettings>(SettingsPath);
-            if (_settings == null)
-            {
-                Debug.LogError(string.Format(
-                    "[Loc] 找不到配置资产 Resources/{0}。请在 Unity 里创建它（右键 ▸ 创建 ▸ 塔防 ▸ 本地化配置）。",
-                    SettingsPath));
-            }
+            if (ResLoader.Instance.IsReady) _settings = ResLoader.Instance.Load<LocalizationSettings>(SettingsPath);
+        }
+
+        private static Language SafeLanguage(Language language)
+        {
+            return System.Enum.IsDefined(typeof(Language), language) ? language : Language.English;
         }
     }
 }

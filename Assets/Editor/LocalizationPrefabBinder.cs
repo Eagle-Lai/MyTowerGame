@@ -47,9 +47,8 @@ namespace FTProject.EditorTools
             "Assets/Prefabs/UI/TowerCodexItem.prefab",
             // 游戏介绍弹窗（2026-10-14）：BackBtn/CloseBtn 的 Label 是静态文案
             "Assets/Prefabs/UI/GameIntroView.prefab",
-            "Assets/Resources/BootUI/SplashView.prefab",
-            "Assets/Resources/BootUI/LoadingView.prefab",
-            "Assets/Resources/BootUI/HotUpdateView.prefab",
+            "Assets/HotUpdateUI/SplashView.prefab",
+            "Assets/HotUpdateUI/LoadingView.prefab",
         };
 
         /// <summary>

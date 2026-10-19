@@ -341,6 +341,7 @@ namespace FTProject.EditorTools
                 Fail("YooAsset 资源包构建失败：\n" + abReport.Text);
                 return;
             }
+            BootReleaseBuilder.Publish(version, "Library/FT_HotUpdate/apk-baseline", true);
             Debug.Log("[BuildFull] ③ YooAsset 资源包构建成功：\n" + abReport.Text);
             BuildApk.WriteStatus("PHASE ab ok version=" + version + " (yooasset)");
 #else

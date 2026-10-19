@@ -152,3 +152,10 @@
   `FreeTower.version` 指针停留在旧版本 → 客户端拿旧清单，新增资源（如 tblevelrating）报"清单找不到定位地址"。
   验证：`curl --noproxy "*" http://127.0.0.1:8000/FreeTower.version` 应等于本地 Bundles 最新版本目录。
   另：`Bundles/Android/FreeTower/{1.0.25,1.0.26}/`（历史版本区）与服务器根平铺区是两回事，前者不被运行时请求。
+
+## 配置加载失败自恢复（2026-10-19 新增）[公司E]
+- ★`Configs.LoadAsync` 早退条件 = `IsLoaded && FailedTables.Count == 0`（失败后允许重载；旧版失败也置 IsLoaded=true 会"假成功"短路）。
+- ★配置加载失败 → `Launcher.HandleConfigLoadFailed()`：3s 后 `BeginHotUpdate(forceRecheck:true)` 重查版本自动自愈，最多 3 次；forceRecheck 用于绕过 Gate 快捷分支。
+- "崩溃+卡死"取证套路：crash 缓冲 / dropbox / tombstone 全空 + events 只有 am_kill(stop by relaunch) = 版本错位困住玩家，不是真崩溃；查 `am_kill` 时间线 + 配置加载日志即可定位。
+- 一键热更可 `execute_code` 直调 `FTProject.EditorTools.HotUpdatePipeline.StartFull()`（53s 增量）；查状态用逐属性拼接（CodeDom 不认 var+链式）。
+- MuMu 横屏 `input tap` 坐标系 = 旋转后 1600x900，非截图像素。

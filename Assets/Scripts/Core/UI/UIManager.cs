@@ -127,17 +127,11 @@ namespace FTProject
                 return null;
             }
 
-            // 【引导期界面的兜底路径】开屏页 / 加载页必须在 ResLoader.Init **之前**就能显示 ——
-            //   而 YooAsset 在 Init 完成前拒绝加载任何资源（"尚未初始化完成，无法加载"）。
-            //   于是启动界面走 ResTable/YooAsset 是**先有鸡还是先有蛋**，必然失败。
-            //   这类"引导期界面"改放 `Assets/Resources/BootUI/` 下：
-            //     · Resources 不依赖任何资源系统初始化，Init 之前就能取到；
-            //     · `Assets/Resources` 不在 BundleCollectorSetting 的收集目录里
-            //       → 不会进任何 AB 包、也不会被热更替换（引导期界面本来就不该热更）。
-            //   资源系统一旦就绪，同一个 UIManager.Open 仍走正常链路（下面前半段）。
+            // Only the stable AOT HotUpdateView may use the APK Resources copy.
+            // Loading/Splash must resolve from the verified active AB release.
             GameObject go = null;
             ResAddress addr;
-            if (ResLoader.Instance.IsReady && ResTable.TryGet(logicalName, out addr))
+            if (logicalName != "HotUpdateView" && ResLoader.Instance.IsReady && ResTable.TryGet(logicalName, out addr))
             {
                 go = ResLoader.Instance.Instantiate(logicalName, parent);
             }
@@ -191,6 +185,7 @@ namespace FTProject
         /// </summary>
         private static GameObject InstantiateBootUi(string logicalName, Transform parent)
         {
+            if (logicalName != "HotUpdateView") return null;
             GameObject prefab = Resources.Load<GameObject>(BootUiDir + logicalName);
             if (prefab == null)
             {

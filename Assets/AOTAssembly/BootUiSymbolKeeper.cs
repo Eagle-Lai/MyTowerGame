@@ -4,7 +4,7 @@ using UnityEngine.UI;
 namespace FTProject.AOT
 {
     /// <summary>
-    /// 热更侧 Boot 更新界面（BootHotUpdateUI / BootHotUpdateGate）的
+    /// 热更侧 Boot 更新界面（HotUpdateView / BootHotUpdateGate）的
     /// **AOT 符号保留清单**（2026-10-16）。
     ///
     /// ==================================================================
@@ -18,7 +18,7 @@ namespace FTProject.AOT
     ///   以真实执行路径保证链接器 100% 保留清单里所有 API；探针全透明、同帧销毁，
     ///   无任何可见效果。
     ///
-    ///   ⚠️ 维护约定：热更侧 BootHotUpdateUI / BootHotUpdateGate 每新增一个
+    ///   ⚠️ 维护约定：热更侧 HotUpdateView / BootHotUpdateGate 每新增一个
     ///   Unity/UGUI API 调用，**必须同步加进下面的 Keep 清单** —— 否则只会在真机
     ///   触发 MissingMethodException（编译期完全无感；这也是为什么探测必须"真实
     ///   执行而不能只写注释"）。

@@ -31,9 +31,8 @@ namespace FTProject.EditorTools
             "Assets/Prefabs/UI/TowerCodexItem.prefab",
             // 游戏介绍弹窗（2026-10-14）
             "Assets/Prefabs/UI/GameIntroView.prefab",
-            "Assets/Resources/BootUI/SplashView.prefab",
-            "Assets/Resources/BootUI/LoadingView.prefab",
-            "Assets/Resources/BootUI/HotUpdateView.prefab",
+            "Assets/HotUpdateUI/SplashView.prefab",
+            "Assets/HotUpdateUI/LoadingView.prefab",
         };
 
         private static readonly System.Collections.Generic.HashSet<string> DynamicNames =

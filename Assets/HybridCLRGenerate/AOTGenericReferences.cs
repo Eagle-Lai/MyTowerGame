@@ -27,7 +27,6 @@ public class AOTGenericReferences : UnityEngine.MonoBehaviour
 	// System.Action<byte>
 	// System.Action<float>
 	// System.Action<int,int,int>
-	// System.Action<int,int,long,long>
 	// System.Action<int,int>
 	// System.Action<int>
 	// System.Action<long,long>

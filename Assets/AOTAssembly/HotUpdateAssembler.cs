@@ -216,7 +216,13 @@ namespace FTProject.AOT
         private static byte[] ReadDllBytes(string fileName)
         {
             // ① 热更产物落点（真机优先级最高）
-            string p0 = Path.Combine(Application.persistentDataPath, "HybridCLR", fileName);
+            if (Array.IndexOf(HotUpdateAssemblies, fileName) >= 0 && BootReleaseStore.Selected != null)
+            {
+                string pinned = Path.Combine(BootReleaseStore.DllDirectory, fileName);
+                if (!BootReleaseStore.VerifyDlls(BootReleaseStore.Selected)) throw new Exception("Pinned DLL set failed verification");
+                return File.ReadAllBytes(pinned);
+            }
+            string p0 = Path.Combine(BootReleaseStore.MetadataDirectory, fileName);
             if (File.Exists(p0))
             {
                 return File.ReadAllBytes(p0);
@@ -312,7 +318,7 @@ namespace FTProject.AOT
         public static System.Collections.IEnumerator PrefetchStreamingAssetsToPersistent(Action<int, int> onProgress)
         {
             string[] names = BuildAllFileNames();
-            string targetDir = Path.Combine(Application.persistentDataPath, BaselineDirName);
+            string targetDir = BootReleaseStore.MetadataDirectory;
             string stampPath = Path.Combine(targetDir, BaselineStampFile);
             string markerPath = Path.Combine(targetDir, CopyInProgressMarker);
             // ---------- ① 目录准备 ----------
@@ -350,7 +356,7 @@ namespace FTProject.AOT
             if (hadInterrupted)
             {
                 Debug.LogWarning("[HybridCLR] 检测到上次基线拷贝中断，将清空并重建基线目录");
-                CleanBaselineDir(targetDir, names, stampPath, markerPath);
+                TryDelete(markerPath);
             }
 
             // ---------- ③ 版本戳比对：一致则整体跳过 ----------
@@ -671,10 +677,7 @@ namespace FTProject.AOT
         /// <summary>全部 dll 文件名（热更 + AOT 补充元数据），供首启预取使用。</summary>
         private static string[] BuildAllFileNames()
         {
-            string[] all = new string[HotUpdateAssemblies.Length + AOTMetaAssemblies.Length];
-            Array.Copy(HotUpdateAssemblies, 0, all, 0, HotUpdateAssemblies.Length);
-            Array.Copy(AOTMetaAssemblies, 0, all, HotUpdateAssemblies.Length, AOTMetaAssemblies.Length);
-            return all;
+            return AOTMetaAssemblies;
         }
 
         /// <summary>

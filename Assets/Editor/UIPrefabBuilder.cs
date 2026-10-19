@@ -1,4 +1,4 @@
-using SuperScrollView;
+﻿using SuperScrollView;
 using TMPro;
 using UnityEditor;
 using UnityEngine;
@@ -121,14 +121,9 @@ namespace FTProject.EditorTools
         public const string LevelClearPath = "Assets/Prefabs/UI/LevelClearView.prefab";
 
         // ---- UI 补全 P1：启动链三界面 ----
-        // ⚠️ **刻意放在 Resources/BootUI 而不是 Assets/Prefabs/UI**（别顺手挪回去）：
-        //   开屏页与加载页必须在 `ResLoader.Init` **之前**就能显示，而 YooAsset 在 Init 完成前
-        //   拒绝加载任何资源 → 走 ResTable/YooAsset 是"先有鸡还是先有蛋"，必然失败（已实测）。
-        //   Resources 不依赖资源系统初始化；且 `Assets/Resources` **不在**
-        //   BundleCollectorSetting 的收集目录里 → 不进任何 AB 包、也不参与热更
-        //   （引导期界面本来就不该被热更换掉，否则可能出现"更新完打不开新的引导界面"）。
-        public const string SplashPath = "Assets/Resources/BootUI/SplashView.prefab";
-        public const string LoadingPath = "Assets/Resources/BootUI/LoadingView.prefab";
+        // Loading/Splash 由 AB 更新；只有 AOT HotUpdate 外壳位于 Resources/BootUI。
+        public const string SplashPath = "Assets/HotUpdateUI/SplashView.prefab";
+        public const string LoadingPath = "Assets/HotUpdateUI/LoadingView.prefab";
         public const string HotUpdatePath = "Assets/Resources/BootUI/HotUpdateView.prefab";
 
         // ---- UI 补全 P2/P3：内容界面与弹窗 ----
@@ -2223,6 +2218,8 @@ namespace FTProject.EditorTools
                 new Vector2(0.5f, 0.5f), new Vector2(0f, -390f), new Vector2(1400f, 60f),
                 TextAnchor.MiddleCenter, 26);
             failText.color = DangerRed;
+            failText.enableWordWrapping = true;
+            failText.overflowMode = TextOverflowModes.Ellipsis;
 
             // 默认态：显示"Game Paused"，隐藏"Continue""Retry"与失败文案（与 HotUpdateView.Awake 的初值一致）
             SetNodeActive(panel.transform, "BtnGroup/ResumeBtn", false);

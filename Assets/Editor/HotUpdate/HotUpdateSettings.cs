@@ -16,9 +16,10 @@ namespace FTProject.EditorTools
     ///   · 编译产物   HybridCLRData/HotUpdateDlls/&lt;平台&gt;/      （HybridCLR 生成）
     ///   · 随包 dll   Assets/StreamingAssets/HybridCLR/          （dll 热更的"原点"）
     ///   · AB 构建    Bundles/&lt;平台&gt;/FreeTower/&lt;版本&gt;/       （YooAsset 输出）
-    ///   · 服务器根   HotUpdateServer/                           （平铺部署区）
-    /// 任何一处写错（例如把 AB 版本目录拼成 `Android/FreeTower`）都会让客户端 404，
-    /// 而 404 的表现是"一直等待 / 黑屏"，排查成本极高。所以一律从这里取。
+    ///   · 服务器根   HotUpdateServer/release.json               （最后激活的指针）
+    ///   · 不可变内容 releases/{id}/                             （完整 DLL + AB）
+    /// 客户端固定同一 release 的 resourceVersion、manifestMd5 和 DLL 校验值。
+    /// 不再把根目录 FreeTower.version 或 Android/HybridCLR 当作新启动协议入口。
     /// </summary>
     public static class HotUpdatePaths
     {
@@ -28,7 +29,7 @@ namespace FTProject.EditorTools
         /// <summary>随包 dll 子目录（运行时按此路径读）。</summary>
         public const string DllFolderName = "HybridCLR";
 
-        /// <summary>版本号文件名（客户端"请求最新版本"的入口，平铺在服务器根）。</summary>
+        /// <summary>YooAsset 版本文件名（位于不可变 release 内；旧部署探测也可读取）。</summary>
         public const string VersionFileName = "FreeTower.version";
 
         /// <summary>本地热更服务器根（git 忽略，各机自建；HTTP 8000 指向它）。</summary>
@@ -104,7 +105,7 @@ namespace FTProject.EditorTools
             return BuildDir(EditorUserBuildSettings.activeBuildTarget, version);
         }
 
-        /// <summary>dll 在服务器上的相对目录：&lt;平台&gt;/HybridCLR/。</summary>
+        /// <summary>仅供旧工具识别历史布局；新发布使用 release.contentRoot + /HybridCLR。</summary>
         public static string DllServerRelative
         {
             get { return PlatformFolder + "/" + DllFolderName; }
@@ -242,7 +243,7 @@ namespace FTProject.EditorTools
     /// 都一样）。但 Bundles 是 git 忽略的构建产物，换机、清缓存、或只 pull 了别人出的包时，
     /// 本地目录可能比服务器旧 → 直接扫会**撞回一个已经发布过的版本号**，客户端因为
     /// "版本号没变"而完全不下载（表现为"改了代码但真机没反应"）。
-    /// 因此这里取三者最大：①本地已构建的版本 ②服务器 FreeTower.version ③上次构建记录。
+    /// 因此这里取三者最大：①本地已构建的版本 ②服务器 release.json ③上次构建记录。
     /// </summary>
     public static class HotUpdateVersionUtil
     {
@@ -289,11 +290,17 @@ namespace FTProject.EditorTools
             return ap.CompareTo(bp);
         }
 
-        /// <summary>服务器根 `FreeTower.version` 的内容（没有/读失败返回空串）。</summary>
+        /// <summary>已激活 release.json 的资源版本；无新协议指针时兼容旧版本文件。</summary>
         public static string GetDeployedVersion()
         {
             try
             {
+                string pointer = Path.Combine(HotUpdatePaths.CdnRoot, "release.json");
+                if (File.Exists(pointer))
+                {
+                    var release = JsonUtility.FromJson<FTProject.AOT.BootRelease>(File.ReadAllText(pointer));
+                    return release != null && IsValid(release.resourceVersion) ? release.resourceVersion : "";
+                }
                 string file = Path.Combine(HotUpdatePaths.CdnRoot, HotUpdatePaths.VersionFileName);
                 if (File.Exists(file))
                 {
