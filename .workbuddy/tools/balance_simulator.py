@@ -73,7 +73,7 @@ def choose_build(cells,towers,table,strategy):
             gain=len(p)-len(oldpath)
             # A newly extended maze is harmful if it abandons the existing firing line.
             # Preserve aggregate support before chasing a few extra path steps.
-            score=gain*2+ground*3+air_cov*POLICY.get('airWeight',2)+support*2
+            score=gain*POLICY.get('pathWeight',2)+ground*3+air_cov*POLICY.get('airWeight',2)+support*2
             if final_path:
                 from balance_maze import intervals
                 # Complete useful folds, retain present firing support, and place
@@ -133,20 +133,23 @@ def spend_boundary(cells,towers,table,gold,strategy,wave,operations):
         hard_cap=POLICY.get('maxTowers',target_count)
         target_count=min(hard_cap,target_count)
         up=[]
-        if len(towers)>=POLICY.get('upgradeAfter',8):
+        builds=sum(op['cost'] for op in operations if op['action']=='build')
+        upgrades=sum(op['cost'] for op in operations if op['action']=='upgrade')
+        upgrade_cap=POLICY.get('upgradeBudgetGold')
+        upgrade_left=(upgrade_cap-upgrades) if upgrade_cap is not None else None
+        if not POLICY.get('forbidUpgrades') and (upgrade_left is None or upgrade_left>0) and len(towers)>=POLICY.get('upgradeAfter',8):
             p=path_for(cells,[t['cell'] for t in towers]);air=straight(p[0],p[-1])
             for i,t in enumerate(towers):
                 old=table[t['id']];nid=old['upgradeTo']
                 if not nid:continue
                 new=table[nid]
                 if new['prices']>gold:continue
+                if upgrade_left is not None and new['prices']>upgrade_left:continue
                 if wave>=20 and gold-new['prices'] < POLICY.get('upgradeReserve',0)*max(0,target_count-len(towers)):continue
                 g=coverage(t['cell'],p,new['radius']);a=coverage(t['cell'],air,new['radius'])/2
                 gain=(new['power']*1000/new['CD']-old['power']*1000/old['CD'])*(g+(a*POLICY.get('upgradeAirWeight',1) if old['canAttackAir'] else 0))
                 if old['type']==3:gain=(new['effectValue']-old['effectValue'])*400*g
                 up.append((gain/new['prices'],i,nid))
-        builds=sum(op['cost'] for op in operations if op['action']=='build')
-        upgrades=sum(op['cost'] for op in operations if op['action']=='upgrade')
         prefer_upgrade=POLICY.get('preferUpgrade',False) or (len(towers)>=8 and upgrades<builds*POLICY.get('upgradeShare',.3))
         build=choose_build(cells,towers,table,strategy) if len(towers)<target_count and (not (prefer_upgrade and up) or not up) else None
         if (strategy=='optimized' or POLICY.get('cheapFallback')) and build and table[build[1]]['prices']>gold and gold>=table[1]['prices'] and len(towers)<POLICY.get('upgradeAfter',6):
@@ -202,6 +205,8 @@ def simulate_level(plan,L,strategy,step_ms,out,seed=42):
         alive=[];cursor=0;elapsed=0.0;wave_kills=wave_leaks=wave_income=wave_boss=wave_critical=peak=0
         wave_overkill=0;wave_air_window=wave_ground_window=0
         initial_ops=len(operations);deferred=0;leak_roles=collections.Counter()
+        upgrade_spent=sum(op['cost'] for op in operations if op['action']=='upgrade')
+        upgrade_cap=POLICY.get('upgradeBudgetGold')
         # Full wave; do not overlap the next wave or pre-credit any income.
         while cursor<len(w['enemyIds']) or alive:
             if elapsed>240:error='wave simulation exceeded 240 seconds';break
@@ -225,17 +230,19 @@ def simulate_level(plan,L,strategy,step_ms,out,seed=42):
                     if e['role']=='boss':boss_leaked+=1;wave_boss+=1
                     if e['role'] in ['boss','elite']:critical_leaked+=1;wave_critical+=1
             alive=[e for e in alive if e['alive']]
-            if (strategy=='optimized' or POLICY.get('midwaveUpgrades')) and len(towers)>=POLICY.get('midwaveAfter',5):
+            if ((strategy=='optimized' or POLICY.get('midwaveUpgrades')) and len(towers)>=POLICY.get('midwaveAfter',5)
+                    and not POLICY.get('forbidUpgrades') and (upgrade_cap is None or upgrade_spent<upgrade_cap)):
                 choices=[]
                 for ti,t in enumerate(towers):
                     old=tower_table[t['id']];nid=old['upgradeTo']
                     if not nid or tower_table[nid]['prices']>gold:continue
+                    if upgrade_cap is not None and upgrade_spent+tower_table[nid]['prices']>upgrade_cap:continue
                     cfg=tower_table[nid];ground=coverage(t['cell'],path,cfg['radius']);a=coverage(t['cell'],straight(path[0],path[-1]),cfg['radius'])/2
                     delta=(cfg['power']*1000/cfg['CD']-old['power']*1000/old['CD'])*(ground+(a if cfg['canAttackAir'] else 0))
                     if cfg['type']==3:delta=(cfg['effectValue']-old['effectValue'])*300*ground
                     choices.append((delta/cfg['prices'],ti,nid))
                 if choices:
-                    _,ti,nid=max(choices);t=towers[ti];cost=tower_table[nid]['prices'];gold-=cost;spent+=cost
+                    _,ti,nid=max(choices);t=towers[ti];cost=tower_table[nid]['prices'];gold-=cost;spent+=cost;upgrade_spent+=cost
                     t.update(id=nid,fireTimer=0.0,searchTimer=0.0,target=None)
                     operations.append({'waveOrdinal':w['waveOrdinal'],'timeMs':math.floor(elapsed*1000),'action':'upgrade',
                       'row':t['cell'][1],'col':t['cell'][0],'towerId':nid,'cost':cost,'balanceAfter':gold})

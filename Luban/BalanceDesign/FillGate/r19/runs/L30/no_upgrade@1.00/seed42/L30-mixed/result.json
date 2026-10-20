@@ -1,0 +1,8371 @@
+{
+  "profileId": "D04",
+  "levelId": 30,
+  "planHash": "f75152cf545645c6e3931d82ad197149ce65cde65dc7d5a8435d3901537d9bc7",
+  "strategyId": "mixed",
+  "strategyRevision": "spatial-fixed-step-30x25-maze-v6-astar",
+  "policy": {
+    "capacity": 129,
+    "targetCount": 53,
+    "maxTowers": 53,
+    "blueprintCells": [
+      [
+        2,
+        0
+      ],
+      [
+        2,
+        1
+      ],
+      [
+        2,
+        2
+      ],
+      [
+        2,
+        3
+      ],
+      [
+        2,
+        4
+      ],
+      [
+        2,
+        5
+      ],
+      [
+        2,
+        7
+      ],
+      [
+        4,
+        1
+      ],
+      [
+        4,
+        2
+      ],
+      [
+        4,
+        3
+      ],
+      [
+        4,
+        4
+      ],
+      [
+        4,
+        5
+      ],
+      [
+        4,
+        6
+      ],
+      [
+        4,
+        7
+      ],
+      [
+        4,
+        8
+      ],
+      [
+        6,
+        0
+      ],
+      [
+        6,
+        1
+      ],
+      [
+        6,
+        2
+      ],
+      [
+        6,
+        3
+      ],
+      [
+        6,
+        4
+      ],
+      [
+        6,
+        5
+      ],
+      [
+        6,
+        6
+      ],
+      [
+        6,
+        7
+      ],
+      [
+        8,
+        1
+      ],
+      [
+        8,
+        2
+      ],
+      [
+        8,
+        3
+      ],
+      [
+        8,
+        4
+      ],
+      [
+        8,
+        5
+      ],
+      [
+        8,
+        6
+      ],
+      [
+        8,
+        7
+      ],
+      [
+        8,
+        8
+      ],
+      [
+        10,
+        0
+      ],
+      [
+        10,
+        1
+      ],
+      [
+        10,
+        2
+      ],
+      [
+        10,
+        3
+      ],
+      [
+        10,
+        4
+      ],
+      [
+        10,
+        5
+      ],
+      [
+        10,
+        6
+      ],
+      [
+        10,
+        7
+      ],
+      [
+        12,
+        1
+      ],
+      [
+        12,
+        2
+      ],
+      [
+        12,
+        3
+      ],
+      [
+        12,
+        4
+      ],
+      [
+        12,
+        5
+      ],
+      [
+        12,
+        6
+      ],
+      [
+        12,
+        7
+      ],
+      [
+        14,
+        0
+      ],
+      [
+        14,
+        1
+      ],
+      [
+        14,
+        2
+      ],
+      [
+        14,
+        3
+      ],
+      [
+        14,
+        4
+      ],
+      [
+        14,
+        5
+      ],
+      [
+        14,
+        6
+      ]
+    ],
+    "types": [
+      1,
+      1,
+      4,
+      1,
+      7,
+      1,
+      4,
+      1,
+      7,
+      4
+    ],
+    "upgradeShare": 0.0,
+    "preferUpgrade": false,
+    "midwaveUpgrades": false,
+    "upgradeAfter": 53,
+    "maxWallSeconds": 900,
+    "trackReentry": true,
+    "forbidUpgrades": true
+  },
+  "stepMs": 100,
+  "seed": 42,
+  "coverage": "offline_prediction_only",
+  "approximations": [
+    "Four-direction path search mirrors shipped AStarWrapper insertion ties; battle timing still approximate",
+    "Fixed-step movement then tower attacks instead of Unity frame scheduling",
+    "Float64 arithmetic instead of Unity float32; near-threshold results need Unity comparison",
+    "No visual/camera/touch validation; no certification of five-star reachability",
+    "Build and upgrade operations only at wave boundaries; no borrowing future kill income"
+  ],
+  "result": "predicted_clear",
+  "error": null,
+  "predictionStars": null,
+  "ratingStatus": "requires C# LevelRatingEvaluator; simulator does not implement another scoring algorithm",
+  "combatToParRatio": 0.8884210526315831,
+  "balance": 3100,
+  "leaked": 5,
+  "metrics": {
+    "runId": "offline:D04:L30:mixed:spatial-fixed-step-30x25-maze-v6-astar",
+    "profileId": "D04",
+    "profileRevision": "2",
+    "balanceRevision": "balance-30x25-tight-v5",
+    "ratingRevision": "five-stars-v1",
+    "planHash": "f75152cf545645c6e3931d82ad197149ce65cde65dc7d5a8435d3901537d9bc7",
+    "expectedWaveCount": 25,
+    "completedWaveCount": 25,
+    "expectedEnemyCount": 2625,
+    "successfulSpawned": 2625,
+    "killed": 2620,
+    "leaked": 5,
+    "bossLeaked": 1,
+    "criticalLeaked": 1,
+    "hp": 8,
+    "maxHp": 20,
+    "combatElapsedMs": 1181600,
+    "levelElapsedMs": 1301600,
+    "combatElapsedSeconds": 1181.6000000000056,
+    "levelElapsedSeconds": 1301.6000000000058,
+    "debugOverride": false,
+    "statisticsValid": true,
+    "timingValid": true,
+    "victory": true,
+    "waves": [
+      {
+        "ordinal": 1,
+        "expected": 69,
+        "successfulSpawned": 69,
+        "killed": 69,
+        "leaked": 0,
+        "bossLeaked": 0,
+        "criticalLeaked": 0,
+        "gold": 176,
+        "hp": 20,
+        "killGold": 138,
+        "clearGold": 8,
+        "peakAlive": 12,
+        "combatStartSeconds": 0.0,
+        "combatEndSeconds": 31.0,
+        "levelEndSeconds": 31.0
+      },
+      {
+        "ordinal": 2,
+        "expected": 72,
+        "successfulSpawned": 72,
+        "killed": 72,
+        "leaked": 0,
+        "bossLeaked": 0,
+        "criticalLeaked": 0,
+        "gold": 158,
+        "hp": 20,
+        "killGold": 144,
+        "clearGold": 8,
+        "peakAlive": 7,
+        "combatStartSeconds": 31.0,
+        "combatEndSeconds": 60.3,
+        "levelEndSeconds": 65.3
+      },
+      {
+        "ordinal": 3,
+        "expected": 75,
+        "successfulSpawned": 75,
+        "killed": 75,
+        "leaked": 0,
+        "bossLeaked": 0,
+        "criticalLeaked": 0,
+        "gold": 145,
+        "hp": 20,
+        "killGold": 129,
+        "clearGold": 8,
+        "peakAlive": 8,
+        "combatStartSeconds": 60.3,
+        "combatEndSeconds": 90.5,
+        "levelEndSeconds": 100.5
+      },
+      {
+        "ordinal": 4,
+        "expected": 78,
+        "successfulSpawned": 78,
+        "killed": 78,
+        "leaked": 0,
+        "bossLeaked": 0,
+        "criticalLeaked": 0,
+        "gold": 148,
+        "hp": 20,
+        "killGold": 135,
+        "clearGold": 8,
+        "peakAlive": 12,
+        "combatStartSeconds": 90.5,
+        "combatEndSeconds": 122.5,
+        "levelEndSeconds": 137.5
+      },
+      {
+        "ordinal": 5,
+        "expected": 81,
+        "successfulSpawned": 81,
+        "killed": 81,
+        "leaked": 0,
+        "bossLeaked": 0,
+        "criticalLeaked": 0,
+        "gold": 158,
+        "hp": 20,
+        "killGold": 140,
+        "clearGold": 8,
+        "peakAlive": 14,
+        "combatStartSeconds": 122.5,
+        "combatEndSeconds": 154.9,
+        "levelEndSeconds": 174.9
+      },
+      {
+        "ordinal": 6,
+        "expected": 84,
+        "successfulSpawned": 84,
+        "killed": 84,
+        "leaked": 0,
+        "bossLeaked": 0,
+        "criticalLeaked": 0,
+        "gold": 159,
+        "hp": 20,
+        "killGold": 129,
+        "clearGold": 10,
+        "peakAlive": 12,
+        "combatStartSeconds": 154.9,
+        "combatEndSeconds": 186.20000000000002,
+        "levelEndSeconds": 211.2
+      },
+      {
+        "ordinal": 7,
+        "expected": 87,
+        "successfulSpawned": 87,
+        "killed": 87,
+        "leaked": 0,
+        "bossLeaked": 0,
+        "criticalLeaked": 0,
+        "gold": 165,
+        "hp": 20,
+        "killGold": 134,
+        "clearGold": 10,
+        "peakAlive": 38,
+        "combatStartSeconds": 186.20000000000002,
+        "combatEndSeconds": 225.60000000000002,
+        "levelEndSeconds": 255.6
+      },
+      {
+        "ordinal": 8,
+        "expected": 90,
+        "successfulSpawned": 90,
+        "killed": 90,
+        "leaked": 0,
+        "bossLeaked": 0,
+        "criticalLeaked": 0,
+        "gold": 163,
+        "hp": 20,
+        "killGold": 138,
+        "clearGold": 10,
+        "peakAlive": 14,
+        "combatStartSeconds": 225.60000000000002,
+        "combatEndSeconds": 258.1,
+        "levelEndSeconds": 293.1
+      },
+      {
+        "ordinal": 9,
+        "expected": 93,
+        "successfulSpawned": 93,
+        "killed": 93,
+        "leaked": 0,
+        "bossLeaked": 0,
+        "criticalLeaked": 0,
+        "gold": 175,
+        "hp": 20,
+        "killGold": 142,
+        "clearGold": 10,
+        "peakAlive": 15,
+        "combatStartSeconds": 258.1,
+        "combatEndSeconds": 291.0,
+        "levelEndSeconds": 331.0
+      },
+      {
+        "ordinal": 10,
+        "expected": 96,
+        "successfulSpawned": 96,
+        "killed": 96,
+        "leaked": 0,
+        "bossLeaked": 0,
+        "criticalLeaked": 0,
+        "gold": 165,
+        "hp": 20,
+        "killGold": 148,
+        "clearGold": 10,
+        "peakAlive": 42,
+        "combatStartSeconds": 291.0,
+        "combatEndSeconds": 331.0,
+        "levelEndSeconds": 376.0
+      },
+      {
+        "ordinal": 11,
+        "expected": 99,
+        "successfulSpawned": 99,
+        "killed": 99,
+        "leaked": 0,
+        "bossLeaked": 0,
+        "criticalLeaked": 0,
+        "gold": 194,
+        "hp": 20,
+        "killGold": 169,
+        "clearGold": 12,
+        "peakAlive": 47,
+        "combatStartSeconds": 331.0,
+        "combatEndSeconds": 370.8,
+        "levelEndSeconds": 420.8
+      },
+      {
+        "ordinal": 12,
+        "expected": 102,
+        "successfulSpawned": 102,
+        "killed": 102,
+        "leaked": 0,
+        "bossLeaked": 0,
+        "criticalLeaked": 0,
+        "gold": 368,
+        "hp": 20,
+        "killGold": 162,
+        "clearGold": 12,
+        "peakAlive": 45,
+        "combatStartSeconds": 370.8,
+        "combatEndSeconds": 410.7,
+        "levelEndSeconds": 465.7
+      },
+      {
+        "ordinal": 13,
+        "expected": 105,
+        "successfulSpawned": 105,
+        "killed": 105,
+        "leaked": 0,
+        "bossLeaked": 0,
+        "criticalLeaked": 0,
+        "gold": 547,
+        "hp": 20,
+        "killGold": 167,
+        "clearGold": 12,
+        "peakAlive": 48,
+        "combatStartSeconds": 410.7,
+        "combatEndSeconds": 451.09999999999997,
+        "levelEndSeconds": 511.1
+      },
+      {
+        "ordinal": 14,
+        "expected": 108,
+        "successfulSpawned": 108,
+        "killed": 108,
+        "leaked": 0,
+        "bossLeaked": 0,
+        "criticalLeaked": 0,
+        "gold": 731,
+        "hp": 20,
+        "killGold": 172,
+        "clearGold": 12,
+        "peakAlive": 58,
+        "combatStartSeconds": 451.09999999999997,
+        "combatEndSeconds": 491.9,
+        "levelEndSeconds": 556.9
+      },
+      {
+        "ordinal": 15,
+        "expected": 111,
+        "successfulSpawned": 111,
+        "killed": 111,
+        "leaked": 0,
+        "bossLeaked": 0,
+        "criticalLeaked": 0,
+        "gold": 922,
+        "hp": 20,
+        "killGold": 179,
+        "clearGold": 12,
+        "peakAlive": 67,
+        "combatStartSeconds": 491.9,
+        "combatEndSeconds": 537.6999999999999,
+        "levelEndSeconds": 607.7
+      },
+      {
+        "ordinal": 16,
+        "expected": 114,
+        "successfulSpawned": 114,
+        "killed": 114,
+        "leaked": 0,
+        "bossLeaked": 0,
+        "criticalLeaked": 0,
+        "gold": 1131,
+        "hp": 20,
+        "killGold": 195,
+        "clearGold": 14,
+        "peakAlive": 73,
+        "combatStartSeconds": 537.6999999999999,
+        "combatEndSeconds": 582.0999999999999,
+        "levelEndSeconds": 657.1
+      },
+      {
+        "ordinal": 17,
+        "expected": 117,
+        "successfulSpawned": 117,
+        "killed": 117,
+        "leaked": 0,
+        "bossLeaked": 0,
+        "criticalLeaked": 0,
+        "gold": 1330,
+        "hp": 20,
+        "killGold": 185,
+        "clearGold": 14,
+        "peakAlive": 71,
+        "combatStartSeconds": 582.0999999999999,
+        "combatEndSeconds": 629.0999999999999,
+        "levelEndSeconds": 709.1
+      },
+      {
+        "ordinal": 18,
+        "expected": 120,
+        "successfulSpawned": 120,
+        "killed": 120,
+        "leaked": 0,
+        "bossLeaked": 0,
+        "criticalLeaked": 0,
+        "gold": 1535,
+        "hp": 20,
+        "killGold": 191,
+        "clearGold": 14,
+        "peakAlive": 74,
+        "combatStartSeconds": 629.0999999999999,
+        "combatEndSeconds": 681.5999999999999,
+        "levelEndSeconds": 766.6
+      },
+      {
+        "ordinal": 19,
+        "expected": 123,
+        "successfulSpawned": 123,
+        "killed": 123,
+        "leaked": 0,
+        "bossLeaked": 0,
+        "criticalLeaked": 0,
+        "gold": 1745,
+        "hp": 20,
+        "killGold": 196,
+        "clearGold": 14,
+        "peakAlive": 79,
+        "combatStartSeconds": 681.5999999999999,
+        "combatEndSeconds": 738.3999999999999,
+        "levelEndSeconds": 828.4
+      },
+      {
+        "ordinal": 20,
+        "expected": 126,
+        "successfulSpawned": 126,
+        "killed": 126,
+        "leaked": 0,
+        "bossLeaked": 0,
+        "criticalLeaked": 0,
+        "gold": 1961,
+        "hp": 20,
+        "killGold": 202,
+        "clearGold": 14,
+        "peakAlive": 86,
+        "combatStartSeconds": 738.3999999999999,
+        "combatEndSeconds": 802.8999999999999,
+        "levelEndSeconds": 897.9
+      },
+      {
+        "ordinal": 21,
+        "expected": 129,
+        "successfulSpawned": 129,
+        "killed": 129,
+        "leaked": 0,
+        "bossLeaked": 0,
+        "criticalLeaked": 0,
+        "gold": 2181,
+        "hp": 20,
+        "killGold": 204,
+        "clearGold": 16,
+        "peakAlive": 86,
+        "combatStartSeconds": 802.8999999999999,
+        "combatEndSeconds": 867.9999999999999,
+        "levelEndSeconds": 968.0
+      },
+      {
+        "ordinal": 22,
+        "expected": 132,
+        "successfulSpawned": 132,
+        "killed": 132,
+        "leaked": 0,
+        "bossLeaked": 0,
+        "criticalLeaked": 0,
+        "gold": 2408,
+        "hp": 20,
+        "killGold": 211,
+        "clearGold": 16,
+        "peakAlive": 89,
+        "combatStartSeconds": 867.9999999999999,
+        "combatEndSeconds": 937.5999999999999,
+        "levelEndSeconds": 1042.6
+      },
+      {
+        "ordinal": 23,
+        "expected": 135,
+        "successfulSpawned": 135,
+        "killed": 135,
+        "leaked": 0,
+        "bossLeaked": 0,
+        "criticalLeaked": 0,
+        "gold": 2638,
+        "hp": 20,
+        "killGold": 214,
+        "clearGold": 16,
+        "peakAlive": 96,
+        "combatStartSeconds": 937.5999999999999,
+        "combatEndSeconds": 1012.0999999999999,
+        "levelEndSeconds": 1122.1
+      },
+      {
+        "ordinal": 24,
+        "expected": 138,
+        "successfulSpawned": 138,
+        "killed": 138,
+        "leaked": 0,
+        "bossLeaked": 0,
+        "criticalLeaked": 0,
+        "gold": 2873,
+        "hp": 20,
+        "killGold": 219,
+        "clearGold": 16,
+        "peakAlive": 97,
+        "combatStartSeconds": 1012.0999999999999,
+        "combatEndSeconds": 1088.799,
+        "levelEndSeconds": 1203.8
+      },
+      {
+        "ordinal": 25,
+        "expected": 141,
+        "successfulSpawned": 141,
+        "killed": 136,
+        "leaked": 5,
+        "bossLeaked": 1,
+        "criticalLeaked": 1,
+        "gold": 3100,
+        "hp": 8,
+        "killGold": 211,
+        "clearGold": 16,
+        "peakAlive": 107,
+        "combatStartSeconds": 1088.799,
+        "combatEndSeconds": 1181.598,
+        "levelEndSeconds": 1301.6
+      }
+    ]
+  },
+  "ratingProfile": {
+    "id": 30,
+    "difficultyTier": 5,
+    "profileId": "D04",
+    "profileRevision": "2",
+    "expectedWaveCount": 25,
+    "expectedEnemyCount": 2625,
+    "twoStarHpPermille": 500,
+    "threeStarHpPermille": 750,
+    "fourStarHpPermille": 900,
+    "maxFourStarLeaks": 2,
+    "fourStarTimePermille": 1250,
+    "parCombatTimeMs": 1330000,
+    "bossVariantIds": [
+      10022319
+    ],
+    "criticalVariantIds": [
+      10022101,
+      10022202,
+      10022319
+    ],
+    "balanceRevision": "balance-30x25-tight-v5",
+    "ratingRevision": "five-stars-v1",
+    "calibrationStatus": "pending_unity_reference",
+    "runtimeContentHash": "",
+    "planHash": "f75152cf545645c6e3931d82ad197149ce65cde65dc7d5a8435d3901537d9bc7"
+  },
+  "operations": [
+    {
+      "waveOrdinal": 1,
+      "timeMs": 0,
+      "action": "build",
+      "row": 5,
+      "col": 14,
+      "towerId": 1,
+      "cost": 32,
+      "balanceAfter": 382
+    },
+    {
+      "waveOrdinal": 1,
+      "timeMs": 0,
+      "action": "build",
+      "row": 4,
+      "col": 8,
+      "towerId": 1,
+      "cost": 32,
+      "balanceAfter": 350
+    },
+    {
+      "waveOrdinal": 1,
+      "timeMs": 0,
+      "action": "build",
+      "row": 3,
+      "col": 10,
+      "towerId": 4,
+      "cost": 44,
+      "balanceAfter": 306
+    },
+    {
+      "waveOrdinal": 1,
+      "timeMs": 0,
+      "action": "build",
+      "row": 3,
+      "col": 6,
+      "towerId": 1,
+      "cost": 32,
+      "balanceAfter": 274
+    },
+    {
+      "waveOrdinal": 1,
+      "timeMs": 0,
+      "action": "build",
+      "row": 2,
+      "col": 8,
+      "towerId": 7,
+      "cost": 30,
+      "balanceAfter": 244
+    },
+    {
+      "waveOrdinal": 1,
+      "timeMs": 0,
+      "action": "build",
+      "row": 3,
+      "col": 4,
+      "towerId": 1,
+      "cost": 32,
+      "balanceAfter": 212
+    },
+    {
+      "waveOrdinal": 1,
+      "timeMs": 0,
+      "action": "build",
+      "row": 5,
+      "col": 10,
+      "towerId": 4,
+      "cost": 44,
+      "balanceAfter": 168
+    },
+    {
+      "waveOrdinal": 1,
+      "timeMs": 0,
+      "action": "build",
+      "row": 4,
+      "col": 12,
+      "towerId": 1,
+      "cost": 32,
+      "balanceAfter": 136
+    },
+    {
+      "waveOrdinal": 1,
+      "timeMs": 0,
+      "action": "build",
+      "row": 6,
+      "col": 12,
+      "towerId": 7,
+      "cost": 30,
+      "balanceAfter": 106
+    },
+    {
+      "waveOrdinal": 1,
+      "timeMs": 0,
+      "action": "build",
+      "row": 1,
+      "col": 6,
+      "towerId": 4,
+      "cost": 44,
+      "balanceAfter": 62
+    },
+    {
+      "waveOrdinal": 1,
+      "timeMs": 0,
+      "action": "build",
+      "row": 4,
+      "col": 14,
+      "towerId": 1,
+      "cost": 32,
+      "balanceAfter": 30
+    },
+    {
+      "waveOrdinal": 2,
+      "timeMs": 0,
+      "action": "build",
+      "row": 3,
+      "col": 2,
+      "towerId": 1,
+      "cost": 32,
+      "balanceAfter": 144
+    },
+    {
+      "waveOrdinal": 2,
+      "timeMs": 0,
+      "action": "build",
+      "row": 1,
+      "col": 4,
+      "towerId": 4,
+      "cost": 44,
+      "balanceAfter": 100
+    },
+    {
+      "waveOrdinal": 2,
+      "timeMs": 0,
+      "action": "build",
+      "row": 1,
+      "col": 2,
+      "towerId": 1,
+      "cost": 32,
+      "balanceAfter": 68
+    },
+    {
+      "waveOrdinal": 2,
+      "timeMs": 0,
+      "action": "build",
+      "row": 4,
+      "col": 6,
+      "towerId": 7,
+      "cost": 30,
+      "balanceAfter": 38
+    },
+    {
+      "waveOrdinal": 2,
+      "timeMs": 0,
+      "action": "build",
+      "row": 3,
+      "col": 12,
+      "towerId": 1,
+      "cost": 32,
+      "balanceAfter": 6
+    },
+    {
+      "waveOrdinal": 3,
+      "timeMs": 0,
+      "action": "build",
+      "row": 1,
+      "col": 8,
+      "towerId": 4,
+      "cost": 44,
+      "balanceAfter": 114
+    },
+    {
+      "waveOrdinal": 3,
+      "timeMs": 0,
+      "action": "build",
+      "row": 6,
+      "col": 14,
+      "towerId": 1,
+      "cost": 32,
+      "balanceAfter": 82
+    },
+    {
+      "waveOrdinal": 3,
+      "timeMs": 0,
+      "action": "build",
+      "row": 5,
+      "col": 8,
+      "towerId": 7,
+      "cost": 30,
+      "balanceAfter": 52
+    },
+    {
+      "waveOrdinal": 3,
+      "timeMs": 0,
+      "action": "build",
+      "row": 7,
+      "col": 12,
+      "towerId": 4,
+      "cost": 44,
+      "balanceAfter": 8
+    },
+    {
+      "waveOrdinal": 4,
+      "timeMs": 0,
+      "action": "build",
+      "row": 2,
+      "col": 10,
+      "towerId": 1,
+      "cost": 32,
+      "balanceAfter": 113
+    },
+    {
+      "waveOrdinal": 4,
+      "timeMs": 0,
+      "action": "build",
+      "row": 4,
+      "col": 4,
+      "towerId": 1,
+      "cost": 32,
+      "balanceAfter": 81
+    },
+    {
+      "waveOrdinal": 4,
+      "timeMs": 0,
+      "action": "build",
+      "row": 6,
+      "col": 10,
+      "towerId": 4,
+      "cost": 44,
+      "balanceAfter": 37
+    },
+    {
+      "waveOrdinal": 4,
+      "timeMs": 0,
+      "action": "build",
+      "row": 4,
+      "col": 2,
+      "towerId": 1,
+      "cost": 32,
+      "balanceAfter": 5
+    },
+    {
+      "waveOrdinal": 5,
+      "timeMs": 0,
+      "action": "build",
+      "row": 5,
+      "col": 6,
+      "towerId": 7,
+      "cost": 30,
+      "balanceAfter": 118
+    },
+    {
+      "waveOrdinal": 5,
+      "timeMs": 0,
+      "action": "build",
+      "row": 3,
+      "col": 14,
+      "towerId": 1,
+      "cost": 32,
+      "balanceAfter": 86
+    },
+    {
+      "waveOrdinal": 5,
+      "timeMs": 0,
+      "action": "build",
+      "row": 0,
+      "col": 6,
+      "towerId": 4,
+      "cost": 44,
+      "balanceAfter": 42
+    },
+    {
+      "waveOrdinal": 5,
+      "timeMs": 0,
+      "action": "build",
+      "row": 0,
+      "col": 2,
+      "towerId": 1,
+      "cost": 32,
+      "balanceAfter": 10
+    },
+    {
+      "waveOrdinal": 6,
+      "timeMs": 0,
+      "action": "build",
+      "row": 6,
+      "col": 8,
+      "towerId": 7,
+      "cost": 30,
+      "balanceAfter": 128
+    },
+    {
+      "waveOrdinal": 6,
+      "timeMs": 0,
+      "action": "build",
+      "row": 7,
+      "col": 8,
+      "towerId": 4,
+      "cost": 44,
+      "balanceAfter": 84
+    },
+    {
+      "waveOrdinal": 6,
+      "timeMs": 0,
+      "action": "build",
+      "row": 8,
+      "col": 8,
+      "towerId": 1,
+      "cost": 32,
+      "balanceAfter": 52
+    },
+    {
+      "waveOrdinal": 6,
+      "timeMs": 0,
+      "action": "build",
+      "row": 2,
+      "col": 4,
+      "towerId": 1,
+      "cost": 32,
+      "balanceAfter": 20
+    },
+    {
+      "waveOrdinal": 7,
+      "timeMs": 0,
+      "action": "build",
+      "row": 0,
+      "col": 10,
+      "towerId": 4,
+      "cost": 44,
+      "balanceAfter": 115
+    },
+    {
+      "waveOrdinal": 7,
+      "timeMs": 0,
+      "action": "build",
+      "row": 1,
+      "col": 10,
+      "towerId": 1,
+      "cost": 32,
+      "balanceAfter": 83
+    },
+    {
+      "waveOrdinal": 7,
+      "timeMs": 0,
+      "action": "build",
+      "row": 3,
+      "col": 8,
+      "towerId": 7,
+      "cost": 30,
+      "balanceAfter": 53
+    },
+    {
+      "waveOrdinal": 7,
+      "timeMs": 0,
+      "action": "build",
+      "row": 2,
+      "col": 6,
+      "towerId": 1,
+      "cost": 32,
+      "balanceAfter": 21
+    },
+    {
+      "waveOrdinal": 8,
+      "timeMs": 0,
+      "action": "build",
+      "row": 5,
+      "col": 2,
+      "towerId": 4,
+      "cost": 44,
+      "balanceAfter": 121
+    },
+    {
+      "waveOrdinal": 8,
+      "timeMs": 0,
+      "action": "build",
+      "row": 6,
+      "col": 6,
+      "towerId": 1,
+      "cost": 32,
+      "balanceAfter": 89
+    },
+    {
+      "waveOrdinal": 8,
+      "timeMs": 0,
+      "action": "build",
+      "row": 4,
+      "col": 10,
+      "towerId": 7,
+      "cost": 30,
+      "balanceAfter": 59
+    },
+    {
+      "waveOrdinal": 8,
+      "timeMs": 0,
+      "action": "build",
+      "row": 7,
+      "col": 6,
+      "towerId": 4,
+      "cost": 44,
+      "balanceAfter": 15
+    },
+    {
+      "waveOrdinal": 9,
+      "timeMs": 0,
+      "action": "build",
+      "row": 6,
+      "col": 4,
+      "towerId": 1,
+      "cost": 32,
+      "balanceAfter": 131
+    },
+    {
+      "waveOrdinal": 9,
+      "timeMs": 0,
+      "action": "build",
+      "row": 7,
+      "col": 4,
+      "towerId": 1,
+      "cost": 32,
+      "balanceAfter": 99
+    },
+    {
+      "waveOrdinal": 9,
+      "timeMs": 0,
+      "action": "build",
+      "row": 7,
+      "col": 10,
+      "towerId": 4,
+      "cost": 44,
+      "balanceAfter": 55
+    },
+    {
+      "waveOrdinal": 9,
+      "timeMs": 0,
+      "action": "build",
+      "row": 8,
+      "col": 4,
+      "towerId": 1,
+      "cost": 32,
+      "balanceAfter": 23
+    },
+    {
+      "waveOrdinal": 10,
+      "timeMs": 0,
+      "action": "build",
+      "row": 5,
+      "col": 4,
+      "towerId": 7,
+      "cost": 30,
+      "balanceAfter": 145
+    },
+    {
+      "waveOrdinal": 10,
+      "timeMs": 0,
+      "action": "build",
+      "row": 2,
+      "col": 2,
+      "towerId": 1,
+      "cost": 32,
+      "balanceAfter": 113
+    },
+    {
+      "waveOrdinal": 10,
+      "timeMs": 0,
+      "action": "build",
+      "row": 7,
+      "col": 2,
+      "towerId": 4,
+      "cost": 44,
+      "balanceAfter": 69
+    },
+    {
+      "waveOrdinal": 10,
+      "timeMs": 0,
+      "action": "build",
+      "row": 5,
+      "col": 12,
+      "towerId": 1,
+      "cost": 32,
+      "balanceAfter": 37
+    },
+    {
+      "waveOrdinal": 10,
+      "timeMs": 0,
+      "action": "build",
+      "row": 2,
+      "col": 12,
+      "towerId": 7,
+      "cost": 30,
+      "balanceAfter": 7
+    },
+    {
+      "waveOrdinal": 11,
+      "timeMs": 0,
+      "action": "build",
+      "row": 1,
+      "col": 12,
+      "towerId": 4,
+      "cost": 44,
+      "balanceAfter": 121
+    },
+    {
+      "waveOrdinal": 11,
+      "timeMs": 0,
+      "action": "build",
+      "row": 0,
+      "col": 14,
+      "towerId": 1,
+      "cost": 32,
+      "balanceAfter": 89
+    },
+    {
+      "waveOrdinal": 11,
+      "timeMs": 0,
+      "action": "build",
+      "row": 1,
+      "col": 14,
+      "towerId": 1,
+      "cost": 32,
+      "balanceAfter": 57
+    },
+    {
+      "waveOrdinal": 11,
+      "timeMs": 0,
+      "action": "build",
+      "row": 2,
+      "col": 14,
+      "towerId": 4,
+      "cost": 44,
+      "balanceAfter": 13
+    }
+  ],
+  "waves": [
+    {
+      "waveOrdinal": 1,
+      "planned": 69,
+      "successfulSpawned": 69,
+      "totalEhp": 1081.26036,
+      "towerCount": 11,
+      "capacity": 129,
+      "occupancy": 0.08527131782945736,
+      "leakedByRole": {},
+      "pathLength": 21,
+      "spawnDeferredCount": 0,
+      "layout": [
+        {
+          "row": 5,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 4,
+          "col": 8,
+          "towerId": 1
+        },
+        {
+          "row": 3,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 3,
+          "col": 6,
+          "towerId": 1
+        },
+        {
+          "row": 2,
+          "col": 8,
+          "towerId": 7
+        },
+        {
+          "row": 3,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 4,
+          "col": 12,
+          "towerId": 1
+        },
+        {
+          "row": 6,
+          "col": 12,
+          "towerId": 7
+        },
+        {
+          "row": 1,
+          "col": 6,
+          "towerId": 4
+        },
+        {
+          "row": 4,
+          "col": 14,
+          "towerId": 1
+        }
+      ],
+      "repeatedCoverageTowers": 1,
+      "flyingCount": 0,
+      "heavyCount": 0,
+      "eliteCount": 0,
+      "bossCount": 0,
+      "killed": 69,
+      "leaked": 0,
+      "bossLeaked": 0,
+      "criticalLeaked": 0,
+      "killGold": 138,
+      "clearReward": 8,
+      "goldBeforePurchases": 414,
+      "spent": 384,
+      "balance": 176,
+      "hp": 20,
+      "towerComposition": {
+        "1": 6,
+        "4": 3,
+        "7": 2
+      },
+      "combatElapsedMs": 31000,
+      "levelElapsedMs": 31000,
+      "alivePeak": 12,
+      "groundEffectiveShootingWindowSec": 156.79999999999538,
+      "airEffectiveShootingWindowSec": 0,
+      "overkillDamage": 262.7396400000006,
+      "cleared": true
+    },
+    {
+      "waveOrdinal": 2,
+      "planned": 72,
+      "successfulSpawned": 72,
+      "totalEhp": 1243.3553913599999,
+      "towerCount": 16,
+      "capacity": 129,
+      "occupancy": 0.12403100775193798,
+      "leakedByRole": {},
+      "pathLength": 21,
+      "spawnDeferredCount": 0,
+      "layout": [
+        {
+          "row": 5,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 4,
+          "col": 8,
+          "towerId": 1
+        },
+        {
+          "row": 3,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 3,
+          "col": 6,
+          "towerId": 1
+        },
+        {
+          "row": 2,
+          "col": 8,
+          "towerId": 7
+        },
+        {
+          "row": 3,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 4,
+          "col": 12,
+          "towerId": 1
+        },
+        {
+          "row": 6,
+          "col": 12,
+          "towerId": 7
+        },
+        {
+          "row": 1,
+          "col": 6,
+          "towerId": 4
+        },
+        {
+          "row": 4,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 3,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 1,
+          "col": 4,
+          "towerId": 4
+        },
+        {
+          "row": 1,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 4,
+          "col": 6,
+          "towerId": 7
+        },
+        {
+          "row": 3,
+          "col": 12,
+          "towerId": 1
+        }
+      ],
+      "repeatedCoverageTowers": 3,
+      "flyingCount": 0,
+      "heavyCount": 0,
+      "eliteCount": 0,
+      "bossCount": 0,
+      "killed": 72,
+      "leaked": 0,
+      "bossLeaked": 0,
+      "criticalLeaked": 0,
+      "killGold": 144,
+      "clearReward": 8,
+      "goldBeforePurchases": 176,
+      "spent": 170,
+      "balance": 158,
+      "hp": 20,
+      "towerComposition": {
+        "1": 9,
+        "4": 4,
+        "7": 3
+      },
+      "combatElapsedMs": 29300,
+      "levelElapsedMs": 65300,
+      "alivePeak": 7,
+      "groundEffectiveShootingWindowSec": 142.4999999999962,
+      "airEffectiveShootingWindowSec": 0,
+      "overkillDamage": 230.64460863999983,
+      "cleared": true
+    },
+    {
+      "waveOrdinal": 3,
+      "planned": 75,
+      "successfulSpawned": 75,
+      "totalEhp": 1466.7531840000001,
+      "towerCount": 20,
+      "capacity": 129,
+      "occupancy": 0.15503875968992248,
+      "leakedByRole": {},
+      "pathLength": 23,
+      "spawnDeferredCount": 0,
+      "layout": [
+        {
+          "row": 5,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 4,
+          "col": 8,
+          "towerId": 1
+        },
+        {
+          "row": 3,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 3,
+          "col": 6,
+          "towerId": 1
+        },
+        {
+          "row": 2,
+          "col": 8,
+          "towerId": 7
+        },
+        {
+          "row": 3,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 4,
+          "col": 12,
+          "towerId": 1
+        },
+        {
+          "row": 6,
+          "col": 12,
+          "towerId": 7
+        },
+        {
+          "row": 1,
+          "col": 6,
+          "towerId": 4
+        },
+        {
+          "row": 4,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 3,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 1,
+          "col": 4,
+          "towerId": 4
+        },
+        {
+          "row": 1,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 4,
+          "col": 6,
+          "towerId": 7
+        },
+        {
+          "row": 3,
+          "col": 12,
+          "towerId": 1
+        },
+        {
+          "row": 1,
+          "col": 8,
+          "towerId": 4
+        },
+        {
+          "row": 6,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 8,
+          "towerId": 7
+        },
+        {
+          "row": 7,
+          "col": 12,
+          "towerId": 4
+        }
+      ],
+      "repeatedCoverageTowers": 7,
+      "flyingCount": 0,
+      "heavyCount": 0,
+      "eliteCount": 0,
+      "bossCount": 0,
+      "killed": 75,
+      "leaked": 0,
+      "bossLeaked": 0,
+      "criticalLeaked": 0,
+      "killGold": 129,
+      "clearReward": 8,
+      "goldBeforePurchases": 158,
+      "spent": 150,
+      "balance": 145,
+      "hp": 20,
+      "towerComposition": {
+        "1": 10,
+        "4": 6,
+        "7": 4
+      },
+      "combatElapsedMs": 30200,
+      "levelElapsedMs": 100500,
+      "alivePeak": 8,
+      "groundEffectiveShootingWindowSec": 156.99999999999537,
+      "airEffectiveShootingWindowSec": 0,
+      "overkillDamage": 195.24681600000002,
+      "cleared": true
+    },
+    {
+      "waveOrdinal": 4,
+      "planned": 78,
+      "successfulSpawned": 78,
+      "totalEhp": 1757.6592321600003,
+      "towerCount": 24,
+      "capacity": 129,
+      "occupancy": 0.18604651162790697,
+      "leakedByRole": {},
+      "pathLength": 23,
+      "spawnDeferredCount": 0,
+      "layout": [
+        {
+          "row": 5,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 4,
+          "col": 8,
+          "towerId": 1
+        },
+        {
+          "row": 3,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 3,
+          "col": 6,
+          "towerId": 1
+        },
+        {
+          "row": 2,
+          "col": 8,
+          "towerId": 7
+        },
+        {
+          "row": 3,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 4,
+          "col": 12,
+          "towerId": 1
+        },
+        {
+          "row": 6,
+          "col": 12,
+          "towerId": 7
+        },
+        {
+          "row": 1,
+          "col": 6,
+          "towerId": 4
+        },
+        {
+          "row": 4,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 3,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 1,
+          "col": 4,
+          "towerId": 4
+        },
+        {
+          "row": 1,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 4,
+          "col": 6,
+          "towerId": 7
+        },
+        {
+          "row": 3,
+          "col": 12,
+          "towerId": 1
+        },
+        {
+          "row": 1,
+          "col": 8,
+          "towerId": 4
+        },
+        {
+          "row": 6,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 8,
+          "towerId": 7
+        },
+        {
+          "row": 7,
+          "col": 12,
+          "towerId": 4
+        },
+        {
+          "row": 2,
+          "col": 10,
+          "towerId": 1
+        },
+        {
+          "row": 4,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 6,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 4,
+          "col": 2,
+          "towerId": 1
+        }
+      ],
+      "repeatedCoverageTowers": 9,
+      "flyingCount": 0,
+      "heavyCount": 0,
+      "eliteCount": 0,
+      "bossCount": 0,
+      "killed": 78,
+      "leaked": 0,
+      "bossLeaked": 0,
+      "criticalLeaked": 0,
+      "killGold": 135,
+      "clearReward": 8,
+      "goldBeforePurchases": 145,
+      "spent": 140,
+      "balance": 148,
+      "hp": 20,
+      "towerComposition": {
+        "1": 13,
+        "4": 7,
+        "7": 4
+      },
+      "combatElapsedMs": 32000,
+      "levelElapsedMs": 137500,
+      "alivePeak": 12,
+      "groundEffectiveShootingWindowSec": 231.9999999999911,
+      "airEffectiveShootingWindowSec": 0,
+      "overkillDamage": 400.34076783999905,
+      "cleared": true
+    },
+    {
+      "waveOrdinal": 5,
+      "planned": 81,
+      "successfulSpawned": 81,
+      "totalEhp": 2376.9525136896,
+      "towerCount": 28,
+      "capacity": 129,
+      "occupancy": 0.21705426356589147,
+      "leakedByRole": {},
+      "pathLength": 23,
+      "spawnDeferredCount": 0,
+      "layout": [
+        {
+          "row": 5,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 4,
+          "col": 8,
+          "towerId": 1
+        },
+        {
+          "row": 3,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 3,
+          "col": 6,
+          "towerId": 1
+        },
+        {
+          "row": 2,
+          "col": 8,
+          "towerId": 7
+        },
+        {
+          "row": 3,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 4,
+          "col": 12,
+          "towerId": 1
+        },
+        {
+          "row": 6,
+          "col": 12,
+          "towerId": 7
+        },
+        {
+          "row": 1,
+          "col": 6,
+          "towerId": 4
+        },
+        {
+          "row": 4,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 3,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 1,
+          "col": 4,
+          "towerId": 4
+        },
+        {
+          "row": 1,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 4,
+          "col": 6,
+          "towerId": 7
+        },
+        {
+          "row": 3,
+          "col": 12,
+          "towerId": 1
+        },
+        {
+          "row": 1,
+          "col": 8,
+          "towerId": 4
+        },
+        {
+          "row": 6,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 8,
+          "towerId": 7
+        },
+        {
+          "row": 7,
+          "col": 12,
+          "towerId": 4
+        },
+        {
+          "row": 2,
+          "col": 10,
+          "towerId": 1
+        },
+        {
+          "row": 4,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 6,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 4,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 6,
+          "towerId": 7
+        },
+        {
+          "row": 3,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 0,
+          "col": 6,
+          "towerId": 4
+        },
+        {
+          "row": 0,
+          "col": 2,
+          "towerId": 1
+        }
+      ],
+      "repeatedCoverageTowers": 9,
+      "flyingCount": 0,
+      "heavyCount": 0,
+      "eliteCount": 0,
+      "bossCount": 0,
+      "killed": 81,
+      "leaked": 0,
+      "bossLeaked": 0,
+      "criticalLeaked": 0,
+      "killGold": 140,
+      "clearReward": 8,
+      "goldBeforePurchases": 148,
+      "spent": 138,
+      "balance": 158,
+      "hp": 20,
+      "towerComposition": {
+        "1": 15,
+        "4": 8,
+        "7": 5
+      },
+      "combatElapsedMs": 32400,
+      "levelElapsedMs": 174900,
+      "alivePeak": 14,
+      "groundEffectiveShootingWindowSec": 295.5999999999987,
+      "airEffectiveShootingWindowSec": 0,
+      "overkillDamage": 600.2799403528467,
+      "cleared": true
+    },
+    {
+      "waveOrdinal": 6,
+      "planned": 84,
+      "successfulSpawned": 84,
+      "totalEhp": 2566.818072,
+      "towerCount": 32,
+      "capacity": 129,
+      "occupancy": 0.24806201550387597,
+      "leakedByRole": {},
+      "pathLength": 27,
+      "spawnDeferredCount": 0,
+      "layout": [
+        {
+          "row": 5,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 4,
+          "col": 8,
+          "towerId": 1
+        },
+        {
+          "row": 3,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 3,
+          "col": 6,
+          "towerId": 1
+        },
+        {
+          "row": 2,
+          "col": 8,
+          "towerId": 7
+        },
+        {
+          "row": 3,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 4,
+          "col": 12,
+          "towerId": 1
+        },
+        {
+          "row": 6,
+          "col": 12,
+          "towerId": 7
+        },
+        {
+          "row": 1,
+          "col": 6,
+          "towerId": 4
+        },
+        {
+          "row": 4,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 3,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 1,
+          "col": 4,
+          "towerId": 4
+        },
+        {
+          "row": 1,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 4,
+          "col": 6,
+          "towerId": 7
+        },
+        {
+          "row": 3,
+          "col": 12,
+          "towerId": 1
+        },
+        {
+          "row": 1,
+          "col": 8,
+          "towerId": 4
+        },
+        {
+          "row": 6,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 8,
+          "towerId": 7
+        },
+        {
+          "row": 7,
+          "col": 12,
+          "towerId": 4
+        },
+        {
+          "row": 2,
+          "col": 10,
+          "towerId": 1
+        },
+        {
+          "row": 4,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 6,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 4,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 6,
+          "towerId": 7
+        },
+        {
+          "row": 3,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 0,
+          "col": 6,
+          "towerId": 4
+        },
+        {
+          "row": 0,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 6,
+          "col": 8,
+          "towerId": 7
+        },
+        {
+          "row": 7,
+          "col": 8,
+          "towerId": 4
+        },
+        {
+          "row": 8,
+          "col": 8,
+          "towerId": 1
+        },
+        {
+          "row": 2,
+          "col": 4,
+          "towerId": 1
+        }
+      ],
+      "repeatedCoverageTowers": 13,
+      "flyingCount": 6,
+      "heavyCount": 0,
+      "eliteCount": 0,
+      "bossCount": 0,
+      "killed": 84,
+      "leaked": 0,
+      "bossLeaked": 0,
+      "criticalLeaked": 0,
+      "killGold": 129,
+      "clearReward": 10,
+      "goldBeforePurchases": 158,
+      "spent": 138,
+      "balance": 159,
+      "hp": 20,
+      "towerComposition": {
+        "1": 17,
+        "4": 9,
+        "7": 6
+      },
+      "combatElapsedMs": 31300,
+      "levelElapsedMs": 211200,
+      "alivePeak": 12,
+      "groundEffectiveShootingWindowSec": 219.29999999999183,
+      "airEffectiveShootingWindowSec": 7.19999999999999,
+      "overkillDamage": 386.8449269651108,
+      "cleared": true
+    },
+    {
+      "waveOrdinal": 7,
+      "planned": 87,
+      "successfulSpawned": 87,
+      "totalEhp": 3097.4818521600005,
+      "towerCount": 36,
+      "capacity": 129,
+      "occupancy": 0.27906976744186046,
+      "leakedByRole": {},
+      "pathLength": 35,
+      "spawnDeferredCount": 0,
+      "layout": [
+        {
+          "row": 5,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 4,
+          "col": 8,
+          "towerId": 1
+        },
+        {
+          "row": 3,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 3,
+          "col": 6,
+          "towerId": 1
+        },
+        {
+          "row": 2,
+          "col": 8,
+          "towerId": 7
+        },
+        {
+          "row": 3,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 4,
+          "col": 12,
+          "towerId": 1
+        },
+        {
+          "row": 6,
+          "col": 12,
+          "towerId": 7
+        },
+        {
+          "row": 1,
+          "col": 6,
+          "towerId": 4
+        },
+        {
+          "row": 4,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 3,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 1,
+          "col": 4,
+          "towerId": 4
+        },
+        {
+          "row": 1,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 4,
+          "col": 6,
+          "towerId": 7
+        },
+        {
+          "row": 3,
+          "col": 12,
+          "towerId": 1
+        },
+        {
+          "row": 1,
+          "col": 8,
+          "towerId": 4
+        },
+        {
+          "row": 6,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 8,
+          "towerId": 7
+        },
+        {
+          "row": 7,
+          "col": 12,
+          "towerId": 4
+        },
+        {
+          "row": 2,
+          "col": 10,
+          "towerId": 1
+        },
+        {
+          "row": 4,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 6,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 4,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 6,
+          "towerId": 7
+        },
+        {
+          "row": 3,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 0,
+          "col": 6,
+          "towerId": 4
+        },
+        {
+          "row": 0,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 6,
+          "col": 8,
+          "towerId": 7
+        },
+        {
+          "row": 7,
+          "col": 8,
+          "towerId": 4
+        },
+        {
+          "row": 8,
+          "col": 8,
+          "towerId": 1
+        },
+        {
+          "row": 2,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 0,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 1,
+          "col": 10,
+          "towerId": 1
+        },
+        {
+          "row": 3,
+          "col": 8,
+          "towerId": 7
+        },
+        {
+          "row": 2,
+          "col": 6,
+          "towerId": 1
+        }
+      ],
+      "repeatedCoverageTowers": 13,
+      "flyingCount": 6,
+      "heavyCount": 0,
+      "eliteCount": 0,
+      "bossCount": 0,
+      "killed": 87,
+      "leaked": 0,
+      "bossLeaked": 0,
+      "criticalLeaked": 0,
+      "killGold": 134,
+      "clearReward": 10,
+      "goldBeforePurchases": 159,
+      "spent": 138,
+      "balance": 165,
+      "hp": 20,
+      "towerComposition": {
+        "1": 19,
+        "4": 10,
+        "7": 7
+      },
+      "combatElapsedMs": 39400,
+      "levelElapsedMs": 255600,
+      "alivePeak": 38,
+      "groundEffectiveShootingWindowSec": 551.1000000000568,
+      "airEffectiveShootingWindowSec": 7.799999999999988,
+      "overkillDamage": 564.9483899919832,
+      "cleared": true
+    },
+    {
+      "waveOrdinal": 8,
+      "planned": 90,
+      "successfulSpawned": 90,
+      "totalEhp": 3720.4758647999997,
+      "towerCount": 40,
+      "capacity": 129,
+      "occupancy": 0.31007751937984496,
+      "leakedByRole": {},
+      "pathLength": 41,
+      "spawnDeferredCount": 0,
+      "layout": [
+        {
+          "row": 5,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 4,
+          "col": 8,
+          "towerId": 1
+        },
+        {
+          "row": 3,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 3,
+          "col": 6,
+          "towerId": 1
+        },
+        {
+          "row": 2,
+          "col": 8,
+          "towerId": 7
+        },
+        {
+          "row": 3,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 4,
+          "col": 12,
+          "towerId": 1
+        },
+        {
+          "row": 6,
+          "col": 12,
+          "towerId": 7
+        },
+        {
+          "row": 1,
+          "col": 6,
+          "towerId": 4
+        },
+        {
+          "row": 4,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 3,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 1,
+          "col": 4,
+          "towerId": 4
+        },
+        {
+          "row": 1,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 4,
+          "col": 6,
+          "towerId": 7
+        },
+        {
+          "row": 3,
+          "col": 12,
+          "towerId": 1
+        },
+        {
+          "row": 1,
+          "col": 8,
+          "towerId": 4
+        },
+        {
+          "row": 6,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 8,
+          "towerId": 7
+        },
+        {
+          "row": 7,
+          "col": 12,
+          "towerId": 4
+        },
+        {
+          "row": 2,
+          "col": 10,
+          "towerId": 1
+        },
+        {
+          "row": 4,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 6,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 4,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 6,
+          "towerId": 7
+        },
+        {
+          "row": 3,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 0,
+          "col": 6,
+          "towerId": 4
+        },
+        {
+          "row": 0,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 6,
+          "col": 8,
+          "towerId": 7
+        },
+        {
+          "row": 7,
+          "col": 8,
+          "towerId": 4
+        },
+        {
+          "row": 8,
+          "col": 8,
+          "towerId": 1
+        },
+        {
+          "row": 2,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 0,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 1,
+          "col": 10,
+          "towerId": 1
+        },
+        {
+          "row": 3,
+          "col": 8,
+          "towerId": 7
+        },
+        {
+          "row": 2,
+          "col": 6,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 2,
+          "towerId": 4
+        },
+        {
+          "row": 6,
+          "col": 6,
+          "towerId": 1
+        },
+        {
+          "row": 4,
+          "col": 10,
+          "towerId": 7
+        },
+        {
+          "row": 7,
+          "col": 6,
+          "towerId": 4
+        }
+      ],
+      "repeatedCoverageTowers": 15,
+      "flyingCount": 7,
+      "heavyCount": 0,
+      "eliteCount": 0,
+      "bossCount": 0,
+      "killed": 90,
+      "leaked": 0,
+      "bossLeaked": 0,
+      "criticalLeaked": 0,
+      "killGold": 138,
+      "clearReward": 10,
+      "goldBeforePurchases": 165,
+      "spent": 150,
+      "balance": 163,
+      "hp": 20,
+      "towerComposition": {
+        "1": 20,
+        "4": 12,
+        "7": 8
+      },
+      "combatElapsedMs": 32500,
+      "levelElapsedMs": 293100,
+      "alivePeak": 14,
+      "groundEffectiveShootingWindowSec": 271.09999999999314,
+      "airEffectiveShootingWindowSec": 10.999999999999977,
+      "overkillDamage": 450.5224441057392,
+      "cleared": true
+    },
+    {
+      "waveOrdinal": 9,
+      "planned": 93,
+      "successfulSpawned": 93,
+      "totalEhp": 4442.00560416,
+      "towerCount": 44,
+      "capacity": 129,
+      "occupancy": 0.34108527131782945,
+      "leakedByRole": {},
+      "pathLength": 41,
+      "spawnDeferredCount": 0,
+      "layout": [
+        {
+          "row": 5,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 4,
+          "col": 8,
+          "towerId": 1
+        },
+        {
+          "row": 3,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 3,
+          "col": 6,
+          "towerId": 1
+        },
+        {
+          "row": 2,
+          "col": 8,
+          "towerId": 7
+        },
+        {
+          "row": 3,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 4,
+          "col": 12,
+          "towerId": 1
+        },
+        {
+          "row": 6,
+          "col": 12,
+          "towerId": 7
+        },
+        {
+          "row": 1,
+          "col": 6,
+          "towerId": 4
+        },
+        {
+          "row": 4,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 3,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 1,
+          "col": 4,
+          "towerId": 4
+        },
+        {
+          "row": 1,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 4,
+          "col": 6,
+          "towerId": 7
+        },
+        {
+          "row": 3,
+          "col": 12,
+          "towerId": 1
+        },
+        {
+          "row": 1,
+          "col": 8,
+          "towerId": 4
+        },
+        {
+          "row": 6,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 8,
+          "towerId": 7
+        },
+        {
+          "row": 7,
+          "col": 12,
+          "towerId": 4
+        },
+        {
+          "row": 2,
+          "col": 10,
+          "towerId": 1
+        },
+        {
+          "row": 4,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 6,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 4,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 6,
+          "towerId": 7
+        },
+        {
+          "row": 3,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 0,
+          "col": 6,
+          "towerId": 4
+        },
+        {
+          "row": 0,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 6,
+          "col": 8,
+          "towerId": 7
+        },
+        {
+          "row": 7,
+          "col": 8,
+          "towerId": 4
+        },
+        {
+          "row": 8,
+          "col": 8,
+          "towerId": 1
+        },
+        {
+          "row": 2,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 0,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 1,
+          "col": 10,
+          "towerId": 1
+        },
+        {
+          "row": 3,
+          "col": 8,
+          "towerId": 7
+        },
+        {
+          "row": 2,
+          "col": 6,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 2,
+          "towerId": 4
+        },
+        {
+          "row": 6,
+          "col": 6,
+          "towerId": 1
+        },
+        {
+          "row": 4,
+          "col": 10,
+          "towerId": 7
+        },
+        {
+          "row": 7,
+          "col": 6,
+          "towerId": 4
+        },
+        {
+          "row": 6,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 7,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 7,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 8,
+          "col": 4,
+          "towerId": 1
+        }
+      ],
+      "repeatedCoverageTowers": 16,
+      "flyingCount": 7,
+      "heavyCount": 0,
+      "eliteCount": 0,
+      "bossCount": 0,
+      "killed": 93,
+      "leaked": 0,
+      "bossLeaked": 0,
+      "criticalLeaked": 0,
+      "killGold": 142,
+      "clearReward": 10,
+      "goldBeforePurchases": 163,
+      "spent": 140,
+      "balance": 175,
+      "hp": 20,
+      "towerComposition": {
+        "1": 23,
+        "4": 13,
+        "7": 8
+      },
+      "combatElapsedMs": 32900,
+      "levelElapsedMs": 331000,
+      "alivePeak": 15,
+      "groundEffectiveShootingWindowSec": 312.10000000000247,
+      "airEffectiveShootingWindowSec": 12.299999999999972,
+      "overkillDamage": 409.1939953391345,
+      "cleared": true
+    },
+    {
+      "waveOrdinal": 10,
+      "planned": 96,
+      "successfulSpawned": 96,
+      "totalEhp": 5900.4697522176,
+      "towerCount": 49,
+      "capacity": 129,
+      "occupancy": 0.3798449612403101,
+      "leakedByRole": {},
+      "pathLength": 57,
+      "spawnDeferredCount": 0,
+      "layout": [
+        {
+          "row": 5,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 4,
+          "col": 8,
+          "towerId": 1
+        },
+        {
+          "row": 3,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 3,
+          "col": 6,
+          "towerId": 1
+        },
+        {
+          "row": 2,
+          "col": 8,
+          "towerId": 7
+        },
+        {
+          "row": 3,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 4,
+          "col": 12,
+          "towerId": 1
+        },
+        {
+          "row": 6,
+          "col": 12,
+          "towerId": 7
+        },
+        {
+          "row": 1,
+          "col": 6,
+          "towerId": 4
+        },
+        {
+          "row": 4,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 3,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 1,
+          "col": 4,
+          "towerId": 4
+        },
+        {
+          "row": 1,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 4,
+          "col": 6,
+          "towerId": 7
+        },
+        {
+          "row": 3,
+          "col": 12,
+          "towerId": 1
+        },
+        {
+          "row": 1,
+          "col": 8,
+          "towerId": 4
+        },
+        {
+          "row": 6,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 8,
+          "towerId": 7
+        },
+        {
+          "row": 7,
+          "col": 12,
+          "towerId": 4
+        },
+        {
+          "row": 2,
+          "col": 10,
+          "towerId": 1
+        },
+        {
+          "row": 4,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 6,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 4,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 6,
+          "towerId": 7
+        },
+        {
+          "row": 3,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 0,
+          "col": 6,
+          "towerId": 4
+        },
+        {
+          "row": 0,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 6,
+          "col": 8,
+          "towerId": 7
+        },
+        {
+          "row": 7,
+          "col": 8,
+          "towerId": 4
+        },
+        {
+          "row": 8,
+          "col": 8,
+          "towerId": 1
+        },
+        {
+          "row": 2,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 0,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 1,
+          "col": 10,
+          "towerId": 1
+        },
+        {
+          "row": 3,
+          "col": 8,
+          "towerId": 7
+        },
+        {
+          "row": 2,
+          "col": 6,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 2,
+          "towerId": 4
+        },
+        {
+          "row": 6,
+          "col": 6,
+          "towerId": 1
+        },
+        {
+          "row": 4,
+          "col": 10,
+          "towerId": 7
+        },
+        {
+          "row": 7,
+          "col": 6,
+          "towerId": 4
+        },
+        {
+          "row": 6,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 7,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 7,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 8,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 4,
+          "towerId": 7
+        },
+        {
+          "row": 2,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 7,
+          "col": 2,
+          "towerId": 4
+        },
+        {
+          "row": 5,
+          "col": 12,
+          "towerId": 1
+        },
+        {
+          "row": 2,
+          "col": 12,
+          "towerId": 7
+        }
+      ],
+      "repeatedCoverageTowers": 28,
+      "flyingCount": 7,
+      "heavyCount": 0,
+      "eliteCount": 0,
+      "bossCount": 0,
+      "killed": 96,
+      "leaked": 0,
+      "bossLeaked": 0,
+      "criticalLeaked": 0,
+      "killGold": 148,
+      "clearReward": 10,
+      "goldBeforePurchases": 175,
+      "spent": 168,
+      "balance": 165,
+      "hp": 20,
+      "towerComposition": {
+        "1": 25,
+        "4": 14,
+        "7": 10
+      },
+      "combatElapsedMs": 40000,
+      "levelElapsedMs": 376000,
+      "alivePeak": 42,
+      "groundEffectiveShootingWindowSec": 719.9000000000951,
+      "airEffectiveShootingWindowSec": 9.099999999999984,
+      "overkillDamage": 465.70789224357543,
+      "cleared": true
+    },
+    {
+      "waveOrdinal": 11,
+      "planned": 99,
+      "successfulSpawned": 99,
+      "totalEhp": 6205.494239999999,
+      "towerCount": 53,
+      "capacity": 129,
+      "occupancy": 0.4108527131782946,
+      "leakedByRole": {},
+      "pathLength": 57,
+      "spawnDeferredCount": 0,
+      "layout": [
+        {
+          "row": 5,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 4,
+          "col": 8,
+          "towerId": 1
+        },
+        {
+          "row": 3,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 3,
+          "col": 6,
+          "towerId": 1
+        },
+        {
+          "row": 2,
+          "col": 8,
+          "towerId": 7
+        },
+        {
+          "row": 3,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 4,
+          "col": 12,
+          "towerId": 1
+        },
+        {
+          "row": 6,
+          "col": 12,
+          "towerId": 7
+        },
+        {
+          "row": 1,
+          "col": 6,
+          "towerId": 4
+        },
+        {
+          "row": 4,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 3,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 1,
+          "col": 4,
+          "towerId": 4
+        },
+        {
+          "row": 1,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 4,
+          "col": 6,
+          "towerId": 7
+        },
+        {
+          "row": 3,
+          "col": 12,
+          "towerId": 1
+        },
+        {
+          "row": 1,
+          "col": 8,
+          "towerId": 4
+        },
+        {
+          "row": 6,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 8,
+          "towerId": 7
+        },
+        {
+          "row": 7,
+          "col": 12,
+          "towerId": 4
+        },
+        {
+          "row": 2,
+          "col": 10,
+          "towerId": 1
+        },
+        {
+          "row": 4,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 6,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 4,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 6,
+          "towerId": 7
+        },
+        {
+          "row": 3,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 0,
+          "col": 6,
+          "towerId": 4
+        },
+        {
+          "row": 0,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 6,
+          "col": 8,
+          "towerId": 7
+        },
+        {
+          "row": 7,
+          "col": 8,
+          "towerId": 4
+        },
+        {
+          "row": 8,
+          "col": 8,
+          "towerId": 1
+        },
+        {
+          "row": 2,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 0,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 1,
+          "col": 10,
+          "towerId": 1
+        },
+        {
+          "row": 3,
+          "col": 8,
+          "towerId": 7
+        },
+        {
+          "row": 2,
+          "col": 6,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 2,
+          "towerId": 4
+        },
+        {
+          "row": 6,
+          "col": 6,
+          "towerId": 1
+        },
+        {
+          "row": 4,
+          "col": 10,
+          "towerId": 7
+        },
+        {
+          "row": 7,
+          "col": 6,
+          "towerId": 4
+        },
+        {
+          "row": 6,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 7,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 7,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 8,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 4,
+          "towerId": 7
+        },
+        {
+          "row": 2,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 7,
+          "col": 2,
+          "towerId": 4
+        },
+        {
+          "row": 5,
+          "col": 12,
+          "towerId": 1
+        },
+        {
+          "row": 2,
+          "col": 12,
+          "towerId": 7
+        },
+        {
+          "row": 1,
+          "col": 12,
+          "towerId": 4
+        },
+        {
+          "row": 0,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 1,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 2,
+          "col": 14,
+          "towerId": 4
+        }
+      ],
+      "repeatedCoverageTowers": 28,
+      "flyingCount": 0,
+      "heavyCount": 9,
+      "eliteCount": 0,
+      "bossCount": 0,
+      "killed": 99,
+      "leaked": 0,
+      "bossLeaked": 0,
+      "criticalLeaked": 0,
+      "killGold": 169,
+      "clearReward": 12,
+      "goldBeforePurchases": 165,
+      "spent": 152,
+      "balance": 194,
+      "hp": 20,
+      "towerComposition": {
+        "1": 27,
+        "4": 16,
+        "7": 10
+      },
+      "combatElapsedMs": 39800,
+      "levelElapsedMs": 420800,
+      "alivePeak": 47,
+      "groundEffectiveShootingWindowSec": 851.8000000001251,
+      "airEffectiveShootingWindowSec": 0,
+      "overkillDamage": 574.8616392438647,
+      "cleared": true
+    },
+    {
+      "waveOrdinal": 12,
+      "planned": 102,
+      "successfulSpawned": 102,
+      "totalEhp": 7259.8641249600005,
+      "towerCount": 53,
+      "capacity": 129,
+      "occupancy": 0.4108527131782946,
+      "leakedByRole": {},
+      "pathLength": 57,
+      "spawnDeferredCount": 0,
+      "layout": [
+        {
+          "row": 5,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 4,
+          "col": 8,
+          "towerId": 1
+        },
+        {
+          "row": 3,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 3,
+          "col": 6,
+          "towerId": 1
+        },
+        {
+          "row": 2,
+          "col": 8,
+          "towerId": 7
+        },
+        {
+          "row": 3,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 4,
+          "col": 12,
+          "towerId": 1
+        },
+        {
+          "row": 6,
+          "col": 12,
+          "towerId": 7
+        },
+        {
+          "row": 1,
+          "col": 6,
+          "towerId": 4
+        },
+        {
+          "row": 4,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 3,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 1,
+          "col": 4,
+          "towerId": 4
+        },
+        {
+          "row": 1,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 4,
+          "col": 6,
+          "towerId": 7
+        },
+        {
+          "row": 3,
+          "col": 12,
+          "towerId": 1
+        },
+        {
+          "row": 1,
+          "col": 8,
+          "towerId": 4
+        },
+        {
+          "row": 6,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 8,
+          "towerId": 7
+        },
+        {
+          "row": 7,
+          "col": 12,
+          "towerId": 4
+        },
+        {
+          "row": 2,
+          "col": 10,
+          "towerId": 1
+        },
+        {
+          "row": 4,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 6,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 4,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 6,
+          "towerId": 7
+        },
+        {
+          "row": 3,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 0,
+          "col": 6,
+          "towerId": 4
+        },
+        {
+          "row": 0,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 6,
+          "col": 8,
+          "towerId": 7
+        },
+        {
+          "row": 7,
+          "col": 8,
+          "towerId": 4
+        },
+        {
+          "row": 8,
+          "col": 8,
+          "towerId": 1
+        },
+        {
+          "row": 2,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 0,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 1,
+          "col": 10,
+          "towerId": 1
+        },
+        {
+          "row": 3,
+          "col": 8,
+          "towerId": 7
+        },
+        {
+          "row": 2,
+          "col": 6,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 2,
+          "towerId": 4
+        },
+        {
+          "row": 6,
+          "col": 6,
+          "towerId": 1
+        },
+        {
+          "row": 4,
+          "col": 10,
+          "towerId": 7
+        },
+        {
+          "row": 7,
+          "col": 6,
+          "towerId": 4
+        },
+        {
+          "row": 6,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 7,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 7,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 8,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 4,
+          "towerId": 7
+        },
+        {
+          "row": 2,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 7,
+          "col": 2,
+          "towerId": 4
+        },
+        {
+          "row": 5,
+          "col": 12,
+          "towerId": 1
+        },
+        {
+          "row": 2,
+          "col": 12,
+          "towerId": 7
+        },
+        {
+          "row": 1,
+          "col": 12,
+          "towerId": 4
+        },
+        {
+          "row": 0,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 1,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 2,
+          "col": 14,
+          "towerId": 4
+        }
+      ],
+      "repeatedCoverageTowers": 28,
+      "flyingCount": 12,
+      "heavyCount": 10,
+      "eliteCount": 0,
+      "bossCount": 0,
+      "killed": 102,
+      "leaked": 0,
+      "bossLeaked": 0,
+      "criticalLeaked": 0,
+      "killGold": 162,
+      "clearReward": 12,
+      "goldBeforePurchases": 194,
+      "spent": 0,
+      "balance": 368,
+      "hp": 20,
+      "towerComposition": {
+        "1": 27,
+        "4": 16,
+        "7": 10
+      },
+      "combatElapsedMs": 39900,
+      "levelElapsedMs": 465700,
+      "alivePeak": 45,
+      "groundEffectiveShootingWindowSec": 833.600000000121,
+      "airEffectiveShootingWindowSec": 16.399999999999963,
+      "overkillDamage": 526.7136534168411,
+      "cleared": true
+    },
+    {
+      "waveOrdinal": 13,
+      "planned": 105,
+      "successfulSpawned": 105,
+      "totalEhp": 8437.5917136,
+      "towerCount": 53,
+      "capacity": 129,
+      "occupancy": 0.4108527131782946,
+      "leakedByRole": {},
+      "pathLength": 57,
+      "spawnDeferredCount": 0,
+      "layout": [
+        {
+          "row": 5,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 4,
+          "col": 8,
+          "towerId": 1
+        },
+        {
+          "row": 3,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 3,
+          "col": 6,
+          "towerId": 1
+        },
+        {
+          "row": 2,
+          "col": 8,
+          "towerId": 7
+        },
+        {
+          "row": 3,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 4,
+          "col": 12,
+          "towerId": 1
+        },
+        {
+          "row": 6,
+          "col": 12,
+          "towerId": 7
+        },
+        {
+          "row": 1,
+          "col": 6,
+          "towerId": 4
+        },
+        {
+          "row": 4,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 3,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 1,
+          "col": 4,
+          "towerId": 4
+        },
+        {
+          "row": 1,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 4,
+          "col": 6,
+          "towerId": 7
+        },
+        {
+          "row": 3,
+          "col": 12,
+          "towerId": 1
+        },
+        {
+          "row": 1,
+          "col": 8,
+          "towerId": 4
+        },
+        {
+          "row": 6,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 8,
+          "towerId": 7
+        },
+        {
+          "row": 7,
+          "col": 12,
+          "towerId": 4
+        },
+        {
+          "row": 2,
+          "col": 10,
+          "towerId": 1
+        },
+        {
+          "row": 4,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 6,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 4,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 6,
+          "towerId": 7
+        },
+        {
+          "row": 3,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 0,
+          "col": 6,
+          "towerId": 4
+        },
+        {
+          "row": 0,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 6,
+          "col": 8,
+          "towerId": 7
+        },
+        {
+          "row": 7,
+          "col": 8,
+          "towerId": 4
+        },
+        {
+          "row": 8,
+          "col": 8,
+          "towerId": 1
+        },
+        {
+          "row": 2,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 0,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 1,
+          "col": 10,
+          "towerId": 1
+        },
+        {
+          "row": 3,
+          "col": 8,
+          "towerId": 7
+        },
+        {
+          "row": 2,
+          "col": 6,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 2,
+          "towerId": 4
+        },
+        {
+          "row": 6,
+          "col": 6,
+          "towerId": 1
+        },
+        {
+          "row": 4,
+          "col": 10,
+          "towerId": 7
+        },
+        {
+          "row": 7,
+          "col": 6,
+          "towerId": 4
+        },
+        {
+          "row": 6,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 7,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 7,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 8,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 4,
+          "towerId": 7
+        },
+        {
+          "row": 2,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 7,
+          "col": 2,
+          "towerId": 4
+        },
+        {
+          "row": 5,
+          "col": 12,
+          "towerId": 1
+        },
+        {
+          "row": 2,
+          "col": 12,
+          "towerId": 7
+        },
+        {
+          "row": 1,
+          "col": 12,
+          "towerId": 4
+        },
+        {
+          "row": 0,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 1,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 2,
+          "col": 14,
+          "towerId": 4
+        }
+      ],
+      "repeatedCoverageTowers": 28,
+      "flyingCount": 12,
+      "heavyCount": 10,
+      "eliteCount": 0,
+      "bossCount": 0,
+      "killed": 105,
+      "leaked": 0,
+      "bossLeaked": 0,
+      "criticalLeaked": 0,
+      "killGold": 167,
+      "clearReward": 12,
+      "goldBeforePurchases": 368,
+      "spent": 0,
+      "balance": 547,
+      "hp": 20,
+      "towerComposition": {
+        "1": 27,
+        "4": 16,
+        "7": 10
+      },
+      "combatElapsedMs": 40400,
+      "levelElapsedMs": 511100,
+      "alivePeak": 48,
+      "groundEffectiveShootingWindowSec": 930.200000000143,
+      "airEffectiveShootingWindowSec": 18.19999999999999,
+      "overkillDamage": 467.4399032134494,
+      "cleared": true
+    },
+    {
+      "waveOrdinal": 14,
+      "planned": 108,
+      "successfulSpawned": 108,
+      "totalEhp": 9744.88250016,
+      "towerCount": 53,
+      "capacity": 129,
+      "occupancy": 0.4108527131782946,
+      "leakedByRole": {},
+      "pathLength": 57,
+      "spawnDeferredCount": 0,
+      "layout": [
+        {
+          "row": 5,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 4,
+          "col": 8,
+          "towerId": 1
+        },
+        {
+          "row": 3,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 3,
+          "col": 6,
+          "towerId": 1
+        },
+        {
+          "row": 2,
+          "col": 8,
+          "towerId": 7
+        },
+        {
+          "row": 3,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 4,
+          "col": 12,
+          "towerId": 1
+        },
+        {
+          "row": 6,
+          "col": 12,
+          "towerId": 7
+        },
+        {
+          "row": 1,
+          "col": 6,
+          "towerId": 4
+        },
+        {
+          "row": 4,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 3,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 1,
+          "col": 4,
+          "towerId": 4
+        },
+        {
+          "row": 1,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 4,
+          "col": 6,
+          "towerId": 7
+        },
+        {
+          "row": 3,
+          "col": 12,
+          "towerId": 1
+        },
+        {
+          "row": 1,
+          "col": 8,
+          "towerId": 4
+        },
+        {
+          "row": 6,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 8,
+          "towerId": 7
+        },
+        {
+          "row": 7,
+          "col": 12,
+          "towerId": 4
+        },
+        {
+          "row": 2,
+          "col": 10,
+          "towerId": 1
+        },
+        {
+          "row": 4,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 6,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 4,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 6,
+          "towerId": 7
+        },
+        {
+          "row": 3,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 0,
+          "col": 6,
+          "towerId": 4
+        },
+        {
+          "row": 0,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 6,
+          "col": 8,
+          "towerId": 7
+        },
+        {
+          "row": 7,
+          "col": 8,
+          "towerId": 4
+        },
+        {
+          "row": 8,
+          "col": 8,
+          "towerId": 1
+        },
+        {
+          "row": 2,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 0,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 1,
+          "col": 10,
+          "towerId": 1
+        },
+        {
+          "row": 3,
+          "col": 8,
+          "towerId": 7
+        },
+        {
+          "row": 2,
+          "col": 6,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 2,
+          "towerId": 4
+        },
+        {
+          "row": 6,
+          "col": 6,
+          "towerId": 1
+        },
+        {
+          "row": 4,
+          "col": 10,
+          "towerId": 7
+        },
+        {
+          "row": 7,
+          "col": 6,
+          "towerId": 4
+        },
+        {
+          "row": 6,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 7,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 7,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 8,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 4,
+          "towerId": 7
+        },
+        {
+          "row": 2,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 7,
+          "col": 2,
+          "towerId": 4
+        },
+        {
+          "row": 5,
+          "col": 12,
+          "towerId": 1
+        },
+        {
+          "row": 2,
+          "col": 12,
+          "towerId": 7
+        },
+        {
+          "row": 1,
+          "col": 12,
+          "towerId": 4
+        },
+        {
+          "row": 0,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 1,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 2,
+          "col": 14,
+          "towerId": 4
+        }
+      ],
+      "repeatedCoverageTowers": 28,
+      "flyingCount": 12,
+      "heavyCount": 10,
+      "eliteCount": 0,
+      "bossCount": 0,
+      "killed": 108,
+      "leaked": 0,
+      "bossLeaked": 0,
+      "criticalLeaked": 0,
+      "killGold": 172,
+      "clearReward": 12,
+      "goldBeforePurchases": 547,
+      "spent": 0,
+      "balance": 731,
+      "hp": 20,
+      "towerComposition": {
+        "1": 27,
+        "4": 16,
+        "7": 10
+      },
+      "combatElapsedMs": 40800,
+      "levelElapsedMs": 556900,
+      "alivePeak": 58,
+      "groundEffectiveShootingWindowSec": 1083.50000000011,
+      "airEffectiveShootingWindowSec": 20.000000000000014,
+      "overkillDamage": 454.373356793802,
+      "cleared": true
+    },
+    {
+      "waveOrdinal": 15,
+      "planned": 111,
+      "successfulSpawned": 111,
+      "totalEhp": 12530.495016345601,
+      "towerCount": 53,
+      "capacity": 129,
+      "occupancy": 0.4108527131782946,
+      "leakedByRole": {},
+      "pathLength": 57,
+      "spawnDeferredCount": 0,
+      "layout": [
+        {
+          "row": 5,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 4,
+          "col": 8,
+          "towerId": 1
+        },
+        {
+          "row": 3,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 3,
+          "col": 6,
+          "towerId": 1
+        },
+        {
+          "row": 2,
+          "col": 8,
+          "towerId": 7
+        },
+        {
+          "row": 3,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 4,
+          "col": 12,
+          "towerId": 1
+        },
+        {
+          "row": 6,
+          "col": 12,
+          "towerId": 7
+        },
+        {
+          "row": 1,
+          "col": 6,
+          "towerId": 4
+        },
+        {
+          "row": 4,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 3,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 1,
+          "col": 4,
+          "towerId": 4
+        },
+        {
+          "row": 1,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 4,
+          "col": 6,
+          "towerId": 7
+        },
+        {
+          "row": 3,
+          "col": 12,
+          "towerId": 1
+        },
+        {
+          "row": 1,
+          "col": 8,
+          "towerId": 4
+        },
+        {
+          "row": 6,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 8,
+          "towerId": 7
+        },
+        {
+          "row": 7,
+          "col": 12,
+          "towerId": 4
+        },
+        {
+          "row": 2,
+          "col": 10,
+          "towerId": 1
+        },
+        {
+          "row": 4,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 6,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 4,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 6,
+          "towerId": 7
+        },
+        {
+          "row": 3,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 0,
+          "col": 6,
+          "towerId": 4
+        },
+        {
+          "row": 0,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 6,
+          "col": 8,
+          "towerId": 7
+        },
+        {
+          "row": 7,
+          "col": 8,
+          "towerId": 4
+        },
+        {
+          "row": 8,
+          "col": 8,
+          "towerId": 1
+        },
+        {
+          "row": 2,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 0,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 1,
+          "col": 10,
+          "towerId": 1
+        },
+        {
+          "row": 3,
+          "col": 8,
+          "towerId": 7
+        },
+        {
+          "row": 2,
+          "col": 6,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 2,
+          "towerId": 4
+        },
+        {
+          "row": 6,
+          "col": 6,
+          "towerId": 1
+        },
+        {
+          "row": 4,
+          "col": 10,
+          "towerId": 7
+        },
+        {
+          "row": 7,
+          "col": 6,
+          "towerId": 4
+        },
+        {
+          "row": 6,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 7,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 7,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 8,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 4,
+          "towerId": 7
+        },
+        {
+          "row": 2,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 7,
+          "col": 2,
+          "towerId": 4
+        },
+        {
+          "row": 5,
+          "col": 12,
+          "towerId": 1
+        },
+        {
+          "row": 2,
+          "col": 12,
+          "towerId": 7
+        },
+        {
+          "row": 1,
+          "col": 12,
+          "towerId": 4
+        },
+        {
+          "row": 0,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 1,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 2,
+          "col": 14,
+          "towerId": 4
+        }
+      ],
+      "repeatedCoverageTowers": 28,
+      "flyingCount": 13,
+      "heavyCount": 11,
+      "eliteCount": 1,
+      "bossCount": 0,
+      "killed": 111,
+      "leaked": 0,
+      "bossLeaked": 0,
+      "criticalLeaked": 0,
+      "killGold": 179,
+      "clearReward": 12,
+      "goldBeforePurchases": 731,
+      "spent": 0,
+      "balance": 922,
+      "hp": 20,
+      "towerComposition": {
+        "1": 27,
+        "4": 16,
+        "7": 10
+      },
+      "combatElapsedMs": 45800,
+      "levelElapsedMs": 607700,
+      "alivePeak": 67,
+      "groundEffectiveShootingWindowSec": 1360.3999999998582,
+      "airEffectiveShootingWindowSec": 25.500000000000092,
+      "overkillDamage": 522.6243177711983,
+      "cleared": true
+    },
+    {
+      "waveOrdinal": 16,
+      "planned": 114,
+      "successfulSpawned": 114,
+      "totalEhp": 12781.3266,
+      "towerCount": 53,
+      "capacity": 129,
+      "occupancy": 0.4108527131782946,
+      "leakedByRole": {},
+      "pathLength": 57,
+      "spawnDeferredCount": 0,
+      "layout": [
+        {
+          "row": 5,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 4,
+          "col": 8,
+          "towerId": 1
+        },
+        {
+          "row": 3,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 3,
+          "col": 6,
+          "towerId": 1
+        },
+        {
+          "row": 2,
+          "col": 8,
+          "towerId": 7
+        },
+        {
+          "row": 3,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 4,
+          "col": 12,
+          "towerId": 1
+        },
+        {
+          "row": 6,
+          "col": 12,
+          "towerId": 7
+        },
+        {
+          "row": 1,
+          "col": 6,
+          "towerId": 4
+        },
+        {
+          "row": 4,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 3,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 1,
+          "col": 4,
+          "towerId": 4
+        },
+        {
+          "row": 1,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 4,
+          "col": 6,
+          "towerId": 7
+        },
+        {
+          "row": 3,
+          "col": 12,
+          "towerId": 1
+        },
+        {
+          "row": 1,
+          "col": 8,
+          "towerId": 4
+        },
+        {
+          "row": 6,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 8,
+          "towerId": 7
+        },
+        {
+          "row": 7,
+          "col": 12,
+          "towerId": 4
+        },
+        {
+          "row": 2,
+          "col": 10,
+          "towerId": 1
+        },
+        {
+          "row": 4,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 6,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 4,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 6,
+          "towerId": 7
+        },
+        {
+          "row": 3,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 0,
+          "col": 6,
+          "towerId": 4
+        },
+        {
+          "row": 0,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 6,
+          "col": 8,
+          "towerId": 7
+        },
+        {
+          "row": 7,
+          "col": 8,
+          "towerId": 4
+        },
+        {
+          "row": 8,
+          "col": 8,
+          "towerId": 1
+        },
+        {
+          "row": 2,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 0,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 1,
+          "col": 10,
+          "towerId": 1
+        },
+        {
+          "row": 3,
+          "col": 8,
+          "towerId": 7
+        },
+        {
+          "row": 2,
+          "col": 6,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 2,
+          "towerId": 4
+        },
+        {
+          "row": 6,
+          "col": 6,
+          "towerId": 1
+        },
+        {
+          "row": 4,
+          "col": 10,
+          "towerId": 7
+        },
+        {
+          "row": 7,
+          "col": 6,
+          "towerId": 4
+        },
+        {
+          "row": 6,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 7,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 7,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 8,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 4,
+          "towerId": 7
+        },
+        {
+          "row": 2,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 7,
+          "col": 2,
+          "towerId": 4
+        },
+        {
+          "row": 5,
+          "col": 12,
+          "towerId": 1
+        },
+        {
+          "row": 2,
+          "col": 12,
+          "towerId": 7
+        },
+        {
+          "row": 1,
+          "col": 12,
+          "towerId": 4
+        },
+        {
+          "row": 0,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 1,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 2,
+          "col": 14,
+          "towerId": 4
+        }
+      ],
+      "repeatedCoverageTowers": 28,
+      "flyingCount": 0,
+      "heavyCount": 11,
+      "eliteCount": 0,
+      "bossCount": 0,
+      "killed": 114,
+      "leaked": 0,
+      "bossLeaked": 0,
+      "criticalLeaked": 0,
+      "killGold": 195,
+      "clearReward": 14,
+      "goldBeforePurchases": 922,
+      "spent": 0,
+      "balance": 1131,
+      "hp": 20,
+      "towerComposition": {
+        "1": 27,
+        "4": 16,
+        "7": 10
+      },
+      "combatElapsedMs": 44400,
+      "levelElapsedMs": 657100,
+      "alivePeak": 73,
+      "groundEffectiveShootingWindowSec": 1545.7999999996896,
+      "airEffectiveShootingWindowSec": 0,
+      "overkillDamage": 706.9074421208032,
+      "cleared": true
+    },
+    {
+      "waveOrdinal": 17,
+      "planned": 117,
+      "successfulSpawned": 117,
+      "totalEhp": 14506.188989760001,
+      "towerCount": 53,
+      "capacity": 129,
+      "occupancy": 0.4108527131782946,
+      "leakedByRole": {},
+      "pathLength": 57,
+      "spawnDeferredCount": 0,
+      "layout": [
+        {
+          "row": 5,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 4,
+          "col": 8,
+          "towerId": 1
+        },
+        {
+          "row": 3,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 3,
+          "col": 6,
+          "towerId": 1
+        },
+        {
+          "row": 2,
+          "col": 8,
+          "towerId": 7
+        },
+        {
+          "row": 3,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 4,
+          "col": 12,
+          "towerId": 1
+        },
+        {
+          "row": 6,
+          "col": 12,
+          "towerId": 7
+        },
+        {
+          "row": 1,
+          "col": 6,
+          "towerId": 4
+        },
+        {
+          "row": 4,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 3,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 1,
+          "col": 4,
+          "towerId": 4
+        },
+        {
+          "row": 1,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 4,
+          "col": 6,
+          "towerId": 7
+        },
+        {
+          "row": 3,
+          "col": 12,
+          "towerId": 1
+        },
+        {
+          "row": 1,
+          "col": 8,
+          "towerId": 4
+        },
+        {
+          "row": 6,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 8,
+          "towerId": 7
+        },
+        {
+          "row": 7,
+          "col": 12,
+          "towerId": 4
+        },
+        {
+          "row": 2,
+          "col": 10,
+          "towerId": 1
+        },
+        {
+          "row": 4,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 6,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 4,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 6,
+          "towerId": 7
+        },
+        {
+          "row": 3,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 0,
+          "col": 6,
+          "towerId": 4
+        },
+        {
+          "row": 0,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 6,
+          "col": 8,
+          "towerId": 7
+        },
+        {
+          "row": 7,
+          "col": 8,
+          "towerId": 4
+        },
+        {
+          "row": 8,
+          "col": 8,
+          "towerId": 1
+        },
+        {
+          "row": 2,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 0,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 1,
+          "col": 10,
+          "towerId": 1
+        },
+        {
+          "row": 3,
+          "col": 8,
+          "towerId": 7
+        },
+        {
+          "row": 2,
+          "col": 6,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 2,
+          "towerId": 4
+        },
+        {
+          "row": 6,
+          "col": 6,
+          "towerId": 1
+        },
+        {
+          "row": 4,
+          "col": 10,
+          "towerId": 7
+        },
+        {
+          "row": 7,
+          "col": 6,
+          "towerId": 4
+        },
+        {
+          "row": 6,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 7,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 7,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 8,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 4,
+          "towerId": 7
+        },
+        {
+          "row": 2,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 7,
+          "col": 2,
+          "towerId": 4
+        },
+        {
+          "row": 5,
+          "col": 12,
+          "towerId": 1
+        },
+        {
+          "row": 2,
+          "col": 12,
+          "towerId": 7
+        },
+        {
+          "row": 1,
+          "col": 12,
+          "towerId": 4
+        },
+        {
+          "row": 0,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 1,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 2,
+          "col": 14,
+          "towerId": 4
+        }
+      ],
+      "repeatedCoverageTowers": 28,
+      "flyingCount": 14,
+      "heavyCount": 11,
+      "eliteCount": 0,
+      "bossCount": 0,
+      "killed": 117,
+      "leaked": 0,
+      "bossLeaked": 0,
+      "criticalLeaked": 0,
+      "killGold": 185,
+      "clearReward": 14,
+      "goldBeforePurchases": 1131,
+      "spent": 0,
+      "balance": 1330,
+      "hp": 20,
+      "towerComposition": {
+        "1": 27,
+        "4": 16,
+        "7": 10
+      },
+      "combatElapsedMs": 47000,
+      "levelElapsedMs": 709100,
+      "alivePeak": 71,
+      "groundEffectiveShootingWindowSec": 1573.6999999996642,
+      "airEffectiveShootingWindowSec": 32.50000000000019,
+      "overkillDamage": 583.5486444669725,
+      "cleared": true
+    },
+    {
+      "waveOrdinal": 18,
+      "planned": 120,
+      "successfulSpawned": 120,
+      "totalEhp": 16393.7875104,
+      "towerCount": 53,
+      "capacity": 129,
+      "occupancy": 0.4108527131782946,
+      "leakedByRole": {},
+      "pathLength": 57,
+      "spawnDeferredCount": 0,
+      "layout": [
+        {
+          "row": 5,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 4,
+          "col": 8,
+          "towerId": 1
+        },
+        {
+          "row": 3,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 3,
+          "col": 6,
+          "towerId": 1
+        },
+        {
+          "row": 2,
+          "col": 8,
+          "towerId": 7
+        },
+        {
+          "row": 3,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 4,
+          "col": 12,
+          "towerId": 1
+        },
+        {
+          "row": 6,
+          "col": 12,
+          "towerId": 7
+        },
+        {
+          "row": 1,
+          "col": 6,
+          "towerId": 4
+        },
+        {
+          "row": 4,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 3,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 1,
+          "col": 4,
+          "towerId": 4
+        },
+        {
+          "row": 1,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 4,
+          "col": 6,
+          "towerId": 7
+        },
+        {
+          "row": 3,
+          "col": 12,
+          "towerId": 1
+        },
+        {
+          "row": 1,
+          "col": 8,
+          "towerId": 4
+        },
+        {
+          "row": 6,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 8,
+          "towerId": 7
+        },
+        {
+          "row": 7,
+          "col": 12,
+          "towerId": 4
+        },
+        {
+          "row": 2,
+          "col": 10,
+          "towerId": 1
+        },
+        {
+          "row": 4,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 6,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 4,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 6,
+          "towerId": 7
+        },
+        {
+          "row": 3,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 0,
+          "col": 6,
+          "towerId": 4
+        },
+        {
+          "row": 0,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 6,
+          "col": 8,
+          "towerId": 7
+        },
+        {
+          "row": 7,
+          "col": 8,
+          "towerId": 4
+        },
+        {
+          "row": 8,
+          "col": 8,
+          "towerId": 1
+        },
+        {
+          "row": 2,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 0,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 1,
+          "col": 10,
+          "towerId": 1
+        },
+        {
+          "row": 3,
+          "col": 8,
+          "towerId": 7
+        },
+        {
+          "row": 2,
+          "col": 6,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 2,
+          "towerId": 4
+        },
+        {
+          "row": 6,
+          "col": 6,
+          "towerId": 1
+        },
+        {
+          "row": 4,
+          "col": 10,
+          "towerId": 7
+        },
+        {
+          "row": 7,
+          "col": 6,
+          "towerId": 4
+        },
+        {
+          "row": 6,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 7,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 7,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 8,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 4,
+          "towerId": 7
+        },
+        {
+          "row": 2,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 7,
+          "col": 2,
+          "towerId": 4
+        },
+        {
+          "row": 5,
+          "col": 12,
+          "towerId": 1
+        },
+        {
+          "row": 2,
+          "col": 12,
+          "towerId": 7
+        },
+        {
+          "row": 1,
+          "col": 12,
+          "towerId": 4
+        },
+        {
+          "row": 0,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 1,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 2,
+          "col": 14,
+          "towerId": 4
+        }
+      ],
+      "repeatedCoverageTowers": 28,
+      "flyingCount": 14,
+      "heavyCount": 12,
+      "eliteCount": 0,
+      "bossCount": 0,
+      "killed": 120,
+      "leaked": 0,
+      "bossLeaked": 0,
+      "criticalLeaked": 0,
+      "killGold": 191,
+      "clearReward": 14,
+      "goldBeforePurchases": 1330,
+      "spent": 0,
+      "balance": 1535,
+      "hp": 20,
+      "towerComposition": {
+        "1": 27,
+        "4": 16,
+        "7": 10
+      },
+      "combatElapsedMs": 52500,
+      "levelElapsedMs": 766600,
+      "alivePeak": 74,
+      "groundEffectiveShootingWindowSec": 1771.3999999994844,
+      "airEffectiveShootingWindowSec": 34.30000000000022,
+      "overkillDamage": 609.5672684580551,
+      "cleared": true
+    },
+    {
+      "waveOrdinal": 19,
+      "planned": 123,
+      "successfulSpawned": 123,
+      "totalEhp": 18441.97670016,
+      "towerCount": 53,
+      "capacity": 129,
+      "occupancy": 0.4108527131782946,
+      "leakedByRole": {},
+      "pathLength": 57,
+      "spawnDeferredCount": 0,
+      "layout": [
+        {
+          "row": 5,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 4,
+          "col": 8,
+          "towerId": 1
+        },
+        {
+          "row": 3,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 3,
+          "col": 6,
+          "towerId": 1
+        },
+        {
+          "row": 2,
+          "col": 8,
+          "towerId": 7
+        },
+        {
+          "row": 3,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 4,
+          "col": 12,
+          "towerId": 1
+        },
+        {
+          "row": 6,
+          "col": 12,
+          "towerId": 7
+        },
+        {
+          "row": 1,
+          "col": 6,
+          "towerId": 4
+        },
+        {
+          "row": 4,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 3,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 1,
+          "col": 4,
+          "towerId": 4
+        },
+        {
+          "row": 1,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 4,
+          "col": 6,
+          "towerId": 7
+        },
+        {
+          "row": 3,
+          "col": 12,
+          "towerId": 1
+        },
+        {
+          "row": 1,
+          "col": 8,
+          "towerId": 4
+        },
+        {
+          "row": 6,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 8,
+          "towerId": 7
+        },
+        {
+          "row": 7,
+          "col": 12,
+          "towerId": 4
+        },
+        {
+          "row": 2,
+          "col": 10,
+          "towerId": 1
+        },
+        {
+          "row": 4,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 6,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 4,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 6,
+          "towerId": 7
+        },
+        {
+          "row": 3,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 0,
+          "col": 6,
+          "towerId": 4
+        },
+        {
+          "row": 0,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 6,
+          "col": 8,
+          "towerId": 7
+        },
+        {
+          "row": 7,
+          "col": 8,
+          "towerId": 4
+        },
+        {
+          "row": 8,
+          "col": 8,
+          "towerId": 1
+        },
+        {
+          "row": 2,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 0,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 1,
+          "col": 10,
+          "towerId": 1
+        },
+        {
+          "row": 3,
+          "col": 8,
+          "towerId": 7
+        },
+        {
+          "row": 2,
+          "col": 6,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 2,
+          "towerId": 4
+        },
+        {
+          "row": 6,
+          "col": 6,
+          "towerId": 1
+        },
+        {
+          "row": 4,
+          "col": 10,
+          "towerId": 7
+        },
+        {
+          "row": 7,
+          "col": 6,
+          "towerId": 4
+        },
+        {
+          "row": 6,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 7,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 7,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 8,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 4,
+          "towerId": 7
+        },
+        {
+          "row": 2,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 7,
+          "col": 2,
+          "towerId": 4
+        },
+        {
+          "row": 5,
+          "col": 12,
+          "towerId": 1
+        },
+        {
+          "row": 2,
+          "col": 12,
+          "towerId": 7
+        },
+        {
+          "row": 1,
+          "col": 12,
+          "towerId": 4
+        },
+        {
+          "row": 0,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 1,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 2,
+          "col": 14,
+          "towerId": 4
+        }
+      ],
+      "repeatedCoverageTowers": 28,
+      "flyingCount": 14,
+      "heavyCount": 12,
+      "eliteCount": 0,
+      "bossCount": 0,
+      "killed": 123,
+      "leaked": 0,
+      "bossLeaked": 0,
+      "criticalLeaked": 0,
+      "killGold": 196,
+      "clearReward": 14,
+      "goldBeforePurchases": 1535,
+      "spent": 0,
+      "balance": 1745,
+      "hp": 20,
+      "towerComposition": {
+        "1": 27,
+        "4": 16,
+        "7": 10
+      },
+      "combatElapsedMs": 56800,
+      "levelElapsedMs": 828400,
+      "alivePeak": 79,
+      "groundEffectiveShootingWindowSec": 2017.1999999992609,
+      "airEffectiveShootingWindowSec": 38.20000000000027,
+      "overkillDamage": 682.5612076355046,
+      "cleared": true
+    },
+    {
+      "waveOrdinal": 20,
+      "planned": 126,
+      "successfulSpawned": 126,
+      "totalEhp": 23135.7974996736,
+      "towerCount": 53,
+      "capacity": 129,
+      "occupancy": 0.4108527131782946,
+      "leakedByRole": {},
+      "pathLength": 57,
+      "spawnDeferredCount": 0,
+      "layout": [
+        {
+          "row": 5,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 4,
+          "col": 8,
+          "towerId": 1
+        },
+        {
+          "row": 3,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 3,
+          "col": 6,
+          "towerId": 1
+        },
+        {
+          "row": 2,
+          "col": 8,
+          "towerId": 7
+        },
+        {
+          "row": 3,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 4,
+          "col": 12,
+          "towerId": 1
+        },
+        {
+          "row": 6,
+          "col": 12,
+          "towerId": 7
+        },
+        {
+          "row": 1,
+          "col": 6,
+          "towerId": 4
+        },
+        {
+          "row": 4,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 3,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 1,
+          "col": 4,
+          "towerId": 4
+        },
+        {
+          "row": 1,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 4,
+          "col": 6,
+          "towerId": 7
+        },
+        {
+          "row": 3,
+          "col": 12,
+          "towerId": 1
+        },
+        {
+          "row": 1,
+          "col": 8,
+          "towerId": 4
+        },
+        {
+          "row": 6,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 8,
+          "towerId": 7
+        },
+        {
+          "row": 7,
+          "col": 12,
+          "towerId": 4
+        },
+        {
+          "row": 2,
+          "col": 10,
+          "towerId": 1
+        },
+        {
+          "row": 4,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 6,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 4,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 6,
+          "towerId": 7
+        },
+        {
+          "row": 3,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 0,
+          "col": 6,
+          "towerId": 4
+        },
+        {
+          "row": 0,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 6,
+          "col": 8,
+          "towerId": 7
+        },
+        {
+          "row": 7,
+          "col": 8,
+          "towerId": 4
+        },
+        {
+          "row": 8,
+          "col": 8,
+          "towerId": 1
+        },
+        {
+          "row": 2,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 0,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 1,
+          "col": 10,
+          "towerId": 1
+        },
+        {
+          "row": 3,
+          "col": 8,
+          "towerId": 7
+        },
+        {
+          "row": 2,
+          "col": 6,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 2,
+          "towerId": 4
+        },
+        {
+          "row": 6,
+          "col": 6,
+          "towerId": 1
+        },
+        {
+          "row": 4,
+          "col": 10,
+          "towerId": 7
+        },
+        {
+          "row": 7,
+          "col": 6,
+          "towerId": 4
+        },
+        {
+          "row": 6,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 7,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 7,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 8,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 4,
+          "towerId": 7
+        },
+        {
+          "row": 2,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 7,
+          "col": 2,
+          "towerId": 4
+        },
+        {
+          "row": 5,
+          "col": 12,
+          "towerId": 1
+        },
+        {
+          "row": 2,
+          "col": 12,
+          "towerId": 7
+        },
+        {
+          "row": 1,
+          "col": 12,
+          "towerId": 4
+        },
+        {
+          "row": 0,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 1,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 2,
+          "col": 14,
+          "towerId": 4
+        }
+      ],
+      "repeatedCoverageTowers": 28,
+      "flyingCount": 15,
+      "heavyCount": 12,
+      "eliteCount": 1,
+      "bossCount": 0,
+      "killed": 126,
+      "leaked": 0,
+      "bossLeaked": 0,
+      "criticalLeaked": 0,
+      "killGold": 202,
+      "clearReward": 14,
+      "goldBeforePurchases": 1745,
+      "spent": 0,
+      "balance": 1961,
+      "hp": 20,
+      "towerComposition": {
+        "1": 27,
+        "4": 16,
+        "7": 10
+      },
+      "combatElapsedMs": 64500,
+      "levelElapsedMs": 897900,
+      "alivePeak": 86,
+      "groundEffectiveShootingWindowSec": 2466.599999998852,
+      "airEffectiveShootingWindowSec": 48.300000000000416,
+      "overkillDamage": 671.8007612961587,
+      "cleared": true
+    },
+    {
+      "waveOrdinal": 21,
+      "planned": 129,
+      "successfulSpawned": 129,
+      "totalEhp": 23598.889200000005,
+      "towerCount": 53,
+      "capacity": 129,
+      "occupancy": 0.4108527131782946,
+      "leakedByRole": {},
+      "pathLength": 57,
+      "spawnDeferredCount": 0,
+      "layout": [
+        {
+          "row": 5,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 4,
+          "col": 8,
+          "towerId": 1
+        },
+        {
+          "row": 3,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 3,
+          "col": 6,
+          "towerId": 1
+        },
+        {
+          "row": 2,
+          "col": 8,
+          "towerId": 7
+        },
+        {
+          "row": 3,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 4,
+          "col": 12,
+          "towerId": 1
+        },
+        {
+          "row": 6,
+          "col": 12,
+          "towerId": 7
+        },
+        {
+          "row": 1,
+          "col": 6,
+          "towerId": 4
+        },
+        {
+          "row": 4,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 3,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 1,
+          "col": 4,
+          "towerId": 4
+        },
+        {
+          "row": 1,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 4,
+          "col": 6,
+          "towerId": 7
+        },
+        {
+          "row": 3,
+          "col": 12,
+          "towerId": 1
+        },
+        {
+          "row": 1,
+          "col": 8,
+          "towerId": 4
+        },
+        {
+          "row": 6,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 8,
+          "towerId": 7
+        },
+        {
+          "row": 7,
+          "col": 12,
+          "towerId": 4
+        },
+        {
+          "row": 2,
+          "col": 10,
+          "towerId": 1
+        },
+        {
+          "row": 4,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 6,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 4,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 6,
+          "towerId": 7
+        },
+        {
+          "row": 3,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 0,
+          "col": 6,
+          "towerId": 4
+        },
+        {
+          "row": 0,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 6,
+          "col": 8,
+          "towerId": 7
+        },
+        {
+          "row": 7,
+          "col": 8,
+          "towerId": 4
+        },
+        {
+          "row": 8,
+          "col": 8,
+          "towerId": 1
+        },
+        {
+          "row": 2,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 0,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 1,
+          "col": 10,
+          "towerId": 1
+        },
+        {
+          "row": 3,
+          "col": 8,
+          "towerId": 7
+        },
+        {
+          "row": 2,
+          "col": 6,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 2,
+          "towerId": 4
+        },
+        {
+          "row": 6,
+          "col": 6,
+          "towerId": 1
+        },
+        {
+          "row": 4,
+          "col": 10,
+          "towerId": 7
+        },
+        {
+          "row": 7,
+          "col": 6,
+          "towerId": 4
+        },
+        {
+          "row": 6,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 7,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 7,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 8,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 4,
+          "towerId": 7
+        },
+        {
+          "row": 2,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 7,
+          "col": 2,
+          "towerId": 4
+        },
+        {
+          "row": 5,
+          "col": 12,
+          "towerId": 1
+        },
+        {
+          "row": 2,
+          "col": 12,
+          "towerId": 7
+        },
+        {
+          "row": 1,
+          "col": 12,
+          "towerId": 4
+        },
+        {
+          "row": 0,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 1,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 2,
+          "col": 14,
+          "towerId": 4
+        }
+      ],
+      "repeatedCoverageTowers": 28,
+      "flyingCount": 15,
+      "heavyCount": 12,
+      "eliteCount": 0,
+      "bossCount": 0,
+      "killed": 129,
+      "leaked": 0,
+      "bossLeaked": 0,
+      "criticalLeaked": 0,
+      "killGold": 204,
+      "clearReward": 16,
+      "goldBeforePurchases": 1961,
+      "spent": 0,
+      "balance": 2181,
+      "hp": 20,
+      "towerComposition": {
+        "1": 27,
+        "4": 16,
+        "7": 10
+      },
+      "combatElapsedMs": 65100,
+      "levelElapsedMs": 968000,
+      "alivePeak": 86,
+      "groundEffectiveShootingWindowSec": 2625.999999998707,
+      "airEffectiveShootingWindowSec": 50.400000000000446,
+      "overkillDamage": 876.7967949938642,
+      "cleared": true
+    },
+    {
+      "waveOrdinal": 22,
+      "planned": 132,
+      "successfulSpawned": 132,
+      "totalEhp": 25612.143226559998,
+      "towerCount": 53,
+      "capacity": 129,
+      "occupancy": 0.4108527131782946,
+      "leakedByRole": {},
+      "pathLength": 57,
+      "spawnDeferredCount": 0,
+      "layout": [
+        {
+          "row": 5,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 4,
+          "col": 8,
+          "towerId": 1
+        },
+        {
+          "row": 3,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 3,
+          "col": 6,
+          "towerId": 1
+        },
+        {
+          "row": 2,
+          "col": 8,
+          "towerId": 7
+        },
+        {
+          "row": 3,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 4,
+          "col": 12,
+          "towerId": 1
+        },
+        {
+          "row": 6,
+          "col": 12,
+          "towerId": 7
+        },
+        {
+          "row": 1,
+          "col": 6,
+          "towerId": 4
+        },
+        {
+          "row": 4,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 3,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 1,
+          "col": 4,
+          "towerId": 4
+        },
+        {
+          "row": 1,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 4,
+          "col": 6,
+          "towerId": 7
+        },
+        {
+          "row": 3,
+          "col": 12,
+          "towerId": 1
+        },
+        {
+          "row": 1,
+          "col": 8,
+          "towerId": 4
+        },
+        {
+          "row": 6,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 8,
+          "towerId": 7
+        },
+        {
+          "row": 7,
+          "col": 12,
+          "towerId": 4
+        },
+        {
+          "row": 2,
+          "col": 10,
+          "towerId": 1
+        },
+        {
+          "row": 4,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 6,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 4,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 6,
+          "towerId": 7
+        },
+        {
+          "row": 3,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 0,
+          "col": 6,
+          "towerId": 4
+        },
+        {
+          "row": 0,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 6,
+          "col": 8,
+          "towerId": 7
+        },
+        {
+          "row": 7,
+          "col": 8,
+          "towerId": 4
+        },
+        {
+          "row": 8,
+          "col": 8,
+          "towerId": 1
+        },
+        {
+          "row": 2,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 0,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 1,
+          "col": 10,
+          "towerId": 1
+        },
+        {
+          "row": 3,
+          "col": 8,
+          "towerId": 7
+        },
+        {
+          "row": 2,
+          "col": 6,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 2,
+          "towerId": 4
+        },
+        {
+          "row": 6,
+          "col": 6,
+          "towerId": 1
+        },
+        {
+          "row": 4,
+          "col": 10,
+          "towerId": 7
+        },
+        {
+          "row": 7,
+          "col": 6,
+          "towerId": 4
+        },
+        {
+          "row": 6,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 7,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 7,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 8,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 4,
+          "towerId": 7
+        },
+        {
+          "row": 2,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 7,
+          "col": 2,
+          "towerId": 4
+        },
+        {
+          "row": 5,
+          "col": 12,
+          "towerId": 1
+        },
+        {
+          "row": 2,
+          "col": 12,
+          "towerId": 7
+        },
+        {
+          "row": 1,
+          "col": 12,
+          "towerId": 4
+        },
+        {
+          "row": 0,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 1,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 2,
+          "col": 14,
+          "towerId": 4
+        }
+      ],
+      "repeatedCoverageTowers": 28,
+      "flyingCount": 15,
+      "heavyCount": 13,
+      "eliteCount": 0,
+      "bossCount": 0,
+      "killed": 132,
+      "leaked": 0,
+      "bossLeaked": 0,
+      "criticalLeaked": 0,
+      "killGold": 211,
+      "clearReward": 16,
+      "goldBeforePurchases": 2181,
+      "spent": 0,
+      "balance": 2408,
+      "hp": 20,
+      "towerComposition": {
+        "1": 27,
+        "4": 16,
+        "7": 10
+      },
+      "combatElapsedMs": 69600,
+      "levelElapsedMs": 1042600,
+      "alivePeak": 89,
+      "groundEffectiveShootingWindowSec": 2872.8999999984826,
+      "airEffectiveShootingWindowSec": 54.0000000000005,
+      "overkillDamage": 864.7311805580771,
+      "cleared": true
+    },
+    {
+      "waveOrdinal": 23,
+      "planned": 135,
+      "successfulSpawned": 135,
+      "totalEhp": 28364.7500352,
+      "towerCount": 53,
+      "capacity": 129,
+      "occupancy": 0.4108527131782946,
+      "leakedByRole": {},
+      "pathLength": 57,
+      "spawnDeferredCount": 0,
+      "layout": [
+        {
+          "row": 5,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 4,
+          "col": 8,
+          "towerId": 1
+        },
+        {
+          "row": 3,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 3,
+          "col": 6,
+          "towerId": 1
+        },
+        {
+          "row": 2,
+          "col": 8,
+          "towerId": 7
+        },
+        {
+          "row": 3,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 4,
+          "col": 12,
+          "towerId": 1
+        },
+        {
+          "row": 6,
+          "col": 12,
+          "towerId": 7
+        },
+        {
+          "row": 1,
+          "col": 6,
+          "towerId": 4
+        },
+        {
+          "row": 4,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 3,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 1,
+          "col": 4,
+          "towerId": 4
+        },
+        {
+          "row": 1,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 4,
+          "col": 6,
+          "towerId": 7
+        },
+        {
+          "row": 3,
+          "col": 12,
+          "towerId": 1
+        },
+        {
+          "row": 1,
+          "col": 8,
+          "towerId": 4
+        },
+        {
+          "row": 6,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 8,
+          "towerId": 7
+        },
+        {
+          "row": 7,
+          "col": 12,
+          "towerId": 4
+        },
+        {
+          "row": 2,
+          "col": 10,
+          "towerId": 1
+        },
+        {
+          "row": 4,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 6,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 4,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 6,
+          "towerId": 7
+        },
+        {
+          "row": 3,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 0,
+          "col": 6,
+          "towerId": 4
+        },
+        {
+          "row": 0,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 6,
+          "col": 8,
+          "towerId": 7
+        },
+        {
+          "row": 7,
+          "col": 8,
+          "towerId": 4
+        },
+        {
+          "row": 8,
+          "col": 8,
+          "towerId": 1
+        },
+        {
+          "row": 2,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 0,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 1,
+          "col": 10,
+          "towerId": 1
+        },
+        {
+          "row": 3,
+          "col": 8,
+          "towerId": 7
+        },
+        {
+          "row": 2,
+          "col": 6,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 2,
+          "towerId": 4
+        },
+        {
+          "row": 6,
+          "col": 6,
+          "towerId": 1
+        },
+        {
+          "row": 4,
+          "col": 10,
+          "towerId": 7
+        },
+        {
+          "row": 7,
+          "col": 6,
+          "towerId": 4
+        },
+        {
+          "row": 6,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 7,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 7,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 8,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 4,
+          "towerId": 7
+        },
+        {
+          "row": 2,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 7,
+          "col": 2,
+          "towerId": 4
+        },
+        {
+          "row": 5,
+          "col": 12,
+          "towerId": 1
+        },
+        {
+          "row": 2,
+          "col": 12,
+          "towerId": 7
+        },
+        {
+          "row": 1,
+          "col": 12,
+          "towerId": 4
+        },
+        {
+          "row": 0,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 1,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 2,
+          "col": 14,
+          "towerId": 4
+        }
+      ],
+      "repeatedCoverageTowers": 28,
+      "flyingCount": 16,
+      "heavyCount": 13,
+      "eliteCount": 0,
+      "bossCount": 0,
+      "killed": 135,
+      "leaked": 0,
+      "bossLeaked": 0,
+      "criticalLeaked": 0,
+      "killGold": 214,
+      "clearReward": 16,
+      "goldBeforePurchases": 2408,
+      "spent": 0,
+      "balance": 2638,
+      "hp": 20,
+      "towerComposition": {
+        "1": 27,
+        "4": 16,
+        "7": 10
+      },
+      "combatElapsedMs": 74500,
+      "levelElapsedMs": 1122100,
+      "alivePeak": 96,
+      "groundEffectiveShootingWindowSec": 3245.299999998144,
+      "airEffectiveShootingWindowSec": 61.70000000000061,
+      "overkillDamage": 743.451860465087,
+      "cleared": true
+    },
+    {
+      "waveOrdinal": 24,
+      "planned": 138,
+      "successfulSpawned": 138,
+      "totalEhp": 31308.974984160002,
+      "towerCount": 53,
+      "capacity": 129,
+      "occupancy": 0.4108527131782946,
+      "leakedByRole": {},
+      "pathLength": 57,
+      "spawnDeferredCount": 0,
+      "layout": [
+        {
+          "row": 5,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 4,
+          "col": 8,
+          "towerId": 1
+        },
+        {
+          "row": 3,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 3,
+          "col": 6,
+          "towerId": 1
+        },
+        {
+          "row": 2,
+          "col": 8,
+          "towerId": 7
+        },
+        {
+          "row": 3,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 4,
+          "col": 12,
+          "towerId": 1
+        },
+        {
+          "row": 6,
+          "col": 12,
+          "towerId": 7
+        },
+        {
+          "row": 1,
+          "col": 6,
+          "towerId": 4
+        },
+        {
+          "row": 4,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 3,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 1,
+          "col": 4,
+          "towerId": 4
+        },
+        {
+          "row": 1,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 4,
+          "col": 6,
+          "towerId": 7
+        },
+        {
+          "row": 3,
+          "col": 12,
+          "towerId": 1
+        },
+        {
+          "row": 1,
+          "col": 8,
+          "towerId": 4
+        },
+        {
+          "row": 6,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 8,
+          "towerId": 7
+        },
+        {
+          "row": 7,
+          "col": 12,
+          "towerId": 4
+        },
+        {
+          "row": 2,
+          "col": 10,
+          "towerId": 1
+        },
+        {
+          "row": 4,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 6,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 4,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 6,
+          "towerId": 7
+        },
+        {
+          "row": 3,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 0,
+          "col": 6,
+          "towerId": 4
+        },
+        {
+          "row": 0,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 6,
+          "col": 8,
+          "towerId": 7
+        },
+        {
+          "row": 7,
+          "col": 8,
+          "towerId": 4
+        },
+        {
+          "row": 8,
+          "col": 8,
+          "towerId": 1
+        },
+        {
+          "row": 2,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 0,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 1,
+          "col": 10,
+          "towerId": 1
+        },
+        {
+          "row": 3,
+          "col": 8,
+          "towerId": 7
+        },
+        {
+          "row": 2,
+          "col": 6,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 2,
+          "towerId": 4
+        },
+        {
+          "row": 6,
+          "col": 6,
+          "towerId": 1
+        },
+        {
+          "row": 4,
+          "col": 10,
+          "towerId": 7
+        },
+        {
+          "row": 7,
+          "col": 6,
+          "towerId": 4
+        },
+        {
+          "row": 6,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 7,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 7,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 8,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 4,
+          "towerId": 7
+        },
+        {
+          "row": 2,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 7,
+          "col": 2,
+          "towerId": 4
+        },
+        {
+          "row": 5,
+          "col": 12,
+          "towerId": 1
+        },
+        {
+          "row": 2,
+          "col": 12,
+          "towerId": 7
+        },
+        {
+          "row": 1,
+          "col": 12,
+          "towerId": 4
+        },
+        {
+          "row": 0,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 1,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 2,
+          "col": 14,
+          "towerId": 4
+        }
+      ],
+      "repeatedCoverageTowers": 28,
+      "flyingCount": 16,
+      "heavyCount": 13,
+      "eliteCount": 0,
+      "bossCount": 0,
+      "killed": 138,
+      "leaked": 0,
+      "bossLeaked": 0,
+      "criticalLeaked": 0,
+      "killGold": 219,
+      "clearReward": 16,
+      "goldBeforePurchases": 2638,
+      "spent": 0,
+      "balance": 2873,
+      "hp": 20,
+      "towerComposition": {
+        "1": 27,
+        "4": 16,
+        "7": 10
+      },
+      "combatElapsedMs": 76699,
+      "levelElapsedMs": 1203800,
+      "alivePeak": 97,
+      "groundEffectiveShootingWindowSec": 3596.799999997824,
+      "airEffectiveShootingWindowSec": 68.3000000000004,
+      "overkillDamage": 788.5535525779907,
+      "cleared": true
+    },
+    {
+      "waveOrdinal": 25,
+      "planned": 141,
+      "successfulSpawned": 141,
+      "totalEhp": 41341.228281216,
+      "towerCount": 53,
+      "capacity": 129,
+      "occupancy": 0.4108527131782946,
+      "leakedByRole": {
+        "heavy": 4,
+        "boss": 1
+      },
+      "pathLength": 57,
+      "spawnDeferredCount": 0,
+      "layout": [
+        {
+          "row": 5,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 4,
+          "col": 8,
+          "towerId": 1
+        },
+        {
+          "row": 3,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 3,
+          "col": 6,
+          "towerId": 1
+        },
+        {
+          "row": 2,
+          "col": 8,
+          "towerId": 7
+        },
+        {
+          "row": 3,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 4,
+          "col": 12,
+          "towerId": 1
+        },
+        {
+          "row": 6,
+          "col": 12,
+          "towerId": 7
+        },
+        {
+          "row": 1,
+          "col": 6,
+          "towerId": 4
+        },
+        {
+          "row": 4,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 3,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 1,
+          "col": 4,
+          "towerId": 4
+        },
+        {
+          "row": 1,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 4,
+          "col": 6,
+          "towerId": 7
+        },
+        {
+          "row": 3,
+          "col": 12,
+          "towerId": 1
+        },
+        {
+          "row": 1,
+          "col": 8,
+          "towerId": 4
+        },
+        {
+          "row": 6,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 8,
+          "towerId": 7
+        },
+        {
+          "row": 7,
+          "col": 12,
+          "towerId": 4
+        },
+        {
+          "row": 2,
+          "col": 10,
+          "towerId": 1
+        },
+        {
+          "row": 4,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 6,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 4,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 6,
+          "towerId": 7
+        },
+        {
+          "row": 3,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 0,
+          "col": 6,
+          "towerId": 4
+        },
+        {
+          "row": 0,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 6,
+          "col": 8,
+          "towerId": 7
+        },
+        {
+          "row": 7,
+          "col": 8,
+          "towerId": 4
+        },
+        {
+          "row": 8,
+          "col": 8,
+          "towerId": 1
+        },
+        {
+          "row": 2,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 0,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 1,
+          "col": 10,
+          "towerId": 1
+        },
+        {
+          "row": 3,
+          "col": 8,
+          "towerId": 7
+        },
+        {
+          "row": 2,
+          "col": 6,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 2,
+          "towerId": 4
+        },
+        {
+          "row": 6,
+          "col": 6,
+          "towerId": 1
+        },
+        {
+          "row": 4,
+          "col": 10,
+          "towerId": 7
+        },
+        {
+          "row": 7,
+          "col": 6,
+          "towerId": 4
+        },
+        {
+          "row": 6,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 7,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 7,
+          "col": 10,
+          "towerId": 4
+        },
+        {
+          "row": 8,
+          "col": 4,
+          "towerId": 1
+        },
+        {
+          "row": 5,
+          "col": 4,
+          "towerId": 7
+        },
+        {
+          "row": 2,
+          "col": 2,
+          "towerId": 1
+        },
+        {
+          "row": 7,
+          "col": 2,
+          "towerId": 4
+        },
+        {
+          "row": 5,
+          "col": 12,
+          "towerId": 1
+        },
+        {
+          "row": 2,
+          "col": 12,
+          "towerId": 7
+        },
+        {
+          "row": 1,
+          "col": 12,
+          "towerId": 4
+        },
+        {
+          "row": 0,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 1,
+          "col": 14,
+          "towerId": 1
+        },
+        {
+          "row": 2,
+          "col": 14,
+          "towerId": 4
+        }
+      ],
+      "repeatedCoverageTowers": 28,
+      "flyingCount": 16,
+      "heavyCount": 14,
+      "eliteCount": 0,
+      "bossCount": 1,
+      "killed": 136,
+      "leaked": 5,
+      "bossLeaked": 1,
+      "criticalLeaked": 1,
+      "killGold": 211,
+      "clearReward": 16,
+      "goldBeforePurchases": 2873,
+      "spent": 0,
+      "balance": 3100,
+      "hp": 8,
+      "towerComposition": {
+        "1": 27,
+        "4": 16,
+        "7": 10
+      },
+      "combatElapsedMs": 92799,
+      "levelElapsedMs": 1301600,
+      "alivePeak": 107,
+      "groundEffectiveShootingWindowSec": 4489.999999998803,
+      "airEffectiveShootingWindowSec": 116.39999999999766,
+      "overkillDamage": 821.1367100086813,
+      "cleared": true
+    }
+  ],
+  "elapsedSec": 126.73412369994912,
+  "alivePeak": 107,
+  "overkillDamage": 13861.537714498741,
+  "aoeAverageActualHits": 3.4388375165125495,
+  "groundEffectiveShootingWindowSec": 34322.599999781036,
+  "airEffectiveShootingWindowSec": 631.600000000075,
+  "slowCoveredEnemySec": 13562.300000031808,
+  "towerContributions": [
+    {
+      "row": 5,
+      "col": 14,
+      "towerId": 1,
+      "damage": 104.17273244536473,
+      "hits": 21,
+      "airHits": 0,
+      "slowApplications": 0,
+      "repeatAttackEnemies": 0,
+      "coveragePasses": 2
+    },
+    {
+      "row": 4,
+      "col": 8,
+      "towerId": 1,
+      "damage": 2605.7976416441174,
+      "hits": 489,
+      "airHits": 41,
+      "slowApplications": 0,
+      "repeatAttackEnemies": 15,
+      "coveragePasses": 2
+    },
+    {
+      "row": 3,
+      "col": 10,
+      "towerId": 4,
+      "damage": 1737.0119829454559,
+      "hits": 130,
+      "airHits": 0,
+      "slowApplications": 0,
+      "repeatAttackEnemies": 1,
+      "coveragePasses": 1
+    },
+    {
+      "row": 3,
+      "col": 6,
+      "towerId": 1,
+      "damage": 5098.880617735169,
+      "hits": 951,
+      "airHits": 145,
+      "slowApplications": 0,
+      "repeatAttackEnemies": 32,
+      "coveragePasses": 2
+    },
+    {
+      "row": 2,
+      "col": 8,
+      "towerId": 7,
+      "damage": 0.0,
+      "hits": 0,
+      "airHits": 0,
+      "slowApplications": 6369,
+      "repeatAttackEnemies": 179,
+      "coveragePasses": 3
+    },
+    {
+      "row": 3,
+      "col": 4,
+      "towerId": 1,
+      "damage": 8747.207855722287,
+      "hits": 1625,
+      "airHits": 348,
+      "slowApplications": 0,
+      "repeatAttackEnemies": 16,
+      "coveragePasses": 2
+    },
+    {
+      "row": 5,
+      "col": 10,
+      "towerId": 4,
+      "damage": 1094.0127822897039,
+      "hits": 83,
+      "airHits": 0,
+      "slowApplications": 0,
+      "repeatAttackEnemies": 1,
+      "coveragePasses": 1
+    },
+    {
+      "row": 4,
+      "col": 12,
+      "towerId": 1,
+      "damage": 22.773347813596388,
+      "hits": 4,
+      "airHits": 4,
+      "slowApplications": 0,
+      "repeatAttackEnemies": 0,
+      "coveragePasses": 0
+    },
+    {
+      "row": 6,
+      "col": 12,
+      "towerId": 7,
+      "damage": 0.0,
+      "hits": 0,
+      "airHits": 0,
+      "slowApplications": 265,
+      "repeatAttackEnemies": 17,
+      "coveragePasses": 2
+    },
+    {
+      "row": 1,
+      "col": 6,
+      "towerId": 4,
+      "damage": 19574.878410301564,
+      "hits": 1418,
+      "airHits": 0,
+      "slowApplications": 0,
+      "repeatAttackEnemies": 142,
+      "coveragePasses": 2
+    },
+    {
+      "row": 4,
+      "col": 14,
+      "towerId": 1,
+      "damage": 67.37273244536482,
+      "hits": 14,
+      "airHits": 0,
+      "slowApplications": 0,
+      "repeatAttackEnemies": 0,
+      "coveragePasses": 1
+    },
+    {
+      "row": 3,
+      "col": 2,
+      "towerId": 1,
+      "damage": 9438.503856203948,
+      "hits": 1688,
+      "airHits": 627,
+      "slowApplications": 0,
+      "repeatAttackEnemies": 0,
+      "coveragePasses": 2
+    },
+    {
+      "row": 1,
+      "col": 4,
+      "towerId": 4,
+      "damage": 27548.919493780377,
+      "hits": 1945,
+      "airHits": 0,
+      "slowApplications": 0,
+      "repeatAttackEnemies": 16,
+      "coveragePasses": 1
+    },
+    {
+      "row": 1,
+      "col": 2,
+      "towerId": 1,
+      "damage": 9018.085261459475,
+      "hits": 1600,
+      "airHits": 602,
+      "slowApplications": 0,
+      "repeatAttackEnemies": 0,
+      "coveragePasses": 1
+    },
+    {
+      "row": 4,
+      "col": 6,
+      "towerId": 7,
+      "damage": 0.0,
+      "hits": 0,
+      "airHits": 0,
+      "slowApplications": 14886,
+      "repeatAttackEnemies": 452,
+      "coveragePasses": 2
+    },
+    {
+      "row": 3,
+      "col": 12,
+      "towerId": 1,
+      "damage": 11.386673906798194,
+      "hits": 2,
+      "airHits": 2,
+      "slowApplications": 0,
+      "repeatAttackEnemies": 0,
+      "coveragePasses": 0
+    },
+    {
+      "row": 1,
+      "col": 8,
+      "towerId": 4,
+      "damage": 4616.19493513606,
+      "hits": 341,
+      "airHits": 0,
+      "slowApplications": 0,
+      "repeatAttackEnemies": 1,
+      "coveragePasses": 1
+    },
+    {
+      "row": 6,
+      "col": 14,
+      "towerId": 1,
+      "damage": 194.98908884706165,
+      "hits": 40,
+      "airHits": 0,
+      "slowApplications": 0,
+      "repeatAttackEnemies": 0,
+      "coveragePasses": 1
+    },
+    {
+      "row": 5,
+      "col": 8,
+      "towerId": 7,
+      "damage": 0.0,
+      "hits": 0,
+      "airHits": 0,
+      "slowApplications": 6233,
+      "repeatAttackEnemies": 64,
+      "coveragePasses": 2
+    },
+    {
+      "row": 7,
+      "col": 12,
+      "towerId": 4,
+      "damage": 426.06908884706235,
+      "hits": 33,
+      "airHits": 0,
+      "slowApplications": 0,
+      "repeatAttackEnemies": 0,
+      "coveragePasses": 1
+    },
+    {
+      "row": 2,
+      "col": 10,
+      "towerId": 1,
+      "damage": 879.028958592717,
+      "hits": 169,
+      "airHits": 19,
+      "slowApplications": 0,
+      "repeatAttackEnemies": 0,
+      "coveragePasses": 1
+    },
+    {
+      "row": 4,
+      "col": 4,
+      "towerId": 1,
+      "damage": 7634.068347331683,
+      "hits": 1399,
+      "airHits": 268,
+      "slowApplications": 0,
+      "repeatAttackEnemies": 33,
+      "coveragePasses": 2
+    },
+    {
+      "row": 6,
+      "col": 10,
+      "towerId": 4,
+      "damage": 1045.7983456798065,
+      "hits": 78,
+      "airHits": 0,
+      "slowApplications": 0,
+      "repeatAttackEnemies": 1,
+      "coveragePasses": 2
+    },
+    {
+      "row": 4,
+      "col": 2,
+      "towerId": 1,
+      "damage": 8381.987420173366,
+      "hits": 1492,
+      "airHits": 458,
+      "slowApplications": 0,
+      "repeatAttackEnemies": 22,
+      "coveragePasses": 3
+    },
+    {
+      "row": 5,
+      "col": 6,
+      "towerId": 7,
+      "damage": 0.0,
+      "hits": 0,
+      "airHits": 0,
+      "slowApplications": 14636,
+      "repeatAttackEnemies": 423,
+      "coveragePasses": 2
+    },
+    {
+      "row": 3,
+      "col": 14,
+      "towerId": 1,
+      "damage": 0.0,
+      "hits": 0,
+      "airHits": 0,
+      "slowApplications": 0,
+      "repeatAttackEnemies": 0,
+      "coveragePasses": 0
+    },
+    {
+      "row": 0,
+      "col": 6,
+      "towerId": 4,
+      "damage": 20566.240710598995,
+      "hits": 1451,
+      "airHits": 0,
+      "slowApplications": 0,
+      "repeatAttackEnemies": 134,
+      "coveragePasses": 2
+    },
+    {
+      "row": 0,
+      "col": 2,
+      "towerId": 1,
+      "damage": 4374.292060870398,
+      "hits": 778,
+      "airHits": 0,
+      "slowApplications": 0,
+      "repeatAttackEnemies": 0,
+      "coveragePasses": 1
+    },
+    {
+      "row": 6,
+      "col": 8,
+      "towerId": 7,
+      "damage": 0.0,
+      "hits": 0,
+      "airHits": 0,
+      "slowApplications": 6427,
+      "repeatAttackEnemies": 51,
+      "coveragePasses": 2
+    },
+    {
+      "row": 7,
+      "col": 8,
+      "towerId": 4,
+      "damage": 11142.871915720894,
+      "hits": 806,
+      "airHits": 0,
+      "slowApplications": 0,
+      "repeatAttackEnemies": 31,
+      "coveragePasses": 2
+    },
+    {
+      "row": 8,
+      "col": 8,
+      "towerId": 1,
+      "damage": 2363.5369143109415,
+      "hits": 432,
+      "airHits": 0,
+      "slowApplications": 0,
+      "repeatAttackEnemies": 16,
+      "coveragePasses": 2
+    },
+    {
+      "row": 2,
+      "col": 4,
+      "towerId": 1,
+      "damage": 6902.984092863925,
+      "hits": 1276,
+      "airHits": 348,
+      "slowApplications": 0,
+      "repeatAttackEnemies": 12,
+      "coveragePasses": 3
+    },
+    {
+      "row": 0,
+      "col": 10,
+      "towerId": 4,
+      "damage": 2809.4361870825715,
+      "hits": 206,
+      "airHits": 0,
+      "slowApplications": 0,
+      "repeatAttackEnemies": 0,
+      "coveragePasses": 1
+    },
+    {
+      "row": 1,
+      "col": 10,
+      "towerId": 1,
+      "damage": 899.9392718941981,
+      "hits": 171,
+      "airHits": 0,
+      "slowApplications": 0,
+      "repeatAttackEnemies": 0,
+      "coveragePasses": 1
+    },
+    {
+      "row": 3,
+      "col": 8,
+      "towerId": 7,
+      "damage": 0.0,
+      "hits": 0,
+      "airHits": 0,
+      "slowApplications": 5468,
+      "repeatAttackEnemies": 107,
+      "coveragePasses": 2
+    },
+    {
+      "row": 2,
+      "col": 6,
+      "towerId": 1,
+      "damage": 4635.70172749145,
+      "hits": 868,
+      "airHits": 105,
+      "slowApplications": 0,
+      "repeatAttackEnemies": 41,
+      "coveragePasses": 2
+    },
+    {
+      "row": 5,
+      "col": 2,
+      "towerId": 4,
+      "damage": 42551.190820493495,
+      "hits": 2865,
+      "airHits": 0,
+      "slowApplications": 0,
+      "repeatAttackEnemies": 185,
+      "coveragePasses": 2
+    },
+    {
+      "row": 6,
+      "col": 6,
+      "towerId": 1,
+      "damage": 3186.385399596159,
+      "hits": 594,
+      "airHits": 0,
+      "slowApplications": 0,
+      "repeatAttackEnemies": 12,
+      "coveragePasses": 3
+    },
+    {
+      "row": 4,
+      "col": 10,
+      "towerId": 7,
+      "damage": 0.0,
+      "hits": 0,
+      "airHits": 0,
+      "slowApplications": 933,
+      "repeatAttackEnemies": 0,
+      "coveragePasses": 1
+    },
+    {
+      "row": 7,
+      "col": 6,
+      "towerId": 4,
+      "damage": 11004.117814138635,
+      "hits": 796,
+      "airHits": 0,
+      "slowApplications": 0,
+      "repeatAttackEnemies": 3,
+      "coveragePasses": 1
+    },
+    {
+      "row": 6,
+      "col": 4,
+      "towerId": 1,
+      "damage": 7161.420791206116,
+      "hits": 1294,
+      "airHits": 0,
+      "slowApplications": 0,
+      "repeatAttackEnemies": 91,
+      "coveragePasses": 2
+    },
+    {
+      "row": 7,
+      "col": 4,
+      "towerId": 1,
+      "damage": 7360.095160400342,
+      "hits": 1312,
+      "airHits": 0,
+      "slowApplications": 0,
+      "repeatAttackEnemies": 94,
+      "coveragePasses": 2
+    },
+    {
+      "row": 7,
+      "col": 10,
+      "towerId": 4,
+      "damage": 715.7599803580307,
+      "hits": 55,
+      "airHits": 0,
+      "slowApplications": 0,
+      "repeatAttackEnemies": 0,
+      "coveragePasses": 1
+    },
+    {
+      "row": 8,
+      "col": 4,
+      "towerId": 1,
+      "damage": 7214.407010133772,
+      "hits": 1289,
+      "airHits": 0,
+      "slowApplications": 0,
+      "repeatAttackEnemies": 100,
+      "coveragePasses": 2
+    },
+    {
+      "row": 5,
+      "col": 4,
+      "towerId": 7,
+      "damage": 0.0,
+      "hits": 0,
+      "airHits": 0,
+      "slowApplications": 28969,
+      "repeatAttackEnemies": 654,
+      "coveragePasses": 2
+    },
+    {
+      "row": 2,
+      "col": 2,
+      "towerId": 1,
+      "damage": 6869.927065074975,
+      "hits": 1207,
+      "airHits": 566,
+      "slowApplications": 0,
+      "repeatAttackEnemies": 0,
+      "coveragePasses": 2
+    },
+    {
+      "row": 7,
+      "col": 2,
+      "towerId": 4,
+      "damage": 42923.975789965894,
+      "hits": 2809,
+      "airHits": 0,
+      "slowApplications": 0,
+      "repeatAttackEnemies": 5,
+      "coveragePasses": 1
+    },
+    {
+      "row": 5,
+      "col": 12,
+      "towerId": 1,
+      "damage": 6.0,
+      "hits": 1,
+      "airHits": 1,
+      "slowApplications": 0,
+      "repeatAttackEnemies": 0,
+      "coveragePasses": 0
+    },
+    {
+      "row": 2,
+      "col": 12,
+      "towerId": 7,
+      "damage": 0.0,
+      "hits": 0,
+      "airHits": 0,
+      "slowApplications": 0,
+      "repeatAttackEnemies": 0,
+      "coveragePasses": 0
+    },
+    {
+      "row": 1,
+      "col": 12,
+      "towerId": 4,
+      "damage": 0.0,
+      "hits": 0,
+      "airHits": 0,
+      "slowApplications": 0,
+      "repeatAttackEnemies": 0,
+      "coveragePasses": 0
+    },
+    {
+      "row": 0,
+      "col": 14,
+      "towerId": 1,
+      "damage": 0.0,
+      "hits": 0,
+      "airHits": 0,
+      "slowApplications": 0,
+      "repeatAttackEnemies": 0,
+      "coveragePasses": 0
+    },
+    {
+      "row": 1,
+      "col": 14,
+      "towerId": 1,
+      "damage": 0.0,
+      "hits": 0,
+      "airHits": 0,
+      "slowApplications": 0,
+      "repeatAttackEnemies": 0,
+      "coveragePasses": 0
+    },
+    {
+      "row": 2,
+      "col": 14,
+      "towerId": 4,
+      "damage": 0.0,
+      "hits": 0,
+      "airHits": 0,
+      "slowApplications": 0,
+      "repeatAttackEnemies": 0,
+      "coveragePasses": 0
+    }
+  ]
+}

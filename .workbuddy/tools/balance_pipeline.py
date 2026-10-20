@@ -24,9 +24,9 @@ TABLE_FILES = {'tbenemydata':'EnemyData','tbenemylist':'EnemyList','tbrounddata'
  'tbsceneinfo':'SceneInfo','tbtowerinfo':'TowerInfo','tbglobal':'Global','tblevelmap':'LevelMap',
  'tbbulletdata':'BulletData','tblevelrating':'LevelRating'}
 OWNED_FIELDS={'tbsceneinfo':{'RoundList','initialGold','initialHp','difficulty','waveIntervalMs','desc'},
- 'tbtowerinfo':{'power','CD','radius','prices','effectValue','canAttackAir','searchIntervalMs','sellPrice','desc'},
+ 'tbtowerinfo':{'power','CD','radius','prices','effectValue','canAttackAir','searchIntervalMs','sellPrice','desc','bulletId'},
  'tbglobal':{'autoNextRoundDelayMs','autoStartRoundDelayMs','sellRefundRate','defaultSearchIntervalMs'},
- 'tblevelmap':{'cols','rows','cells','desc'},'tbbulletdata':{'aoeRadius'}}
+ 'tblevelmap':{'cols','rows','cells','desc'},'tbbulletdata':{'aoeRadius','name','resName','speed','hitRadius','lifeTimeMs','effectType','effectValue','scale','desc'}}
 ROLE_ORDER = ['normal','swarm','fast','air','medium','heavy','elite','boss']
 RATING_TYPES = {'id':'int','difficultyTier':'int','profileId':'string','profileRevision':'string',
  'expectedWaveCount':'int','expectedEnemyCount':'int','twoStarHpPermille':'int',
@@ -35,7 +35,7 @@ RATING_TYPES = {'id':'int','difficultyTier':'int','profileId':'string','profileR
  'criticalVariantIds':'(list#sep=,),int','balanceRevision':'string','ratingRevision':'string',
  'planHash':'string','calibrationStatus':'string','runtimeContentHash':'string'}
 FLOAT_FIELDS={'tbenemydata':{'speed','hp','armor','scale','bodyRadius'},
- 'tbtowerinfo':{'CD','rotateSpeed','effectValue'},
+ 'tbtowerinfo':{'CD','rotateSpeed','effectValue','radius'},
  'tbbulletdata':{'speed','hitRadius','aoeRadius','effectValue','scale'}}
 
 def read_json(p, default=None):
@@ -353,8 +353,9 @@ def generate(recipe,profile_id,manifest=None):
         for o in ov:
             if o['field'] in seen:raise ValueError('Overlapping tower overrides '+str(t['id']))
             seen.add(o['field']);override_value(t,o['field'],o)
-        for k in ['power','radius','prices','searchIntervalMs','canAttackAir']:
+        for k in ['power','prices','searchIntervalMs','canAttackAir']:
             if int(t[k])!=t[k]:raise ValueError(f'Tower {t["id"]} {k} does not accept fractional values')
+        if float(t['radius'])<=0:raise ValueError(f'Tower {t["id"]} radius must be positive')
         total=sum(x['prices'] for x in towers if x['type']==t['type'] and x['level']<=t['level'])
         t['sellPrice']=math.floor(total*.7);t['desc']=f'Incremental cost {t["prices"]}; cumulative {total}; '+('slow aura; DPS=0' if t['type']==3 else f'continuous theoretical DPS={t["power"]*1000/t["CD"]:.6g}')
     measurements=load_measurements()
@@ -413,9 +414,15 @@ def generate(recipe,profile_id,manifest=None):
                 legacy_id=100000+pidx*1000000+(L-1)*40000+(w-1)*2000+cid*8+ROLE_ORDER.index(role) if pidx<9 and L<=20 and w<=20 else None
                 vid=allocate(manifest,'variants',key,legacy_id)
                 if vid in proto:raise ValueError('Variant ID conflicts with existing original')
+                # Reward is denominated in *base* EHP (before profile.ehpMultiplier) so that
+                # easier profiles keep their gold multiplier instead of inheriting the HP cut.
+                base_hp=float(budgets[L,w])*roles[role]['weight']/q*(1-roles[role]['armor'])
+                gpe=float(f.get('goldPerEhp',0) or 0)
+                reward_value=(max(1,round_up(base_hp*gpe*profile['goldMultiplier'])) if gpe>0
+                    else max(1,round_up(roles[role]['reward']*profile['goldMultiplier'])))
                 r=roles[role];e=copy.deepcopy(proto[cid]);e.update(id=vid,hp=v['targetEhp']*r['weight']/q*(1-r['armor']),
                     speed=r['speed']*(1+f['speedLevelGrowth']*(L-1)+f['speedWaveGrowth']*x)*v['speedMultiplier'],
-                    armor=r['armor'],reward=max(1,round_up(r['reward']*profile['goldMultiplier'])),damageToPlayer=r['damage'],type=r['type'],isFlying=int(role=='air'),
+                    armor=r['armor'],reward=reward_value,damageToPlayer=r['damage'],type=r['type'],isFlying=int(role=='air'),
                     scale=.5,bodyRadius=.4,desc=f'Balance variant; canonical={cid}; role={role}; profile={profile_id}; level={L}; wave={w}')
                 if role=='air' and not proto[cid].get('isFlying'):raise ValueError(f'{cid} has no validated flight identity')
                 if role=='boss':
@@ -481,8 +488,16 @@ def generate(recipe,profile_id,manifest=None):
           'planHash':rating['planHash'],'calibrationStatus':rating['calibrationStatus'],'overrideSources':level_sources})
     glob=copy.deepcopy(baseline['tbglobal']);glob[0].update(autoNextRoundDelayMs=f['autoNextRoundDelayMs'],autoStartRoundDelayMs=f['autoStartRoundDelayMs'],sellRefundRate=1,defaultSearchIntervalMs=100)
     bullets=copy.deepcopy(baseline['tbbulletdata'])
-    for bullet in bullets:
-        bullet.update(next((value for value in recipe.get('bulletValues',[]) if value['id']==bullet['id']),{}))
+    by_bullet={b['id']:b for b in bullets}
+    for value in recipe.get('bulletValues',[]):
+        if value['id'] in by_bullet:
+            by_bullet[value['id']].update(value)
+        else:
+            # New rows (e.g. per-level AOE projectiles) are cloned from the base shell
+            # so every Luban column stays populated; only declared fields differ.
+            shell=copy.deepcopy(next(b for b in bullets if b['id']==2))
+            shell.update(id=value['id']);shell.update(value)
+            bullets.append(shell);by_bullet[value['id']]=shell
     tables={'tbenemydata':copy.deepcopy(baseline['tbenemydata'])+variants,'tbenemylist':lists,'tbrounddata':rounds,
       'tbsceneinfo':levels,'tbtowerinfo':towers,'tbglobal':glob,'tblevelmap':maps,
       'tbbulletdata':bullets,'tblevelrating':ratings}
@@ -559,6 +574,16 @@ def validate(plan,export_dir=None):
         check(t['sellPrice']==math.floor(cumulative*.7),f'Tower {t["id"]} sell price')
         check(t['upgradeTo']==(0 if t['level']==3 else t['id']+1),f'Tower {t["id"]} upgrade chain')
         check(t['prices']>0 and t['CD']>0 and t['radius']>0 and t['power']>=0 and 0<=t['effectValue']<1,f'Tower {t["id"]} positive values')
+        if t['type']==2:
+            bullet=next((b for b in tables['tbbulletdata'] if b['id']==t['bulletId']),None)
+            check(bool(bullet) and bullet['aoeRadius']>0,f'Tower {t["id"]} AOE bullet {t["bulletId"]} missing or zero radius')
+    if export_dir:
+        planned={t['id']:t for t in plan['tables']['tbtowerinfo']}
+        for t in tables['tbtowerinfo']:
+            p=planned.get(t['id'])
+            if not p:continue
+            for field in ('radius','bulletId','power','CD','prices','effectValue','canAttackAir','sellPrice'):
+                check(t.get(field)==p.get(field),f'Tower {t["id"]} exported {field} differs from resolved plan')
     if export_dir:
         actual_hash=runtime_content_hash(plan,export_dir)
         expected_status={r['id']:r['calibrationStatus'] for r in plan['tables']['tblevelrating']}
@@ -951,9 +976,51 @@ def write_candidate(plan,out):
     write_json(out/'resolved-plan.json',plan)
     return data
 
+def require_openpyxl():
+    import importlib.util
+    if importlib.util.find_spec('openpyxl') is None:
+        raise RuntimeError('openpyxl is required for excel write/read. Run this command with '
+                           'C:/Users/78296/.workbuddy/binaries/python/envs/default/Scripts/python.exe')
+
+
+def assert_tower_radius_type():
+    """The shipped TowerInfo sheet must declare radius as float, otherwise 2.15/2.3 truncate."""
+    import openpyxl
+    path=DATA/'TowerInfo.xlsx'
+    wb=openpyxl.load_workbook(path,read_only=True);ws=wb[wb.sheetnames[0]]
+    header=[c.value for c in next(ws.iter_rows(min_row=1,max_row=1))]
+    types=[c.value for c in next(ws.iter_rows(min_row=2,max_row=2))]
+    try:
+        col=header.index('radius')
+    except ValueError:
+        raise RuntimeError('TowerInfo.xlsx has no radius column')
+    declared=str(types[col]).strip()
+    if declared!='float':
+        raise RuntimeError(f'TowerInfo.xlsx radius type must be float, found {declared!r}')
+
+
+def stage_export(plan,out):
+    """Full export dry run: mirrors apply_plan's two-pass Luban export without touching the project."""
+    require_openpyxl();assert_tower_radius_type()
+    jobdir=pathlib.Path(out);jobdir.mkdir(parents=True,exist_ok=True)
+    datas=jobdir/'Datas';code=jobdir/'Gen';data=jobdir/'ConfigJson'
+    progress('stage_excel',jobId=jobdir.name)
+    excel_write(datas,plan)
+    progress('stage_luban')
+    luban_export(datas,code,data,jobdir/'luban.cache.meta')
+    content_hash=runtime_content_hash(plan,data)
+    for row in plan['tables']['tblevelrating']:row['runtimeContentHash']=content_hash
+    write_rating_excel(datas/'LevelRating.xlsx',plan['tables']['tblevelrating'])
+    luban_export(datas,code,data,jobdir/'luban.cache.meta')
+    result=validate(plan,str(data));write_json(jobdir/'validation.json',result)
+    write_json(jobdir/'resolved-plan.json',plan)
+    progress('stage_complete',passed=result['passed'],out=str(jobdir),contentHash=content_hash)
+    return result
+
+
 def main(argv=None):
     parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('command',choices=['inspect','generate','preview','validate','apply','rollback','simulate','all-profiles','init'])
+    parser.add_argument('command',choices=['inspect','generate','preview','validate','apply','stage','rollback','simulate','all-profiles','init'])
     parser.add_argument('--profile',default=None);parser.add_argument('--recipe',default=str(DEFAULT_RECIPE));parser.add_argument('--out',default=None)
     parser.add_argument('--plan');parser.add_argument('--dry-run',action='store_true');parser.add_argument('--transaction')
     parser.add_argument('--level-min',type=int,default=1);parser.add_argument('--level-max',type=int,default=None)
@@ -1025,7 +1092,11 @@ def main(argv=None):
     write_json(out/'resolved-plan.json',plan);write_json(out/'preview.json',result);export_reports(plan,out)
     # Scope filters affect views only; the full 20-level resolved plan remains consistency-checked.
     write_json(out/'selection.json',[z for z in plan['waves'] if args.level_min<=z['levelId']<=args.level_max and args.wave_min<=z['waveOrdinal']<=args.wave_max])
-    if args.command=='apply' and not args.dry_run:apply_plan(plan,out)
+    if args.command=='stage':
+        result=stage_export(plan,out)
+        raise SystemExit(0 if result['passed'] else 2)
+    if args.command=='apply' and not args.dry_run:
+        require_openpyxl();assert_tower_radius_type();apply_plan(plan,out)
     else:progress('complete',passed=result['validation']['passed'],dryRun=True,out=str(out),elapsedSec=time.perf_counter()-start)
 
 def run_cli():
