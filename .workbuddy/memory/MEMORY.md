@@ -15,6 +15,7 @@
 | `VOL_05_玩法存档音频与地图.md` | 关卡生命周期、存档、音频/倍速、塔型与攻击表现、建造交互、地图链路、新增关卡 |
 | `VOL_06_敌人四方向.md` | AdvancedHen / Monkey 两套架构、构建器与校验坑、AI 分件美术 |
 | `VOL_07_工具与UnityMCP.md` | Unity MCP 两版端口、Python/脚本兜底、怪物素材、待办与环境事实 |
+| `VOL_08_数值管线与平衡.md` | balance_pipeline 命令链与公式、单调性硬校验与前向修复、v6 第一关重平衡决策与 K=1.61 由来、仿真代理局限、apply→菜单3→编译→PlayMode 回放链路 |
 
 ## 开工必读铁律
 - 双版本：[家用D] `D:\FreedomTower_1`｜[公司E] `E:\MyTowerGame`。记录必须标版本，严禁跨版套结论；同步走 GitHub `Eagle-Lai/MyTowerGame`(main)。
