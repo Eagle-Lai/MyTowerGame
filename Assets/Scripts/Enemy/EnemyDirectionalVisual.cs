@@ -124,8 +124,9 @@ namespace FTProject
             LegL.sprite = LegR.sprite = parts.Leg;
             WingL.flipX = false;
             WingR.flipX = true;
-            // Back view: the tail/torso occludes the legs and lower neck.
-            Head.sortingOrder = Facing == EnemyFacing.Up ? 12 : 25;
+            // Head stays in front of the torso in both vertical views: behind it, the torso's top
+            // edge cuts the back of the head into a flat line (the artwork has no neck to hide).
+            Head.sortingOrder = 25;
             WingL.sortingOrder = WingR.sortingOrder = 20;
         }
     }

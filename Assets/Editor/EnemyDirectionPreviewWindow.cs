@@ -1,4 +1,4 @@
-using FTProject;
+﻿using FTProject;
 using UnityEditor;
 using UnityEngine;
 
@@ -14,7 +14,6 @@ namespace FTProject.EditorTools
     {
         private EnemyDirectionSpec _spec;
         private GameObject _instance;
-        private BaseEnemy _enemy;
         private EnemyDirectionalVisual _visual;
         private Animator _animator;
         private bool _playing = true;
@@ -129,7 +128,6 @@ namespace FTProject.EditorTools
             }
             _instance = (GameObject)PrefabUtility.InstantiatePrefab(prefab);
             _instance.name = "[" + _spec.Name + "DirectionPreview]";
-            _enemy = _instance.GetComponent<BaseEnemy>();
             _visual = _instance.GetComponent<EnemyDirectionalVisual>();
             _animator = _instance.GetComponent<Animator>();
             Selection.activeGameObject = _instance;
@@ -140,16 +138,22 @@ namespace FTProject.EditorTools
         {
             if (_instance != null) DestroyImmediate(_instance);
             _instance = null;
-            _enemy = null;
             _visual = null;
             _animator = null;
         }
 
         private void SetState(EnemyAnimState state)
         {
-            if (_enemy == null) return;
-            _enemy.SetAnimState(state);
+            // 预览实例没走对象池 Init，BaseEnemy.SetAnimState 因 _anim 未缓存会静默返回，
+            // 这里直接写与它完全相同的参数（State 整数 + Action 布尔）。
+            if (_animator == null) return;
+            _animator.SetBool(ActionHash, false);
+            _animator.SetInteger(StateHash, (int)state);
+            _animator.Update(0f);
         }
+
+        private static readonly int StateHash = Animator.StringToHash("State");
+        private static readonly int ActionHash = Animator.StringToHash("Action");
 
         private void Face(Vector2 dir)
         {
