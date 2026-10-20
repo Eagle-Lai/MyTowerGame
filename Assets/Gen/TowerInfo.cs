@@ -40,7 +40,7 @@ public sealed partial class TowerInfo :  Bright.Config.BeanBase
         PostInit();
     }
 
-    public TowerInfo(int id, int type, string name, string resName, int level, int radius, int power, float CD, int prices, int bulletId, int targetMode, int searchIntervalMs, float rotateSpeed, int upgradeTo, int sellPrice, int effectType, float effectValue, string desc, int canAttackAir )
+    public TowerInfo(int id, int type, string name, string resName, int level, float radius, int power, float CD, int prices, int bulletId, int targetMode, int searchIntervalMs, float rotateSpeed, int upgradeTo, int sellPrice, int effectType, float effectValue, string desc, int canAttackAir )
     {
         this.Id = id;
         this.Type = type;
@@ -89,7 +89,7 @@ public sealed partial class TowerInfo :  Bright.Config.BeanBase
     /// <summary>
     /// 攻击半径
     /// </summary>
-    public int Radius { get; private set; }
+    public float Radius { get; private set; }
     /// <summary>
     /// 攻击力（减速塔=光环，本列不参与运行）
     /// </summary>
