@@ -12,18 +12,18 @@ using SimpleJSON;
 
 
 namespace cfg
-{
+{ 
 
 public sealed partial class TBTowerInfo
 {
     private readonly Dictionary<int, TowerInfo> _dataMap;
     private readonly List<TowerInfo> _dataList;
-
+    
     public TBTowerInfo(JSONNode _json)
     {
         _dataMap = new Dictionary<int, TowerInfo>();
         _dataList = new List<TowerInfo>();
-
+        
         foreach(JSONNode _row in _json.Children)
         {
             var _v = TowerInfo.DeserializeTowerInfo(_row);
@@ -56,8 +56,8 @@ public sealed partial class TBTowerInfo
             v.TranslateText(translator);
         }
     }
-
-
+    
+    
     partial void PostInit();
     partial void PostResolve();
 }

@@ -12,18 +12,18 @@ using SimpleJSON;
 
 
 namespace cfg
-{
+{ 
 
 public sealed partial class TBLocalization
 {
     private readonly Dictionary<string, Localization> _dataMap;
     private readonly List<Localization> _dataList;
-
+    
     public TBLocalization(JSONNode _json)
     {
         _dataMap = new Dictionary<string, Localization>();
         _dataList = new List<Localization>();
-
+        
         foreach(JSONNode _row in _json.Children)
         {
             var _v = Localization.DeserializeLocalization(_row);
@@ -56,8 +56,8 @@ public sealed partial class TBLocalization
             v.TranslateText(translator);
         }
     }
-
-
+    
+    
     partial void PostInit();
     partial void PostResolve();
 }

@@ -12,11 +12,11 @@ using SimpleJSON;
 
 
 namespace cfg
-{
+{ 
 
-public sealed partial class Localization :  Bright.Config.BeanBase
+public sealed partial class Localization :  Bright.Config.BeanBase 
 {
-    public Localization(JSONNode _json)
+    public Localization(JSONNode _json) 
     {
         { if(!_json["id"].IsString) { throw new SerializationException(); }  Id = _json["id"]; }
         { if(!_json["en"].IsString) { throw new SerializationException(); }  En = _json["en"]; }
@@ -26,7 +26,7 @@ public sealed partial class Localization :  Bright.Config.BeanBase
         PostInit();
     }
 
-    public Localization(string id, string en, string zhHans, string zhHant, string comment )
+    public Localization(string id, string en, string zhHans, string zhHant, string comment ) 
     {
         this.Id = id;
         this.En = en;
@@ -84,7 +84,7 @@ public sealed partial class Localization :  Bright.Config.BeanBase
         + "Comment:" + Comment + ","
         + "}";
     }
-
+    
     partial void PostInit();
     partial void PostResolve();
 }

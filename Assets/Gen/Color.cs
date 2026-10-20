@@ -8,7 +8,7 @@
 
 
 namespace cfg
-{
+{ 
     [System.Flags]
     public enum Color
     {
@@ -30,4 +30,4 @@ namespace cfg
         yellow = 4,
     }
 
-}
+} 

@@ -12,11 +12,11 @@ using SimpleJSON;
 
 
 namespace cfg
-{
+{ 
 
-public sealed partial class EnemyData :  Bright.Config.BeanBase
+public sealed partial class EnemyData :  Bright.Config.BeanBase 
 {
-    public EnemyData(JSONNode _json)
+    public EnemyData(JSONNode _json) 
     {
         { if(!_json["id"].IsNumber) { throw new SerializationException(); }  Id = _json["id"]; }
         { if(!_json["speed"].IsNumber) { throw new SerializationException(); }  Speed = _json["speed"]; }
@@ -36,7 +36,7 @@ public sealed partial class EnemyData :  Bright.Config.BeanBase
         PostInit();
     }
 
-    public EnemyData(int id, float speed, float hp, string name, int type, int interval, string resName, float armor, int reward, int damageToPlayer, float scale, float bodyRadius, int isFlying, string animController, string desc )
+    public EnemyData(int id, float speed, float hp, string name, int type, int interval, string resName, float armor, int reward, int damageToPlayer, float scale, float bodyRadius, int isFlying, string animController, string desc ) 
     {
         this.Id = id;
         this.Speed = speed;
@@ -151,7 +151,7 @@ public sealed partial class EnemyData :  Bright.Config.BeanBase
         + "Desc:" + Desc + ","
         + "}";
     }
-
+    
     partial void PostInit();
     partial void PostResolve();
 }

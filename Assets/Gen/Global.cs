@@ -12,11 +12,11 @@ using SimpleJSON;
 
 
 namespace cfg
-{
+{ 
 
-public sealed partial class Global :  Bright.Config.BeanBase
+public sealed partial class Global :  Bright.Config.BeanBase 
 {
-    public Global(JSONNode _json)
+    public Global(JSONNode _json) 
     {
         { if(!_json["id"].IsNumber) { throw new SerializationException(); }  Id = _json["id"]; }
         { if(!_json["cellSize"].IsNumber) { throw new SerializationException(); }  CellSize = _json["cellSize"]; }
@@ -43,7 +43,7 @@ public sealed partial class Global :  Bright.Config.BeanBase
         PostInit();
     }
 
-    public Global(int id, float cellSize, float boardOriginPadding, int enemyPoolSize, int bulletPoolSize, int maxEnemyAlive, int defaultReward, int defaultDamageToPlayer, float defaultBodyRadius, int defaultSearchIntervalMs, int targetFrameRate, int deathRecycleDelayMs, int checkOfflinePerFrame, int showDebugLog, int autoNextRoundDelayMs, int autoStartRoundDelayMs, float sellRefundRate, int artFaceLeft, int showDamageText, int damageTextThrottleMs, float shakeAmplitude, int shakeDurationMs )
+    public Global(int id, float cellSize, float boardOriginPadding, int enemyPoolSize, int bulletPoolSize, int maxEnemyAlive, int defaultReward, int defaultDamageToPlayer, float defaultBodyRadius, int defaultSearchIntervalMs, int targetFrameRate, int deathRecycleDelayMs, int checkOfflinePerFrame, int showDebugLog, int autoNextRoundDelayMs, int autoStartRoundDelayMs, float sellRefundRate, int artFaceLeft, int showDamageText, int damageTextThrottleMs, float shakeAmplitude, int shakeDurationMs ) 
     {
         this.Id = id;
         this.CellSize = cellSize;
@@ -137,7 +137,7 @@ public sealed partial class Global :  Bright.Config.BeanBase
         + "ShakeDurationMs:" + ShakeDurationMs + ","
         + "}";
     }
-
+    
     partial void PostInit();
     partial void PostResolve();
 }
