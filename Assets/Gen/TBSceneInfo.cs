@@ -12,18 +12,18 @@ using SimpleJSON;
 
 
 namespace cfg
-{
+{ 
 
 public sealed partial class TBSceneInfo
 {
     private readonly Dictionary<int, SceneInfo> _dataMap;
     private readonly List<SceneInfo> _dataList;
-
+    
     public TBSceneInfo(JSONNode _json)
     {
         _dataMap = new Dictionary<int, SceneInfo>();
         _dataList = new List<SceneInfo>();
-
+        
         foreach(JSONNode _row in _json.Children)
         {
             var _v = SceneInfo.DeserializeSceneInfo(_row);
@@ -56,8 +56,8 @@ public sealed partial class TBSceneInfo
             v.TranslateText(translator);
         }
     }
-
-
+    
+    
     partial void PostInit();
     partial void PostResolve();
 }

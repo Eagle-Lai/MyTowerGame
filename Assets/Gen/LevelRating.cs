@@ -12,11 +12,11 @@ using SimpleJSON;
 
 
 namespace cfg
-{
+{ 
 
-public sealed partial class LevelRating :  Bright.Config.BeanBase
+public sealed partial class LevelRating :  Bright.Config.BeanBase 
 {
-    public LevelRating(JSONNode _json)
+    public LevelRating(JSONNode _json) 
     {
         { if(!_json["id"].IsNumber) { throw new SerializationException(); }  Id = _json["id"]; }
         { if(!_json["difficultyTier"].IsNumber) { throw new SerializationException(); }  DifficultyTier = _json["difficultyTier"]; }
@@ -40,7 +40,7 @@ public sealed partial class LevelRating :  Bright.Config.BeanBase
         PostInit();
     }
 
-    public LevelRating(int id, int difficultyTier, string profileId, string profileRevision, int expectedWaveCount, int expectedEnemyCount, int twoStarHpPermille, int threeStarHpPermille, int fourStarHpPermille, int maxFourStarLeaks, int fourStarTimePermille, int parCombatTimeMs, System.Collections.Generic.List<int> bossVariantIds, System.Collections.Generic.List<int> criticalVariantIds, string balanceRevision, string ratingRevision, string planHash, string calibrationStatus, string runtimeContentHash )
+    public LevelRating(int id, int difficultyTier, string profileId, string profileRevision, int expectedWaveCount, int expectedEnemyCount, int twoStarHpPermille, int threeStarHpPermille, int fourStarHpPermille, int maxFourStarLeaks, int fourStarTimePermille, int parCombatTimeMs, System.Collections.Generic.List<int> bossVariantIds, System.Collections.Generic.List<int> criticalVariantIds, string balanceRevision, string ratingRevision, string planHash, string calibrationStatus, string runtimeContentHash ) 
     {
         this.Id = id;
         this.DifficultyTier = difficultyTier;
@@ -182,7 +182,7 @@ public sealed partial class LevelRating :  Bright.Config.BeanBase
         + "RuntimeContentHash:" + RuntimeContentHash + ","
         + "}";
     }
-
+    
     partial void PostInit();
     partial void PostResolve();
 }

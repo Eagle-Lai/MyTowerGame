@@ -12,11 +12,11 @@ using SimpleJSON;
 
 
 namespace cfg
-{
+{ 
 
-public sealed partial class BulletData :  Bright.Config.BeanBase
+public sealed partial class BulletData :  Bright.Config.BeanBase 
 {
-    public BulletData(JSONNode _json)
+    public BulletData(JSONNode _json) 
     {
         { if(!_json["id"].IsNumber) { throw new SerializationException(); }  Id = _json["id"]; }
         { if(!_json["name"].IsString) { throw new SerializationException(); }  Name = _json["name"]; }
@@ -32,7 +32,7 @@ public sealed partial class BulletData :  Bright.Config.BeanBase
         PostInit();
     }
 
-    public BulletData(int id, string name, string resName, float speed, float hitRadius, int lifeTimeMs, float aoeRadius, int effectType, float effectValue, float scale, string desc )
+    public BulletData(int id, string name, string resName, float speed, float hitRadius, int lifeTimeMs, float aoeRadius, int effectType, float effectValue, float scale, string desc ) 
     {
         this.Id = id;
         this.Name = name;
@@ -126,7 +126,7 @@ public sealed partial class BulletData :  Bright.Config.BeanBase
         + "Desc:" + Desc + ","
         + "}";
     }
-
+    
     partial void PostInit();
     partial void PostResolve();
 }
