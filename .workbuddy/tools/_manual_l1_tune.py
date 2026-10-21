@@ -13,7 +13,9 @@ import openpyxl
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 L01 = ROOT / 'Luban/Config/Datas/Levels/L01'
-HP_FACTOR = 2
+# 2026-10-21 第二次调：地面 ×1.5、空军 ×2（空军在 1.5 的基础上再翻倍）
+HP_FACTOR = 1.5
+AIR_HP_FACTOR = 2.0
 AIR_FIRST_WAVE = 5
 AIR_FACTOR = 2
 
@@ -35,13 +37,15 @@ def main():
         if eid is None:
             continue
         assert int(eid) >= 100000, f'L01 里出现原型行 {eid}，不该在这里'
-        hp = ws.cell(r, h['hp']).value
-        ws.cell(r, h['hp']).value = round(float(hp) * HP_FACTOR, 6)
-        rows[int(eid)] = {'hp': float(hp) * HP_FACTOR, 'armor': float(ws.cell(r, h['armor']).value or 0),
-                          'flying': int(ws.cell(r, h['isFlying']).value or 0)}
+        hp = float(ws.cell(r, h['hp']).value)
+        flying = int(ws.cell(r, h['isFlying']).value or 0)
+        factor = AIR_HP_FACTOR if flying else HP_FACTOR
+        ws.cell(r, h['hp']).value = round(hp * factor, 6)
+        rows[int(eid)] = {'hp': hp * factor, 'armor': float(ws.cell(r, h['armor']).value or 0),
+                          'flying': flying}
         changed += 1
     wb.save(L01 / 'EnemyData.xlsx')
-    print(f'EnemyData: {changed} 行 hp x{HP_FACTOR}')
+    print(f'EnemyData: {changed} 行 地面 hp x{HP_FACTOR} / 空军 hp x{AIR_HP_FACTOR}')
 
     # ---------- 2. EnemyList：空军 W5 起、数量 ×2（总数不变，用地面换） ----------
     wb, ws, h = load(L01 / 'EnemyList.xlsx')
@@ -91,7 +95,7 @@ def main():
         air_after = sum(1 for i in new_ids if rows[i]['flying'])
         desc = re.sub(r'EHP=[\d.]+', f'EHP={ehp:.6f}', desc)
         if 'manual:' not in desc:
-            desc = desc.rstrip() + ' | manual: hp x2, air x2 from W5'
+            desc = desc.rstrip() + f' | manual: hp x{HP_FACTOR} (air x{AIR_HP_FACTOR}), air x{AIR_FACTOR} from W{AIR_FIRST_WAVE}'
         ws.cell(r, h['desc']).value = desc
         stats.append((wave, len(ids), len(air_ids), air_after, ehp))
     wb.save(L01 / 'EnemyList.xlsx')
