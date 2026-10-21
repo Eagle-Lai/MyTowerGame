@@ -179,7 +179,7 @@ def main():
         raise SystemExit(
             "找不到该关的棋盘源表：%s\n"
             "拆表后每关一个文件（Levels/L%02d/LevelMap.xlsx）。若要新增关卡，"
-            "请先用 .workbuddy/tools/migrate_split_level_tables.py 或数值管线建好该关目录。"
+            "该关目录必须手工建好（Levels/Lxx 下 6 张表齐全），脚本不再自动生成关卡表。"
             % (xlsx_path, level_id))
 
     stamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")

@@ -698,7 +698,7 @@ def sync_tables_input(path):
     heads={c.value:c.column for c in ws[1] if c.value}
     known={('TB'+v):k for k,v in TABLE_FILES.items()}
     levels=sorted(int(p.name[1:]) for p in (DATA/'Levels').glob('L*') if p.is_dir() and p.name[1:].isdigit())
-    if not levels:raise RuntimeError('Datas/Levels/Lxx is empty; run .workbuddy/tools/migrate_split_level_tables.py first')
+    if not levels:raise RuntimeError('Datas/Levels/Lxx 为空：关卡表只能手工维护，先建好 Levels/Lxx 目录')
     for r in range(4,ws.max_row+1):
         key=known.get(ws.cell(r,heads['full_name']).value)
         if key not in LEVEL_TABLES:continue

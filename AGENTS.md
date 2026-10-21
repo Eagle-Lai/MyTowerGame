@@ -21,3 +21,13 @@
 4. 本次错误修复后重复验证。历史错误结合时间和现状说明，不擅自清空日志。MCP 断线先等约 5 秒重试，并重新选定实例和核对身份；未连上就明确报告未完成编辑器验证。
 
 运行时排查先读取本工程错误日志，再查看状态、复现和修改；不得使用 CatchFish_Android 的 `unity` 结果作为本工程验证。Unity 2020 的专用语言/API 限制不自动适用于本项目。进入/退出 Play Mode 和破坏性操作按用户当前授权处理。
+
+## 配置表只能手工维护（2026-10-21 用户定规，最高优先级）
+
+- **禁止任何脚本批量改写关卡配置表**：`Luban/Config/Datas/Levels/L01..L30/**`、`Luban/Config/Datas/EnemyData.xlsx`、`Luban/Config/Datas/__tables__.xlsx`。
+- `Assets/ConfigJson/**` 与 `Assets/Gen/**` 是 Luban 的**导出产物**，只由「改表 → 跑 Luban 导出」这条链产生，不允许第三方脚本直接写。
+- `.workbuddy/tools/balance_pipeline.py` 的 `apply` / `rollback` 及事务提交层**已整体移除**（`apply_plan` / `commit_files` / `job_lock` / `restore_transaction` / `check_managed_conflicts` / `assert_sources`）。不要为了"方便"把它们加回来；只允许用它的只读能力：`inspect` / `generate` / `preview` / `validate` / `simulate` / `verify-layout` / `stage`（`stage` 只写 `--out`，且禁止指向 `Luban/`、`Assets/`）。
+- 手工改表后的标准流程：改 `Levels/Lxx/*.xlsx` → 跑 Luban 导出到 `Assets/ConfigJson` → **重算并重封 `runtimeContentHash`**（每关 LevelRating 行）→ Unity 里确认日志 `[Rating] Runtime configuration SHA256 verified`。
+- 已被删除的写表脚本（需要时从 git 历史取）：`migrate_split_level_tables.py`、`migrate_config.py`、`gen_m3_levelmaps.py`、`gen_m3_waves_rounds.py`、`apply_m2_monsters.py`、`add_levels_9_15/16_20_*.py`。
+- 仍然保留的两个人工工具：`apply_levelmap_export.py`（地图编辑器「一键写入」只写当前关的 `LevelMap.xlsx`）、`_manual_l1_tune.py`（第一关数值手工调整，按倍率写入）。
+

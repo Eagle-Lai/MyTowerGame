@@ -87,3 +87,13 @@
 ### PlayMode 实测（v7 / D04 / mixed）
 L1 18/25 波、L10 19/25、L20 19/25、L30 19/25，全 `hp=0`（mixed 代理在 W18~19 崩）。**mixed 只作下界，不作判据**；但它"各关都到 18~19 波"说明关卡间难度体感被压平（与 G1~G3 不成立同源）。
 - 批量回放用法：写 `Library/BalanceWorkbench/play-request-batch.json`（runs 数组）→ `execute_code` 调 `FTProject.EditorTools.BalancePlayModeVerifier.StartBatch(path)`，4 关一次跑完只要 14s（40 步/帧 × 0.05s）。
+
+## 2026-10-21 用户定规：配置表只能手工改（apply 已删除）
+
+- `balance_pipeline.py` 删除：`apply_plan`、`commit_files`、`job_lock`、`restore_transaction`、`rollback`、`check_managed_conflicts`、`assert_sources`；CLI 去掉 `apply`/`rollback`，`main()` 前置拦截给中文错误。
+- 新增 `assert_safe_out()`：`stage` 的 `--out` 落到 `Luban/` 或 `Assets/` 直接拒绝。
+- `verify_layout` 放宽：手工改表产生的"孤儿行 / 未被引用的 enemyList"降级为 `notes`；"引用了不存在的变体"仍是 `problems`。
+- 删除 7 个会写关卡表的脚本（都在 git 历史里）：`migrate_split_level_tables.py`、`migrate_config.py`、`gen_m3_levelmaps.py`、`gen_m3_waves_rounds.py`、`apply_m2_monsters.py`、`add_levels_9_15_20261017.py`、`add_levels_16_20_20261017.py`；`test_balance_transactions.py` 一并删（测的是已移除的事务层）。
+- 保留：`apply_levelmap_export.py`（地图编辑器写单关 LevelMap）、`_manual_l1_tune.py`（按倍率改 L1 的人工工具）。
+- **手工改表标准流程**：改 `Levels/Lxx/*.xlsx` → `Luban.ClientServer.exe -j cfg -c <cache> -- -d Defines/__root__.xml --input_data_dir Luban/Config/Datas --output_code_dir <tmp>/Gen --output_data_dir Assets/ConfigJson ...`（或 Unity 菜单 3）→ 重算 `runtimeContentHash`（算法见 `Configs.CalculateRuntimeContentHash`，Python 复刻已验证能对上旧值）→ Unity 日志确认 `[Rating] Runtime configuration SHA256 verified`。
+- 回归：`test_balance_pipeline.py` 17 项全过；`verify-layout` 通过（L1 有 3 行孤儿变体，属手工换空军后的正常残留）。

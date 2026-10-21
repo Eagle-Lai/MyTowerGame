@@ -27,4 +27,5 @@
 - ★★出 APK 前核对 Build Settings：`Boot.unity` 启用 + `Main.unity` 禁用（main 只能从 AB 加载）。
 - ★★改热更码真机三件套：重编 dll → AB 有变化才重打（菜单 9 后立刻 deploy）→ 先跑 `启动热更服务器.bat`。
 - ★★v7 起配置表按关拆分：`Luban/Config/Datas/Levels/L01..L30/`（每关 6 个 xlsx），根目录只剩 `EnemyData.xlsx`（132 原型）+ 非关卡表；旧聚合 5 表已删。改数值只走 `balance_pipeline.py`，别去找 `Datas/RoundData.xlsx`。
+- ★★**配置表只能手工改**（2026-10-21 定规）：`balance_pipeline.py` 的 `apply`/`rollback` 与事务层已整体删除，7 个会写关卡表的旧脚本也已删；只读命令 `inspect/preview/validate/simulate/verify-layout/stage` 保留。改表流程＝改 xlsx → 跑 Luban → 重封 `runtimeContentHash`。详见 `AGENTS.md` 与 `VOL_08`。
 - 日档 `YYYY-MM-DD.md` 追加写，读最近的在最前。
