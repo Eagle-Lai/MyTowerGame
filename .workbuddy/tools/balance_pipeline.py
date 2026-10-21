@@ -117,8 +117,9 @@ def composition(recipe,L,w,n):
     slots=[]
     # First four waves always small ground, including later campaign levels.
     final_wave=dimensions(recipe)[1]
-    air1={7:1,8:1,9:2,10:2,11:0,12:1,13:2,14:2,15:2,16:0,17:2,18:3,19:3,20:3,21:2,22:3,23:4,24:4,25:5}
-    air=air1.get(w,0) if L==1 else (0 if w<=5 or w in (11,16) else max(1,math.floor(n*(.08 if w<=10 else .12))))
+    # L1 flying schedule (v6, user-authorized 2026-10-20): first flying at W3,
+    # ~13% of each wave (12-20% overall), rotated over the unlocked air pool.
+    air=(0 if w<3 else max(1,math.floor(n*.13))) if L==1 else (0 if w<=5 or w in (11,16) else max(1,math.floor(n*(.08 if w<=10 else .12))))
     if w==final_wave:air=min(air,math.floor(n*.2))
     pool=available(recipe,L,w,'air')
     for i in range(air): slots.append((pool[(w+i)%len(pool)],'air'))
@@ -409,7 +410,7 @@ def generate(recipe,profile_id,manifest=None):
                 if not unlocks or (L,w)<min((u['level'],u['wave']) for u in unlocks):
                     raise ValueError(f'Resource {cid} is not unlocked at L{L} W{w}')
                 if role=='boss' and (L<12 or w!=wave_count):raise ValueError('Bosses unlock only in final waves from level 12')
-                if L==1 and w<7 and role=='air':raise ValueError('First flying mechanic is L1 W7')
+                if L==1 and w<3 and role=='air':raise ValueError('First flying mechanic is L1 W3')
                 key=f'{profile_id}|{L}|{w}|{cid}|{role}'
                 legacy_id=100000+pidx*1000000+(L-1)*40000+(w-1)*2000+cid*8+ROLE_ORDER.index(role) if pidx<9 and L<=20 and w<=20 else None
                 vid=allocate(manifest,'variants',key,legacy_id)

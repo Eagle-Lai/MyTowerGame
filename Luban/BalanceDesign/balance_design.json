@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "balanceRevision": "balance-30x25-tight-v5",
+  "balanceRevision": "balance-30x25-tight-v6",
   "ratingRevision": "five-stars-v1",
   "selectedProfileId": "D04",
   "profiles": [
@@ -78,7 +78,7 @@
     }
   ],
   "formula": {
-    "countOffset": 6,
+    "countOffset": 10,
     "baseEhpPerUnit": 10,
     "levelEhpGrowth": 0.02,
     "waveLinear": 0.08,
@@ -89,21 +89,21 @@
     "spawnBaseMs": 450,
     "spawnWaveReductionMs": 10,
     "spawnLevelReductionMs": 2,
-    "minSpawnMs": 240,
+    "minSpawnMs": 200,
     "maxSpawnMs": 450,
     "speedLevelGrowth": 0.0015,
     "speedWaveGrowth": 0.0015,
     "initialGold": 620,
     "goldPerLevel": 4,
     "initialHp": 20,
-    "rewardBase": 22,
+    "rewardBase": 26,
     "rewardWaveBlock": 5,
     "autoNextRoundDelayMs": 5000,
     "autoStartRoundDelayMs": 0,
     "tailBaseMs": 11500,
     "tailTierGrowthMs": 1500,
     "countLevelCoefficient": 2,
-    "countWaveCoefficient": 3,
+    "countWaveCoefficient": 6,
     "rewardBlockIncrement": 2,
     "goldPerEhp": 0
   },
@@ -133,7 +133,7 @@
       "type": 2
     },
     "air": {
-      "weight": 0.3,
+      "weight": 1.0,
       "speed": 1.0,
       "armor": 0,
       "reward": 1,
@@ -201,19 +201,19 @@
     {
       "canonicalId": 13,
       "level": 1,
-      "wave": 7,
+      "wave": 3,
       "role": "air"
     },
     {
       "canonicalId": 11,
       "level": 1,
-      "wave": 8,
+      "wave": 4,
       "role": "air"
     },
     {
       "canonicalId": 14,
       "level": 1,
-      "wave": 10,
+      "wave": 5,
       "role": "air"
     },
     {
@@ -434,13 +434,22 @@
   },
   "overrides": [
     {
+      "id": "L1-gold-v6",
+      "target": "level",
+      "scope": "level",
+      "levelId": 1,
+      "field": "initialGold",
+      "mode": "replace",
+      "value": 230
+    },
+    {
       "id": "L1-tighten",
       "target": "wave",
       "scope": "level",
       "levelId": 1,
       "field": "targetEhp",
       "mode": "multiply",
-      "value": 1.191
+      "value": 1.9175
     },
     {
       "id": "L2-tighten",
@@ -467,7 +476,7 @@
       "levelId": 4,
       "field": "targetEhp",
       "mode": "multiply",
-      "value": 1.987
+      "value": 2.005
     },
     {
       "id": "L5-tighten",
@@ -476,7 +485,7 @@
       "levelId": 5,
       "field": "targetEhp",
       "mode": "multiply",
-      "value": 1.941
+      "value": 1.9506
     },
     {
       "id": "L6-tighten",
@@ -485,7 +494,7 @@
       "levelId": 6,
       "field": "targetEhp",
       "mode": "multiply",
-      "value": 1.8797
+      "value": 1.8985
     },
     {
       "id": "L7-tighten",
@@ -494,7 +503,7 @@
       "levelId": 7,
       "field": "targetEhp",
       "mode": "multiply",
-      "value": 1.8086
+      "value": 1.8487
     },
     {
       "id": "L8-tighten",
@@ -503,7 +512,7 @@
       "levelId": 8,
       "field": "targetEhp",
       "mode": "multiply",
-      "value": 1.7703
+      "value": 1.801
     },
     {
       "id": "L9-tighten",
@@ -512,7 +521,7 @@
       "levelId": 9,
       "field": "targetEhp",
       "mode": "multiply",
-      "value": 1.7307
+      "value": 1.7553
     },
     {
       "id": "L10-tighten",
@@ -521,7 +530,7 @@
       "levelId": 10,
       "field": "targetEhp",
       "mode": "multiply",
-      "value": 1.6967
+      "value": 1.7115
     },
     {
       "id": "L11-tighten",
@@ -530,7 +539,7 @@
       "levelId": 11,
       "field": "targetEhp",
       "mode": "multiply",
-      "value": 1.6473
+      "value": 1.6695
     },
     {
       "id": "L12-tighten",
@@ -539,7 +548,7 @@
       "levelId": 12,
       "field": "targetEhp",
       "mode": "multiply",
-      "value": 1.6011
+      "value": 1.6291
     },
     {
       "id": "L13-tighten",
@@ -548,7 +557,7 @@
       "levelId": 13,
       "field": "targetEhp",
       "mode": "multiply",
-      "value": 1.5568
+      "value": 1.5904
     },
     {
       "id": "L14-tighten",
@@ -557,7 +566,7 @@
       "levelId": 14,
       "field": "targetEhp",
       "mode": "multiply",
-      "value": 1.5157
+      "value": 1.5531
     },
     {
       "id": "L15-tighten",
@@ -566,7 +575,7 @@
       "levelId": 15,
       "field": "targetEhp",
       "mode": "multiply",
-      "value": 1.494
+      "value": 1.5173
     },
     {
       "id": "L16-tighten",
@@ -575,7 +584,7 @@
       "levelId": 16,
       "field": "targetEhp",
       "mode": "multiply",
-      "value": 1.4548
+      "value": 1.4829
     },
     {
       "id": "L17-tighten",
@@ -584,7 +593,7 @@
       "levelId": 17,
       "field": "targetEhp",
       "mode": "multiply",
-      "value": 1.4238
+      "value": 1.4497
     },
     {
       "id": "L18-tighten",
@@ -593,7 +602,7 @@
       "levelId": 18,
       "field": "targetEhp",
       "mode": "multiply",
-      "value": 1.3877
+      "value": 1.4177
     },
     {
       "id": "L19-tighten",
@@ -602,7 +611,7 @@
       "levelId": 19,
       "field": "targetEhp",
       "mode": "multiply",
-      "value": 1.3643
+      "value": 1.3869
     },
     {
       "id": "L20-tighten",
@@ -611,7 +620,7 @@
       "levelId": 20,
       "field": "targetEhp",
       "mode": "multiply",
-      "value": 1.3277
+      "value": 1.3572
     },
     {
       "id": "L21-tighten",
@@ -620,7 +629,7 @@
       "levelId": 21,
       "field": "targetEhp",
       "mode": "multiply",
-      "value": 1.2928
+      "value": 1.3285
     },
     {
       "id": "L22-tighten",
@@ -629,7 +638,7 @@
       "levelId": 22,
       "field": "targetEhp",
       "mode": "multiply",
-      "value": 1.2648
+      "value": 1.3009
     },
     {
       "id": "L23-tighten",
@@ -638,7 +647,7 @@
       "levelId": 23,
       "field": "targetEhp",
       "mode": "multiply",
-      "value": 1.2388
+      "value": 1.2741
     },
     {
       "id": "L24-tighten",
@@ -647,7 +656,7 @@
       "levelId": 24,
       "field": "targetEhp",
       "mode": "multiply",
-      "value": 1.2061
+      "value": 1.2483
     },
     {
       "id": "L25-tighten",
@@ -656,7 +665,7 @@
       "levelId": 25,
       "field": "targetEhp",
       "mode": "multiply",
-      "value": 1.1824
+      "value": 1.2234
     },
     {
       "id": "L26-tighten",
@@ -665,7 +674,7 @@
       "levelId": 26,
       "field": "targetEhp",
       "mode": "multiply",
-      "value": 1.1522
+      "value": 1.1993
     },
     {
       "id": "L27-tighten",
@@ -674,7 +683,7 @@
       "levelId": 27,
       "field": "targetEhp",
       "mode": "multiply",
-      "value": 1.1432
+      "value": 1.176
     },
     {
       "id": "L28-tighten",
@@ -683,7 +692,7 @@
       "levelId": 28,
       "field": "targetEhp",
       "mode": "multiply",
-      "value": 1.1167
+      "value": 1.1534
     },
     {
       "id": "L29-tighten",
@@ -692,7 +701,7 @@
       "levelId": 29,
       "field": "targetEhp",
       "mode": "multiply",
-      "value": 1.097
+      "value": 1.1315
     },
     {
       "id": "L30-tighten",
@@ -701,7 +710,7 @@
       "levelId": 30,
       "field": "targetEhp",
       "mode": "multiply",
-      "value": 1.0683
+      "value": 1.1104
     },
     {
       "id": "L3-gold",
