@@ -12,11 +12,11 @@ using SimpleJSON;
 
 
 namespace cfg
-{
+{ 
 
-public sealed partial class AudioData :  Bright.Config.BeanBase
+public sealed partial class AudioData :  Bright.Config.BeanBase 
 {
-    public AudioData(JSONNode _json)
+    public AudioData(JSONNode _json) 
     {
         { if(!_json["id"].IsNumber) { throw new SerializationException(); }  Id = _json["id"]; }
         { if(!_json["name"].IsString) { throw new SerializationException(); }  Name = _json["name"]; }
@@ -29,7 +29,7 @@ public sealed partial class AudioData :  Bright.Config.BeanBase
         PostInit();
     }
 
-    public AudioData(int id, string name, string logicalName, float volume, float pitch, int loop, int is3d, string desc )
+    public AudioData(int id, string name, string logicalName, float volume, float pitch, int loop, int is3d, string desc ) 
     {
         this.Id = id;
         this.Name = name;
@@ -105,7 +105,7 @@ public sealed partial class AudioData :  Bright.Config.BeanBase
         + "Desc:" + Desc + ","
         + "}";
     }
-
+    
     partial void PostInit();
     partial void PostResolve();
 }

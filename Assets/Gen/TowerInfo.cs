@@ -12,11 +12,11 @@ using SimpleJSON;
 
 
 namespace cfg
-{
+{ 
 
-public sealed partial class TowerInfo :  Bright.Config.BeanBase
+public sealed partial class TowerInfo :  Bright.Config.BeanBase 
 {
-    public TowerInfo(JSONNode _json)
+    public TowerInfo(JSONNode _json) 
     {
         { if(!_json["id"].IsNumber) { throw new SerializationException(); }  Id = _json["id"]; }
         { if(!_json["type"].IsNumber) { throw new SerializationException(); }  Type = _json["type"]; }
@@ -40,7 +40,7 @@ public sealed partial class TowerInfo :  Bright.Config.BeanBase
         PostInit();
     }
 
-    public TowerInfo(int id, int type, string name, string resName, int level, float radius, int power, float CD, int prices, int bulletId, int targetMode, int searchIntervalMs, float rotateSpeed, int upgradeTo, int sellPrice, int effectType, float effectValue, string desc, int canAttackAir )
+    public TowerInfo(int id, int type, string name, string resName, int level, float radius, int power, float CD, int prices, int bulletId, int targetMode, int searchIntervalMs, float rotateSpeed, int upgradeTo, int sellPrice, int effectType, float effectValue, string desc, int canAttackAir ) 
     {
         this.Id = id;
         this.Type = type;
@@ -179,7 +179,7 @@ public sealed partial class TowerInfo :  Bright.Config.BeanBase
         + "CanAttackAir:" + CanAttackAir + ","
         + "}";
     }
-
+    
     partial void PostInit();
     partial void PostResolve();
 }

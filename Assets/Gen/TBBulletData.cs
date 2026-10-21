@@ -12,18 +12,18 @@ using SimpleJSON;
 
 
 namespace cfg
-{
+{ 
 
 public sealed partial class TBBulletData
 {
     private readonly Dictionary<int, BulletData> _dataMap;
     private readonly List<BulletData> _dataList;
-
+    
     public TBBulletData(JSONNode _json)
     {
         _dataMap = new Dictionary<int, BulletData>();
         _dataList = new List<BulletData>();
-
+        
         foreach(JSONNode _row in _json.Children)
         {
             var _v = BulletData.DeserializeBulletData(_row);
@@ -56,8 +56,8 @@ public sealed partial class TBBulletData
             v.TranslateText(translator);
         }
     }
-
-
+    
+    
     partial void PostInit();
     partial void PostResolve();
 }

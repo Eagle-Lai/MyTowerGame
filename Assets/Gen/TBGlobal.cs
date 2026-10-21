@@ -12,18 +12,18 @@ using SimpleJSON;
 
 
 namespace cfg
-{
+{ 
 
 public sealed partial class TBGlobal
 {
     private readonly Dictionary<int, Global> _dataMap;
     private readonly List<Global> _dataList;
-
+    
     public TBGlobal(JSONNode _json)
     {
         _dataMap = new Dictionary<int, Global>();
         _dataList = new List<Global>();
-
+        
         foreach(JSONNode _row in _json.Children)
         {
             var _v = Global.DeserializeGlobal(_row);
@@ -56,8 +56,8 @@ public sealed partial class TBGlobal
             v.TranslateText(translator);
         }
     }
-
-
+    
+    
     partial void PostInit();
     partial void PostResolve();
 }
