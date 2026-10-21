@@ -34,6 +34,7 @@ namespace FTProject
     ///   - 去掉 Renderer/GetComponentsInChildren 换色 → 改 SpriteRenderer.color
     ///   - **攻击逻辑抽出为 TickAttack(dt)，由 CombatSystem 集中驱动**（不再自行订阅 UpdateEvent）
     ///   - 索敌走 EnemyGrid 空间哈希 + 节流 + 目标锁定（不再用 SphereCollider / OnTriggerEnter）
+    ///   - **对空优先**：能打飞行单位的塔，射程内有飞行怪就先打飞行怪，没有才打地面（2026-10-21）
     ///   - **无目标绝不开火**（v1.0 是每 0.2s 无条件空放）
     ///   - 塔头转向目标；数值全部来自 TBTowerInfo
     /// </summary>
@@ -288,12 +289,27 @@ namespace FTProject
                 _target = null;
             }
 
-            // ③ 节流索敌：已有锁定目标时不重复搜索
+            // ③ 节流索敌
+            //    · 无锁定 → 整圈找：飞行单位优先，没有飞行单位才选地面；
+            //    · 已锁定**地面**目标 → 每个节拍复查一次，只要圈里有飞行单位就立刻抢断
+            //      （否则塔会一直咬着地面怪，飞行怪整队从头顶溜过去 —— 这正是本次需求的由来）。
+            //    · 已锁定飞行目标 → 不再复查，保持地面目标原有的"锁定不抖动"手感。
             _searchTimer += dt;
-            if (_target == null && _searchTimer >= Config.SearchIntervalSec)
+            if (_searchTimer >= Config.SearchIntervalSec)
             {
                 _searchTimer = 0f;
-                _target = FindTarget();
+                if (_target == null)
+                {
+                    _target = FindTarget();
+                }
+                else if (Config.CanAttackAir && !IsFlying(_target))
+                {
+                    BaseEnemy air = FindAirTarget();
+                    if (air != null)
+                    {
+                        _target = air;
+                    }
+                }
             }
 
             if (_target == null)
@@ -331,6 +347,10 @@ namespace FTProject
         /// 这样"这座塔能不能打到飞行怪"在代码里**只有一条判定**（FindTarget 与此处相同），
         /// 不会出现塔型分支各说各话。目标模式不在此过滤 —— 那是"选哪个目标打"的概念，
         /// 光环没有选择行为，范围内一律结算。
+        ///
+        /// 【不参与"对空优先"（2026-10-21 确认）】光环没有单目标，射程内的飞行与地面
+        /// 一律同时结算，"优先打飞行"在这里没有落点。**不要**为了对齐而加
+        /// "圈里有飞行就跳过地面"的分支 —— 那会白白削掉地面减速，属于改坏而不是改好。
         /// </summary>
         private void TickSlowAura(float dt)
         {
@@ -457,8 +477,39 @@ namespace FTProject
             return (e.Position - Position).sqrMagnitude <= r * r;
         }
 
-        /// <summary>空间哈希取候选 → 精确过滤 → 按 targetMode 打分</summary>
+        /// <summary>本怪是否飞行（Config 缺失时按地面处理，与原对空过滤口径一致）</summary>
+        private static bool IsFlying(BaseEnemy e)
+        {
+            return e != null && e.Config != null && e.Config.IsFlying;
+        }
+
+        /// <summary>空间哈希取候选 → 精确过滤 → 按 targetMode 打分 → 对空优先分层</summary>
         private BaseEnemy FindTarget()
+        {
+            return SelectBest(false);
+        }
+
+        /// <summary>只挑飞行单位（用于抢断已锁定的地面目标）</summary>
+        private BaseEnemy FindAirTarget()
+        {
+            return SelectBest(true);
+        }
+
+        /// <summary>
+        /// 选敌核心。
+        ///
+        /// 【对空优先（2026-10-21）】飞行单位与地面单位分成两层各自打分：
+        /// 只要圈内存在本塔打得到的飞行单位，就在飞行层里按 targetMode 选，
+        /// 地面层彻底不参与；没有飞行单位时才回落到地面层。
+        /// 分层的意义：targetMode=0 的"最靠前"是按地面路径算的，
+        /// 飞行怪走直线、没有 PathProgress，混在一起比分会把飞行怪永久压在地面怪后面。
+        ///
+        /// 【为什么按层而不是给分数加常数】加常数要挑一个"足够大"的值，
+        /// 而 PathProgress / CurrentHp / 距离的量纲各不相同，迟早会被某个极端值穿透；
+        /// 两个候选变量互不干扰，也不存在溢出与比较误差。
+        /// </summary>
+        /// <param name="flyingOnly">true = 只考虑飞行单位（抢断检查用）</param>
+        private BaseEnemy SelectBest(bool flyingOnly)
         {
             CombatSystem cs = CombatSystem.Instance;
             if (cs == null || cs.Grid == null)
@@ -476,50 +527,86 @@ namespace FTProject
                 return null;   // ★ 空列表直接返回，杜绝 v1.0 的 IndexOutOfRange
             }
 
-            float r2 = Config.RadiusWorld * Config.RadiusWorld;
-            Vector2 self = Position;
-            BaseEnemy best = null;
-            float bestScore = float.MinValue;
+            float radius = Config.RadiusWorld;
+            return PickBestTarget(_candidates, Position, radius * radius,
+                Config.TargetMode, Config.CanAttackAir, flyingOnly);
+        }
 
-            for (int i = 0; i < _candidates.Count; i++)
+        /// <summary>
+        /// 选敌策略本体：**纯函数**（不查场景、不读全局表），EditMode 可直接验证。
+        /// 规则只有两条，按顺序生效：
+        ///   ① 能否攻击飞行单位（塔表 canAttackAir）→ 打不到就直接剔除；
+        ///   ② 对空优先 → 有可打的飞行单位就绝不选地面，层内再按 targetMode 打分。
+        /// </summary>
+        internal static BaseEnemy PickBestTarget(IList<BaseEnemy> candidates, Vector2 self, float radiusSqr,
+            TargetMode targetMode, bool canAttackAir, bool flyingOnly)
+        {
+            if (candidates == null)
             {
-                BaseEnemy e = _candidates[i];
+                return null;
+            }
+
+            BaseEnemy bestAir = null;
+            BaseEnemy bestGround = null;
+            float bestAirScore = float.MinValue;
+            float bestGroundScore = float.MinValue;
+
+            for (int i = 0; i < candidates.Count; i++)
+            {
+                BaseEnemy e = candidates[i];
                 if (e == null || !e.IsAlive)
                 {
                     continue;
                 }
+                bool flying = IsFlying(e);
                 // 对空过滤：本塔打不到飞行单位时**直接跳过**，
                 // 而不是"锁一个打不到的目标然后空放"——那会让无目标开火的自检计数器爆掉。
-                if (e.Config != null && e.Config.IsFlying && !Config.CanAttackAir)
+                if (flying && !canAttackAir)
+                {
+                    continue;
+                }
+                if (flyingOnly && !flying)
                 {
                     continue;
                 }
                 float d2 = (e.Position - self).sqrMagnitude;
-                if (d2 > r2)
+                if (d2 > radiusSqr)
                 {
                     continue;   // 网格查询会带出范围外元素，这里精确过滤
                 }
 
-                float score;
-                switch (Config.TargetMode)
+                float score = ScoreCandidate(e, d2, targetMode);
+                if (flying)
                 {
-                    case TargetMode.Nearest:
-                        score = -d2;
-                        break;
-                    case TargetMode.HighestHp:
-                        score = e.CurrentHp;
-                        break;
-                    default:
-                        score = e.PathProgress;   // 最危险优先
-                        break;
+                    if (score > bestAirScore)
+                    {
+                        bestAirScore = score;
+                        bestAir = e;
+                    }
                 }
-                if (score > bestScore)
+                else if (score > bestGroundScore)
                 {
-                    bestScore = score;
-                    best = e;
+                    bestGroundScore = score;
+                    bestGround = e;
                 }
             }
-            return best;
+
+            // ★ 对空优先：有能打的飞行单位就不选地面
+            return bestAir != null ? bestAir : bestGround;
+        }
+
+        /// <summary>按塔表 targetMode 打分（口径与改造前完全一致，只是不再跨层比较）</summary>
+        private static float ScoreCandidate(BaseEnemy e, float d2, TargetMode mode)
+        {
+            switch (mode)
+            {
+                case TargetMode.Nearest:
+                    return -d2;
+                case TargetMode.HighestHp:
+                    return e.CurrentHp;
+                default:
+                    return e.PathProgress;   // 最危险优先
+            }
         }
 
         private void RotateBarrelTowards(Vector2 targetPos, float dt)

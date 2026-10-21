@@ -111,6 +111,67 @@ namespace FTProject.Tests
             Assert.That(SelectView.Stars(stars), Is.EqualTo(expected));
         }
 
+        [Test]
+        public void AirCapableTowerPicksFlyingEvenWhenGroundIsNearest()
+        {
+            BaseEnemy ground = Enemy(false, new Vector2(0.2f, 0f));
+            BaseEnemy flying = Enemy(true, new Vector2(1.6f, 0f));
+            BaseEnemy picked = Pick(new[] { ground, flying }, TargetMode.Nearest, true);
+            Assert.That(picked, Is.SameAs(flying), "对空优先：飞行怪更远也要先打");
+        }
+
+        [Test]
+        public void AirPriorityOutranksTargetModeHighestHp()
+        {
+            BaseEnemy ground = Enemy(false, new Vector2(1.0f, 0f));
+            BaseEnemy flying = Enemy(true, new Vector2(1.5f, 0f));
+            flying.Hurt(50f);   // 飞行怪血更少：按 targetMode 会选地面，对空优先必须仍选飞行
+            BaseEnemy picked = Pick(new[] { ground, flying }, TargetMode.HighestHp, true);
+            Assert.That(picked, Is.SameAs(flying));
+        }
+
+        [Test]
+        public void AirPriorityFallsBackToGroundWhenNoFlyingInRange()
+        {
+            BaseEnemy ground = Enemy(false, new Vector2(0.5f, 0f));
+            BaseEnemy farFlying = Enemy(true, new Vector2(6f, 0f));   // 半径 5 之外
+            BaseEnemy picked = Pick(new[] { ground, farFlying }, TargetMode.Nearest, true);
+            Assert.That(picked, Is.SameAs(ground));
+        }
+
+        [Test]
+        public void GroundOnlyTowerStillIgnoresFlying()
+        {
+            BaseEnemy ground = Enemy(false, new Vector2(1.0f, 0f));
+            BaseEnemy flying = Enemy(true, new Vector2(0.2f, 0f));
+            BaseEnemy picked = Pick(new[] { ground, flying }, TargetMode.Nearest, false);
+            Assert.That(picked, Is.SameAs(ground));
+        }
+
+        [Test]
+        public void AirProbeReturnsNullWhenOnlyGroundIsInRange()
+        {
+            BaseEnemy ground = Enemy(false, new Vector2(0.5f, 0f));
+            BaseEnemy picked = BaseTower.PickBestTarget(new List<BaseEnemy> { ground }, Vector2.zero,
+                25f, TargetMode.FurthestAlongPath, true, true);
+            Assert.That(picked, Is.Null, "抢断检查只认飞行单位");
+        }
+
+        [Test]
+        public void FlyingTierKeepsTargetModeOrdering()
+        {
+            BaseEnemy nearFlying = Enemy(true, new Vector2(1.0f, 0f));
+            BaseEnemy farFlying = Enemy(true, new Vector2(3.0f, 0f));
+            BaseEnemy picked = Pick(new[] { farFlying, nearFlying }, TargetMode.Nearest, true);
+            Assert.That(picked, Is.SameAs(nearFlying), "同一层内仍按 targetMode 选");
+        }
+
+        private static BaseEnemy Pick(IList<BaseEnemy> candidates, TargetMode mode, bool canAttackAir)
+        {
+            // 半径 5 格：飞行怪放 1.6 格仍在内，6 格那只在外
+            return BaseTower.PickBestTarget(candidates, Vector2.zero, 25f, mode, canAttackAir, false);
+        }
+
         private BaseEnemy Enemy(bool flying, Vector2 position)
         {
             GameObject go = new GameObject("RatingCombatTestEnemy");

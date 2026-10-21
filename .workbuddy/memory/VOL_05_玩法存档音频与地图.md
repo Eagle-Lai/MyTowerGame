@@ -7,6 +7,7 @@
 - 存档只走 `SaveManager`（禁 SQL / PlayerPrefs）；改表三步：`CreateStatements` → `CurrentVersion + 1` → `RunMigrations`。
 - 音频 = 丢文件 + `gen_audio_catalog.py`；BGM 2 源 + `AudioFadeDriver`；倍速唯一源 `Core/GameClock.cs`（`timeScale` 只取 0/1）。
 - ★塔型：Normal1（打飞+走）/ Aoe2 火力仅打走 / Slow3 光环；Pierce4、Laser5 已删（编号不回收，别复用）；对空与否看塔表 `canAttackAir`。
+- ★索敌对空优先（2026-10-21）：能打飞行单位的塔先选飞行怪，圈内无飞行才回落地面；层内仍按 `targetMode`。实现 = `BaseTower.PickBestTarget`（纯函数，两层打分）+ `TickAttack` 第③步「锁定地面时每索敌节拍复查并抢断」。**减速塔是光环，不参与该优先级**（用户 2026-10-21 明确：保持全覆盖，别加"有飞行就跳过地面"）。
 - ★塔攻击表现：普通/火力塔不发子弹，开火 = 即时命中 + 序列帧。
   - `TowerFireFx`：枪口焰挂到炮管 `BarrelPoint` 子节点、local 置零；落点爆炸走对象池；帧由 `gen_tower_fire_frames.py` 生成。
   - ★散帧 meta 必须 `alignment: 9`(Custom) + `spritePivot y = 0.2`；写成 `alignment: 1` = TopLeft（底中应是 7）→ 焰会被甩到炮口右下角。
