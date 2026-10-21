@@ -37,6 +37,14 @@ RATING_TYPES = {'id':'int','difficultyTier':'int','profileId':'string','profileR
 FLOAT_FIELDS={'tbenemydata':{'speed','hp','armor','scale','bodyRadius'},
  'tbtowerinfo':{'CD','rotateSpeed','effectValue','radius'},
  'tbbulletdata':{'speed','hitRadius','aoeRadius','effectValue','scale'}}
+# v7: campaign level tables are stored one file per level under Datas/Levels/Lxx.
+# The compiler still holds them as one in-memory table; only the Excel layout is split.
+LEVEL_TABLES=['tbsceneinfo','tbrounddata','tbenemylist','tblevelmap','tblevelrating','tbenemydata']
+LEVEL_TABLE_FILES={TABLE_FILES[t] for t in LEVEL_TABLES}
+LEGACY_AGGREGATES=['SceneInfo','RoundData','EnemyList','LevelMap','LevelRating']
+def level_rel(L,table): return f'Levels/L{L:02d}/{TABLE_FILES[table]}.xlsx'
+def level_path(L,table): return DATA/level_rel(L,table)
+def level_file_path(root,L,table): return pathlib.Path(root)/level_rel(L,table)
 
 def read_json(p, default=None):
     return json.loads(pathlib.Path(p).read_text(encoding='utf-8-sig')) if pathlib.Path(p).exists() else copy.deepcopy(default)
@@ -98,7 +106,9 @@ def default_recipe():
       'maps':{'expandTutorial':True,'sparseObstacles':True,'longAirCorridors':True},'overrides':[]}
 
 def source_hashes():
-    paths=[DATA/(v+'.xlsx') for v in TABLE_FILES.values()]
+    # Level tables live one file per level; EnemyData.xlsx keeps only the prototypes.
+    paths=sorted((DATA/'Levels').glob('L*/*.xlsx'))+[DATA/'EnemyData.xlsx']
+    paths += [DATA/(v+'.xlsx') for v in TABLE_FILES.values() if v not in LEVEL_TABLE_FILES]
     paths += [DATA/'__tables__.xlsx',DATA/'Localization.xlsx',DEFAULT_RECIPE,MANIFEST,STATE]
     paths += [DESIGN/'baseline_data.json',DESIGN/'balance_localization.json',DESIGN/'monster_measurements.json']
     paths += list((ROOT/'Luban/Config/Defines').glob('*.xml'))
@@ -117,11 +127,14 @@ def composition(recipe,L,w,n):
     slots=[]
     # First four waves always small ground, including later campaign levels.
     final_wave=dimensions(recipe)[1]
-    # L1 flying schedule (v6, user-authorized 2026-10-20): first flying at W3,
-    # ~13% of each wave (12-20% overall), rotated over the unlocked air pool.
-    air=(0 if w<3 else max(1,math.floor(n*.13))) if L==1 else (0 if w<=5 or w in (11,16) else max(1,math.floor(n*(.08 if w<=10 else .12))))
-    if w==final_wave:air=min(air,math.floor(n*.2))
-    pool=available(recipe,L,w,'air')
+    # v7: 空军改为数据驱动 —— 首现波取 unlockSchedule 里 air 的最早 wave，
+    # 占比取 roles.air.share（不再为 L1 写死 13%，也不再让 L>1 只有 8%）。
+    air_pool=available(recipe,L,w,'air')
+    air_first=min((u['wave'] for u in recipe['unlockSchedule'] if u['role']=='air'),default=None)
+    share=float(recipe['roles']['air'].get('share',.13))
+    air=0 if (not air_pool or air_first is None or w<air_first) else max(1,math.floor(n*share+.5))
+    if w==final_wave:air=min(air,max(1,math.floor(n*.2)))
+    pool=air_pool
     for i in range(air): slots.append((pool[(w+i)%len(pool)],'air'))
     if w==final_wave:
         bosses=available(recipe,L,w,'boss')
@@ -320,6 +333,33 @@ def bind_calibration_evidence(plan):
       'pendingLevelIds':[L for L in ratings if L not in matched]}
     return plan
 
+def level_row_index(plan):
+    """表名 -> {行 id: 关卡号}。拆表后每行必须能唯一落到一个 Levels/Lxx 目录。
+
+    判据一律走引用链，不用 id 数值范围（变体 id 里含 profile 位，范围不单调）：
+    SceneInfo.RoundList -> RoundData -> EnemyList；EnemyData 用 plan.waves 的 enemyIds；
+    原型（id<100000）不参与任何波次，因此进主表 Datas/EnemyData.xlsx。
+    """
+    index=collections.defaultdict(dict)
+    for level in plan['tables']['tbsceneinfo']:
+        L=level['id'];index['tbsceneinfo'][L]=L;index['tblevelrating'][L]=L
+        for rid in level['RoundList']:index['tbrounddata'][rid]=L
+    for row in plan['tables']['tblevelmap']:index['tblevelmap'][row['id']]=row['levelId']
+    for row in plan['tables']['tbrounddata']:
+        L=index['tbrounddata'].get(row['id'])
+        for lid in row['EnemyIndexs']:index['tbenemylist'][lid]=L
+    for wave in plan['waves']:
+        for eid in wave['enemyIds']:index['tbenemydata'][eid]=wave['levelId']
+    return index
+
+
+def table_sources(table):
+    """某张表在磁盘上的全部源文件：全局一个 + Levels 下每关一个。"""
+    files=[DATA/(TABLE_FILES[table]+'.xlsx')]
+    files+=sorted((DATA/'Levels').glob(f'L*/{TABLE_FILES[table]}.xlsx'))
+    return [p for p in files if p.exists()]
+
+
 def generate(recipe,profile_id,manifest=None):
     baseline=read_json(DESIGN/'baseline_data.json'); recipe=copy.deepcopy(recipe);recipe['_profile']=profile_id
     profile=next((p for p in recipe['profiles'] if p['id']==profile_id),None)
@@ -379,9 +419,12 @@ def generate(recipe,profile_id,manifest=None):
                 if k in budgets:candidates.append((budgets[k]*Decimal(str(f['minBudgetGrowth']))).to_integral_value(rounding=ROUND_CEILING))
             budgets[L,w]=max(candidates)
             gap=max(f['minSpawnMs'],min(f['maxSpawnMs'],f['spawnBaseMs']-f['spawnWaveReductionMs']*x-f['spawnLevelReductionMs']*(L-1)))
+            wave_reward=(f['rewardBase']+x//f['rewardWaveBlock']*f.get('rewardBlockIncrement',1))*profile['goldMultiplier']
+            # v7: 坎波（W5/10/15/20/25）波奖励 ×rewardPeakMultiplier，作为"过坎回血"的正反馈。
+            if w%5==0:wave_reward*=float(f.get('rewardPeakMultiplier',1))
             v={'count':n,'targetEhp':float(budgets[L,w])*profile['ehpMultiplier'],
                 'spawnIntervalMs':max(100,min(1500,round_up(gap*profile['gapMultiplier']))),
-                'speedMultiplier':profile['speedMultiplier'],'rewardGold':round_up((f['rewardBase']+x//f['rewardWaveBlock']*f.get('rewardBlockIncrement',1))*profile['goldMultiplier']),
+                'speedMultiplier':profile['speedMultiplier'],'rewardGold':max(1,round_up(wave_reward)),
                'roleRatios':{},'composition':[], 'hpOverrides':{}}
             sources=apply_overrides(v,recipe,profile_id,L,w,'wave')
             n=positive_int(v['count'],f'L{L} W{w} count');v['spawnIntervalMs']=positive_int(v['spawnIntervalMs'],'spawnIntervalMs')
@@ -557,6 +600,22 @@ def validate(plan,export_dir=None):
             if prev in counts:
                 check(n>counts[prev],f'Count not strictly increasing L{L} W{w} vs {prev}')
                 check(ehps[L,w]>ehps[prev],f'EHP not strictly increasing L{L} W{w} vs {prev}')
+    # 拆表归属一致性（阶段 A）：每行必须唯一落进一个 Levels/Lxx，否则 apply 会写错目录。
+    # 原型（id<100000）不属于任何一关，留在 Datas/EnemyData.xlsx。
+    index=level_row_index(plan)
+    for table in LEVEL_TABLES:
+        unmapped=[r['id'] for r in tables[table] if r['id'] not in index[table] and
+                  not (table=='tbenemydata' and r['id']<100000)]
+        check(not unmapped,f'{table}: {len(unmapped)} rows have no level owner, e.g. {unmapped[:5]}')
+    used_variants={eid for wave in plan['waves'] for eid in wave['enemyIds']}
+    declared_variants={r['id'] for r in tables['tbenemydata'] if r['id']>=100000}
+    check(used_variants==declared_variants,'Level variant set differs from the variants referenced by waves')
+    owner_of_variant={}
+    for wave in plan['waves']:
+        for eid in set(wave['enemyIds']):
+            check(eid not in owner_of_variant,
+                  f'Variant {eid} is shared by L{owner_of_variant.get(eid)} and L{wave["levelId"]} W{wave["waveOrdinal"]}')
+            owner_of_variant.setdefault(eid,(wave['levelId'],wave['waveOrdinal']))
     res_text=(ROOT/'Assets/Scripts/Core/Res/ResTable.cs').read_text(encoding='utf-8-sig')
     catalog_text=(ROOT/'Assets/Scripts/Data/MonsterCatalog.cs').read_text(encoding='utf-8-sig')
     resources={}
@@ -626,61 +685,97 @@ def preview(plan):
         for rid in current.keys()-{r['id'] for r in rows}:changes.append({'table':table,'id':rid,'field':'__row__','before':'exists','after':None})
     return {k:v for k,v in plan.items() if k not in ['tables','manifest','recipe']}|{'validation':validate(plan),'changes':changes}
 
+def sync_tables_input(path):
+    """__tables__.xlsx 的 input 列：6 张关卡表按 Levels/L01..L30 顺序重写（幂等，先清后填）。
+
+    必须由脚本生成：30×6 段路径手写必错，且拆表后漏改这一列 Luban 会直接少读关。
+    """
+    import openpyxl
+    path=pathlib.Path(path);wb=openpyxl.load_workbook(path);ws=wb.active
+    heads={c.value:c.column for c in ws[1] if c.value}
+    known={('TB'+v):k for k,v in TABLE_FILES.items()}
+    levels=sorted(int(p.name[1:]) for p in (DATA/'Levels').glob('L*') if p.is_dir() and p.name[1:].isdigit())
+    if not levels:raise RuntimeError('Datas/Levels/Lxx is empty; run .workbuddy/tools/migrate_split_level_tables.py first')
+    for r in range(4,ws.max_row+1):
+        key=known.get(ws.cell(r,heads['full_name']).value)
+        if key not in LEVEL_TABLES:continue
+        paths=[level_rel(L,key) for L in levels]
+        if key=='tbenemydata':paths=[TABLE_FILES[key]+'.xlsx']+paths
+        ws.cell(r,heads['input']).value=','.join(paths)
+    wb.save(path);wb.close()
+
+
 def excel_write(stage,plan):
     import openpyxl
     from copy import copy as shallow
     stage=pathlib.Path(stage);stage.mkdir(parents=True,exist_ok=True)
     for p in DATA.glob('*.xlsx'):shutil.copy2(p,stage/p.name)
+    for p in (DATA/'Levels').rglob('*.xlsx'):
+        dst=stage/p.relative_to(DATA);dst.parent.mkdir(parents=True,exist_ok=True);shutil.copy2(p,dst)
+    index=level_row_index(plan)
     for table,rows in plan['tables'].items():
-        check_cancel(stage);table_started=time.perf_counter()
-        progress('stage_excel_table',table=table,rows=len(rows),completed=0)
-        p=stage/(TABLE_FILES[table]+'.xlsx')
-        if p.exists():wb=openpyxl.load_workbook(p);ws=wb.active
+        check_cancel(stage)
+        if table in LEVEL_TABLES:
+            unknown=[row['id'] for row in rows if row['id'] not in index[table]]
+            if unknown and table!='tbenemydata':
+                raise ValueError(f'{table}: {len(unknown)} rows have no level owner, e.g. {unknown[:5]}')
+            groups=collections.OrderedDict()
+            for row in rows:groups.setdefault(index[table].get(row['id']),[]).append(row)
+            # 原型（None）先写主表，再按 L01..L30；Luban 要求主表 input 排第一位
+            order=sorted(groups,key=lambda L:(L is not None,L or 0))
         else:
-            wb=openpyxl.Workbook();ws=wb.active;ws.title='data'
-            ws.append(['##']+list(RATING_TYPES));ws.append(['##type']+list(RATING_TYPES.values()));ws.append(['##']+list(RATING_TYPES))
-            ws.freeze_panes='C4'
-            for col in ws.columns:ws.column_dimensions[col[0].column_letter].width=24
-        headers={c.value:c.column for c in ws[1] if c.value}
-        max_row=ws.max_row;max_column=ws.max_column;next_row=max_row+1
-        template_styles=[shallow(ws.cell(4,c)._style) for c in range(1,max_column+1)] if max_row>=4 else []
-        existing={ws.cell(r,headers['id']).value:r for r in range(4,max_row+1) if ws.cell(r,headers['id']).value is not None}
-        desired_ids={row['id'] for row in rows}
-        free_rows=collections.deque()
-        # Only campaign-managed rows are cleared; unrelated prototype fields are untouched.
-        if table in ['tbenemydata','tbenemylist','tbrounddata','tblevelrating']:
-            free_rows.extend(r for r in range(4,max_row+1) if ws.cell(r,headers['id']).value is None and
-              all(ws.cell(r,c).value is None for c in range(1,max_column+1)))
-            for rid,r in existing.items():
-                if rid not in desired_ids:
-                    if table!='tbenemydata' or int(rid)>=100000:
-                        for c in range(1,max_column+1):ws.cell(r,c).value=None
-                        free_rows.append(r)
-        reused=appended=0
-        for row_index,row in enumerate(rows):
-            if row_index%128==0:check_cancel(stage)
-            r=existing.get(row['id'])
-            new_row=r is None
-            if r is None:
-                if free_rows:r=free_rows.popleft();reused+=1
-                else:r=next_row;next_row+=1;appended+=1
-                for c,style in enumerate(template_styles,1):ws.cell(r,c)._style=shallow(style)
-                existing[row['id']]=r
-            for field,value in row.items():
-                if field not in headers:continue
-                if not new_row and table in OWNED_FIELDS and field!='id' and field not in OWNED_FIELDS[table]:continue
-                # Preserve all original prototype values, and unknown existing columns.
-                if table=='tbenemydata' and row['id']<100000:continue
-                if isinstance(value,list):value=('|' if field=='cells' else ',').join(map(str,value))
-                if isinstance(value,dict) and all(k in value for k in ['x','y','z']):value=','.join(str(value[k]) for k in ['x','y','z'])
-                ws.cell(r,headers[field],value)
-        wb.save(p);wb.close()
-        progress('stage_excel_table_complete',table=table,completed=len(rows),total=len(rows),reusedRows=reused,appendedRows=appended,elapsedSec=time.perf_counter()-table_started)
+            order=[None];groups={None:rows}
+        for L in order:
+            sub=groups[L];table_started=time.perf_counter()
+            progress('stage_excel_table',table=table,level=L,rows=len(sub),completed=0)
+            p=stage/(TABLE_FILES[table]+'.xlsx') if L is None else level_file_path(stage,L,table)
+            p.parent.mkdir(parents=True,exist_ok=True)
+            if not p.exists() and L is not None:
+                seed=stage/(TABLE_FILES[table]+'.xlsx')
+                if seed.is_file():shutil.copy2(seed,p)
+            if p.exists():wb=openpyxl.load_workbook(p);ws=wb.active
+            else:
+                wb=openpyxl.Workbook();ws=wb.active;ws.title='data'
+                ws.append(['##']+list(RATING_TYPES));ws.append(['##type']+list(RATING_TYPES.values()));ws.append(['##']+list(RATING_TYPES))
+                ws.freeze_panes='C4'
+                for col in ws.columns:ws.column_dimensions[col[0].column_letter].width=24
+            headers={c.value:c.column for c in ws[1] if c.value}
+            max_row=ws.max_row;max_column=ws.max_column;next_row=max_row+1
+            template_styles=[shallow(ws.cell(4,c)._style) for c in range(1,max_column+1)] if max_row>=4 else []
+            existing={ws.cell(r,headers['id']).value:r for r in range(4,max_row+1) if ws.cell(r,headers['id']).value is not None}
+            desired_ids={row['id'] for row in sub}
+            free_rows=collections.deque()
+            # Only campaign-managed rows are cleared; unrelated prototype fields are untouched.
+            if table in LEVEL_TABLES:
+                free_rows.extend(r for r in range(4,max_row+1) if ws.cell(r,headers['id']).value is None and
+                  all(ws.cell(r,c).value is None for c in range(1,max_column+1)))
+                for rid,r in existing.items():
+                    if rid not in desired_ids:
+                        if table!='tbenemydata' or int(rid)>=100000:
+                            for c in range(1,max_column+1):ws.cell(r,c).value=None
+                            free_rows.append(r)
+            reused=appended=0
+            for row_index,row in enumerate(sub):
+                if row_index%128==0:check_cancel(stage)
+                r=existing.get(row['id'])
+                new_row=r is None
+                if r is None:
+                    if free_rows:r=free_rows.popleft();reused+=1
+                    else:r=next_row;next_row+=1;appended+=1
+                    for c,style in enumerate(template_styles,1):ws.cell(r,c)._style=shallow(style)
+                    existing[row['id']]=r
+                for field,value in row.items():
+                    if field not in headers:continue
+                    if not new_row and table in OWNED_FIELDS and field!='id' and field not in OWNED_FIELDS[table]:continue
+                    # Preserve all original prototype values, and unknown existing columns.
+                    if table=='tbenemydata' and row['id']<100000:continue
+                    if isinstance(value,list):value=('|' if field=='cells' else ',').join(map(str,value))
+                    if isinstance(value,dict) and all(k in value for k in ['x','y','z']):value=','.join(str(value[k]) for k in ['x','y','z'])
+                    ws.cell(r,headers[field],value)
+            wb.save(p);wb.close()
+            progress('stage_excel_table_complete',table=table,level=L,completed=len(sub),total=len(sub),reusedRows=reused,appendedRows=appended,elapsedSec=time.perf_counter()-table_started)
     check_cancel(stage)
-    p=stage/'__tables__.xlsx';wb=openpyxl.load_workbook(p);ws=wb.active
-    if not any(ws.cell(r,2).value=='TBLevelRating' for r in range(4,ws.max_row+1)):
-        ws.append(['Level performance rating','TBLevelRating','LevelRating',True,'LevelRating.xlsx'])
-    wb.save(p);wb.close()
+    sync_tables_input(stage/'__tables__.xlsx')
     p=stage/'Localization.xlsx';wb=openpyxl.load_workbook(p);ws=wb.active
     heads={c.value:c.column for c in ws[1] if c.value};ids={ws.cell(r,heads['id']).value:r for r in range(4,ws.max_row+1)}
     next_row=ws.max_row+1
@@ -720,13 +815,17 @@ def runtime_content_hash(plan,export_dir):
         parts.append('|'.join(','.join(map(str,r[k])) if isinstance(r[k],list) else str(r[k]) for k in fields)+'\n')
     return hashlib.sha256(''.join(parts).encode('utf-8')).hexdigest()
 
-def write_rating_excel(path,rows):
+def write_rating_excel(datas,rows):
+    """runtimeContentHash 写回各关自己的 Levels/Lxx/LevelRating.xlsx（拆表后不再有聚合表）。"""
     import openpyxl
-    wb=openpyxl.load_workbook(path);ws=wb.active;heads={c.value:c.column for c in ws[1] if c.value}
+    datas=pathlib.Path(datas)
     for row in rows:
+        p=level_file_path(datas,row['id'],'tblevelrating')
+        if not p.is_file():raise RuntimeError('Missing rating sheet '+str(p))
+        wb=openpyxl.load_workbook(p);ws=wb.active;heads={c.value:c.column for c in ws[1] if c.value}
         rr=next(r for r in range(4,ws.max_row+1) if ws.cell(r,heads['id']).value==row['id'])
         ws.cell(rr,heads['runtimeContentHash'],row['runtimeContentHash'])
-    wb.save(path);wb.close()
+        wb.save(p);wb.close()
 
 @contextmanager
 def job_lock():
@@ -787,15 +886,33 @@ def check_managed_conflicts():
     state=read_json(STATE)
     if not state:return
     # Compare managed cell values, not xlsx zip timestamps, and require explicit resolution.
+    # Split level tables: the row may live in any Levels/Lxx file, so build an id->file index
+    # first and treat "same id in two files" as a hard conflict (it would break Luban's PK).
     import openpyxl
     conflicts=[]
     for table,rows in state.get('managedRows',{}).items():
-        p=DATA/(TABLE_FILES[table]+'.xlsx')
-        if not p.exists():conflicts.append(str(p));continue
-        wb=openpyxl.load_workbook(p,data_only=True);ws=wb.active;headers={c.value:c.column for c in ws[1] if c.value}
-        current={ws.cell(r,headers['id']).value:r for r in range(4,ws.max_row+1)}
+        sources=table_sources(table)
+        if not sources:conflicts.append(f'{table}: no source file under Datas');continue
+        location=collections.defaultdict(list)
+        for p in sources:
+            wb=openpyxl.load_workbook(p,data_only=True);ws=wb.active;headers={c.value:c.column for c in ws[1] if c.value}
+            if 'id' not in headers:wb.close();conflicts.append(f'{p.name} has no id column: {p}');continue
+            for r in range(4,ws.max_row+1):
+                v=ws.cell(r,headers['id']).value
+                if v is not None:location[v].append(str(p))
+            wb.close()
+        cache={}
         for row in rows:
-            r=current.get(row['id'])
+            paths=location.get(row['id'])
+            if not paths:conflicts.append(f'{table}/{row["id"]} missing');continue
+            if len(paths)>1:conflicts.append(f'{table}/{row["id"]} duplicated in {len(paths)} files');continue
+            p=pathlib.Path(paths[0])
+            if p not in cache:
+                wb=openpyxl.load_workbook(p,data_only=True);ws=wb.active
+                cache[p]=(wb,ws,{c.value:c.column for c in ws[1] if c.value})
+            wb,ws,headers=cache[p]
+            if 'id' not in headers:continue
+            r=next((r for r in range(4,ws.max_row+1) if ws.cell(r,headers['id']).value==row['id']),None)
             if not r:conflicts.append(f'{table}/{row["id"]} missing');continue
             for k,v in row.items():
                 if k not in headers:continue
@@ -805,13 +922,20 @@ def check_managed_conflicts():
                 if expected in ('',None) and actual in ('',None):continue
                 if isinstance(expected,(int,float)) and isinstance(actual,(int,float)) and math.isclose(expected,actual,rel_tol=1e-12,abs_tol=1e-10):continue
                 if actual!=expected:conflicts.append(f'{table}/{row["id"]}/{k}')
-        wb.close()
+        for wb,_,_ in cache.values():wb.close()
     if conflicts:raise RuntimeError('Managed Excel cells changed externally. Import edits as recipe overrides or discard candidate: '+', '.join(conflicts[:30]))
 
 def commit_files(files,jobdir,plan):
+    """files: [(src, dst)]；src=None 表示删除 dst（拆表后旧聚合文件必须消失，且要能回滚恢复）。"""
     backup=jobdir/'backup';backup.mkdir(parents=True,exist_ok=True)
     entries=[]
     for src,dst in files:
+        if src is None:
+            if not dst.exists():continue
+            rel=str(dst.relative_to(ROOT)).replace('\\','/');bp=backup/rel
+            bp.parent.mkdir(parents=True,exist_ok=True);shutil.copy2(dst,bp)
+            entries.append({'path':rel,'before':file_hash(dst),'after':None,'backup':str(bp),'source':None})
+            continue
         if dst.exists() and src.read_bytes()==dst.read_bytes():continue
         rel=str(dst.relative_to(ROOT)).replace('\\','/');bp=backup/rel
         if dst.exists():bp.parent.mkdir(parents=True,exist_ok=True);shutil.copy2(dst,bp)
@@ -822,6 +946,8 @@ def commit_files(files,jobdir,plan):
         journal['phase']='committing';write_json(jobdir/'transaction.json',journal)
         for e in entries:
             dst=ROOT/e['path'];dst.parent.mkdir(parents=True,exist_ok=True)
+            if e['after'] is None:
+                dst.unlink(missing_ok=True);continue
             temp=dst.with_name(dst.name+'.balance-tmp')
             try:
                 shutil.copy2(e['source'],temp);os.replace(temp,dst)
@@ -841,6 +967,8 @@ def commit_files(files,jobdir,plan):
 
 def apply_plan(plan,out):
     if not validate(plan)['passed']:raise RuntimeError('Candidate validation failed')
+    layout=verify_layout()
+    if not layout['passed']:raise RuntimeError('Level table layout failed: '+canonical(layout['problems'][:10]))
     with job_lock():
         check_managed_conflicts();assert_sources(plan['sourceHashes']);check_cancel(out)
         jobdir=pathlib.Path(out);jobdir.mkdir(parents=True,exist_ok=True)
@@ -852,7 +980,7 @@ def apply_plan(plan,out):
         check_cancel(out)
         content_hash=runtime_content_hash(plan,jobdir/'ConfigJson')
         for r in plan['tables']['tblevelrating']:r['runtimeContentHash']=content_hash
-        write_rating_excel(jobdir/'Datas'/'LevelRating.xlsx',plan['tables']['tblevelrating'])
+        write_rating_excel(jobdir/'Datas',plan['tables']['tblevelrating'])
         luban_export(jobdir/'Datas',jobdir/'Gen',jobdir/'ConfigJson',jobdir/'luban.cache.meta')
         result=validate(plan,jobdir/'ConfigJson');write_json(jobdir/'export_validation.json',result)
         if not result['passed']:raise RuntimeError('Staged JSON validation failed: '+canonical(result['errors']))
@@ -864,9 +992,15 @@ def apply_plan(plan,out):
           'ownedFields':{k:sorted(v) for k,v in OWNED_FIELDS.items()},
           'managedRows':{k:[{f:value for f,value in r.items() if k not in OWNED_FIELDS or f=='id' or f in OWNED_FIELDS[k]}
               for r in v if k!='tbenemydata' or r['id']>=100000] for k,v in plan['tables'].items()}})
-        files=[(jobdir/'Datas'/(name+'.xlsx'),DATA/(name+'.xlsx')) for name in TABLE_FILES.values()]
-        files.append((jobdir/'Datas/__tables__.xlsx',DATA/'__tables__.xlsx'))
-        files.append((jobdir/'Datas/Localization.xlsx',DATA/'Localization.xlsx'))
+        datas=jobdir/'Datas'
+        files=[(p,DATA/p.relative_to(datas)) for p in sorted((datas/'Levels').glob('L*/*.xlsx'))]
+        files += [(datas/(name+'.xlsx'),DATA/(name+'.xlsx')) for name in TABLE_FILES.values() if name not in LEVEL_TABLE_FILES]
+        # EnemyData 主表只剩原型，仍在 Datas 根目录
+        files.append((datas/(TABLE_FILES['tbenemydata']+'.xlsx'),DATA/(TABLE_FILES['tbenemydata']+'.xlsx')))
+        # 旧聚合文件在拆表后必须消失；用事务删除项，回滚时从 backup 恢复。
+        files += [(None,DATA/(name+'.xlsx')) for name in LEGACY_AGGREGATES]
+        files.append((datas/'__tables__.xlsx',DATA/'__tables__.xlsx'))
+        files.append((datas/'Localization.xlsx',DATA/'Localization.xlsx'))
         for name in ['Gen','ConfigJson']:
             for src in (jobdir/name).glob('*'):
                 if src.is_file() and src.suffix in ['.cs','.json']:files.append((src,ROOT/'Assets'/name/src.name))
@@ -1011,7 +1145,7 @@ def stage_export(plan,out):
     luban_export(datas,code,data,jobdir/'luban.cache.meta')
     content_hash=runtime_content_hash(plan,data)
     for row in plan['tables']['tblevelrating']:row['runtimeContentHash']=content_hash
-    write_rating_excel(datas/'LevelRating.xlsx',plan['tables']['tblevelrating'])
+    write_rating_excel(datas,plan['tables']['tblevelrating'])
     luban_export(datas,code,data,jobdir/'luban.cache.meta')
     result=validate(plan,str(data));write_json(jobdir/'validation.json',result)
     write_json(jobdir/'resolved-plan.json',plan)
@@ -1019,9 +1153,93 @@ def stage_export(plan,out):
     return result
 
 
+def verify_layout():
+    """磁盘布局体检：30 目录 × 6 表齐全、归属正确、无重复主键、__tables__ 与磁盘一致。
+
+    不硬编码行数总量（v7 改数值会让变体数变化），而是用「本关引用闭包」做自洽校验：
+    每关 SceneInfo.RoundList → 本关 RoundData → 本关 EnemyList → 本关 EnemyData。
+    """
+    import openpyxl
+    problems=[];stats={}
+    def load(p):
+        wb=openpyxl.load_workbook(p);ws=wb.active
+        heads={c.value:c.column for c in ws[1] if c.value}
+        rows={}
+        for r in range(4,ws.max_row+1):
+            v=ws.cell(r,heads['id']).value
+            if v is None:continue
+            rows[v]={f:ws.cell(r,c).value for f,c in heads.items()}
+        wb.close();return rows
+    levels=sorted(int(p.name[1:]) for p in (DATA/'Levels').glob('L*') if p.is_dir() and p.name[1:].isdigit())
+    if levels!=list(range(1,31)):problems.append(f'Levels 目录不是 1..30：{levels}')
+    seen=collections.defaultdict(dict)   # table -> id -> file
+    per_level={}
+    for L in levels:
+        folder=DATA/'Levels'/f'L{L:02d}'
+        files=sorted(p.name for p in folder.glob('*.xlsx'))
+        expected=sorted(set(TABLE_FILES[t]+'.xlsx' for t in LEVEL_TABLES))
+        if files!=expected:problems.append(f'{folder.name} 文件集合不符：{files}')
+        try:
+            scene=load(folder/'SceneInfo.xlsx');rounds=load(folder/'RoundData.xlsx')
+            lists=load(folder/'EnemyList.xlsx');enemies=load(folder/'EnemyData.xlsx')
+            maps=load(folder/'LevelMap.xlsx');ratings=load(folder/'LevelRating.xlsx')
+        except FileNotFoundError as error:
+            problems.append(f'L{L} 缺文件 {error.filename}');continue
+        if set(scene)!={L}:problems.append(f'L{L} SceneInfo 只能有 id={L}，实际 {sorted(scene)}')
+        round_list=[int(x) for x in str((scene.get(L) or {}).get('RoundList') or '').split(',') if str(x).strip()]
+        if len(round_list)!=25 or len(set(round_list))!=25:problems.append(f'L{L} RoundList 不是 25 个唯一 id')
+        if set(rounds)!=set(round_list):problems.append(f'L{L} RoundData 行与 RoundList 不一致')
+        if len(lists)!=25:problems.append(f'L{L} EnemyList 行数 {len(lists)} != 25')
+        used_lists=set();used_enemies=set()
+        for rid in round_list:
+            children=[int(x) for x in str((rounds.get(rid) or {}).get('EnemyIndexs') or '').split(',') if str(x).strip()]
+            if len(children)!=1:problems.append(f'L{L} round {rid} 必须引用 1 个 enemyList');continue
+            lid=children[0];used_lists.add(lid)
+            row=lists.get(lid)
+            if row is None:problems.append(f'L{L} round {rid} 引用的 enemyList {lid} 不在本关文件');continue
+            used_enemies|={int(x) for x in str(row.get('EnemyIndexs') or '').split(',') if str(x).strip()}
+        if used_lists!=set(lists):problems.append(f'L{L} EnemyList 有 {len(set(lists)-used_lists)} 行未被本关引用')
+        if used_enemies!=set(enemies):problems.append(f'L{L} EnemyData 行与本关引用闭包不一致（多 {len(set(enemies)-used_enemies)} / 少 {len(used_enemies-set(enemies))}）')
+        for eid,row in enemies.items():
+            desc=str(row.get('desc') or '')
+            if f'level={L};' not in desc and not desc.endswith(f'level={L}'):
+                problems.append(f'L{L} 变体 {eid} 的 desc 关卡号不符：{desc!r}');break
+        if set(maps)!={L} or int((maps.get(L) or {}).get('levelId') or 0)!=L:problems.append(f'L{L} LevelMap 归属错误')
+        if set(ratings)!={L}:problems.append(f'L{L} LevelRating 只能有 id={L}')
+        for tbl,rows in [('tbsceneinfo',scene),('tbrounddata',rounds),('tbenemylist',lists),('tblevelmap',maps),('tblevelrating',ratings),('tbenemydata',enemies)]:
+            for rid in rows:
+                if rid in seen[tbl]:problems.append(f'{tbl}/{rid} 同时出现在 {seen[tbl][rid]} 与 L{L:02d}')
+                else:seen[tbl][rid]=f'L{L:02d}'
+        per_level[L]={'rounds':len(rounds),'lists':len(lists),'enemies':len(enemies)}
+    protos=load(DATA/'EnemyData.xlsx')
+    bad=[i for i in protos if int(i)>=100000]
+    if bad:problems.append(f'Datas/EnemyData.xlsx 仍有 {len(bad)} 行变体（应为纯原型）')
+    for rid in protos:
+        if rid in seen['tbenemydata']:problems.append(f'原型 {rid} 与关卡变体 id 冲突')
+    stats.update(levels=len(levels),protoRows=len(protos),
+      roundRows=len(seen['tbrounddata']),listRows=len(seen['tbenemylist']),
+      variantRows=len(seen['tbenemydata']),perLevel=per_level)
+    # __tables__ 的 input 必须与磁盘完全一致
+    path=DATA/'__tables__.xlsx'
+    if not path.is_file():problems.append('缺 __tables__.xlsx')
+    else:
+        wb=openpyxl.load_workbook(path);ws=wb.active
+        heads={c.value:c.column for c in ws[1] if c.value}
+        known={('TB'+v):k for k,v in TABLE_FILES.items()}
+        for r in range(4,ws.max_row+1):
+            key=known.get(ws.cell(r,heads['full_name']).value)
+            if key not in LEVEL_TABLES:continue
+            want=[level_rel(L,key) for L in levels]
+            if key=='tbenemydata':want=[TABLE_FILES[key]+'.xlsx']+want
+            got=[x for x in str(ws.cell(r,heads['input']).value or '').split(',') if x]
+            if got!=want:problems.append(f'__tables__ {ws.cell(r,heads["full_name"]).value} 的 input 与磁盘不一致')
+        wb.close()
+    return {'passed':not problems,'problems':problems,'stats':stats}
+
+
 def main(argv=None):
     parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('command',choices=['inspect','generate','preview','validate','apply','stage','rollback','simulate','all-profiles','init'])
+    parser.add_argument('command',choices=['inspect','generate','preview','validate','apply','stage','rollback','simulate','all-profiles','init','verify-layout'])
     parser.add_argument('--profile',default=None);parser.add_argument('--recipe',default=str(DEFAULT_RECIPE));parser.add_argument('--out',default=None)
     parser.add_argument('--plan');parser.add_argument('--dry-run',action='store_true');parser.add_argument('--transaction')
     parser.add_argument('--level-min',type=int,default=1);parser.add_argument('--level-max',type=int,default=None)
@@ -1038,6 +1256,13 @@ def main(argv=None):
         write_json(DEFAULT_RECIPE,default_recipe());return
     if args.command=='rollback':
         result=rollback(args.transaction or args.backup or args.out);progress('complete',result=result);return
+    if args.command=='verify-layout':
+        result=verify_layout()
+        out=pathlib.Path(args.out or JOBS/('verify-layout-'+uuid.uuid4().hex[:12]));out.mkdir(parents=True,exist_ok=True)
+        write_json(out/'layout.json',result)
+        progress('complete',**result,out=str(out))
+        if not result['passed']:raise SystemExit(2)
+        return
     recipe=read_json(args.recipe)
     if not recipe:raise RuntimeError('Recipe not found; run init')
     level_count,wave_count,_=dimensions(recipe)

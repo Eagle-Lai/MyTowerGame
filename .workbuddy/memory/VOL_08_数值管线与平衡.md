@@ -43,3 +43,47 @@
 ## apply 后链路（v6 实测）
 1. `apply` → 2. Unity 菜单 `Tools/塔防/3. 导出配置表（Luban）`（LubanExporter.cs 直调 exe，**自带 asmdef 备份还原**；日志里 Luban 的 `[remove] FTProject.Gen.asmdef` 是中途行为，导出后已还原，用 ls 复核）→ 3. `refresh_unity(force)`（会域重载断线，等 5~8s 重连）→ 4. execute_code 查 `scriptCompilationFailed` → read_console 查 error CS（历史遗留 Unity Remote Exception 可忽略）→ 5. PlayMode：SessionState `FT.Balance.TestLevel/Profile/Strategy` → 菜单 `Tools/塔防/数值验证/运行隔离回放`（要求空闲 EditMode，自动设 main.unity 为启动场景、跑完自动退出），输出 `Library/BalanceWorkbench/PlayMode-*/`（status.json 可轮询，unity-results.json 为终局）。
 - 真机生效还差：重打 AB（菜单 9）→ deploy → 启动热更服务器.bat（三件套，本次未做，用户未要求）。
+
+## v7：按关拆表 + 节奏重构（2026-10-21 实测落地）
+
+### 表结构（★永久变更，后续所有数值工作都按这个找表）
+- `Luban/Config/Datas/Levels/L01..L30/` 每关 6 个 xlsx：`SceneInfo / RoundData / EnemyList / LevelMap / LevelRating / EnemyData`，共 180 个。
+- `Datas/EnemyData.xlsx` 只剩 **132 行原型**（id<100000）；关卡变体（desc 含 `level=N; wave=M`）全部进各自 `Levels/Lxx/EnemyData.xlsx`（每关 186~393 行）。
+- `Datas/` 根下 `SceneInfo/RoundData/EnemyList/LevelMap/LevelRating.xlsx` **已删除**；`__tables__.xlsx` 的 `input` 列改成 30 个 `Levels/Lxx/xxx.xlsx`，`TBEnemyData` 第一位是 `EnemyData.xlsx`（原型必须先入表，32 个路径）。
+- 迁移脚本 `.workbuddy/tools/migrate_split_level_tables.py`（`--dry-run` 先看行数）；备份在 `Luban/BalanceDesign/Versions/split-20261021_104857/`；证据 `Docs/BalanceEvidence/split-migration.json`。
+- **等价性实测**：拆分前后 `Assets/ConfigJson/tb*.json` 8 张表**字节完全一致**，只有 `tbrounddata/tbenemylist/tbenemydata` 三张的行序变了（改为按 L01..L30 分块，id 不再全局升序）→ `runtimeContentHash` 随之变，这是**唯一**允许的表内变化。
+- 判据链条：`SceneInfo.RoundList → RoundData → EnemyList`，变体归关**只认 desc 的 level=**（id 数值范围含 profile 位，不可猜）。
+
+### 管线改造（10 处，函数级）
+- 新增常量 `LEVEL_TABLES / LEVEL_TABLE_FILES / LEGACY_AGGREGATES`、`level_rel/level_path/level_file_path`、`level_row_index(plan)`、`table_sources(table)`、`sync_tables_input()`、`verify_layout()`。
+- `excel_write` 改成"复制整棵 Datas（含 Levels）→ 按 L 分组逐文件写"，`tbenemydata` 原型写主表、变体写分关文件；新增文件从主表克隆表头。
+- `write_rating_excel(datas_root, rows)` 签名变了（原来是单文件路径）。
+- `commit_files` 支持 `src=None` 的**删除事务项**（旧聚合文件必须消失，回滚从 backup 恢复）。
+- `check_managed_conflicts` 改为"跨所有 Levels 文件建 id→文件索引 + 同 id 出现在两个文件即报错"（约 5s）。
+- 新子命令 `verify-layout`：30 目录 × 6 表齐全 / 归属闭包 / 无重复主键 / `__tables__` 与磁盘一致。**apply 前会自动跑一次**。
+- `composition()` 空军改成数据驱动：`air_first` 取 `unlockSchedule` 里 air 最小 wave，占比取 `roles.air.share`（不再写死 L1=13%、L>1=8%）。
+- `generate()` 新增 `formula.rewardPeakMultiplier`（`w%5==0` 时波奖励乘）。
+
+### v7 数值（balance-30x25-tight-v7 / D04）
+`initialGold 100, goldPerLevel 20, initialHp 12, autoNextRoundDelayMs 2500`；
+`countLevel 1 / countWave 6 / countOffset 38`（n=L+6w+38，45→218）；
+`baseEhpPerUnit 5.5, levelEhpGrowth 0.008, waveLinear 0.015, waveQuadratic 0.0321`；
+`pressureMultiplier 1.46, finalMultiplier 1.78, minBudgetGrowth 1.02`；
+`spawnBase 280, spawnWaveReduction 7, spawnLevelReduction 2, minSpawn 128, maxSpawn 280`；
+`tailBaseMs 10000, tailTierGrowthMs 400`；`fourStarTimePermille 1150`；`roles.air.share 0.12 / weight 0.45 / damage 1`。
+- **overrides 全清**（40 条：L1-gold-v6 + 30 条 L*-tighten + 9 条历史 L*-gold）。历史金币覆盖与新曲线直接冲突（L5=2060 对曲线 180），必须一起删，否则 7.2#4 必挂。
+- 实测指标：坎/普比 1.567（备用口径 1.441）；数量环比 ≤1.194；L1 开局 3.12 塔；单关 510~536s（8.5~8.9min）；W25 span 22.3~26.0s；W25/W1 148~199；空军首现 W3、间隔 1、占比 11~13%。
+- **三处未达标（已写进报告，不许静默降级）**：① 普通波环比 max 1.312（W4，超 0.012）；② 后期关 W1 span 到 13.1s（数量必须逐关递增 + W1 要 5~9s 数学上不可兼得，只保住 L1~L3）；③ 空军占比 11.1%（floor 取整，低于 12% 下限 0.9 个点）。
+
+### Par 校准（★顺序不能反）
+`balance_fill_gate.py run --levels 1..30` → `balance_par.py calibrate --run <gate目录> --out ... --write --force`。**必须先冻结数值再写 Par**（`combatBasisHash` 覆盖 targetEhp/塔/子弹/地图/节奏，改任何一项 Par 全部失效）。校准后 `parCalibrationCurrent` 应 = 30（v7 L3 因参考驻防漏 1 只被工具跳过，手工补了一条，par=671000）。
+- gate 的 G4 时间带是 `0.90 ≤ combat/par ≤ 1.05`；校准因子 x1.06 → 实测都在 0.943~0.944。
+
+### fill-gate 实测（v7）
+- **30 关满驻防 + 升级：29 关 0 漏 12 血通关，L3 漏 1 只（11 血）**——满足"完成 25 波且剩余生命 ≥1"。
+- 但**占位阶梯 G1/G2/G3 在多个关卡不成立**（50%/85% 驻防也能清场）→ 难度与驻防规模脱钩，这是"压平 `levelEhpGrowth` + 压平数量曲线"的直接副作用，是**已知未解决项**。
+- **空军是唯一的结构性杀手**：只要 `roles.air.weight=1.0`，地面迷宫型参考驻防在 W25 必漏 ≥6 只（12 血直接归零）→ 30 关全灭。把 weight 降到 0.45 后 29/30 过关。真机手感是否"空军太软"需实机确认。
+
+### PlayMode 实测（v7 / D04 / mixed）
+L1 18/25 波、L10 19/25、L20 19/25、L30 19/25，全 `hp=0`（mixed 代理在 W18~19 崩）。**mixed 只作下界，不作判据**；但它"各关都到 18~19 波"说明关卡间难度体感被压平（与 G1~G3 不成立同源）。
+- 批量回放用法：写 `Library/BalanceWorkbench/play-request-batch.json`（runs 数组）→ `execute_code` 调 `FTProject.EditorTools.BalancePlayModeVerifier.StartBatch(path)`，4 关一次跑完只要 14s（40 步/帧 × 0.05s）。

@@ -12,18 +12,18 @@ using SimpleJSON;
 
 
 namespace cfg
-{ 
+{
 
 public sealed partial class TBAudio
 {
     private readonly Dictionary<int, AudioData> _dataMap;
     private readonly List<AudioData> _dataList;
-    
+
     public TBAudio(JSONNode _json)
     {
         _dataMap = new Dictionary<int, AudioData>();
         _dataList = new List<AudioData>();
-        
+
         foreach(JSONNode _row in _json.Children)
         {
             var _v = AudioData.DeserializeAudioData(_row);
@@ -56,8 +56,8 @@ public sealed partial class TBAudio
             v.TranslateText(translator);
         }
     }
-    
-    
+
+
     partial void PostInit();
     partial void PostResolve();
 }

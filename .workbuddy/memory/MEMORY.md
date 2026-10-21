@@ -15,7 +15,7 @@
 | `VOL_05_玩法存档音频与地图.md` | 关卡生命周期、存档、音频/倍速、塔型与攻击表现、建造交互、地图链路、新增关卡 |
 | `VOL_06_敌人四方向.md` | AdvancedHen / Monkey 两套架构、构建器与校验坑、AI 分件美术 |
 | `VOL_07_工具与UnityMCP.md` | Unity MCP 两版端口、Python/脚本兜底、怪物素材、待办与环境事实 |
-| `VOL_08_数值管线与平衡.md` | balance_pipeline 命令链与公式、单调性硬校验与前向修复、v6 第一关重平衡决策与 K=1.61 由来、仿真代理局限、apply→菜单3→编译→PlayMode 回放链路 |
+| `VOL_08_数值管线与平衡.md` | balance_pipeline 命令链与公式、单调性硬校验与前向修复、v6 第一关重平衡、**v7 按关拆表 + 节奏重构（表结构/参数/Par 校准/fill-gate 结论）**、仿真代理局限、apply→菜单3→编译→PlayMode 回放链路 |
 
 ## 开工必读铁律
 - 双版本：[家用D] `D:\FreedomTower_1`｜[公司E] `E:\MyTowerGame`。记录必须标版本，严禁跨版套结论；同步走 GitHub `Eagle-Lai/MyTowerGame`(main)。
@@ -26,4 +26,5 @@
 - ★git 必须显式覆盖代理到 7897（默认注入的 60044 对 github 返回 502）：`http_proxy=http://127.0.0.1:7897 https_proxy=http://127.0.0.1:7897 git -c http.version=HTTP/2`；>10MB 必带 HTTP/2；`cannot lock ref` = 并行竞态，先 `ls-remote` 核对，**不要装 git-lfs**。
 - ★★出 APK 前核对 Build Settings：`Boot.unity` 启用 + `Main.unity` 禁用（main 只能从 AB 加载）。
 - ★★改热更码真机三件套：重编 dll → AB 有变化才重打（菜单 9 后立刻 deploy）→ 先跑 `启动热更服务器.bat`。
+- ★★v7 起配置表按关拆分：`Luban/Config/Datas/Levels/L01..L30/`（每关 6 个 xlsx），根目录只剩 `EnemyData.xlsx`（132 原型）+ 非关卡表；旧聚合 5 表已删。改数值只走 `balance_pipeline.py`，别去找 `Datas/RoundData.xlsx`。
 - 日档 `YYYY-MM-DD.md` 追加写，读最近的在最前。

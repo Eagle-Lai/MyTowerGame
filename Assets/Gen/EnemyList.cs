@@ -12,11 +12,11 @@ using SimpleJSON;
 
 
 namespace cfg
-{ 
-
-public sealed partial class EnemyList :  Bright.Config.BeanBase 
 {
-    public EnemyList(JSONNode _json) 
+
+public sealed partial class EnemyList :  Bright.Config.BeanBase
+{
+    public EnemyList(JSONNode _json)
     {
         { if(!_json["id"].IsNumber) { throw new SerializationException(); }  Id = _json["id"]; }
         { var __json0 = _json["EnemyIndexs"]; if(!__json0.IsArray) { throw new SerializationException(); } EnemyIndexs = new System.Collections.Generic.List<int>(__json0.Count); foreach(JSONNode __e0 in __json0.Children) { int __v0;  { if(!__e0.IsNumber) { throw new SerializationException(); }  __v0 = __e0; }  EnemyIndexs.Add(__v0); }   }
@@ -26,7 +26,7 @@ public sealed partial class EnemyList :  Bright.Config.BeanBase
         PostInit();
     }
 
-    public EnemyList(int id, System.Collections.Generic.List<int> EnemyIndexs, int interval, float enemyInterval, string desc ) 
+    public EnemyList(int id, System.Collections.Generic.List<int> EnemyIndexs, int interval, float enemyInterval, string desc )
     {
         this.Id = id;
         this.EnemyIndexs = EnemyIndexs;
@@ -81,7 +81,7 @@ public sealed partial class EnemyList :  Bright.Config.BeanBase
         + "Desc:" + Desc + ","
         + "}";
     }
-    
+
     partial void PostInit();
     partial void PostResolve();
 }

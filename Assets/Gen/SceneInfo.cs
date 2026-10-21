@@ -12,11 +12,11 @@ using SimpleJSON;
 
 
 namespace cfg
-{ 
-
-public sealed partial class SceneInfo :  Bright.Config.BeanBase 
 {
-    public SceneInfo(JSONNode _json) 
+
+public sealed partial class SceneInfo :  Bright.Config.BeanBase
+{
+    public SceneInfo(JSONNode _json)
     {
         { if(!_json["id"].IsNumber) { throw new SerializationException(); }  Id = _json["id"]; }
         { var __json0 = _json["RoundList"]; if(!__json0.IsArray) { throw new SerializationException(); } RoundList = new System.Collections.Generic.List<int>(__json0.Count); foreach(JSONNode __e0 in __json0.Children) { int __v0;  { if(!__e0.IsNumber) { throw new SerializationException(); }  __v0 = __e0; }  RoundList.Add(__v0); }   }
@@ -37,7 +37,7 @@ public sealed partial class SceneInfo :  Bright.Config.BeanBase
         PostInit();
     }
 
-    public SceneInfo(int id, System.Collections.Generic.List<int> RoundList, UnityEngine.Vector3 CameraPosition, UnityEngine.Vector3 CameraRotration, string MapName, UnityEngine.Vector3 EenemyPosition, UnityEngine.Vector3 MapPosition, int PointScale, string name, int mapId, int initialGold, int initialHp, int waveIntervalMs, int nightSightMs, int difficulty, string desc ) 
+    public SceneInfo(int id, System.Collections.Generic.List<int> RoundList, UnityEngine.Vector3 CameraPosition, UnityEngine.Vector3 CameraRotration, string MapName, UnityEngine.Vector3 EenemyPosition, UnityEngine.Vector3 MapPosition, int PointScale, string name, int mapId, int initialGold, int initialHp, int waveIntervalMs, int nightSightMs, int difficulty, string desc )
     {
         this.Id = id;
         this.RoundList = RoundList;
@@ -158,7 +158,7 @@ public sealed partial class SceneInfo :  Bright.Config.BeanBase
         + "Desc:" + Desc + ","
         + "}";
     }
-    
+
     partial void PostInit();
     partial void PostResolve();
 }

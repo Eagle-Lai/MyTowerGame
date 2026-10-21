@@ -165,3 +165,11 @@ Desktop.ini
 
 # 怪物换皮原始图快照（一次性备份，不入库）
 /.workbuddy/reskin_backup/
+
+# ---------------------------------------------------------------------------
+# 5. 配置表拆分的一次性回滚备份（2026-10-21 v7 按关拆表）
+#    Versions/<stamp>/Datas 是迁移前的整份 xlsx 备份，可由
+#    .workbuddy/tools/migrate_split_level_tables.py 重新生成，体积 ~8MB，
+#    只作本机回滚用，不入库（Versions 下的 *.json 仍照常提交）。
+# ---------------------------------------------------------------------------
+Luban/BalanceDesign/Versions/*/Datas/

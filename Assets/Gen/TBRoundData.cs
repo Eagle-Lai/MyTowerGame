@@ -12,18 +12,18 @@ using SimpleJSON;
 
 
 namespace cfg
-{ 
+{
 
 public sealed partial class TBRoundData
 {
     private readonly Dictionary<int, RoundData> _dataMap;
     private readonly List<RoundData> _dataList;
-    
+
     public TBRoundData(JSONNode _json)
     {
         _dataMap = new Dictionary<int, RoundData>();
         _dataList = new List<RoundData>();
-        
+
         foreach(JSONNode _row in _json.Children)
         {
             var _v = RoundData.DeserializeRoundData(_row);
@@ -56,8 +56,8 @@ public sealed partial class TBRoundData
             v.TranslateText(translator);
         }
     }
-    
-    
+
+
     partial void PostInit();
     partial void PostResolve();
 }

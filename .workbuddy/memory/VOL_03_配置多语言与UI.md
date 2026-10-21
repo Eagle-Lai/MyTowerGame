@@ -20,3 +20,14 @@
   - 关键尺寸：塔按钮 96×96、VolumeSlider 480×65、`TowerCodexItem` / `SelectLevelItem` 根节点 active=false。
   - ResTable 漏登记 = 真机打不开。
 - ★HUD 右上两按钮职责：`Btn_Pause` = 只切暂停/继续（不弹窗，两态文本）；`Btn_Intro` = 只打开暂停菜单（不暂停，文案 `Menu`）。暂停的唯一写入口 = `GameClock.SetPaused`，`PauseView` 不写 timeScale；标题按 `IsPaused` 取词。
+
+## Luban 多文件 input 与拆表（2026-10-21 实测，未落地）
+
+- ★`__tables__.xlsx` 的 `input` 列**支持逗号分隔多个 xlsx**，Luban 会合并成一张逻辑表、导出单一 json，行序 = 文件声明顺序；支持子目录相对路径（`Levels/L01/RoundData.xlsx`）。这是"物理按关拆表、逻辑仍是单表、运行时零改动"的唯一可行路径。
+- ★★**一个 xlsx 里不能放多张表**：Luban 会把该文件**所有 sheet** 按同一张表读入（实测 `OtherData` sheet 的 id=91 被并进 TBRoundData）。所以"每关一个工作簿、内含关卡/波次/出怪多张 sheet"**被否决**，只能"每关一个目录 + 每张表一个文件"。
+- ★跨文件重复主键会明确报错（`主键字段:'id' 主键值:'1' 重复`），不会静默覆盖——拆表出错能被抓住。
+- 命令行：`Luban.ClientServer.exe -j cfg -c <cache> -- -d <root.xml> --input_data_dir ... --output_code_dir ... --output_data_dir ... --gen_types code_cs_unity_json,data_json -s all`。`-d` 必须在 `--` 之后，否则报 `unknown argument:-d`；环境变量 `DOTNET_ROLL_FORWARD=LatestMajor` 必带；缺 `__beans__.xlsx` / `__enums__.xlsx` 会直接失败。
+- 拆表改造的必改点（`balance_pipeline.py`）：`source_hashes()`（否则 `assert_sources` 误报源表被改）、`excel_write()`（按 L 分文件 + `tbenemydata` 原型/变体分流）、`write_rating_excel()`、`__tables__` input 自动生成、`commit_files()` 的**删除事务**（旧聚合文件必须消失且可回滚）、`validate()` 加归属一致性。
+- ★易漏的**非**管线消费者：`Assets/Editor/LevelMapEditorWindow.cs` 的「一键写入」→ `.workbuddy/tools/apply_levelmap_export.py`，脚本里硬编码 `Datas/LevelMap.xlsx` 与 `Datas/SceneInfo.xlsx`，拆表后必须按 `level_id` 改路径（C# 侧只读 `ConfigJson/tblevelmap.json`，不用改）。
+- 历史脚本（`add_levels_9_15/16_20_*.py`、`apply_m2_*.py`、`gen_wave_data.py`、`gen_m3_waves_rounds.py`、`gen_challenge_data.py`）直写聚合表，拆表后失效 → 标 LEGACY，不修。
+- 拆表验收口径：**纯物理拆分必须做到 `Assets/ConfigJson/tb*.json` 语义等价**（按 id 排序逐字段比对）。先拆表、再改数值，两阶段分开 apply，否则出问题无法二分定位。

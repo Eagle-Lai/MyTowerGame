@@ -12,18 +12,18 @@ using SimpleJSON;
 
 
 namespace cfg
-{ 
+{
 
 public sealed partial class TBLevelMap
 {
     private readonly Dictionary<int, LevelMap> _dataMap;
     private readonly List<LevelMap> _dataList;
-    
+
     public TBLevelMap(JSONNode _json)
     {
         _dataMap = new Dictionary<int, LevelMap>();
         _dataList = new List<LevelMap>();
-        
+
         foreach(JSONNode _row in _json.Children)
         {
             var _v = LevelMap.DeserializeLevelMap(_row);
@@ -56,8 +56,8 @@ public sealed partial class TBLevelMap
             v.TranslateText(translator);
         }
     }
-    
-    
+
+
     partial void PostInit();
     partial void PostResolve();
 }

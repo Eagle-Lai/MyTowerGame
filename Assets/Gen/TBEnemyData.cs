@@ -12,18 +12,18 @@ using SimpleJSON;
 
 
 namespace cfg
-{ 
+{
 
 public sealed partial class TBEnemyData
 {
     private readonly Dictionary<int, EnemyData> _dataMap;
     private readonly List<EnemyData> _dataList;
-    
+
     public TBEnemyData(JSONNode _json)
     {
         _dataMap = new Dictionary<int, EnemyData>();
         _dataList = new List<EnemyData>();
-        
+
         foreach(JSONNode _row in _json.Children)
         {
             var _v = EnemyData.DeserializeEnemyData(_row);
@@ -56,8 +56,8 @@ public sealed partial class TBEnemyData
             v.TranslateText(translator);
         }
     }
-    
-    
+
+
     partial void PostInit();
     partial void PostResolve();
 }

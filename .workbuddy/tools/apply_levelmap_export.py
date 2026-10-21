@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-把 Unity 地图编辑器导出的 .workbuddy/levelmap_export.json 写回 LevelMap.xlsx（M3-7）。
+把 Unity 地图编辑器导出的 .workbuddy/levelmap_export.json 写回该关自己的
+Luban/Config/Datas/Levels/Lxx/LevelMap.xlsx（M3-7）。拆表前是单张 Datas/LevelMap.xlsx。
 
 【为什么中间要隔一个文件，而不是让编辑器直接写 xlsx】
   工程里能在编辑器侧读写 Excel 的库（ClosedXML）只存在于 Luban 工具目录；
@@ -84,34 +85,48 @@ def header_map(ws):
     return {ws.cell(row=HEADER_ROW, column=c).value: c for c in range(1, ws.max_column + 1)}
 
 
+def level_dir(level_id):
+    """拆表后每关一个目录：Luban/Config/Datas/Levels/Lxx/。"""
+    return os.path.join(DATAS, "Levels", "L%02d" % int(level_id))
+
+
 def scene_level_ids():
     """
-    读 SceneInfo.xlsx 里已登记的关卡 id 集合。
-    【为什么要看】SceneInfo 是"关卡入口表"（决定选关界面能不能进第 N 关），
-    LevelMap 只是它的棋盘。只往 LevelMap 加一行、不在 SceneInfo 登记，
-    游戏里这张图根本进不去 —— 这种"写了但没人用"的坑必须在写表时就提示出来。
-    表不存在或没有 id 列时返回 None（表示无法判断，不报错）。
+    已登记的关卡 id 集合。
+
+    【为什么优先读 ConfigJson 而不是 xlsx】拆表后 SceneInfo 分散在 30 个文件里，
+    逐个打开既慢又容易读到"还没导出的中间态"；Assets/ConfigJson/tbsceneinfo.json
+    是 Luban 的合并产物，就是运行时真正读的东西，判断"这关能不能进"最准。
+    读不到 json 时退回扫 Levels/Lxx/SceneInfo.xlsx（首次导入前也能用）。
     """
-    path = os.path.join(DATAS, "SceneInfo.xlsx")
-    if not os.path.exists(path):
+    path = os.path.join(ROOT, "Assets", "ConfigJson", "tbsceneinfo.json")
+    if os.path.exists(path):
+        try:
+            with open(path, "r", encoding="utf-8-sig") as f:
+                rows = json.load(f)
+            return {int(r["id"]) for r in rows if isinstance(r, dict) and "id" in r}
+        except Exception:
+            pass
+    ids = set()
+    levels_root = os.path.join(DATAS, "Levels")
+    if not os.path.isdir(levels_root):
         return None
-    try:
-        wb = openpyxl.load_workbook(path, read_only=True)
-    except Exception:
-        return None
-    try:
-        ws = wb.active
-        hdr = header_map(ws)
+    for name in sorted(os.listdir(levels_root)):
+        folder = os.path.join(levels_root, name)
+        p = os.path.join(folder, "SceneInfo.xlsx")
+        if not (name.startswith("L") and os.path.isdir(folder) and os.path.exists(p)):
+            continue
+        try:
+            wb = openpyxl.load_workbook(p, read_only=True)
+            ws = wb.active
+            hdr = header_map(ws)
+            wb.close()
+        except Exception:
+            continue
         if "id" not in hdr:
-            return None
-        ids = set()
-        for r in range(FIRST_DATA_ROW, ws.max_row + 1):
-            v = ws.cell(row=r, column=hdr["id"]).value
-            if v is not None:
-                ids.add(int(v))
-        return ids
-    finally:
-        wb.close()
+            continue
+        ids.add(int(name[1:]))
+    return ids or None
 
 
 def main():
@@ -158,12 +173,18 @@ def main():
         raise SystemExit("校验未通过，未写文件")
 
     # ---------- 写回 ----------
-    xlsx_path = os.path.join(DATAS, "LevelMap.xlsx")
+    # 拆表后 LevelMap 按关存放：Levels/Lxx/LevelMap.xlsx（一关一行）
+    xlsx_path = os.path.join(level_dir(level_id), "LevelMap.xlsx")
     if not os.path.exists(xlsx_path):
-        raise SystemExit("找不到源表：%s" % xlsx_path)
+        raise SystemExit(
+            "找不到该关的棋盘源表：%s\n"
+            "拆表后每关一个文件（Levels/L%02d/LevelMap.xlsx）。若要新增关卡，"
+            "请先用 .workbuddy/tools/migrate_split_level_tables.py 或数值管线建好该关目录。"
+            % (xlsx_path, level_id))
 
     stamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-    dst = os.path.join(BACKUP_ROOT, stamp, "Config", "Datas")
+    # 备份目录带关卡号，避免 30 个 LevelMap.xlsx.bak 互相覆盖
+    dst = os.path.join(BACKUP_ROOT, stamp, "Config", "Datas", "Levels", "L%02d" % level_id)
     os.makedirs(dst, exist_ok=True)
     shutil.copy2(xlsx_path, os.path.join(dst, "LevelMap.xlsx"))
     print("已备份到: %s" % dst)
@@ -197,15 +218,16 @@ def main():
         ws.cell(row=target, column=hdr["desc"]).value = desc
 
     wb.save(xlsx_path)
-    print("已%s LevelMap.xlsx 第 %d 行（关卡 %d，%d×%d）"
-          % ("新增" if created else "更新", target, level_id, cols, rows))
+    print("已%s %s 第 %d 行（关卡 %d，%d×%d）"
+          % ("新增" if created else "更新", os.path.relpath(xlsx_path, ROOT), target, level_id, cols, rows))
 
     # ---------- 软提示：SceneInfo 是否登记过这一关 ----------
     ids = scene_level_ids()
     if ids is not None and level_id not in ids:
         print("")
-        print("[提示] SceneInfo.xlsx 里没有 id=%d 这一关 —— 棋盘写好了，但游戏里还进不去。" % level_id)
-        print("       需要同时在 Luban/Config/Datas/SceneInfo.xlsx 登记该关（关卡入口/波次/经济等）。")
+        print("[提示] SceneInfo 里没有 id=%d 这一关 —— 棋盘写好了，但游戏里还进不去。" % level_id)
+        print("       需要同时在 Luban/Config/Datas/Levels/L%02d/SceneInfo.xlsx 登记该关（关卡入口/波次/经济等）。"
+              % level_id)
 
     print("")
     print("写表完成。Unity 会接着自动跑 Luban 导出并在编辑器里回读校验。")

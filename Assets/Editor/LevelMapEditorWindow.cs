@@ -17,7 +17,7 @@ namespace FTProject.EditorTools
     /// 【一键写入的完整链路】点一次「一键写入 xlsx」按钮，按顺序做完这 5 步，中途失败即停：
     ///     ① 页面数据自检（行长 / S 与 E 各一个 / S→E 可达）—— 不合格绝不落盘
     ///     ② 读页面数据 → 导出 .workbuddy/levelmap_export.json
-    ///     ③ 调 Python 脚本把 json 写回 Luban/Config/Datas/LevelMap.xlsx（自动备份原表）
+    ///     ③ 调 Python 脚本把 json 写回本关的 Luban/Config/Datas/Levels/Lxx/LevelMap.xlsx（自动备份原表）
     ///     ④ 跑 Luban 重导，生成 Assets/ConfigJson/tblevelmap.json
     ///     ⑤ 刷新资源库 → 从重导后的 json 回读本关，逐格比对"画进去的"和"读回来的"
     ///   第 ⑤ 步是这套流程的价值所在：它把"写表成功"升级成"往返一致"，
@@ -629,7 +629,7 @@ namespace FTProject.EditorTools
             //   依赖编译器对 finally 控制流的分析；这里显式初始化，把"能不能编过"变成确定的事。
             string outp = null, errp = null;
             int code = -3;
-            EditorUtility.DisplayProgressBar("一键写入 xlsx", "正在写回 Luban/Config/Datas/LevelMap.xlsx …", 0.33f);
+            EditorUtility.DisplayProgressBar("一键写入 xlsx", "正在写回 Luban/Config/Datas/Levels/Lxx/LevelMap.xlsx …", 0.33f);
             try
             {
                 code = RunProcess(python, "\"" + script + "\"", root, out outp, out errp, ApplierTimeoutMs);
@@ -644,12 +644,12 @@ namespace FTProject.EditorTools
 
             if (code != 0)
             {
-                LogErr(string.Format("写表脚本返回非 0（exitCode={0}），LevelMap.xlsx 未改动。", code));
+                LogErr(string.Format("写表脚本返回非 0（exitCode={0}），该关 LevelMap.xlsx 未改动。", code));
                 AppendToolTail(outp, errp);
                 FlushStatus(true);
                 return;
             }
-            LogOk("已写回 LevelMap.xlsx" + ExtractBackupHint(outp));
+            LogOk("已写回该关 LevelMap.xlsx" + ExtractBackupHint(outp));
             LogSkip(ExtractSceneHint(outp));
 
             // ── ⑤ Luban 重导（这一步把 xlsx 变成运行时真正读的 tblevelmap.json）
