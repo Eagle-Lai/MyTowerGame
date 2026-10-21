@@ -1,15 +1,18 @@
 #!/usr/bin/env python3
-"""Authoritative deterministic balance compiler. Preview never writes Assets or Excel.
+"""Deterministic balance compiler — READ ONLY with respect to the project tables.
 
-Luban spreadsheets are machine-owned source tables, so this adapter deliberately uses
-the project's established openpyxl writer to preserve Luban header/type/style contracts.
+v7 之后（2026-10-21 用户要求）**apply / rollback 已整体移除**：
+关卡配置表（Luban/Config/Datas/Levels/**、Assets/ConfigJson/**）只能手工修改，
+本脚本只负责 generate / preview / validate / simulate / verify-layout 这类只读分析，
+以及把导出结果写进 `--out` 指定的临时目录（默认 Library/BalanceWorkbench）。
+
+Luban spreadsheets are hand-owned source tables now; this module never writes them.
 All gameplay formulae live here and in balance_design.json, never in the EditorWindow.
 """
 from __future__ import annotations
 import argparse, collections, copy, csv, hashlib, json, math, os, pathlib, shutil
 import struct, subprocess, sys, time, traceback, uuid
 from datetime import datetime,timezone
-from contextlib import contextmanager
 from decimal import Decimal, ROUND_CEILING
 from balance_campaign import dimensions, prepare_manifest, allocate, economy
 
@@ -827,212 +830,16 @@ def write_rating_excel(datas,rows):
         ws.cell(rr,heads['runtimeContentHash'],row['runtimeContentHash'])
         wb.save(p);wb.close()
 
-@contextmanager
-def job_lock():
-    JOBS.mkdir(parents=True,exist_ok=True);p=JOBS/'apply.lock'
-    if p.exists():
-        try:pid=int(p.read_text())
-        except (ValueError,OSError):raise RuntimeError('Unreadable apply lock; inspect '+str(p))
-        if os.name=='nt':
-            import ctypes
-            handle=ctypes.windll.kernel32.OpenProcess(0x1000,False,pid)
-            active=False
-            if handle:
-                status=ctypes.c_ulong();ctypes.windll.kernel32.GetExitCodeProcess(handle,ctypes.byref(status));active=status.value==259;ctypes.windll.kernel32.CloseHandle(handle)
-        else:
-            try:os.kill(pid,0);active=True
-            except ProcessLookupError:active=False
-        if active:raise RuntimeError('Another active application owns '+str(p))
-        # Only an exited task's lock is released. Journal recovery runs under our new lock.
-        p.unlink()
-    try:fd=os.open(p,os.O_CREAT|os.O_EXCL|os.O_WRONLY)
-    except FileExistsError:raise RuntimeError('Another application acquired '+str(p))
-    os.write(fd,str(os.getpid()).encode());os.close(fd)
-    try:
-        # A prior recovery may have been blocked by external edits after its stale lock
-        # was removed. Never let a second attempt silently bypass that journal.
-        for jp in JOBS.glob('*/transaction.json'):
-            journal=read_json(jp)
-            if journal.get('phase') not in ['prepared','committing','rollback_blocked']:continue
-            restore_transaction(journal)
-            journal['phase']='rolled_back';write_json(jp,journal)
-            progress('recovered_interrupted_transaction',jobId=journal['jobId'])
-        yield
-    finally:p.unlink(missing_ok=True)
+def assert_safe_out(out):
+    """写盘类命令（stage）的输出目录不得落在工程数据区。
 
-def restore_transaction(journal):
-    conflicts=[e['path'] for e in journal['entries'] if file_hash(ROOT/e['path']) not in [e['before'],e['after']]]
-    if conflicts:raise RuntimeError('External modifications block rollback: '+', '.join(conflicts))
-    for e in reversed(journal['entries']):
-        dst=ROOT/e['path']
-        if file_hash(dst)==e['before']:continue
-        if e['backup']:
-            # Windows can keep the destination memory-mapped after Luban/Unity
-            # reads it. Replacing a staged file avoids truncating that live map.
-            temporary=dst.with_name(dst.name+'.rollback-'+uuid.uuid4().hex+'.tmp')
-            try:
-                shutil.copy2(e['backup'],temporary)
-                if file_hash(dst) not in [e['before'],e['after']]:
-                    raise RuntimeError('External modification during rollback: '+e['path'])
-                os.replace(temporary,dst)
-            finally:temporary.unlink(missing_ok=True)
-        elif file_hash(dst)==e['after']:dst.unlink(missing_ok=True)
-
-def assert_sources(expected):
-    changed=[p for p,h in expected.items() if file_hash(ROOT/p)!=h]
-    if changed:raise RuntimeError('External source changes detected; regenerate candidate before apply: '+', '.join(changed[:15]))
-
-def check_managed_conflicts():
-    state=read_json(STATE)
-    if not state:return
-    # Compare managed cell values, not xlsx zip timestamps, and require explicit resolution.
-    # Split level tables: the row may live in any Levels/Lxx file, so build an id->file index
-    # first and treat "same id in two files" as a hard conflict (it would break Luban's PK).
-    import openpyxl
-    conflicts=[]
-    for table,rows in state.get('managedRows',{}).items():
-        sources=table_sources(table)
-        if not sources:conflicts.append(f'{table}: no source file under Datas');continue
-        location=collections.defaultdict(list)
-        for p in sources:
-            wb=openpyxl.load_workbook(p,data_only=True);ws=wb.active;headers={c.value:c.column for c in ws[1] if c.value}
-            if 'id' not in headers:wb.close();conflicts.append(f'{p.name} has no id column: {p}');continue
-            for r in range(4,ws.max_row+1):
-                v=ws.cell(r,headers['id']).value
-                if v is not None:location[v].append(str(p))
-            wb.close()
-        cache={}
-        for row in rows:
-            paths=location.get(row['id'])
-            if not paths:conflicts.append(f'{table}/{row["id"]} missing');continue
-            if len(paths)>1:conflicts.append(f'{table}/{row["id"]} duplicated in {len(paths)} files');continue
-            p=pathlib.Path(paths[0])
-            if p not in cache:
-                wb=openpyxl.load_workbook(p,data_only=True);ws=wb.active
-                cache[p]=(wb,ws,{c.value:c.column for c in ws[1] if c.value})
-            wb,ws,headers=cache[p]
-            if 'id' not in headers:continue
-            r=next((r for r in range(4,ws.max_row+1) if ws.cell(r,headers['id']).value==row['id']),None)
-            if not r:conflicts.append(f'{table}/{row["id"]} missing');continue
-            for k,v in row.items():
-                if k not in headers:continue
-                expected=('|' if k=='cells' else ',').join(map(str,v)) if isinstance(v,list) else v
-                if isinstance(expected,dict) and all(k in expected for k in ['x','y','z']):expected=','.join(str(expected[k]) for k in ['x','y','z'])
-                actual=ws.cell(r,headers[k]).value
-                if expected in ('',None) and actual in ('',None):continue
-                if isinstance(expected,(int,float)) and isinstance(actual,(int,float)) and math.isclose(expected,actual,rel_tol=1e-12,abs_tol=1e-10):continue
-                if actual!=expected:conflicts.append(f'{table}/{row["id"]}/{k}')
-        for wb,_,_ in cache.values():wb.close()
-    if conflicts:raise RuntimeError('Managed Excel cells changed externally. Import edits as recipe overrides or discard candidate: '+', '.join(conflicts[:30]))
-
-def commit_files(files,jobdir,plan):
-    """files: [(src, dst)]；src=None 表示删除 dst（拆表后旧聚合文件必须消失，且要能回滚恢复）。"""
-    backup=jobdir/'backup';backup.mkdir(parents=True,exist_ok=True)
-    entries=[]
-    for src,dst in files:
-        if src is None:
-            if not dst.exists():continue
-            rel=str(dst.relative_to(ROOT)).replace('\\','/');bp=backup/rel
-            bp.parent.mkdir(parents=True,exist_ok=True);shutil.copy2(dst,bp)
-            entries.append({'path':rel,'before':file_hash(dst),'after':None,'backup':str(bp),'source':None})
-            continue
-        if dst.exists() and src.read_bytes()==dst.read_bytes():continue
-        rel=str(dst.relative_to(ROOT)).replace('\\','/');bp=backup/rel
-        if dst.exists():bp.parent.mkdir(parents=True,exist_ok=True);shutil.copy2(dst,bp)
-        entries.append({'path':rel,'before':file_hash(dst),'after':file_hash(src),'backup':str(bp) if dst.exists() else None,'source':str(src)})
-    journal={'schemaVersion':1,'jobId':jobdir.name,'phase':'prepared','profileId':plan['profileId'],'entries':entries}
-    write_json(jobdir/'transaction.json',journal)
-    try:
-        journal['phase']='committing';write_json(jobdir/'transaction.json',journal)
-        for e in entries:
-            dst=ROOT/e['path'];dst.parent.mkdir(parents=True,exist_ok=True)
-            if e['after'] is None:
-                dst.unlink(missing_ok=True);continue
-            temp=dst.with_name(dst.name+'.balance-tmp')
-            try:
-                shutil.copy2(e['source'],temp);os.replace(temp,dst)
-            finally:
-                temp.unlink(missing_ok=True)
-        journal['phase']='committed';write_json(jobdir/'transaction.json',journal)
-    except BaseException as error:
-        try:
-            restore_transaction(journal)
-            journal['phase']='rolled_back';write_json(jobdir/'transaction.json',journal)
-        except BaseException as recovery_error:
-            journal['phase']='rollback_blocked';journal['recoveryError']=str(recovery_error)
-            write_json(jobdir/'transaction.json',journal)
-            raise RuntimeError('Commit failed and recovery is blocked; inspect '+str(jobdir/'transaction.json')+': '+str(recovery_error)) from error
-        raise
-    return journal
-
-def apply_plan(plan,out):
-    if not validate(plan)['passed']:raise RuntimeError('Candidate validation failed')
-    layout=verify_layout()
-    if not layout['passed']:raise RuntimeError('Level table layout failed: '+canonical(layout['problems'][:10]))
-    with job_lock():
-        check_managed_conflicts();assert_sources(plan['sourceHashes']);check_cancel(out)
-        jobdir=pathlib.Path(out);jobdir.mkdir(parents=True,exist_ok=True)
-        progress('stage_excel',jobId=jobdir.name)
-        excel_write(jobdir/'Datas',plan)
-        check_cancel(out)
-        progress('stage_luban',jobId=jobdir.name)
-        luban_export(jobdir/'Datas',jobdir/'Gen',jobdir/'ConfigJson',jobdir/'luban.cache.meta')
-        check_cancel(out)
-        content_hash=runtime_content_hash(plan,jobdir/'ConfigJson')
-        for r in plan['tables']['tblevelrating']:r['runtimeContentHash']=content_hash
-        write_rating_excel(jobdir/'Datas',plan['tables']['tblevelrating'])
-        luban_export(jobdir/'Datas',jobdir/'Gen',jobdir/'ConfigJson',jobdir/'luban.cache.meta')
-        result=validate(plan,jobdir/'ConfigJson');write_json(jobdir/'export_validation.json',result)
-        if not result['passed']:raise RuntimeError('Staged JSON validation failed: '+canonical(result['errors']))
-        assert_sources(plan['sourceHashes']);check_cancel(out)
-        # Stage authoritative metadata in same transaction; manifests are not committed during preview.
-        write_json(jobdir/'balance_design.json',plan['recipe']);write_json(jobdir/'variant_manifest.json',plan['manifest'])
-        write_json(jobdir/'applied_state.json',{'profileId':plan['profileId'],'jobId':jobdir.name,
-          'planHashes':{str(r['id']):r['planHash'] for r in plan['tables']['tblevelrating']},
-          'ownedFields':{k:sorted(v) for k,v in OWNED_FIELDS.items()},
-          'managedRows':{k:[{f:value for f,value in r.items() if k not in OWNED_FIELDS or f=='id' or f in OWNED_FIELDS[k]}
-              for r in v if k!='tbenemydata' or r['id']>=100000] for k,v in plan['tables'].items()}})
-        datas=jobdir/'Datas'
-        files=[(p,DATA/p.relative_to(datas)) for p in sorted((datas/'Levels').glob('L*/*.xlsx'))]
-        files += [(datas/(name+'.xlsx'),DATA/(name+'.xlsx')) for name in TABLE_FILES.values() if name not in LEVEL_TABLE_FILES]
-        # EnemyData 主表只剩原型，仍在 Datas 根目录
-        files.append((datas/(TABLE_FILES['tbenemydata']+'.xlsx'),DATA/(TABLE_FILES['tbenemydata']+'.xlsx')))
-        # 旧聚合文件在拆表后必须消失；用事务删除项，回滚时从 backup 恢复。
-        files += [(None,DATA/(name+'.xlsx')) for name in LEGACY_AGGREGATES]
-        files.append((datas/'__tables__.xlsx',DATA/'__tables__.xlsx'))
-        files.append((datas/'Localization.xlsx',DATA/'Localization.xlsx'))
-        for name in ['Gen','ConfigJson']:
-            for src in (jobdir/name).glob('*'):
-                if src.is_file() and src.suffix in ['.cs','.json']:files.append((src,ROOT/'Assets'/name/src.name))
-        files += [(jobdir/'balance_design.json',DEFAULT_RECIPE),(jobdir/'variant_manifest.json',MANIFEST),(jobdir/'applied_state.json',STATE)]
-        progress('commit',fileCount=len(files),jobId=jobdir.name)
-        journal=commit_files(files,jobdir,plan)
-        try:
-            final=validate(plan,ROOT/'Assets/ConfigJson');write_json(jobdir/'validation.json',final)
-            if not final['passed']:raise RuntimeError('Final readback failed: '+canonical(final['errors']))
-        except BaseException as error:
-            journal['validationError']=str(error)
-            try:
-                restore_transaction(journal)
-                journal['phase']='rolled_back';write_json(jobdir/'transaction.json',journal)
-            except BaseException as recovery_error:
-                journal['phase']='rollback_blocked';journal['recoveryError']=str(recovery_error)
-                write_json(jobdir/'transaction.json',journal)
-                raise RuntimeError('Final readback failed and recovery is blocked; inspect '+str(jobdir/'transaction.json')+': '+str(recovery_error)) from error
-            raise RuntimeError('Final readback failed; transaction restored: '+jobdir.name) from error
-        progress('complete',passed=True,jobId=jobdir.name,transaction=str(jobdir/'transaction.json'))
-        return journal
-
-def rollback(path,force=False):
-    p=pathlib.Path(path)
-    if p.is_dir():p=p/'transaction.json'
-    journal=read_json(p)
-    if not journal:raise ValueError('Transaction not found '+str(p))
-    if journal['phase']=='rolled_back':return journal
-    with job_lock():
-        restore_transaction(journal)
-        journal['phase']='rolled_back';write_json(p,journal)
-    return journal
+    v7 之后关卡配置表只能手工维护，apply/rollback 已整体移除；这里再挡一层：
+    即使传错 --out，也不允许往 Luban/ 或 Assets/ 里写任何东西。
+    """
+    p=pathlib.Path(out).resolve()
+    for guarded in [(ROOT/"Luban").resolve(),(ROOT/"Assets").resolve()]:
+        if p==guarded or guarded in p.parents:
+            raise RuntimeError("拒绝写入工程数据区："+str(p)+"（配置表只能手工改，或改到 Library 下的临时目录）")
 
 def export_reports(plan,out):
     out=pathlib.Path(out);out.mkdir(parents=True,exist_ok=True)
@@ -1135,7 +942,8 @@ def assert_tower_radius_type():
 
 
 def stage_export(plan,out):
-    """Full export dry run: mirrors apply_plan's two-pass Luban export without touching the project."""
+    """Full export dry run into --out (two-pass Luban export); never touches the project."""
+    assert_safe_out(out)
     require_openpyxl();assert_tower_radius_type()
     jobdir=pathlib.Path(out);jobdir.mkdir(parents=True,exist_ok=True)
     datas=jobdir/'Datas';code=jobdir/'Gen';data=jobdir/'ConfigJson'
@@ -1160,7 +968,7 @@ def verify_layout():
     每关 SceneInfo.RoundList → 本关 RoundData → 本关 EnemyList → 本关 EnemyData。
     """
     import openpyxl
-    problems=[];stats={}
+    problems=[];notes=[];stats={}
     def load(p):
         wb=openpyxl.load_workbook(p);ws=wb.active
         heads={c.value:c.column for c in ws[1] if c.value}
@@ -1198,8 +1006,10 @@ def verify_layout():
             row=lists.get(lid)
             if row is None:problems.append(f'L{L} round {rid} 引用的 enemyList {lid} 不在本关文件');continue
             used_enemies|={int(x) for x in str(row.get('EnemyIndexs') or '').split(',') if str(x).strip()}
-        if used_lists!=set(lists):problems.append(f'L{L} EnemyList 有 {len(set(lists)-used_lists)} 行未被本关引用')
-        if used_enemies!=set(enemies):problems.append(f'L{L} EnemyData 行与本关引用闭包不一致（多 {len(set(enemies)-used_enemies)} / 少 {len(used_enemies-set(enemies))}）')
+        if used_lists!=set(lists):notes.append(f'L{L} EnemyList 有 {len(set(lists)-used_lists)} 行未被本关引用（手工改表后允许）')
+        missing_enemies=used_enemies-set(enemies)
+        if missing_enemies:problems.append(f'L{L} 引用了不在本关文件里的怪物变体：{sorted(missing_enemies)[:5]}')
+        if set(enemies)-used_enemies:notes.append(f'L{L} EnemyData 有 {len(set(enemies)-used_enemies)} 行没被任何波引用（手工改表的孤儿行）')
         for eid,row in enemies.items():
             desc=str(row.get('desc') or '')
             if f'level={L};' not in desc and not desc.endswith(f'level={L}'):
@@ -1234,19 +1044,23 @@ def verify_layout():
             got=[x for x in str(ws.cell(r,heads['input']).value or '').split(',') if x]
             if got!=want:problems.append(f'__tables__ {ws.cell(r,heads["full_name"]).value} 的 input 与磁盘不一致')
         wb.close()
-    return {'passed':not problems,'problems':problems,'stats':stats}
+    return {'passed':not problems,'problems':problems,'notes':notes,'stats':stats}
 
 
 def main(argv=None):
+    argv=list(sys.argv[1:] if argv is None else argv)
+    if argv and argv[0] in ('apply','rollback'):
+        raise RuntimeError('apply/rollback 已在 v7 之后移除：关卡配置表只能手工修改，'
+                           '本脚本不再写 Luban/Config/Datas 或 Assets/ConfigJson')
     parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('command',choices=['inspect','generate','preview','validate','apply','stage','rollback','simulate','all-profiles','init','verify-layout'])
+    parser.add_argument('command',choices=['inspect','generate','preview','validate','stage','simulate','all-profiles','init','verify-layout'])
     parser.add_argument('--profile',default=None);parser.add_argument('--recipe',default=str(DEFAULT_RECIPE));parser.add_argument('--out',default=None)
-    parser.add_argument('--plan');parser.add_argument('--dry-run',action='store_true');parser.add_argument('--transaction')
+    parser.add_argument('--plan')
     parser.add_argument('--level-min',type=int,default=1);parser.add_argument('--level-max',type=int,default=None)
     parser.add_argument('--wave-min',type=int,default=1);parser.add_argument('--wave-max',type=int,default=None)
     parser.add_argument('--strategy',default='mixed');parser.add_argument('--step-ms',type=int,default=100)
     parser.add_argument('--step',type=float);parser.add_argument('--seed',type=int,default=42)
-    parser.add_argument('--all-profiles',action='store_true');parser.add_argument('--backup')
+    parser.add_argument('--all-profiles',action='store_true')
     parser.add_argument('--export-dir')
     args=parser.parse_args(argv);start=time.perf_counter()
     if args.step_ms<=0 or (args.step is not None and (not math.isfinite(args.step) or args.step<=0)):
@@ -1254,8 +1068,6 @@ def main(argv=None):
     if args.command=='init':
         if DEFAULT_RECIPE.exists():raise RuntimeError('Recipe already exists')
         write_json(DEFAULT_RECIPE,default_recipe());return
-    if args.command=='rollback':
-        result=rollback(args.transaction or args.backup or args.out);progress('complete',result=result);return
     if args.command=='verify-layout':
         result=verify_layout()
         out=pathlib.Path(args.out or JOBS/('verify-layout-'+uuid.uuid4().hex[:12]));out.mkdir(parents=True,exist_ok=True)
@@ -1321,9 +1133,7 @@ def main(argv=None):
     if args.command=='stage':
         result=stage_export(plan,out)
         raise SystemExit(0 if result['passed'] else 2)
-    if args.command=='apply' and not args.dry_run:
-        require_openpyxl();assert_tower_radius_type();apply_plan(plan,out)
-    else:progress('complete',passed=result['validation']['passed'],dryRun=True,out=str(out),elapsedSec=time.perf_counter()-start)
+    progress('complete',passed=result['validation']['passed'],dryRun=True,out=str(out),elapsedSec=time.perf_counter()-start)
 
 def run_cli():
     terminal_out=None
