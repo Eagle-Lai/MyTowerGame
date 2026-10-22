@@ -60,6 +60,7 @@ namespace FTProject
             go.transform.SetParent(towerRoot, false);
             SpriteRenderer sr = go.AddComponent<SpriteRenderer>();
             sr.sprite = sp;
+            sr.sortingLayerName = BoardSorting.LayerMain;
             sr.sortingOrder = SortingOrder;
             sr.color = RingColor;
 

@@ -119,6 +119,7 @@ namespace FTProject
                 go.transform.SetParent(_root != null ? _root : transform, false);
                 SpriteRenderer sr = go.AddComponent<SpriteRenderer>();
                 sr.sprite = _arrowSprite;
+                sr.sortingLayerName = BoardSorting.LayerMain;
                 sr.sortingOrder = BoardSorting.PathArrow;
                 sr.color = new Color(1f, 1f, 1f, 0.75f);
                 go.SetActive(false);

@@ -33,6 +33,7 @@ namespace FTProject
                 _sr = gameObject.AddComponent<SpriteRenderer>();
             }
             _sr.sprite = sprite;
+            _sr.sortingLayerName = BoardSorting.LayerMain;
             _sr.sortingOrder = BoardSorting.Cell;
 
             float target = cellSize * fillRatio;

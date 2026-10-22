@@ -156,20 +156,58 @@ namespace FTProject
     /// 渲染层级约定（统一在此声明，避免各改各的）。
     /// 注意：完全不使用 UGUI 承载玩法对象，全部为世界空间 SpriteRenderer。
     ///
+    /// 【排序层】ProjectSettings/TagManager.asset，声明顺序即优先级
+    /// （Default 保留但不用于玩法对象）：
+    ///   Bg   → 背景纸，永远在棋盘之下
+    ///   Main → 棋盘 / 路径 / 射程圈 / 塔 / 怪 / 子弹（层内再按 sortingOrder 排队）
+    ///   Pop  → 需要压在所有世界物体之上的东西（伤害飘字）
+    /// **层优先级高于层内 sortingOrder**：要跨层就用层，不要靠调 order 硬顶。
+    ///
+    /// 【层内顺序】数值越大越靠前：
+    ///   Cell 0 → PathArrow 10 → RangeIndicator 100 → Tower 200 → Enemy 300 → Bullet 400
+    /// 2026-10-21 定案：**永远怪压塔**（Tower 必须小于 Enemy），任何情况下不允许塔盖住怪。
+    ///
+    /// 【SortingGroup】塔与怪的根节点各挂一个 SortingGroup，组序取下方的 Tower / Enemy；
+    /// 组内的子渲染器只用相对序号（TowerBody / TowerBarrel / EnemyHpBarBack…）。
+    /// ★ 子渲染器写多大都**越不出组**：写 500 只是在本组内排到最前，不会跑到别的组之上。
+    ///
     /// 配合 Graphics Settings 的 Transparency Sort Mode = Custom Axis (0,-1,0)，
-    /// 同层内会按 Y 从大到小绘制，从而实现"靠下的物体盖住靠上的"。
+    /// 同层同序内会按 Y 从大到小绘制，从而实现"靠下的物体盖住靠上的"。
     /// </summary>
     public static class BoardSorting
     {
-        /// <summary>背景（在格子之下）</summary>
-        public const int Background = -100;
+        // ---- 排序层名（字符串必须与 TagManager 里的名字逐字一致）----
+        public const string LayerBg = "Bg";
+        public const string LayerMain = "Main";
+        public const string LayerPop = "Pop";
+
+        /// <summary>背景（Bg 层，层内序号无实际意义）</summary>
+        public const int Background = 0;
+
+        // ---- Main 层：全局序号 ----
         public const int Cell = 0;
         public const int PathArrow = 10;
-        /// <summary>射程提示圈（在格子之上、怪物之下，避免挡住塔与怪）</summary>
+        /// <summary>射程提示圈 / 减速光环（格子之上、塔与怪之下）</summary>
         public const int RangeIndicator = 100;
-        public const int Enemy = 200;      // 与怪物素材包 SortingGroup 默认值一致
-        public const int Tower = 300;      // 塔默认盖住怪
+        /// <summary>塔的 SortingGroup 根序。★ 必须小于 Enemy：永远怪压塔。</summary>
+        public const int Tower = 200;
+        /// <summary>怪的 SortingGroup 根序。★ 必须大于 Tower。</summary>
+        public const int Enemy = 300;
         public const int Bullet = 400;
-        public const int Overlay = 500;    // 血条 / 伤害数字
+
+        // ---- SortingGroup 组内相对序号（只在所属组内有意义，不是全局层级）----
+        public const int TowerBody = 0;
+        public const int TowerBarrel = 1;
+        public const int TowerMuzzleFx = 2;
+        /// <summary>
+        /// 血条在**组内**的相对序：只在敌人自己的 SortingGroup 里比大小，与全局层级无关。
+        /// 必须大于美术包所有部件（实测最大 99：BugQueen / MossQueen 的装饰件；蝎子 40~70），
+        /// 所以取 500/501 —— 这不是"Overlay 层"，别拿它跟 Pop 层的 0 去比。
+        /// </summary>
+        public const int EnemyHpBarBack = 500;
+        public const int EnemyHpBarFill = 501;
+
+        /// <summary>Pop 层：伤害飘字（世界空间 Canvas）</summary>
+        public const int PopOverlay = 0;
     }
 }

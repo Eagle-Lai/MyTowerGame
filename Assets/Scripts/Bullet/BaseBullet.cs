@@ -104,6 +104,7 @@ namespace FTProject
             }
             if (_sr != null)
             {
+                _sr.sortingLayerName = BoardSorting.LayerMain;
                 _sr.sortingOrder = BoardSorting.Bullet;
                 transform.localScale = Vector3.one * cfg.Scale;
             }

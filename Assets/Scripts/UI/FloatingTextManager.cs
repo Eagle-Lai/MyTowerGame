@@ -124,7 +124,9 @@ namespace FTProject
             GameObject root = new GameObject("FloatingTextRoot");
             Canvas canvas = root.AddComponent<Canvas>();
             canvas.renderMode = RenderMode.WorldSpace;
-            canvas.sortingOrder = BoardSorting.Overlay;   // 已预留 500：血条 / 伤害数字
+            // 伤害飘字走 Pop 排序层：层优先级高于层内 order，任何 Main 层物体都压不住它。
+            canvas.sortingLayerName = BoardSorting.LayerPop;
+            canvas.sortingOrder = BoardSorting.PopOverlay;
 
             // 世界空间 Canvas 的常规做法：整体缩小，让 1 canvas 单位 = 0.01 世界单位。
             // 于是 fontSize=34 的字约 0.34 世界单位高，与"1 格 = 1 世界单位"相称。

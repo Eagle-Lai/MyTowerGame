@@ -163,16 +163,11 @@ namespace FTProject
 
             if (_renderers == null)
             {
+                // 只做缓存（SetTint / 预览半透明要用），**不再改写 sortingOrder**：
+                // 塔根节点已挂 SortingGroup，子渲染器用的是组内相对序号（0=炮座 / 1=炮管）。
+                // 旧的「< Tower 就抬到 Tower」规则会把炮座与炮管压成同一层，破坏相对层次；
+                // 塔的全局位置现在由根节点的组序 BoardSorting.Tower 决定。
                 _renderers = GetComponentsInChildren<SpriteRenderer>(true);
-                for (int i = 0; i < _renderers.Length; i++)
-                {
-                    // 保留 prefab 里排好的相对层次（炮座 300 / 炮管 301），
-                    // 只把"画在棋盘底下"的那些抬到塔层，不做无差别覆盖
-                    if (_renderers[i] != null && _renderers[i].sortingOrder < BoardSorting.Tower)
-                    {
-                        _renderers[i].sortingOrder = BoardSorting.Tower;
-                    }
-                }
             }
             if (_barrel == null)
             {

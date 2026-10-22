@@ -55,7 +55,8 @@ namespace FTProject
             GameObject go = new GameObject("RangeIndicator");
             SpriteRenderer sr = go.AddComponent<SpriteRenderer>();
             sr.sprite = sp;
-            sr.sortingOrder = BoardSorting.RangeIndicator;   // 已预留 100：格子之上、怪物之下
+            sr.sortingLayerName = BoardSorting.LayerMain;
+            sr.sortingOrder = BoardSorting.RangeIndicator;   // 格子之上、塔与怪之下
             sr.color = RingColor;
 
             RangeIndicatorView v = go.AddComponent<RangeIndicatorView>();

@@ -81,8 +81,10 @@ namespace FTProject
                 go = new GameObject(FxNodeName);
                 go.transform.SetParent(anchor, false);
                 SpriteRenderer sr = go.AddComponent<SpriteRenderer>();
-                // 塔层之上、子弹层之下：焰要盖住炮管，但不得盖住飞行中的弹体/爆炸
-                sr.sortingOrder = BoardSorting.Tower + 2;
+                // 焰是塔的子节点 → 落在塔的 SortingGroup 内，这里用的是**组内相对序号**：
+                // 必须大于炮管（TowerBarrel），才能盖住炮口。
+                sr.sortingLayerName = BoardSorting.LayerMain;
+                sr.sortingOrder = BoardSorting.TowerMuzzleFx;
             }
             else
             {
@@ -214,6 +216,7 @@ namespace FTProject
             go.transform.SetParent(_blastRoot, false);
             go.transform.localScale = Vector3.one;
             SpriteRenderer sr = go.AddComponent<SpriteRenderer>();
+            sr.sortingLayerName = BoardSorting.LayerMain;
             sr.sortingOrder = BoardSorting.Bullet + 1;
             TowerFireFx fx = go.AddComponent<TowerFireFx>();
             fx._sr = sr;
