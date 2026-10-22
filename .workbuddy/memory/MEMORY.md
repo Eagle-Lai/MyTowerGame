@@ -22,8 +22,8 @@
 - 命名：`自由人塔防`=文档名｜`FREEDOM TOWER`=副标题｜`freedomtower`=包名｜`FreeTower`=YooAsset 包裹名（★改则热更全失效）｜`FTProject`=命名空间。
 - 跑生成/挂载菜单前必须 `isCompiling == false && isPlaying == false`；改过 `Assets/Editor/*.cs` 要等编译完；动手前先确认 MCP 连的是本工程（不是 CatchFish）。
 - 编辑器脚本不弹 `DisplayDialog`（走 `Debug.Log`）；危险操作拆成两档菜单。
-- ★提交：**全部一起提交**（一笔含未跟踪/缓存/产物，不拆不挑）；**先写完记录再提交**（当天日档 + 本文件 + 相关分册同一笔）；提交后不再写盘。
-- ★git 必须显式覆盖代理到 7897（默认注入的 60044 对 github 返回 502）：`http_proxy=http://127.0.0.1:7897 https_proxy=http://127.0.0.1:7897 git -c http.version=HTTP/2`；>10MB 必带 HTTP/2；`cannot lock ref` = 并行竞态，先 `ls-remote` 核对，**不要装 git-lfs**。
+- ★提交：默认**按功能分批**（2026-10-22 用户新口径：按功能拆多笔，代码契约→工具→资产→文档的先后顺序，保证每笔不悬空）；**先写完记录再提交**（当天日档 + 本文件 + 相关分册同一笔）；提交后不再写盘。旧口径「全部一起提交，不拆不挑」已被取代。
+- ★git 代理：**先试环境默认 `http_proxy`（现为 127.0.0.1:56630）**，2026-10-22 实测 7897 已握手失败（schannel/openssl 均挂），62114/60044/7890/10809 全 closed；配 `git -c http.version=HTTP/2`；>10MB 必带 HTTP/2；`cannot lock ref` = 并行竞态，先 `ls-remote` 核对，**不要装 git-lfs**。
 - ★★出 APK 前核对 Build Settings：`Boot.unity` 启用 + `Main.unity` 禁用（main 只能从 AB 加载）。
 - ★★改热更码真机三件套：重编 dll → AB 有变化才重打（菜单 9 后立刻 deploy）→ 先跑 `启动热更服务器.bat`。
 - ★★v7 起配置表按关拆分：`Luban/Config/Datas/Levels/L01..L30/`（每关 6 个 xlsx），根目录只剩 `EnemyData.xlsx`（132 原型）+ 非关卡表；旧聚合 5 表已删。改数值只走 `balance_pipeline.py`，别去找 `Datas/RoundData.xlsx`。

@@ -16,10 +16,17 @@
 - 编辑器脚本不弹 `DisplayDialog`（走 `Debug.Log`）；危险操作拆成两档菜单；DOTweenPro 里那 2 处弹窗保持不变。
 - ★提交规范：**全部一起提交**（一笔含未跟踪文件/缓存/产物，不拆不挑）；**先写完记录再提交**（当天 `memory/YYYY-MM-DD.md` + `MEMORY.md` 同一笔）；提交后不再写盘。
   - ※2026-10-19 拆分后补充：`MEMORY.md` 已拆成索引 + 7 个 `VOL_*.md` 分册，"先写完记录"的同一笔里要含当天日档 + `MEMORY.md` + 被改动的相关分册。
+  - ※**2026-10-22 口径变更**：用户改为「按功能修改，把改动分批次推送到 git 上」→ 默认**按功能拆多笔**（示例：运行时代码契约 → 编辑器工具 → 资产落地 → 文档+记忆 → 无关产物单独一笔），
+    不再要求"一笔全包"。分批顺序要保证任一笔单独 checkout 都不出现悬空引用（如预制体引用不存在的排序层）。
+    "先写完记录再提交、提交后不再写盘"两条仍然有效。上面的"全部一起提交"保留为历史口径。
 - ★可能有并行 Unity/MCP/会话在改资产 → 提交前确认 mtime 静止数分钟；openpyxl 打开 xlsx 会独占锁 → Unity Digest 报 Sharing violation；陈旧 `.git/index.lock`（0 字节且无进程持有）直接删。
 - git 走 env 代理（Clash 混合端口 **7897** / socks 7898 亦可 7892）。★本环境默认注入 `http_proxy=127.0.0.1:60044`（服务侧代理，对 github.com 返回 `502 CONNECT tunnel failed`）→ **git 命令必须显式覆盖成 7897**：
   `http_proxy=http://127.0.0.1:7897 https_proxy=http://127.0.0.1:7897 git -c http.version=HTTP/2 pull`
 - ★>10MB 推送/拉取必加 `-c http.version=HTTP/2`（HTTP/1.1 过代理必 408，且尾部会混"Everything up-to-date"的假象，别被骗）。
+  - ※**2026-10-22 实测修正**：`7897` 已不可用（端口 OPEN 但握手失败：schannel `failed to receive handshake`，
+    `http.sslBackend=openssl` 变 `unexpected eof while reading`）；`62114 / 60044 / 7890 / 10809` 全 closed。
+    当前能用的是**环境注入的 `http://127.0.0.1:56630`**（`$http_proxy` 默认值）→ **先 `git ls-remote origin HEAD` 试环境默认代理**，
+    通了就别覆盖；不通再逐个探端口（`for p in ...; do (echo >/dev/tcp/127.0.0.1/$p); done`）。
 - ★`cannot lock ref` = 并行推送竞态 → 先 `git ls-remote` 确认远端 sha，**不要装 git-lfs**。
 - 凭据弹窗 → 在 `~/.gitconfig` 的 `[credential]` 段插一行空 `helper =` 后重试，并用 `ls-remote` 核对 sha。
 

@@ -16,3 +16,16 @@
 - 地图链路：棋盘 → `levelmap_export.json` → `LevelMap.xlsx` → `tblevelmap.json` → `SceneInfo.xlsx`；日志前缀 `[Place]` / `[HUD]` / `[TowerInfoView]` / `[Audit]`。
 - ★新增一关 = 四表齐全：LevelMap(id) + SceneInfo(mapId、RoundList) + RoundData + EnemyList。现役 20 关 × 20 波。
 - ★编辑器全解锁 = `SaveManager.UnlockAllLevelsInEditor`（真机仍逐关解锁）。
+- ★★渲染层级契约（2026-10-21 改造，权威 = `Game/Board.cs` 的 `BoardSorting`）
+  - 排序层只剩 4 个：`Default < Bg < Main < Pop`（TagManager 里删掉了 Top/Over；层优先级 > 层内 order）。
+    Bg = 背景纸（序 0）；Main = 棋盘/路径/射程圈/塔/怪/子弹；Pop = 伤害飘字（序 0）。
+  - Main 层内序：Cell 0 → PathArrow 10 → RangeIndicator 100 → **Tower 200 → Enemy 300** → Bullet 400。
+  - ★★**永远怪压塔**（用户 2026-10-21 定案，不许塔盖怪）。塔根 SortingGroup = 200；怪根 SortingGroup = 300。
+  - 塔组内：barbette 0 / Img_gun 1 / 枪口焰 2（都是**组内相对序**，`BaseTower.Init` 已删掉"<Tower 就抬到 Tower"的旧规则）。
+  - 怪组内：血条 Bg 500 / Fill 501（同样是组内相对序，必须压过美术部件，实测最大 99：BugQueen/MossQueen；蝎子 40~70）。
+  - ★血的教训：**SortingGroup 的子渲染器排序越不出组**，所以别再写"把血条设 500 就最上层"。
+  - 资产落地/复查：菜单「高级（单步重建）▸ 标准化渲染层级（预置体+场景）」+「校验 ▸ 渲染层级体检（只读）」
+    + 「0. 自检」第 ⑥ 步（AssetBundle 顺延 ⑦）：任何重建脚本把层级冲掉，自检直接报阻塞项，
+    代码在 `Assets/Editor/SortingLayerNormalizer.cs`；怪物/塔生成器已内置同样规则，重跑不会回退。
+  - 敌人美术源包（`_UIAssets/Monsters/**`）自带 SortingGroup 序不统一（0/1/2/3/4、100–104、201–204），
+    所以 `MonsterPrefabBuilder` 克隆后必须 `NormalizeSortingGroup`，否则 31 个怪整组错位。

@@ -1420,6 +1420,7 @@ public class Point
 > 2. 三个节点的 `RectTransform` → `Transform`（删除 `CanvasRenderer` 与 `Image`）
 > 3. `barbette` / `Img_gun` 各加 `SpriteRenderer`，`sprite` 仍引用原来那两张 PNG（`turret_base_128` / `turret_barrel_128`）—— 若 PNG 的 `Texture Type` 是 `Sprite (UI and 2D)` 则无需改动，直接可用
 > 4. 加 `SortingGroup`，`sortingOrder` 设为与怪物协调的值（怪物是 200，塔建议 **300**，保证塔在怪之上；如需塔被前排怪遮挡则改用自定义排序轴 + Y 位置）
+>    —— **本条已于 2026-10-21 反转**：塔 200 / 怪 300，永远怪压塔；保留原文仅作历史记录，现行值见 §「SortingLayer / sortingOrder 约定」。
 > 5. `Img_gun` 的 `Pivot` 建议设为炮管旋转中心（如 `(0.3, 0.5)`），使转向自然；炮口发射点加一个空子节点 `BarrelPoint`
 > 6. 保留 prefab 路径 `Assets/Prefabs/Tower/Tower_Normal.prefab`，`ResTable` 中逻辑名 `Tower_Normal` 不变 → **不影响配置表与业务代码**
 
@@ -1787,7 +1788,7 @@ public List<Point> GetAStarPath(Point start, Point target)
 | 1 | 游戏在 `main.unity` 中 Play 全程无异常 | Console 无 `Exception` / `NullReference` / `Error` |
 | 2 | 配置表从 `Luban` 导出后能被正确加载 | Console 打印各表记录数，与 Excel 行数一致 |
 | 3 | **`Tower_Normal.prefab` 已转为 `SpriteRenderer`**，与怪物同一渲染体系 | Inspector 中无 `RectTransform`/`CanvasRenderer`/`Image` |
-| 4 | 塔与怪物的 `sortingOrder` 生效（塔盖住怪） | 目视 |
+| 4 | 塔与怪物的 `sortingOrder` 生效（**怪盖住塔**，2026-10-21 反转） | 目视 |
 | 5 | 棋盘按 `TBLevelMap` 正确生成，相机尺寸匹配 | 目视：行列数、起终点、障碍位置与表一致，棋盘完整可见 |
 | 6 | **改 Excel 数值 → 重导 → 游戏内生效** | 改 1 个怪物血量/塔攻击力验证 |
 | 7 | 拖塔可放置；落在非法格变红；堵死路径被拒并回滚 | 目视 + Console |
@@ -2031,18 +2032,25 @@ public List<Point> GetAStarPath(Point start, Point target)
    - **M0 至少清掉 `Enemy_Rat.prefab` 与 `Tower_Normal.prefab` 上的物理组件**（完整批处理可以后做）
    - 复用 2026-09-25 新增的 `MissingScriptCleaner` 的写法与交互（菜单项 + 结果面板 + 预览模式）
 5. **`SortingLayer` / `sortingOrder` 约定**（写进文档，避免各改各的）：
-   | 对象 | sortingOrder | 说明 |
-   |---|---|---|
-   | 棋盘格子 `CellView` | 0 | 最底 |
-   | 路径箭头 `MapArrow` | 10 | |
-   | 怪物 | 200（沿用资源包默认） | |
-   | 塔 | 300 | 默认盖住怪 |
-   | 血条 / 伤害数字 | 500 | 最上 |
+   > **2026-10-21 修订**：塔与怪的上下关系反转为「永远怪压塔」，并启用 Bg/Main/Pop 三个排序层。
+   > 下表为当前生效值，权威定义见 `Assets/Scripts/Game/Board.cs` 的 `BoardSorting`；
+   > 资产侧的落地与校验走菜单「高级（单步重建）▸ 标准化渲染层级」与「校验 ▸ 渲染层级体检」。
+
+   | 对象 | 排序层 | sortingOrder | 说明 |
+   |---|---|---|---|
+   | 背景 `Background` | Bg | 0 | 层优先级保证在棋盘之下 |
+   | 棋盘格子 `CellView` | Main | 0 | 最底 |
+   | 路径箭头 `PathArrow` | Main | 10 | |
+   | 射程圈 / 减速光环 | Main | 100 | 格子之上、塔与怪之下 |
+   | 塔（根 SortingGroup） | Main | 200 | **必须小于怪**；组内炮座 0 / 炮管 1 / 枪口焰 2 |
+   | 怪（根 SortingGroup） | Main | 300 | **永远怪压塔**；组内血条 500/501（组内相对序） |
+   | 子弹 / 爆炸 | Main | 400 / 401 | |
+   | 伤害飘字 | Pop | 0 | 层优先级最高，任何 Main 层物体压不住 |
 6. **创建 SpriteAtlas** `atlas_battle`（塔/怪/子弹/格子小图打进去，减少 DrawCall）
 7. **创建 UI prefab**：`HudView`、`TipsView`（节点名与 `HudView.cs` 的 `transform.Find` 严格一致）
 8. **校验一张怪物 PNG 的导入设置**：`Texture Type = Sprite`、`Pixels Per Unit = 100`、`Filter Mode` 与项目风格一致（像素风用 `Point`，手绘风用 `Bilinear`）
 
-**验收**：转换后的塔与怪可在编辑器下经 `ResLoader` 加载并正常渲染；两者 `sortingOrder` 生效（塔能盖住怪）；M0 用的 prefab 上无任何物理组件。
+**验收**：转换后的塔与怪可在编辑器下经 `ResLoader` 加载并正常渲染；两者 `sortingOrder` 生效（**怪能盖住塔**，2026-10-21 定案）；M0 用的 prefab 上无任何物理组件。
 
 ---
 
