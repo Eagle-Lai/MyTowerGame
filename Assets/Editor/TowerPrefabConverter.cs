@@ -1,5 +1,6 @@
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace FTProject.EditorTools
 {
@@ -21,10 +22,15 @@ namespace FTProject.EditorTools
     ///   3. **备份只做一次**：原来每个塔都尝试备份，现在统一在开头扫一遍，已有的跳过
     ///
     /// 【产物层级】（BaseTower 依赖的名字，不能改）
-    ///   Tower_<Type>                     根，挂 <Type>Tower，scale 0.8
-    ///   └── barbette                     炮座（SpriteRenderer, sortingOrder 300）
-    ///       └── Img_gun                  炮管（SpriteRenderer, sortingOrder 301）
+    ///   Tower_<Type>                     根，挂 <Type>Tower + SortingGroup(序 200, Main 层)，scale 0.8
+    ///   └── barbette                     炮座（SpriteRenderer, 组内序 0）
+    ///       └── Img_gun                  炮管（SpriteRenderer, 组内序 1）
     ///           └── BarrelPoint          出膛点（BaseTower 取它作为子弹出生位置）
+    ///
+    /// 【为什么要有 SortingGroup】
+    ///   组序 200 把整座塔当成一个排序单位，组内 0/1 只决定炮座与炮管的相对前后。
+    ///   没有组时炮管的 301 会越过别的塔的 300（全局序号），远处塔的炮管会压住近处塔的炮座。
+    ///   2026-10-21 起塔的组序是 200（小于怪的 300）——**永远怪压塔**，不允许塔盖住怪。
     ///
     /// 【原 UGUI 版会先备份】到 Assets/Prefabs/Tower/_UI_Source/，便于回退对照。
     ///
@@ -262,15 +268,19 @@ namespace FTProject.EditorTools
 
             GameObject root = new GameObject(spec.RootName);
             root.transform.localScale = new Vector3(RootScale, RootScale, 1f);
+            // 整座塔作为一个排序单位（组序 200 < 怪的 300 → 永远怪压塔）
+            SortingGroup group = root.AddComponent<SortingGroup>();
+            group.sortingLayerName = BoardSorting.LayerMain;
+            group.sortingOrder = BoardSorting.Tower;
 
             GameObject barbette = new GameObject("barbette");
             barbette.transform.SetParent(root.transform, false);
-            AddSprite(barbette, baseSprite, BoardSorting.Tower);
+            AddSprite(barbette, baseSprite, BoardSorting.TowerBody);
 
             // 炮管挂在炮座下：炮座不动，炮管绕自身 pivot 旋转（美术把 pivot 定在炮管旋转中心）
             GameObject gun = new GameObject("Img_gun");
             gun.transform.SetParent(barbette.transform, false);
-            AddSprite(gun, barrelSprite, BoardSorting.Tower + 1);
+            AddSprite(gun, barrelSprite, BoardSorting.TowerBarrel);
 
             // 出膛点：必须在炮管贴图**原生指向**的那一端。
             // 【为什么是 +Y 而不是 +X】炮管贴图（turret_barrel_128.png）是**竖着画**的：
@@ -296,7 +306,8 @@ namespace FTProject.EditorTools
                 return false;
             }
 
-            report.Ok(spec.ResName + " 已生成世界空间版（根 scale " + RootScale + "，barbette 300 / Img_gun 301）");
+            report.Ok(spec.ResName + " 已生成世界空间版（根 scale " + RootScale +
+                      "，SortingGroup 200 / barbette 0 / Img_gun 1）");
 
             Bounds b;
             if (EditorUtil.TryMeasureBounds(saved, out b))
@@ -328,6 +339,7 @@ namespace FTProject.EditorTools
         {
             SpriteRenderer sr = go.AddComponent<SpriteRenderer>();
             sr.sprite = sprite;
+            sr.sortingLayerName = BoardSorting.LayerMain;
             sr.sortingOrder = sortingOrder;
             sr.color = Color.white;
         }

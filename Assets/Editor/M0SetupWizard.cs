@@ -170,6 +170,7 @@ namespace FTProject.EditorTools
             CheckPrefabs(report);
             CheckScene(report);
             CheckProjectSettings(report);
+            CheckSorting(report);
             CheckBundles(report);
 
             report.Head("结论");
@@ -615,9 +616,33 @@ namespace FTProject.EditorTools
             }
         }
 
+        /// <summary>
+        /// 渲染层级自检（2026-10-21 新增）。
+        ///
+        /// 判定逻辑复用 <see cref="SortingLayerNormalizer.AuditFindings"/>，与「校验 ▸ 渲染层级体检」
+        /// 完全同源 —— 目的不是重复检查，而是让**每一次标准自检**都能发现"某个重建脚本把层级冲掉"：
+        /// 怪必须是 Main/300、塔必须是 Main/200（永远怪压塔）、血条组内 500/501、排序层只剩 Bg/Main/Pop。
+        /// </summary>
+        private static void CheckSorting(EditorUtil.Report report)
+        {
+            report.Head("⑥ 渲染层级（怪压塔 / Bg-Main-Pop）");
+            var details = new StringBuilder();
+            int issues = SortingLayerNormalizer.AuditFindings(details);
+            if (issues == 0)
+            {
+                report.Ok("层级与约定一致：怪 300 > 塔 200；血条组内 500/501；伤害飘字在 Pop 层；飘字压住一切");
+            }
+            else
+            {
+                report.Error(string.Format(
+                    "发现 {0} 处层级偏差，跑「高级（单步重建）▸ 标准化渲染层级（预置体+场景）」可一键修复：\n{1}",
+                    issues, details));
+            }
+        }
+
         private static void CheckBundles(EditorUtil.Report report)
         {
-            report.Head("⑥ AssetBundle（编辑器试跑不需要，出包/验证 AB 时才需要）");
+            report.Head("⑦ AssetBundle（编辑器试跑不需要，出包/验证 AB 时才需要）");
             string dir = ResPathUtil.BuildOutputRoot;
             if (!Directory.Exists(dir))
             {

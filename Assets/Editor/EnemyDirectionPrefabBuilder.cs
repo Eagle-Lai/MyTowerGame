@@ -801,6 +801,7 @@ namespace FTProject.EditorTools
             leaf.transform.localScale = new Vector3(scale, scale, 1);
             var sr = leaf.AddComponent<SpriteRenderer>();
             sr.sprite = sprite;
+            sr.sortingLayerName = BoardSorting.LayerMain;
             sr.sortingOrder = order;
             return sr;
         }

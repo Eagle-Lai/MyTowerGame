@@ -287,6 +287,7 @@ namespace FTProject.EditorTools
             bgGo.transform.localScale = new Vector3(BackgroundScale, BackgroundScale, 1f);
             SpriteRenderer bgSr = bgGo.AddComponent<SpriteRenderer>();
             bgSr.sprite = bg;
+            bgSr.sortingLayerName = BoardSorting.LayerBg;   // Bg 层：层优先级已保证在棋盘之下
             bgSr.sortingOrder = BoardSorting.Background;
             bgSr.color = new Color(1f, 1f, 1f, 0.55f);
             // M4-4：背景视差。Init 必须在设完缩放与颜色之后调用 —— 它要记住这两者的基准值。

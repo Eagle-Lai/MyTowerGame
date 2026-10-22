@@ -1,5 +1,6 @@
 ﻿using UnityEditor;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace FTProject.EditorTools
 {
@@ -128,6 +129,8 @@ namespace FTProject.EditorTools
                 Bounds bounds;
                 GameObject clone = Object.Instantiate(source);
                 clone.name = System.IO.Path.GetFileNameWithoutExtension(dst);
+                // ★ 必须紧跟克隆：美术源包的 SortingGroup 序不统一，不归一化就会整组错位
+                NormalizeSortingGroup(clone);
                 try
                 {
                     int removed = PhysicsComponentCleaner.StripPhysics(clone);
@@ -231,6 +234,25 @@ namespace FTProject.EditorTools
             report.Ok("下一步：执行「8a. 打 AssetBundle 标记」，让这些怪物按家族进入 enemy_<家族> 资源包");
         }
 
+        /// <summary>
+        /// 把根节点的 SortingGroup 统一成「Main 层 + BoardSorting.Enemy」。
+        ///
+        /// 【为什么必须做】战斗预制体是直接 Instantiate 美术源包得来的，源包的组序并不统一：
+        ///   实测 119 个里 88 个是 200，其余 31 个是 0/1/2/3/4、100–104、201–204。
+        ///   不归一化的话：0–4 的整组会掉到格子(0)/路径箭头(10)/射程圈(100)之下；
+        ///   100–104 的永远被 200 组盖住；201–204 的永远盖住所有怪（Y 排序失效）。
+        /// </summary>
+        private static void NormalizeSortingGroup(GameObject root)
+        {
+            SortingGroup group = root.GetComponent<SortingGroup>();
+            if (group == null)
+            {
+                group = root.AddComponent<SortingGroup>();
+            }
+            group.sortingLayerName = BoardSorting.LayerMain;
+            group.sortingOrder = BoardSorting.Enemy;
+        }
+
         // Some source art prefabs refer to a particle material absent from the pack.
         // Keep the installed battle-prefab repair when regenerating from those sources.
         private static void RestoreMissingParticleMaterials(GameObject root)
@@ -323,14 +345,19 @@ namespace FTProject.EditorTools
             bgGo.transform.SetParent(bar.transform, false);
             SpriteRenderer bgSr = bgGo.AddComponent<SpriteRenderer>();
             bgSr.sprite = barBg;
-            bgSr.sortingOrder = BoardSorting.Overlay;
+            // ★ 组内相对序号（不是全局 500）：血条挂在带 SortingGroup 的根下面，
+            //   子渲染器的 order 只在组内比大小，写多少都越不出组。取 500/501 是因为
+            //   必须压过美术包的所有部件（实测最大 99：BugQueen/MossQueen；蝎子 40~70）。
+            bgSr.sortingLayerName = BoardSorting.LayerMain;
+            bgSr.sortingOrder = BoardSorting.EnemyHpBarBack;
             bgSr.color = new Color(1f, 1f, 1f, 0.9f);
 
             GameObject fillGo = new GameObject("Fill");
             fillGo.transform.SetParent(bar.transform, false);
             SpriteRenderer fillSr = fillGo.AddComponent<SpriteRenderer>();
             fillSr.sprite = barFill;
-            fillSr.sortingOrder = BoardSorting.Overlay + 1;
+            fillSr.sortingLayerName = BoardSorting.LayerMain;
+            fillSr.sortingOrder = BoardSorting.EnemyHpBarFill;
             fillSr.color = HpFillColor;
 
             // 返回血条的世界 Y，供调用方统计（报告里用来核对有没有离谱的偏移）

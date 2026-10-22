@@ -64,6 +64,7 @@ namespace FTProject.EditorTools
             GameObject go = new GameObject("Bullet_Normal");
             SpriteRenderer sr = go.AddComponent<SpriteRenderer>();
             sr.sprite = dot;
+            sr.sortingLayerName = BoardSorting.LayerMain;
             sr.sortingOrder = BoardSorting.Bullet;
             go.AddComponent<BaseBullet>();
 
