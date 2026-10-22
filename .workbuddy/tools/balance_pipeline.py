@@ -463,7 +463,9 @@ def generate(recipe,profile_id,manifest=None):
                 if vid in proto:raise ValueError('Variant ID conflicts with existing original')
                 # Reward is denominated in *base* EHP (before profile.ehpMultiplier) so that
                 # easier profiles keep their gold multiplier instead of inheriting the HP cut.
-                base_hp=float(budgets[L,w])*roles[role]['weight']/q*(1-roles[role]['armor'])
+                # goldPerEhp 用「本波实际目标 EHP」（含 override），不用 raw budget：
+                # 否则手工对齐用的每关 targetEhp 乘区会让金币停留在未缩放的值上。
+                base_hp=float(v['targetEhp'])/profile['ehpMultiplier']*roles[role]['weight']/q*(1-roles[role]['armor'])
                 gpe=float(f.get('goldPerEhp',0) or 0)
                 reward_value=(max(1,round_up(base_hp*gpe*profile['goldMultiplier'])) if gpe>0
                     else max(1,round_up(roles[role]['reward']*profile['goldMultiplier'])))

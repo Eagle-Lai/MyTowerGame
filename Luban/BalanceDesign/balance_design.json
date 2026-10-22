@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "balanceRevision": "balance-30x25-tight-v7",
+  "balanceRevision": "balance-30x25-l1anchor-v8",
   "ratingRevision": "five-stars-v1",
   "selectedProfileId": "D04",
   "profiles": [
@@ -105,7 +105,7 @@
     "countLevelCoefficient": 1,
     "countWaveCoefficient": 6,
     "rewardBlockIncrement": 2,
-    "goldPerEhp": 0,
+    "goldPerEhp": 0.016774,
     "rewardPeakMultiplier": 1.5
   },
   "roles": {
@@ -134,13 +134,13 @@
       "type": 2
     },
     "air": {
-      "weight": 0.45,
+      "weight": 0.6,
       "speed": 1.0,
       "armor": 0,
       "reward": 1,
       "damage": 1,
       "type": 4,
-      "share": 0.12
+      "share": 0.24
     },
     "medium": {
       "weight": 1.7,
@@ -203,19 +203,19 @@
     {
       "canonicalId": 13,
       "level": 1,
-      "wave": 3,
+      "wave": 5,
       "role": "air"
     },
     {
       "canonicalId": 11,
       "level": 1,
-      "wave": 4,
+      "wave": 6,
       "role": "air"
     },
     {
       "canonicalId": 14,
       "level": 1,
-      "wave": 5,
+      "wave": 8,
       "role": "air"
     },
     {
@@ -329,13 +329,13 @@
     {
       "canonicalId": 12,
       "level": 1,
-      "wave": 8,
+      "wave": 13,
       "role": "air"
     },
     {
       "canonicalId": 2,
       "level": 1,
-      "wave": 13,
+      "wave": 18,
       "role": "air"
     }
   ],
@@ -446,7 +446,818 @@
     "sparseObstacles": true,
     "longAirCorridors": true
   },
-  "overrides": [],
+  "overrides": [
+    {
+      "id": "align-ehp-L1",
+      "scope": "level",
+      "levelId": 1,
+      "target": "wave",
+      "field": "targetEhp",
+      "mode": "multiply",
+      "value": 1.517418
+    },
+    {
+      "id": "align-wave-L1",
+      "scope": "level",
+      "levelId": 1,
+      "target": "wave",
+      "field": "rewardGold",
+      "mode": "replace",
+      "value": 17
+    },
+    {
+      "id": "align-par-L1",
+      "scope": "level",
+      "levelId": 1,
+      "target": "rating",
+      "field": "parCombatTimeMs",
+      "mode": "replace",
+      "value": 647000
+    },
+    {
+      "id": "align-ehp-L2",
+      "scope": "level",
+      "levelId": 2,
+      "target": "wave",
+      "field": "targetEhp",
+      "mode": "multiply",
+      "value": 1.606343
+    },
+    {
+      "id": "align-wave-L2",
+      "scope": "level",
+      "levelId": 2,
+      "target": "wave",
+      "field": "rewardGold",
+      "mode": "replace",
+      "value": 3
+    },
+    {
+      "id": "align-par-L2",
+      "scope": "level",
+      "levelId": 2,
+      "target": "rating",
+      "field": "parCombatTimeMs",
+      "mode": "replace",
+      "value": 704000
+    },
+    {
+      "id": "align-ehp-L3",
+      "scope": "level",
+      "levelId": 3,
+      "target": "wave",
+      "field": "targetEhp",
+      "mode": "multiply",
+      "value": 1.691161
+    },
+    {
+      "id": "align-wave-L3",
+      "scope": "level",
+      "levelId": 3,
+      "target": "wave",
+      "field": "rewardGold",
+      "mode": "replace",
+      "value": 1
+    },
+    {
+      "id": "align-par-L3",
+      "scope": "level",
+      "levelId": 3,
+      "target": "rating",
+      "field": "parCombatTimeMs",
+      "mode": "replace",
+      "value": 671000
+    },
+    {
+      "id": "align-ehp-L4",
+      "scope": "level",
+      "levelId": 4,
+      "target": "wave",
+      "field": "targetEhp",
+      "mode": "multiply",
+      "value": 1.772004
+    },
+    {
+      "id": "align-wave-L4",
+      "scope": "level",
+      "levelId": 4,
+      "target": "wave",
+      "field": "rewardGold",
+      "mode": "replace",
+      "value": 36
+    },
+    {
+      "id": "align-par-L4",
+      "scope": "level",
+      "levelId": 4,
+      "target": "rating",
+      "field": "parCombatTimeMs",
+      "mode": "replace",
+      "value": 734000
+    },
+    {
+      "id": "align-ehp-L5",
+      "scope": "level",
+      "levelId": 5,
+      "target": "wave",
+      "field": "targetEhp",
+      "mode": "multiply",
+      "value": 1.849
+    },
+    {
+      "id": "align-wave-L5",
+      "scope": "level",
+      "levelId": 5,
+      "target": "wave",
+      "field": "rewardGold",
+      "mode": "replace",
+      "value": 34
+    },
+    {
+      "id": "align-par-L5",
+      "scope": "level",
+      "levelId": 5,
+      "target": "rating",
+      "field": "parCombatTimeMs",
+      "mode": "replace",
+      "value": 748000
+    },
+    {
+      "id": "align-ehp-L6",
+      "scope": "level",
+      "levelId": 6,
+      "target": "wave",
+      "field": "targetEhp",
+      "mode": "multiply",
+      "value": 1.922277
+    },
+    {
+      "id": "align-wave-L6",
+      "scope": "level",
+      "levelId": 6,
+      "target": "wave",
+      "field": "rewardGold",
+      "mode": "replace",
+      "value": 35
+    },
+    {
+      "id": "align-par-L6",
+      "scope": "level",
+      "levelId": 6,
+      "target": "rating",
+      "field": "parCombatTimeMs",
+      "mode": "replace",
+      "value": 631000
+    },
+    {
+      "id": "align-ehp-L7",
+      "scope": "level",
+      "levelId": 7,
+      "target": "wave",
+      "field": "targetEhp",
+      "mode": "multiply",
+      "value": 1.991959
+    },
+    {
+      "id": "align-wave-L7",
+      "scope": "level",
+      "levelId": 7,
+      "target": "wave",
+      "field": "rewardGold",
+      "mode": "replace",
+      "value": 20
+    },
+    {
+      "id": "align-par-L7",
+      "scope": "level",
+      "levelId": 7,
+      "target": "rating",
+      "field": "parCombatTimeMs",
+      "mode": "replace",
+      "value": 693000
+    },
+    {
+      "id": "align-ehp-L8",
+      "scope": "level",
+      "levelId": 8,
+      "target": "wave",
+      "field": "targetEhp",
+      "mode": "multiply",
+      "value": 2.058157
+    },
+    {
+      "id": "align-wave-L8",
+      "scope": "level",
+      "levelId": 8,
+      "target": "wave",
+      "field": "rewardGold",
+      "mode": "replace",
+      "value": 81
+    },
+    {
+      "id": "align-par-L8",
+      "scope": "level",
+      "levelId": 8,
+      "target": "rating",
+      "field": "parCombatTimeMs",
+      "mode": "replace",
+      "value": 796000
+    },
+    {
+      "id": "align-ehp-L9",
+      "scope": "level",
+      "levelId": 9,
+      "target": "wave",
+      "field": "targetEhp",
+      "mode": "multiply",
+      "value": 2.120981
+    },
+    {
+      "id": "align-wave-L9",
+      "scope": "level",
+      "levelId": 9,
+      "target": "wave",
+      "field": "rewardGold",
+      "mode": "replace",
+      "value": 70
+    },
+    {
+      "id": "align-par-L9",
+      "scope": "level",
+      "levelId": 9,
+      "target": "rating",
+      "field": "parCombatTimeMs",
+      "mode": "replace",
+      "value": 756000
+    },
+    {
+      "id": "align-ehp-L10",
+      "scope": "level",
+      "levelId": 10,
+      "target": "wave",
+      "field": "targetEhp",
+      "mode": "multiply",
+      "value": 2.180522
+    },
+    {
+      "id": "align-wave-L10",
+      "scope": "level",
+      "levelId": 10,
+      "target": "wave",
+      "field": "rewardGold",
+      "mode": "replace",
+      "value": 58
+    },
+    {
+      "id": "align-par-L10",
+      "scope": "level",
+      "levelId": 10,
+      "target": "rating",
+      "field": "parCombatTimeMs",
+      "mode": "replace",
+      "value": 785000
+    },
+    {
+      "id": "align-ehp-L11",
+      "scope": "level",
+      "levelId": 11,
+      "target": "wave",
+      "field": "targetEhp",
+      "mode": "multiply",
+      "value": 2.236925
+    },
+    {
+      "id": "align-wave-L11",
+      "scope": "level",
+      "levelId": 11,
+      "target": "wave",
+      "field": "rewardGold",
+      "mode": "replace",
+      "value": 41
+    },
+    {
+      "id": "align-par-L11",
+      "scope": "level",
+      "levelId": 11,
+      "target": "rating",
+      "field": "parCombatTimeMs",
+      "mode": "replace",
+      "value": 782000
+    },
+    {
+      "id": "align-ehp-L12",
+      "scope": "level",
+      "levelId": 12,
+      "target": "wave",
+      "field": "targetEhp",
+      "mode": "multiply",
+      "value": 2.290278
+    },
+    {
+      "id": "align-wave-L12",
+      "scope": "level",
+      "levelId": 12,
+      "target": "wave",
+      "field": "rewardGold",
+      "mode": "replace",
+      "value": 87
+    },
+    {
+      "id": "align-par-L12",
+      "scope": "level",
+      "levelId": 12,
+      "target": "rating",
+      "field": "parCombatTimeMs",
+      "mode": "replace",
+      "value": 850000
+    },
+    {
+      "id": "align-ehp-L13",
+      "scope": "level",
+      "levelId": 13,
+      "target": "wave",
+      "field": "targetEhp",
+      "mode": "multiply",
+      "value": 2.340683
+    },
+    {
+      "id": "align-wave-L13",
+      "scope": "level",
+      "levelId": 13,
+      "target": "wave",
+      "field": "rewardGold",
+      "mode": "replace",
+      "value": 85
+    },
+    {
+      "id": "align-par-L13",
+      "scope": "level",
+      "levelId": 13,
+      "target": "rating",
+      "field": "parCombatTimeMs",
+      "mode": "replace",
+      "value": 675000
+    },
+    {
+      "id": "align-ehp-L14",
+      "scope": "level",
+      "levelId": 14,
+      "target": "wave",
+      "field": "targetEhp",
+      "mode": "multiply",
+      "value": 2.388207
+    },
+    {
+      "id": "align-wave-L14",
+      "scope": "level",
+      "levelId": 14,
+      "target": "wave",
+      "field": "rewardGold",
+      "mode": "replace",
+      "value": 83
+    },
+    {
+      "id": "align-par-L14",
+      "scope": "level",
+      "levelId": 14,
+      "target": "rating",
+      "field": "parCombatTimeMs",
+      "mode": "replace",
+      "value": 774000
+    },
+    {
+      "id": "align-ehp-L15",
+      "scope": "level",
+      "levelId": 15,
+      "target": "wave",
+      "field": "targetEhp",
+      "mode": "multiply",
+      "value": 2.432975
+    },
+    {
+      "id": "align-wave-L15",
+      "scope": "level",
+      "levelId": 15,
+      "target": "wave",
+      "field": "rewardGold",
+      "mode": "replace",
+      "value": 79
+    },
+    {
+      "id": "align-par-L15",
+      "scope": "level",
+      "levelId": 15,
+      "target": "rating",
+      "field": "parCombatTimeMs",
+      "mode": "replace",
+      "value": 788000
+    },
+    {
+      "id": "align-ehp-L16",
+      "scope": "level",
+      "levelId": 16,
+      "target": "wave",
+      "field": "targetEhp",
+      "mode": "multiply",
+      "value": 2.475065
+    },
+    {
+      "id": "align-wave-L16",
+      "scope": "level",
+      "levelId": 16,
+      "target": "wave",
+      "field": "rewardGold",
+      "mode": "replace",
+      "value": 75
+    },
+    {
+      "id": "align-par-L16",
+      "scope": "level",
+      "levelId": 16,
+      "target": "rating",
+      "field": "parCombatTimeMs",
+      "mode": "replace",
+      "value": 794000
+    },
+    {
+      "id": "align-ehp-L17",
+      "scope": "level",
+      "levelId": 17,
+      "target": "wave",
+      "field": "targetEhp",
+      "mode": "multiply",
+      "value": 2.514562
+    },
+    {
+      "id": "align-wave-L17",
+      "scope": "level",
+      "levelId": 17,
+      "target": "wave",
+      "field": "rewardGold",
+      "mode": "replace",
+      "value": 70
+    },
+    {
+      "id": "align-par-L17",
+      "scope": "level",
+      "levelId": 17,
+      "target": "rating",
+      "field": "parCombatTimeMs",
+      "mode": "replace",
+      "value": 765000
+    },
+    {
+      "id": "align-ehp-L18",
+      "scope": "level",
+      "levelId": 18,
+      "target": "wave",
+      "field": "targetEhp",
+      "mode": "multiply",
+      "value": 2.551542
+    },
+    {
+      "id": "align-wave-L18",
+      "scope": "level",
+      "levelId": 18,
+      "target": "wave",
+      "field": "rewardGold",
+      "mode": "replace",
+      "value": 58
+    },
+    {
+      "id": "align-par-L18",
+      "scope": "level",
+      "levelId": 18,
+      "target": "rating",
+      "field": "parCombatTimeMs",
+      "mode": "replace",
+      "value": 748000
+    },
+    {
+      "id": "align-ehp-L19",
+      "scope": "level",
+      "levelId": 19,
+      "target": "wave",
+      "field": "targetEhp",
+      "mode": "multiply",
+      "value": 2.586107
+    },
+    {
+      "id": "align-wave-L19",
+      "scope": "level",
+      "levelId": 19,
+      "target": "wave",
+      "field": "rewardGold",
+      "mode": "replace",
+      "value": 58
+    },
+    {
+      "id": "align-par-L19",
+      "scope": "level",
+      "levelId": 19,
+      "target": "rating",
+      "field": "parCombatTimeMs",
+      "mode": "replace",
+      "value": 849000
+    },
+    {
+      "id": "align-ehp-L20",
+      "scope": "level",
+      "levelId": 20,
+      "target": "wave",
+      "field": "targetEhp",
+      "mode": "multiply",
+      "value": 2.618316
+    },
+    {
+      "id": "align-wave-L20",
+      "scope": "level",
+      "levelId": 20,
+      "target": "wave",
+      "field": "rewardGold",
+      "mode": "replace",
+      "value": 104
+    },
+    {
+      "id": "align-par-L20",
+      "scope": "level",
+      "levelId": 20,
+      "target": "rating",
+      "field": "parCombatTimeMs",
+      "mode": "replace",
+      "value": 810000
+    },
+    {
+      "id": "align-ehp-L21",
+      "scope": "level",
+      "levelId": 21,
+      "target": "wave",
+      "field": "targetEhp",
+      "mode": "multiply",
+      "value": 2.64829
+    },
+    {
+      "id": "align-wave-L21",
+      "scope": "level",
+      "levelId": 21,
+      "target": "wave",
+      "field": "rewardGold",
+      "mode": "replace",
+      "value": 100
+    },
+    {
+      "id": "align-par-L21",
+      "scope": "level",
+      "levelId": 21,
+      "target": "rating",
+      "field": "parCombatTimeMs",
+      "mode": "replace",
+      "value": 804000
+    },
+    {
+      "id": "align-ehp-L22",
+      "scope": "level",
+      "levelId": 22,
+      "target": "wave",
+      "field": "targetEhp",
+      "mode": "multiply",
+      "value": 2.67607
+    },
+    {
+      "id": "align-wave-L22",
+      "scope": "level",
+      "levelId": 22,
+      "target": "wave",
+      "field": "rewardGold",
+      "mode": "replace",
+      "value": 97
+    },
+    {
+      "id": "align-par-L22",
+      "scope": "level",
+      "levelId": 22,
+      "target": "rating",
+      "field": "parCombatTimeMs",
+      "mode": "replace",
+      "value": 713000
+    },
+    {
+      "id": "align-ehp-L23",
+      "scope": "level",
+      "levelId": 23,
+      "target": "wave",
+      "field": "targetEhp",
+      "mode": "multiply",
+      "value": 2.701775
+    },
+    {
+      "id": "align-wave-L23",
+      "scope": "level",
+      "levelId": 23,
+      "target": "wave",
+      "field": "rewardGold",
+      "mode": "replace",
+      "value": 89
+    },
+    {
+      "id": "align-par-L23",
+      "scope": "level",
+      "levelId": 23,
+      "target": "rating",
+      "field": "parCombatTimeMs",
+      "mode": "replace",
+      "value": 819000
+    },
+    {
+      "id": "align-ehp-L24",
+      "scope": "level",
+      "levelId": 24,
+      "target": "wave",
+      "field": "targetEhp",
+      "mode": "multiply",
+      "value": 2.725438
+    },
+    {
+      "id": "align-wave-L24",
+      "scope": "level",
+      "levelId": 24,
+      "target": "wave",
+      "field": "rewardGold",
+      "mode": "replace",
+      "value": 80
+    },
+    {
+      "id": "align-par-L24",
+      "scope": "level",
+      "levelId": 24,
+      "target": "rating",
+      "field": "parCombatTimeMs",
+      "mode": "replace",
+      "value": 819000
+    },
+    {
+      "id": "align-ehp-L25",
+      "scope": "level",
+      "levelId": 25,
+      "target": "wave",
+      "field": "targetEhp",
+      "mode": "multiply",
+      "value": 2.747131
+    },
+    {
+      "id": "align-wave-L25",
+      "scope": "level",
+      "levelId": 25,
+      "target": "wave",
+      "field": "rewardGold",
+      "mode": "replace",
+      "value": 148
+    },
+    {
+      "id": "align-par-L25",
+      "scope": "level",
+      "levelId": 25,
+      "target": "rating",
+      "field": "parCombatTimeMs",
+      "mode": "replace",
+      "value": 866000
+    },
+    {
+      "id": "align-ehp-L26",
+      "scope": "level",
+      "levelId": 26,
+      "target": "wave",
+      "field": "targetEhp",
+      "mode": "multiply",
+      "value": 2.766889
+    },
+    {
+      "id": "align-wave-L26",
+      "scope": "level",
+      "levelId": 26,
+      "target": "wave",
+      "field": "rewardGold",
+      "mode": "replace",
+      "value": 147
+    },
+    {
+      "id": "align-par-L26",
+      "scope": "level",
+      "levelId": 26,
+      "target": "rating",
+      "field": "parCombatTimeMs",
+      "mode": "replace",
+      "value": 776000
+    },
+    {
+      "id": "align-ehp-L27",
+      "scope": "level",
+      "levelId": 27,
+      "target": "wave",
+      "field": "targetEhp",
+      "mode": "multiply",
+      "value": 2.784825
+    },
+    {
+      "id": "align-wave-L27",
+      "scope": "level",
+      "levelId": 27,
+      "target": "wave",
+      "field": "rewardGold",
+      "mode": "replace",
+      "value": 134
+    },
+    {
+      "id": "align-par-L27",
+      "scope": "level",
+      "levelId": 27,
+      "target": "rating",
+      "field": "parCombatTimeMs",
+      "mode": "replace",
+      "value": 839000
+    },
+    {
+      "id": "align-ehp-L28",
+      "scope": "level",
+      "levelId": 28,
+      "target": "wave",
+      "field": "targetEhp",
+      "mode": "multiply",
+      "value": 2.800996
+    },
+    {
+      "id": "align-wave-L28",
+      "scope": "level",
+      "levelId": 28,
+      "target": "wave",
+      "field": "rewardGold",
+      "mode": "replace",
+      "value": 131
+    },
+    {
+      "id": "align-par-L28",
+      "scope": "level",
+      "levelId": 28,
+      "target": "rating",
+      "field": "parCombatTimeMs",
+      "mode": "replace",
+      "value": 773000
+    },
+    {
+      "id": "align-ehp-L29",
+      "scope": "level",
+      "levelId": 29,
+      "target": "wave",
+      "field": "targetEhp",
+      "mode": "multiply",
+      "value": 2.815465
+    },
+    {
+      "id": "align-wave-L29",
+      "scope": "level",
+      "levelId": 29,
+      "target": "wave",
+      "field": "rewardGold",
+      "mode": "replace",
+      "value": 117
+    },
+    {
+      "id": "align-par-L29",
+      "scope": "level",
+      "levelId": 29,
+      "target": "rating",
+      "field": "parCombatTimeMs",
+      "mode": "replace",
+      "value": 870000
+    },
+    {
+      "id": "align-ehp-L30",
+      "scope": "level",
+      "levelId": 30,
+      "target": "wave",
+      "field": "targetEhp",
+      "mode": "multiply",
+      "value": 2.82828
+    },
+    {
+      "id": "align-wave-L30",
+      "scope": "level",
+      "levelId": 30,
+      "target": "wave",
+      "field": "rewardGold",
+      "mode": "replace",
+      "value": 116
+    },
+    {
+      "id": "align-par-L30",
+      "scope": "level",
+      "levelId": 30,
+      "target": "rating",
+      "field": "parCombatTimeMs",
+      "mode": "replace",
+      "value": 889000
+    }
+  ],
   "calibrationEvidence": [],
   "campaignLevelCount": 30,
   "wavesPerLevel": 25,
@@ -717,188 +1528,5 @@
     "authorization": "User 2026-10-19: prioritize long routes and fire reuse; occupancy may be below 85%",
     "mazeDirectory": "Luban/BalanceDesign/Evidence30x25/Mazes"
   },
-  "parCalibration": {
-    "D04": {
-      "1": {
-        "combatBasisHash": "18289df56a4d28da986be8f6ec68ab405c4d57eeaa8b688ff9ef0096b09b2723",
-        "parCombatTimeMs": 647000,
-        "method": "offline fill-gate full-maze reference garrison; uniform upgrade budget; 100ms step; x1.06; rounded to 1s",
-        "observedCombatMs": 610700
-      },
-      "2": {
-        "combatBasisHash": "b26a3c6c7bbe81865084213a67594a030a0a50a4f30292b23162d9f08264a468",
-        "parCombatTimeMs": 704000,
-        "method": "offline fill-gate full-maze reference garrison; uniform upgrade budget; 100ms step; x1.06; rounded to 1s",
-        "observedCombatMs": 664100
-      },
-      "4": {
-        "combatBasisHash": "d0588a564be537b6ceaa58b059f69de1f664c4f43210bcd8128d675fb1c93525",
-        "parCombatTimeMs": 734000,
-        "method": "offline fill-gate full-maze reference garrison; uniform upgrade budget; 100ms step; x1.06; rounded to 1s",
-        "observedCombatMs": 692800
-      },
-      "5": {
-        "combatBasisHash": "119c0d7509f9c820d277072e5aadcb8254a6d223da5de2a0c5e4f2662ba4db68",
-        "parCombatTimeMs": 748000,
-        "method": "offline fill-gate full-maze reference garrison; uniform upgrade budget; 100ms step; x1.06; rounded to 1s",
-        "observedCombatMs": 705900
-      },
-      "6": {
-        "combatBasisHash": "bc221be029f01db725d32bede38ade6d6c89363e560be849e4a4f7006798f193",
-        "parCombatTimeMs": 631000,
-        "method": "offline fill-gate full-maze reference garrison; uniform upgrade budget; 100ms step; x1.06; rounded to 1s",
-        "observedCombatMs": 595700
-      },
-      "7": {
-        "combatBasisHash": "82fa738ea241fb00b1e9c2510970830f6127800a6051db7b119dce4dca33ea26",
-        "parCombatTimeMs": 693000,
-        "method": "offline fill-gate full-maze reference garrison; uniform upgrade budget; 100ms step; x1.06; rounded to 1s",
-        "observedCombatMs": 654200
-      },
-      "8": {
-        "combatBasisHash": "fa37407edc80ba4e8e42fc1ed62cc66969466d3ab9ba3473c8f2278ff7f2b96f",
-        "parCombatTimeMs": 796000,
-        "method": "offline fill-gate full-maze reference garrison; uniform upgrade budget; 100ms step; x1.06; rounded to 1s",
-        "observedCombatMs": 751300
-      },
-      "9": {
-        "combatBasisHash": "fc36870470d70cf6652b7b847bf10d214bb4ab3dd5edd817959c4a1e40ea9113",
-        "parCombatTimeMs": 756000,
-        "method": "offline fill-gate full-maze reference garrison; uniform upgrade budget; 100ms step; x1.06; rounded to 1s",
-        "observedCombatMs": 712900
-      },
-      "10": {
-        "combatBasisHash": "b829c1eb94333ef3e166d3bd6ebb54220095c7e7c343d7220454aa8faa5810a8",
-        "parCombatTimeMs": 785000,
-        "method": "offline fill-gate full-maze reference garrison; uniform upgrade budget; 100ms step; x1.06; rounded to 1s",
-        "observedCombatMs": 740500
-      },
-      "11": {
-        "combatBasisHash": "db8a864aeb77d76584b2838f46930ba40a57abc8952968d8b1331eb5e07e4c0d",
-        "parCombatTimeMs": 782000,
-        "method": "offline fill-gate full-maze reference garrison; uniform upgrade budget; 100ms step; x1.06; rounded to 1s",
-        "observedCombatMs": 738200
-      },
-      "12": {
-        "combatBasisHash": "5ae97bc3bd3a2d9900a9a64f737783f4b0dce3b31c46a07927c9ad76f3a78b00",
-        "parCombatTimeMs": 850000,
-        "method": "offline fill-gate full-maze reference garrison; uniform upgrade budget; 100ms step; x1.06; rounded to 1s",
-        "observedCombatMs": 802200
-      },
-      "13": {
-        "combatBasisHash": "3b9ce0b79b9e39839d6aa5c71cafeb8cbf5fb24d2b19d2d646f7ef1c2315d0bb",
-        "parCombatTimeMs": 675000,
-        "method": "offline fill-gate full-maze reference garrison; uniform upgrade budget; 100ms step; x1.06; rounded to 1s",
-        "observedCombatMs": 637000
-      },
-      "14": {
-        "combatBasisHash": "a7c5d5001d4229bbd31d0ea9c1cde6f1b04c0dd226448c4a8ee02ac5a4e88150",
-        "parCombatTimeMs": 774000,
-        "method": "offline fill-gate full-maze reference garrison; uniform upgrade budget; 100ms step; x1.06; rounded to 1s",
-        "observedCombatMs": 730000
-      },
-      "15": {
-        "combatBasisHash": "f676ba47e4d57a04ebd92b3cf42a64f0b8e98de51b23ad7f6e17bc66af77330a",
-        "parCombatTimeMs": 788000,
-        "method": "offline fill-gate full-maze reference garrison; uniform upgrade budget; 100ms step; x1.06; rounded to 1s",
-        "observedCombatMs": 743400
-      },
-      "16": {
-        "combatBasisHash": "16573308971d6ce3c6a9c6857a15529c341499b51c71501dc4304f8231834fae",
-        "parCombatTimeMs": 794000,
-        "method": "offline fill-gate full-maze reference garrison; uniform upgrade budget; 100ms step; x1.06; rounded to 1s",
-        "observedCombatMs": 748800
-      },
-      "17": {
-        "combatBasisHash": "d9b5a33299085df53e2cfd61377fcfde4b0ad6f072e1dbab29b82a991402447a",
-        "parCombatTimeMs": 765000,
-        "method": "offline fill-gate full-maze reference garrison; uniform upgrade budget; 100ms step; x1.06; rounded to 1s",
-        "observedCombatMs": 721500
-      },
-      "18": {
-        "combatBasisHash": "e4e62521326b4a5e0b05af7c134de63b532e616431b47e949e30f6e0363fae85",
-        "parCombatTimeMs": 748000,
-        "method": "offline fill-gate full-maze reference garrison; uniform upgrade budget; 100ms step; x1.06; rounded to 1s",
-        "observedCombatMs": 705600
-      },
-      "19": {
-        "combatBasisHash": "ca06081523efc07e937626d8abaaf53e87b0ec06f9a999e32f9722d078a3cb69",
-        "parCombatTimeMs": 849000,
-        "method": "offline fill-gate full-maze reference garrison; uniform upgrade budget; 100ms step; x1.06; rounded to 1s",
-        "observedCombatMs": 800800
-      },
-      "20": {
-        "combatBasisHash": "e890fbed8450f1baf79bb05f21c5ab1c312b79c91029bccfba1f0055ca2d77c7",
-        "parCombatTimeMs": 810000,
-        "method": "offline fill-gate full-maze reference garrison; uniform upgrade budget; 100ms step; x1.06; rounded to 1s",
-        "observedCombatMs": 763700
-      },
-      "21": {
-        "combatBasisHash": "aed9f033721dd3f521b63087a46c82dbf1d60b6505c02a9751ec802fdde5099d",
-        "parCombatTimeMs": 804000,
-        "method": "offline fill-gate full-maze reference garrison; uniform upgrade budget; 100ms step; x1.06; rounded to 1s",
-        "observedCombatMs": 758900
-      },
-      "22": {
-        "combatBasisHash": "658421f0154fe1389403e7d9b3c2a71ec53f60100422808e73ca74965a1eaf92",
-        "parCombatTimeMs": 713000,
-        "method": "offline fill-gate full-maze reference garrison; uniform upgrade budget; 100ms step; x1.06; rounded to 1s",
-        "observedCombatMs": 672300
-      },
-      "23": {
-        "combatBasisHash": "161e219beb973bf7554b1aec159c8e8f3035ef451b0ed4e34a47df41ea3ca57c",
-        "parCombatTimeMs": 819000,
-        "method": "offline fill-gate full-maze reference garrison; uniform upgrade budget; 100ms step; x1.06; rounded to 1s",
-        "observedCombatMs": 773000
-      },
-      "24": {
-        "combatBasisHash": "0c994b1afc1f5cd9fd6c075121c1ffe0f391875c1f4ee144158302e0ee9b4fcc",
-        "parCombatTimeMs": 819000,
-        "method": "offline fill-gate full-maze reference garrison; uniform upgrade budget; 100ms step; x1.06; rounded to 1s",
-        "observedCombatMs": 772200
-      },
-      "25": {
-        "combatBasisHash": "f87f41b7e6f0b0bd66c1d4352973d8c32ed8864b081f3abcc52b56a10f913e92",
-        "parCombatTimeMs": 866000,
-        "method": "offline fill-gate full-maze reference garrison; uniform upgrade budget; 100ms step; x1.06; rounded to 1s",
-        "observedCombatMs": 817000
-      },
-      "26": {
-        "combatBasisHash": "9d677e72657ac9cb9c3760ece263fd681699ef1dacb4baa73dca8b2ede443c47",
-        "parCombatTimeMs": 776000,
-        "method": "offline fill-gate full-maze reference garrison; uniform upgrade budget; 100ms step; x1.06; rounded to 1s",
-        "observedCombatMs": 731800
-      },
-      "27": {
-        "combatBasisHash": "ded8daecfabbe0a326b86acd975eded3da0a90262874329ed6e338b4e960dd44",
-        "parCombatTimeMs": 839000,
-        "method": "offline fill-gate full-maze reference garrison; uniform upgrade budget; 100ms step; x1.06; rounded to 1s",
-        "observedCombatMs": 791400
-      },
-      "28": {
-        "combatBasisHash": "e699ea6fd740a478dd3fdcc3e5847bc5bb60f55df1404fc95ac65953b663f67d",
-        "parCombatTimeMs": 773000,
-        "method": "offline fill-gate full-maze reference garrison; uniform upgrade budget; 100ms step; x1.06; rounded to 1s",
-        "observedCombatMs": 729100
-      },
-      "29": {
-        "combatBasisHash": "ca0e1fe77a13edc96b71f3032eb8f2b0cda26ba1d000bf87b3795df64ede1af9",
-        "parCombatTimeMs": 870000,
-        "method": "offline fill-gate full-maze reference garrison; uniform upgrade budget; 100ms step; x1.06; rounded to 1s",
-        "observedCombatMs": 821100
-      },
-      "30": {
-        "combatBasisHash": "81257bbcc193e329046feac6215732bf8a05a5359705de3912f49f45689808fc",
-        "parCombatTimeMs": 889000,
-        "method": "offline fill-gate full-maze reference garrison; uniform upgrade budget; 100ms step; x1.06; rounded to 1s",
-        "observedCombatMs": 839000
-      },
-      "3": {
-        "combatBasisHash": "5026389645297abaf152020ce0f6d284e9e3ca891adbcc7d92ae8e853fdf51ce",
-        "parCombatTimeMs": 671000,
-        "method": "offline fill-gate full-maze reference garrison; uniform upgrade budget; 100ms step; x1.06; rounded to 1s (reference leaked 1 unit)",
-        "observedCombatMs": 632700
-      }
-    }
-  }
+  "parCalibration": {}
 }
