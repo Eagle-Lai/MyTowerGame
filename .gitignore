@@ -173,3 +173,37 @@ Desktop.ini
 #    只作本机回滚用，不入库（Versions 下的 *.json 仍照常提交）。
 # ---------------------------------------------------------------------------
 Luban/BalanceDesign/Versions/*/Datas/
+
+# ---------------------------------------------------------------------------
+# 6. 关卡回放录像（2026-10-23 新增，BalanceVideoRecorder 产出）
+#    单关 720p 约 100–500MB，30 关可达十几 GB，只作本机验收素材，不入库。
+#    需要归档时单独打包外传，不要提交。
+# ---------------------------------------------------------------------------
+/Docs/LevelVideos/
+
+# ---------------------------------------------------------------------------
+# 8. 平衡验收与四方向审阅的过程证据（2026-10-23 新增）
+#    raw-trials（约 1.5GB）、audit（约 257MB）、逐关 evidence 截图、审阅帧
+#    runtime_*（含 tailfix/polish 等各轮）、生成原图、首次成功试跑等属可重算的
+#    中间过程，体积 GB 级，只留本机。
+#    结论级文件（每关「完整逐波操作与测试报告.md」「最终布阵图.png」
+#    「trial-index.*」「reproducibility.json」、各怪物 offline_/parts_ 审阅图、
+#    README 与清单 json）仍照常入库。
+# ---------------------------------------------------------------------------
+/Docs/BalanceEvidence/L02-L30-ManualBalance-100Gold/raw-trials/
+/Docs/BalanceEvidence/L02-L30-ManualBalance-100Gold/audit/
+/Docs/BalanceEvidence/L02-L30-ManualBalance-100Gold/L01-current-check/
+/Docs/BalanceEvidence/L02-L30-ManualBalance-100Gold/*/evidence/
+/Docs/BalanceEvidence/L02-L30-ManualBalance-100Gold/*/search-*/
+/Docs/BalanceEvidence/L02-L30-ManualBalance-100Gold/*/current-version-seed/
+/Docs/BalanceEvidence/L02-L30-ManualBalance-100Gold/*/final-player-plans/
+/Docs/BalanceEvidence/L02-L30-ManualBalance-100Gold/*/首次成功-r*/
+/Docs/BalanceEvidence/L02-L30-ManualBalance-100Gold/*/best-result.json
+/Docs/EnemyDirectionReview/AdvancedHen/frames/
+/Docs/EnemyDirectionReview/AdvancedHen/history/
+/Docs/EnemyDirectionReview/AdvancedHen/revision_02/
+/Docs/EnemyDirectionReview/AdvancedHen/revision_03/
+/Docs/EnemyDirectionReview/Batch01_10/*/generation/
+/Docs/EnemyDirectionReview/Batch01_10/*/runtime_*/
+/Docs/EnemyDirectionReview/Batch01_10/*/staged_art/
+
