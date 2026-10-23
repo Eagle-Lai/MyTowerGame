@@ -1,0 +1,152 @@
+--- before/Assets/Scripts/Enemy/EnemyDirectionalProfile.cs
++++ after/Assets/Scripts/Enemy/EnemyDirectionalProfile.cs
+@@ -21,6 +21,8 @@
+             // False preserves the existing view; the example front torso covers its folded wings.
+             public bool WingsBehindBody;
+ 
++            public bool HasHeadAndBody { get { return NormalHead && AngryHead && DeadHead && Body; } }
++
+             public bool IsComplete
+             {
+                 get { return NormalHead && AngryHead && DeadHead && Body && Wing && Leg; }
+@@ -32,13 +34,19 @@
+             }
+         }
+ 
++        // Optional complete per-view rigs for wings, quadrupeds and multi-legged enemies.
++        // Existing six-part profiles retain their serialized behavior.
++        public bool SeparateViewRigs;
++
+         public Parts Up = new Parts();
+         public Parts Down = new Parts();
+         public RuntimeAnimatorController Controller;
+ 
+         public bool IsComplete
+         {
+-            get { return Up != null && Down != null && Up.IsComplete && Down.IsComplete && Controller; }
++            get { return Up != null && Down != null && Controller && (SeparateViewRigs
++                    ? Up.HasHeadAndBody && Down.HasHeadAndBody
++                    : Up.IsComplete && Down.IsComplete); }
+         }
+     }
+ }
+--- before/Assets/Scripts/Enemy/EnemyDirectionalVisual.cs
++++ after/Assets/Scripts/Enemy/EnemyDirectionalVisual.cs
+@@ -19,6 +19,12 @@
+         public SpriteRenderer LegL;
+         public SpriteRenderer LegR;
+ 
++        // Only profiles opting into separate anatomical rigs use these arrays.
++        public SpriteRenderer[] UpRenderers;
++        public SpriteRenderer[] DownRenderers;
++        public SpriteRenderer UpHead, DownHead;
++        public SpriteRenderer UpBody, DownBody;
++
+         [Range(1f, 2f)] public float AxisHysteresis = 1.2f;
+         public EnemyFacing Facing { get; private set; }
+         public int HeadIndex { get; private set; }
+@@ -34,8 +40,12 @@
+         {
+             get
+             {
+-                return Profile && Profile.IsComplete && Head && Body && WingL && WingR && LegL && LegR
+-                    && HorizontalRenderers != null && HorizontalRenderers.Length > 0;
++                if (!Profile || !Profile.IsComplete || HorizontalRenderers == null || HorizontalRenderers.Length == 0)
++                    return false;
++                if (Profile.SeparateViewRigs)
++                    return UpHead && DownHead && UpBody && DownBody && UpRenderers != null && UpRenderers.Length > 0
++                        && DownRenderers != null && DownRenderers.Length > 0;
++                return Head && Body && WingL && WingR && LegL && LegR;
+             }
+         }
+ 
+@@ -99,6 +109,12 @@
+         {
+             if (_flashProperties == null) _flashProperties = new MaterialPropertyBlock();
+             foreach (var sr in HorizontalRenderers) Flash(sr, amount);
++            if (Profile && Profile.SeparateViewRigs)
++            {
++                foreach (var sr in UpRenderers) Flash(sr, amount);
++                foreach (var sr in DownRenderers) Flash(sr, amount);
++                return;
++            }
+             Flash(Head, amount); Flash(Body, amount);
+             Flash(WingL, amount); Flash(WingR, amount); Flash(LegL, amount); Flash(LegR, amount);
+         }
+@@ -144,6 +160,19 @@
+         private void ApplyView()
+         {
+             bool vertical = Facing == EnemyFacing.Up || Facing == EnemyFacing.Down;
++            if (Profile.SeparateViewRigs)
++            {
++                // Original Bat clips animate SpriteRenderer.enabled on alternating wing poses.
++                // A renderer-level draw gate preserves those curves while hiding the entire side view.
++                foreach (var sr in HorizontalRenderers) if (sr) sr.forceRenderingOff = vertical;
++                bool up = Facing == EnemyFacing.Up;
++                foreach (var sr in UpRenderers) if (sr) sr.forceRenderingOff = !vertical || !up;
++                foreach (var sr in DownRenderers) if (sr) sr.forceRenderingOff = !vertical || up;
++                Head = up ? UpHead : DownHead;
++                Body = up ? UpBody : DownBody;
++                if (vertical) Head.sprite = CurrentParts().HeadAt(HeadIndex);
++                return;
++            }
+             foreach (var sr in HorizontalRenderers) if (sr) sr.enabled = !vertical;
+             Head.enabled = Body.enabled = WingL.enabled = WingR.enabled = LegL.enabled = LegR.enabled = vertical;
+             if (!vertical) return;
+--- before/Assets/Editor/EnemyDirectionPrefabBuilder.cs
++++ after/Assets/Editor/EnemyDirectionPrefabBuilder.cs
+@@ -16,6 +16,7 @@
+         public string ArtDir;          // .../Directions
+         public string PrefabPath;      // Assets/Prefabs/Enemy/Enemy_X.prefab
+         public string ControllerSource; // family AnimatorController whose clips drive the rig
++        public bool UseSeparateViewRigs;
+         public bool UseRealController;  // true: copy the family controller and add WalkUp/WalkDown states (code controls Dir); false: AnimatorOverrideController (AdvancedHen pattern)
+         public Vector2 TorsoPos, HeadPos, WingPos, LegPos;
+         public Vector2 TorsoSize, HeadSize, WingSize, LegSize;   // target box (0 = fall back to the height below)
+@@ -69,6 +70,7 @@
+ 
+         public static bool TryGetSpec(string monsterName, out EnemyDirectionSpec spec)
+         {
++            if (EnemyDirectionalRigBuilder.TryGetSpec(monsterName, out spec)) return true;
+             foreach (var s in Specs)
+             {
+                 if (s.Name == monsterName) { spec = s; return true; }
+@@ -142,6 +144,7 @@
+ 
+         public static void Build(EnemyDirectionSpec spec)
+         {
++            if (spec.UseSeparateViewRigs) { EnemyDirectionalRigBuilder.Build(spec); return; }
+             if (EditorApplication.isPlayingOrWillChangePlaymode || EditorApplication.isCompiling)
+                 throw new InvalidOperationException("请在非 Play、编译完成后接入方向资源。");
+             // Validate all inputs before importing or editing a prefab.
+@@ -186,7 +189,8 @@
+             if (!TryGetSpec(name, out spec)) return false;
+             var profile = AssetDatabase.LoadAssetAtPath<EnemyDirectionalProfile>(folder + "/Directions/" + name + "_Directions.asset");
+             if (!profile || !profile.IsComplete) return false;
+-            Apply(root, profile, spec);
++            if (spec.UseSeparateViewRigs) EnemyDirectionalRigBuilder.Apply(root, profile, spec);
++            else Apply(root, profile, spec);
+             return true;
+         }
+ 
+@@ -353,10 +357,10 @@
+             return result;
+         }
+ 
+-        private static RuntimeAnimatorController BuildAdvancedHenController(EnemyDirectionSpec spec,
++        internal static RuntimeAnimatorController BuildAdvancedHenController(EnemyDirectionSpec spec,
+             Dictionary<string, AnimationClip> clips)
+         {
+-            string path = spec.AnimDir + "/AdvancedHen_Directions.controller";
++            string path = spec.AnimDir + "/" + spec.Name + "_Directions.controller";
+             var controller = AssetDatabase.LoadAssetAtPath<AnimatorController>(path);
+             if (!controller) controller = AnimatorController.CreateAnimatorControllerAtPath(path);
+             controller.parameters = new[]
+@@ -890,6 +894,7 @@
+         /// <summary>Editor-time integrity checks; writes a report for unattended runs.</summary>
+         public static bool Verify(EnemyDirectionSpec s, out string report)
+         {
++            if (s.UseSeparateViewRigs) return EnemyDirectionalRigBuilder.Verify(s, out report);
+             var lines = new List<string>();
+             bool ok = true;
+             var profile = AssetDatabase.LoadAssetAtPath<EnemyDirectionalProfile>(s.ProfilePath);
