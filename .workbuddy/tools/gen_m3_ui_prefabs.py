@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-生成 SelectView / PauseView / SettingView 三个 UI prefab（M3）。
+生成 SelectView / PauseView 两个旧版 UI prefab（M3）。
+设置界面请在 Unity 使用 UIPrefabBuilder.RebuildSettingOnly()，保留语言下拉框。
 
 【为什么要自己生成，而不是让用户在 Unity 里点一下】
   UIPrefabBuilder 已经能生成它们，但那需要一次编辑器交互。M3 的目标是"全部内容交付"，
@@ -32,7 +33,6 @@ TEMPLATE = os.path.join(UI, "TowerInfoView.prefab")
 SCRIPT_GUID = {
     "SelectView": "6552693babe951ea4b0a618f8ca9e553",
     "PauseView": "d354127551b5a7b6f0f3567c207974c2",
-    "SettingView": "cdb3a5c081ce8530d14d9cea415e6b36",
 }
 
 ANCHOR_MID_CENTER = 4
@@ -320,18 +320,6 @@ def pause_children(panel_size):
     ]
 
 
-def setting_children(panel_size):
-    return [
-        make_text("Title", "设置", (panel_size[0] - 60, 56), (0, -36), 38, anchor=(0.5, 1)),
-        make_text("VolumeText", "音量 80%", (520, 56), (0, 120), 38, wrap=False),
-        make_button("VolDownBtn", "音量 −", (320, 72), (-170, 40)),
-        make_button("VolUpBtn", "音量 ＋", (320, 72), (170, 40)),
-        make_button("MuteBtn", "静音", (320, 72), (0, -50)),
-        make_button("ResetBtn", "重置存档", (320, 72), (0, -140)),
-        make_button("CloseBtn", "关闭", (320, 72), (0, -230)),
-    ]
-
-
 def validate(path, body):
     anchors = re.findall(r"^--- !u!\d+ &(\d+)", body, re.M)
     if len(anchors) != len(set(anchors)):
@@ -351,7 +339,6 @@ if __name__ == "__main__":
     specs = [
         ("SelectView", SCRIPT_GUID["SelectView"], (1120, 640), select_children),
         ("PauseView", SCRIPT_GUID["PauseView"], (560, 520), pause_children),
-        ("SettingView", SCRIPT_GUID["SettingView"], (620, 600), setting_children),
     ]
     bad = 0
     for name, guid, size, fn in specs:

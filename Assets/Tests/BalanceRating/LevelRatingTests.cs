@@ -372,11 +372,11 @@ namespace FTProject.Tests
                         database.Execute("INSERT INTO level_snapshot(id,valid,level_id,round_cursor,gold,hp,max_hp) VALUES(1,1,1,3,99,18,20)");
                     }
                 }
-                else File.WriteAllText(Path.Combine(directory, "freetower_save.json"), "{\"version\":1,\"levels\":[{\"levelId\":1,\"stars\":3,\"clearCount\":7,\"bestTimeMs\":123456}],\"settings\":{\"volume\":0.4,\"muted\":true},\"snapshot\":{\"valid\":true,\"levelId\":1,\"roundCursor\":3}}");
+                else File.WriteAllText(Path.Combine(directory, "freetower_save.json"), "{\"version\":1,\"levels\":[{\"levelId\":1,\"stars\":3,\"clearCount\":7,\"bestTimeMs\":123456}],\"settings\":{\"volume\":0.4,\"muted\":true,\"language\":\"zh-Hant\"},\"snapshot\":{\"valid\":true,\"levelId\":1,\"roundCursor\":3}}");
                 using (var storage = Open(sqlite, directory))
                 {
                     var old = storage.LoadLevels()[0]; Assert.That(old.stars, Is.EqualTo(3)); Assert.That(old.bestTimeMs, Is.EqualTo(123456)); Assert.That(old.clearCount, Is.EqualTo(7)); Assert.That(storage.LoadSnapshot().valid, Is.False);
-                    if (!sqlite) { Assert.That(storage.LoadSettings().muted, Is.True); Assert.That(File.Exists(Path.Combine(directory, "freetower_save.json.legacy-v1.bak")), Is.True); }
+                    if (!sqlite) { Assert.That(storage.LoadSettings().language, Is.EqualTo("zh-Hant")); Assert.That(File.Exists(Path.Combine(directory, "freetower_save.json.legacy-v1.bak")), Is.True); }
                     SaveProgressMigration.ArchiveForVersion(old, Profile().versionKey); storage.SaveLevel(old);
                 }
                 using (var storage = Open(sqlite, directory))

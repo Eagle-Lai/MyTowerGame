@@ -5,32 +5,11 @@ using UnityEngine.UI;
 
 namespace FTProject
 {
-    /// <summary>
-    /// 设置界面（M3-6；2026-10-16 新增语言切换下拉框）。
-    ///
-    /// 【为什么音量用 Slider】(M3-6 修订)
-    ///   音量改为滑动条拖拽调节，所见即所得；VolumeText 仍同步显示百分比。
-    ///   Slider 节点树（Background / Fill Area / Handle）由 UIPrefabBuilder 生成，
-    ///   本脚本只关心 Panel/VolumeSlider 的 onValueChanged。
-    ///
-    /// 【语言切换为什么能"实时生效、不用重启"】
-    ///   选语言 → LanguageManager.SetLanguage（写存档 + 广播 LanguageChangedEvent）→
-    ///   ① 全场景挂了 TextLocalizer / ImageLocalizer 的静态节点**自动**刷新（不需要遍历界面）；
-    ///   ② 本界面订阅了同一事件：标题、音量、静音这些"代码手动拼词"的文本在这里重刷，
-    ///      下拉框选中值也一并同步；
-    ///   ③ 主菜单 / 暂停 / HUD 也各自订阅（它们是设置界面打开时的"背景双人组"），
-    ///      关闭设置后看到的每一处文案都已是新语言。
-    ///
-    /// 【设置写到哪里】SaveManager（持久化），并立刻推给 AudioManager 生效。
-    /// </summary>
+    /// <summary>语言选择、存档重置和关闭操作；语言切换立即生效并持久化。</summary>
     public class SettingView : MonoBehaviour
     {
         public const string LogicalName = "SettingView";
 
-        private TMP_Text _volumeText;
-        private Slider _volumeSlider;
-        private Button _muteBtn;
-        private TMP_Text _muteLabel;
         private Button _resetBtn;
         private Button _closeBtn;
         private TMP_Text _title;
@@ -43,16 +22,10 @@ namespace FTProject
         private void Awake()
         {
             _title = FindText("Panel/Title");
-            _volumeText = FindText("Panel/VolumeText");
-            _volumeSlider = FindSlider("Panel/VolumeSlider");
-            _muteBtn = FindButton("Panel/MuteBtn");
-            _muteLabel = FindText("Panel/MuteBtn/Label");
             _resetBtn = FindButton("Panel/ResetBtn");
             _closeBtn = FindButton("Panel/CloseBtn");
             _languageDropdown = FindDropdown("Panel/LanguageDropdown");
 
-            if (_volumeSlider != null) _volumeSlider.onValueChanged.AddListener(OnVolumeChanged);
-            if (_muteBtn != null) _muteBtn.onClick.AddListener(OnClickMute);
             if (_resetBtn != null) _resetBtn.onClick.AddListener(OnClickReset);
             if (_closeBtn != null) _closeBtn.onClick.AddListener(OnClickClose);
             if (_languageDropdown != null) _languageDropdown.onValueChanged.AddListener(OnPickLanguage);
@@ -182,21 +155,8 @@ namespace FTProject
         }
 
         // ------------------------------------------------------------------
-        // 音量 / 静音 / 重置 / 关闭
+        // 重置 / 关闭
         // ------------------------------------------------------------------
-
-        private void OnVolumeChanged(float value)
-        {
-            SaveManager.Instance.SetVolume(value);
-            Refresh();
-        }
-
-        private void OnClickMute()
-        {
-            GameSettings s = SaveManager.Instance.Settings;
-            SaveManager.Instance.SetMuted(!s.muted);
-            Refresh();
-        }
 
         private void OnClickReset()
         {
@@ -212,10 +172,7 @@ namespace FTProject
 
         private void DoReset()
         {
-            // 【易错点】重置存档会连带把音量也重置回默认 —— 这是"重置"应有的语义，
-            // 但要在界面上说清楚，否则玩家会以为设置丢了。
             SaveManager.Instance.ResetAll();
-            SaveManager.Instance.ApplyToAudio();
             Refresh();
             EventDispatcher.TriggerEvent<string>(EventName.ShowTipEvent,
                 Localization.Get("Save reset") ?? "存档已重置");
@@ -236,17 +193,6 @@ namespace FTProject
                 LanguageManager.ApplyFont(_title);
             }
 
-            GameSettings s = SaveManager.Instance.Settings;
-            SetText(_volumeText,
-                Localization.Get("Volume {0}%", Mathf.RoundToInt(s.volume * 100f))
-                ?? string.Format("音量 {0}%", Mathf.RoundToInt(s.volume * 100f)));
-            LanguageManager.ApplyFont(_volumeText);
-            if (_volumeSlider != null) _volumeSlider.SetValueWithoutNotify(s.volume);
-            SetText(_muteLabel, s.muted
-                ? (Localization.Get("Unmute") ?? "取消静音")
-                : (Localization.Get("Mute") ?? "静音"));
-            LanguageManager.ApplyFont(_muteLabel);
-
             SyncLanguageDropdown();
         }
 
@@ -259,17 +205,6 @@ namespace FTProject
                 return null;
             }
             return tr.GetComponent<TMP_Text>();
-        }
-
-        private Slider FindSlider(string path)
-        {
-            Transform tr = transform.Find(path);
-            if (tr == null)
-            {
-                Debug.LogWarning("[Setting] 缺少滑动条节点「" + path + "」");
-                return null;
-            }
-            return tr.GetComponent<Slider>();
         }
 
         private Button FindButton(string path)
@@ -294,12 +229,5 @@ namespace FTProject
             return tr.GetComponent<TMP_Dropdown>();
         }
 
-        private static void SetText(TMP_Text t, string v)
-        {
-            if (t != null && t.text != v)
-            {
-                t.text = v;
-            }
-        }
     }
 }

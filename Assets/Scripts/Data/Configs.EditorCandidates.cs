@@ -21,7 +21,7 @@ namespace FTProject
             {
                 string path = Path.Combine(directory, key + ".json");
                 if (File.Exists(path)) json[key] = File.ReadAllText(path).TrimStart('\uFEFF');
-                else if ((key == "tbaudio" || key == "tblocalization") && LoadedJson.ContainsKey(key)) json[key] = LoadedJson[key];
+                else if (key == "tblocalization" && LoadedJson.ContainsKey(key)) json[key] = LoadedJson[key];
                 else throw new FileNotFoundException("Candidate table is missing", path);
             }
             // Construction happens before touching any live table.
@@ -33,7 +33,6 @@ namespace FTProject
             var levels = new TBSceneInfo(JSONNode.Parse(json["tbsceneinfo"]));
             var maps = new TBLevelMap(JSONNode.Parse(json["tblevelmap"]));
             var globals = new TBGlobal(JSONNode.Parse(json["tbglobal"]));
-            var audio = new TBAudio(JSONNode.Parse(json["tbaudio"]));
             var localization = new TBLocalization(JSONNode.Parse(json["tblocalization"]));
             JSONNode ratingJson = JSONNode.Parse(json["tblevelrating"]);
             foreach (JSONNode node in ratingJson.Children) node["runtimeContentHash"] = "";
@@ -44,20 +43,20 @@ namespace FTProject
             var global = globals.GetOrDefault(1);
             if (global == null) throw new InvalidDataException("Candidate global config is missing");
 
-            var oldEnemies = EnemyTable; var oldTowers = TowerTable; var oldBullets = BulletTable; var oldGroups = WaveTable; var oldRounds = RoundTable; var oldLevels = LevelTable; var oldMaps = LevelMapTable; var oldGlobals = GlobalTable; var oldAudio = AudioTable; var oldLocalization = LocalizationTable; var oldRating = RatingTable; var oldGlobal = Global;
+            var oldEnemies = EnemyTable; var oldTowers = TowerTable; var oldBullets = BulletTable; var oldGroups = WaveTable; var oldRounds = RoundTable; var oldLevels = LevelTable; var oldMaps = LevelMapTable; var oldGlobals = GlobalTable; var oldLocalization = LocalizationTable; var oldRating = RatingTable; var oldGlobal = Global;
             var oldJson = new Dictionary<string, string>(LoadedJson); bool oldVerified = RatingContentVerified; bool oldLoaded = IsLoaded;
             try
             {
-                EnemyTable = enemies; TowerTable = towers; BulletTable = bullets; WaveTable = groups; RoundTable = rounds; LevelTable = levels; LevelMapTable = maps; GlobalTable = globals; AudioTable = audio; LocalizationTable = localization; RatingTable = rating; Global = new GlobalConfig(global);
+                EnemyTable = enemies; TowerTable = towers; BulletTable = bullets; WaveTable = groups; RoundTable = rounds; LevelTable = levels; LevelMapTable = maps; GlobalTable = globals; LocalizationTable = localization; RatingTable = rating; Global = new GlobalConfig(global);
                 LoadedJson.Clear(); foreach (var pair in json) LoadedJson[pair.Key] = pair.Value;
                 if (!VerifyRatingContent()) throw new InvalidDataException("Candidate rating/content self-check failed");
-                RatingContentVerified = true; IsLoaded = true; _audioByLogicalName = null;
+                RatingContentVerified = true; IsLoaded = true;
                 Debug.Log("[Rating] Isolated editor candidate loaded: " + Path.GetFullPath(directory) + " hash=" + hash);
                 return true;
             }
             catch
             {
-                EnemyTable = oldEnemies; TowerTable = oldTowers; BulletTable = oldBullets; WaveTable = oldGroups; RoundTable = oldRounds; LevelTable = oldLevels; LevelMapTable = oldMaps; GlobalTable = oldGlobals; AudioTable = oldAudio; LocalizationTable = oldLocalization; RatingTable = oldRating; Global = oldGlobal;
+                EnemyTable = oldEnemies; TowerTable = oldTowers; BulletTable = oldBullets; WaveTable = oldGroups; RoundTable = oldRounds; LevelTable = oldLevels; LevelMapTable = oldMaps; GlobalTable = oldGlobals; LocalizationTable = oldLocalization; RatingTable = oldRating; Global = oldGlobal;
                 LoadedJson.Clear(); foreach (var pair in oldJson) LoadedJson[pair.Key] = pair.Value;
                 RatingContentVerified = oldVerified; IsLoaded = oldLoaded;
                 throw;

@@ -12,7 +12,7 @@ namespace FTProject
     ///   · `SetHead(int)`：0=正常头、1=愤怒头、2=死亡头
     ///     （对应图集里的 `HeadNormal` / `HeadAngry` / `HeadDead` 三个精灵）
     ///     攻击动画里按 0→1→0 来回切，死亡动画里切成 2。
-    ///   · `Event(string)`：形如 "Attack" 的通用事件钩子（原包用作音效/特效触发点）。
+    ///   · `Event(string)`：形如 "Attack" 的通用事件钩子（原包通用事件）。
     ///
     /// 【挂在哪】Unity 把 AnimationEvent 发给**播放动画的 Animator 所在的那个 GameObject**，
     /// 所以本组件必须挂在 Animator 的 GameObject 上（生成预制体时由工具负责）。
@@ -67,12 +67,11 @@ namespace FTProject
 
         /// <summary>
         /// 通用事件钩子（原包在攻击动画的关键帧发出，参数形如 "Attack"）。
-        /// M0 不接音效/特效，所以这里是空实现 —— 它**必须存在**，
-        /// 否则 Unity 会报 "has no receiver"。M2 接音效时在这里分发即可。
+        /// 保留原包通用事件接收口，避免动画触发无接收器警告。
         /// </summary>
         public void Event(string name)
         {
-            // 预留给 M2：按 name 播放音效 / 生成受击特效
+            // 该原包事件不承载游戏逻辑；SetHead 仍处理头部表情。
         }
 
         /// <summary>兜底查找：从本组件的父级往上找到怪物根节点，再往下找名字含 Head 的渲染器</summary>

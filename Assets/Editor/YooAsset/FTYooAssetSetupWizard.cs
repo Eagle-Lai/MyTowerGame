@@ -1,4 +1,4 @@
-﻿#if USE_YOOASSET
+#if USE_YOOASSET
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -44,7 +44,6 @@ namespace FTProject.EditorTools
             new[] { "Art", "Assets/_UIAssets" },
             new[] { "Prefab", "Assets/Prefabs" },
             new[] { "Font", "Assets/Font" },
-            new[] { "Audio", "Assets/Audio" },
         };
 
         private string _version = "1.0.0";

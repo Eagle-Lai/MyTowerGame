@@ -315,7 +315,7 @@ for f in files:
     for m in CALL_RE.finditer(code):
         # 排除"拼接前缀"：Load<AudioClip>("Audio_" + name) 里的 "Audio_" 只是片段，
         # 不是完整的逻辑名。早期版本会把它当成逻辑名 → 误报"未登记"
-        # （已真实发生在 AudioManager.cs:139），故这里看紧随其后是否还有 '+'
+        # （历史资源加载误报），故这里看紧随其后是否还有 '+'
         if code[m.end():m.end() + 8].lstrip().startswith('+'):
             continue
         literal_calls[m.group(1)].add(rel)

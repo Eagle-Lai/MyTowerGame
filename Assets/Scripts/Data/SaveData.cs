@@ -40,13 +40,10 @@ namespace FTProject
         public LevelRatingResult bestRating;
     }
 
-    /// <summary>玩家设置。目前只有音量、静音、语言。</summary>
+    /// <summary>玩家设置：语言。</summary>
     [Serializable]
     public class GameSettings
     {
-        public float volume = 0.8f;
-        public bool muted;
-
         /// <summary>
         /// 玩家选择的语言码（如 "en" / "zh-Hans" / "zh-Hant"）。
         /// 空字符串 = 尚无显式选择，用 LocalizationSettings.defaultLanguage。
@@ -54,11 +51,6 @@ namespace FTProject
         /// </summary>
         public string language = "";
 
-        public void Clamp()
-        {
-            if (volume < 0f) volume = 0f;
-            if (volume > 1f) volume = 1f;
-        }
     }
 
     /// <summary>局内快照里的单座塔。</summary>

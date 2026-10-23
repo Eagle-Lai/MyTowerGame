@@ -636,7 +636,7 @@ namespace FTProject
         /// 【2026-10-17 表现改版：移除真实子弹，《坚守阵地》式即时命中】
         ///   开火瞬间直接结算伤害，塔上只重放一段枪口焰序列帧（TowerFireFx）；
         ///   火力塔在落点补播爆炸序列帧。攻击节奏完全不变：
-        ///   冷却间隔（CooldownSec）、索敌/锁定、伤害值（Power）、音效、后坐、震动全部照旧。
+        ///   冷却间隔（CooldownSec）、索敌/锁定、伤害值（Power）、后坐、震动全部照旧。
         ///   唯一的判定差异是"伤害不再等弹体飞行"——即时命中本来就是去掉真实子弹后的题中之义。
         ///
         /// 【为什么数值仍从子弹表取】aoeRadius / effectType / effectValue 的权威来源
@@ -691,10 +691,6 @@ namespace FTProject
             if (_muzzleFx != null)
             {
                 _muzzleFx.PlayMuzzle(TowerFireFx.GetMuzzleFrames(Config.IsAoe));
-            }
-            if (AudioManager.Instance != null)
-            {
-                AudioManager.Instance.PlayAt(AudioName.TowerFire(Config.Type), MuzzlePosition);
             }
             FireCount++;
         }
@@ -978,10 +974,6 @@ namespace FTProject
 
             CombatSystem.Instance.RegisterTower(tower);
             EventDispatcher.TriggerEvent<BaseTower>(EventName.BuildTowerSuccess, tower);
-            if (AudioManager.Instance != null)
-            {
-                AudioManager.Instance.PlayAt(AudioName.TowerBuild, cell.Center);
-            }
             astar.RequestRefresh();      // 节流重算，敌人改道
 
             // 【怪物脚下建塔的收尾】建好的瞬间，正站在这一格上的怪就被墙包住了。
@@ -1135,10 +1127,6 @@ namespace FTProject
             // 【为什么不用 BuildTowerSuccess】它的语义是"新建了一座塔"，
             // HudView 收到会退出放置态并复位按钮 —— 升级时发它会把 HUD 状态搅乱。
             EventDispatcher.TriggerEvent<BaseTower>(EventName.TowerUpgradeSuccess, tower);
-            if (AudioManager.Instance != null)
-            {
-                AudioManager.Instance.PlayAt(AudioName.TowerUpgrade, tower.Position);
-            }
             Tips(Localization.Get("Upgraded to {0} Lv.{1}", nextCfg.DisplayName, nextCfg.Level)
                 ?? string.Format("已升级为 {0} Lv.{1}", nextCfg.DisplayName, nextCfg.Level));
 
@@ -1172,10 +1160,6 @@ namespace FTProject
 
             PlayerDataManager.Instance.AddGold(refund);
             EventDispatcher.TriggerEvent<BaseTower>(EventName.DestroyTower, tower);
-            if (AudioManager.Instance != null)
-            {
-                AudioManager.Instance.PlayAt(AudioName.TowerSell, tower.Position);
-            }
             ResLoader.Instance.ReleaseInstance(resName, tower.gameObject);
             AStarManager.Instance.RequestRefresh();
             Tips(Localization.Get("Tower sold, refunded {0} gold", refund)

@@ -47,7 +47,7 @@ namespace FTProject.EditorTools
             "TypeName", "Role", "DescText", "DpsRow", "RangeRow", "SpeedRow", "PriceRow",
             "PageText",
             "StatusText", "PercentText", "TipText", "PhaseText", "SizeText", "SpeedText",
-            "DetailText", "FailText", "LoadingDots", "VolumeText",
+            "DetailText", "FailText", "LoadingDots",
         };
 
         [MenuItem("Tools/塔防/高级（单步重建）/清理误挂的多语言组件", false, 309)]

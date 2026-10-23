@@ -22,7 +22,6 @@ public sealed partial class Tables
     public TBBulletData TBBulletData {get; }
     public TBLevelMap TBLevelMap {get; }
     public TBGlobal TBGlobal {get; }
-    public TBAudio TBAudio {get; }
     public TBLocalization TBLocalization {get; }
     public TBLevelRating TBLevelRating {get; }
 
@@ -45,8 +44,6 @@ public sealed partial class Tables
         tables.Add("TBLevelMap", TBLevelMap);
         TBGlobal = new TBGlobal(loader("tbglobal"));
         tables.Add("TBGlobal", TBGlobal);
-        TBAudio = new TBAudio(loader("tbaudio"));
-        tables.Add("TBAudio", TBAudio);
         TBLocalization = new TBLocalization(loader("tblocalization"));
         tables.Add("TBLocalization", TBLocalization);
         TBLevelRating = new TBLevelRating(loader("tblevelrating"));
@@ -61,7 +58,6 @@ public sealed partial class Tables
         TBBulletData.Resolve(tables);
         TBLevelMap.Resolve(tables);
         TBGlobal.Resolve(tables);
-        TBAudio.Resolve(tables);
         TBLocalization.Resolve(tables);
         TBLevelRating.Resolve(tables);
         PostResolve();
@@ -77,7 +73,6 @@ public sealed partial class Tables
         TBBulletData.TranslateText(translator);
         TBLevelMap.TranslateText(translator);
         TBGlobal.TranslateText(translator);
-        TBAudio.TranslateText(translator);
         TBLocalization.TranslateText(translator);
         TBLevelRating.TranslateText(translator);
     }

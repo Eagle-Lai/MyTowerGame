@@ -4,7 +4,6 @@
 - TowerInfo.xlsx：删 type=4(穿透)/5(激光) 全部行；type=2(火力) 行 canAttackAir 1→0；
   表头图例同步更新。
 - BulletData.xlsx：删穿透弹(id=3)行；删 pierce 列；effectType 图例去"4激光"。
-- AudioData.xlsx：删 sfx_tower_fire_pierce / sfx_tower_fire_laser 两行。
 
 幂等：重复执行无副作用。执行前自动备份到 .workbuddy/backup/tower3types_20261014/。
 """
@@ -14,7 +13,7 @@ sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 DATAS = r'D:/FreedomTower_1/Luban/Config/Datas'
 BACKUP = r'D:/FreedomTower_1/.workbuddy/backup/tower3types_20261014'
 
-FILES = ['TowerInfo.xlsx', 'BulletData.xlsx', 'AudioData.xlsx', 'Localization.xlsx']
+FILES = ['TowerInfo.xlsx', 'BulletData.xlsx', 'Localization.xlsx']
 os.makedirs(BACKUP, exist_ok=True)
 for f in FILES:
     src = os.path.join(DATAS, f)
@@ -97,26 +96,6 @@ ws.cell(row=3, column=hm['effectType']).value = '效果类型 0无/1减速/2持�
 
 left = [s(ws.cell(row=r, column=hm['id']).value) for r in range(4, ws.max_row + 1) if s(ws.cell(row=r, column=hm['id']).value)]
 print('[BulletData] 收敛后子弹 id:', left, '| 表头字段:', [k for k in hm if k != '##'])
-wb.save(p)
-
-# ---------------------------------------------------------------- AudioData
-p = os.path.join(DATAS, 'AudioData.xlsx')
-wb = openpyxl.load_workbook(p)
-ws = wb.worksheets[0]
-hm = header_map(ws)
-name_col = hm.get('logicalName')
-if name_col is None:   # 兜底：找不到表头名就在所有列里找
-    name_col = None
-    for c in range(1, ws.max_column + 1):
-        for r in range(1, 4):
-            if s(ws.cell(row=r, column=c).value) == 'logicalName':
-                name_col = c
-                break
-KILL = {'sfx_tower_fire_pierce', 'sfx_tower_fire_laser'}
-del_rows = [r for r in range(2, ws.max_row + 1) if s(ws.cell(row=r, column=name_col).value) in KILL]
-for r in reversed(del_rows):
-    ws.delete_rows(r, 1)
-print('[AudioData] 删除穿透/激光音效行数:', len(del_rows))
 wb.save(p)
 
 print('DONE')

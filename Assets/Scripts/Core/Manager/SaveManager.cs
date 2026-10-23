@@ -149,7 +149,6 @@ namespace FTProject
                 if (_data.levels == null) _data.levels = new List<LevelProgress>();
                 if (_data.snapshot == null) _data.snapshot = new LevelSnapshot();
                 if (_data.snapshot.towers == null) _data.snapshot.towers = new List<TowerSnapshot>();
-                _data.settings.Clamp();
             }
             catch (Exception ex)
             {
@@ -500,24 +499,6 @@ namespace FTProject
             }
         }
 
-        public void SetVolume(float v)
-        {
-            EnsureLoaded();
-            _data.settings.volume = Mathf.Clamp01(v);
-            ApplyToAudio();
-            PersistSettings();
-            if (_storage != null) _storage.Flush();
-        }
-
-        public void SetMuted(bool muted)
-        {
-            EnsureLoaded();
-            _data.settings.muted = muted;
-            ApplyToAudio();
-            PersistSettings();
-            if (_storage != null) _storage.Flush();
-        }
-
         /// <summary>
         /// 读玩家显式选择的语言。从未选择过返回 false（此时应回退到配置里的默认语言）。
         /// </summary>
@@ -541,19 +522,6 @@ namespace FTProject
             _data.settings.language = lang.ToCode();
             PersistSettings();
             if (_storage != null) _storage.Flush();
-        }
-
-        /// <summary>把设置推给音频系统。AudioManager 可能还没初始化，所以判空。</summary>
-        public void ApplyToAudio()
-        {
-            EnsureLoaded();
-            AudioManager am = AudioManager.Instance;
-            if (am == null)
-            {
-                return;
-            }
-            am.Muted = _data.settings.muted;
-            am.MasterVolume = _data.settings.volume;
         }
 
         // ------------------------------------------------------------------

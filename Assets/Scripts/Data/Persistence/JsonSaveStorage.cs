@@ -152,7 +152,6 @@ namespace FTProject
             if (d.settings == null) d.settings = new GameSettings();
             if (d.snapshot == null) d.snapshot = new LevelSnapshot();
             if (d.snapshot.towers == null) d.snapshot.towers = new List<TowerSnapshot>();
-            d.settings.Clamp();
             foreach (LevelProgress p in d.levels)
             {
                 if (p == null) continue;
@@ -273,7 +272,6 @@ namespace FTProject
             {
                 return;
             }
-            settings.Clamp();
             SaveData candidate = Clone(_data);
             candidate.settings = Clone(settings);
             if (WriteSaveFile(candidate)) _data = candidate;

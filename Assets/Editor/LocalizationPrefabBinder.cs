@@ -23,8 +23,7 @@ namespace FTProject.EditorTools
         ///   这类节点的内容由 View 代码用 Localization.Get(key, args) / SetText 主动赋值，
         ///   挂了本地化组件反而会在切语言时把代码算好的内容冲掉。
         ///   判据 = 见 <see cref="DynamicNames"/>（按节点名，宁少挂不多挂）
-        ///     + BindOne 里的两处结构性特判：TMP_Dropdown 内部文本（语言下拉框）、
-        ///       MuteBtn/Label（"静音 / 取消静音"两态文本）。
+        ///     + BindOne 里的结构性特判：TMP_Dropdown 内部文本（语言下拉框）。
     /// </summary>
     public static class LocalizationPrefabBinder
     {
@@ -65,7 +64,7 @@ namespace FTProject.EditorTools
         ///   · TypeName / Role / DescText / DpsRow / RangeRow / SpeedRow / PriceRow — 图鉴条目 Setup
         ///   · PageText — 图鉴页码
         ///   · StatusText / PercentText / TipText / PhaseText / SizeText / SpeedText /
-        ///     DetailText / FailText / LoadingDots / VolumeText — 启动链与设置的运行时刷新
+        ///     DetailText / FailText / LoadingDots — 启动链与设置的运行时刷新
         ///   · Title(空串占位) — 骨架空标题
         /// </summary>
         private static readonly HashSet<string> DynamicNames = new HashSet<string>
@@ -79,7 +78,7 @@ namespace FTProject.EditorTools
             "TypeName", "Role", "DescText", "DpsRow", "RangeRow", "SpeedRow", "PriceRow",
             "PageText",
             "StatusText", "PercentText", "TipText", "PhaseText", "SizeText", "SpeedText",
-            "DetailText", "FailText", "LoadingDots", "VolumeText",
+            "DetailText", "FailText", "LoadingDots",
         };
 
         /// <summary>
@@ -148,16 +147,8 @@ namespace FTProject.EditorTools
                     continue;
                 }
 
-                // MuteBtn/Label 是"静音 / 取消静音"两态文本（SettingView.Refresh 按存档状态写），
-                // 挂了本地化组件会在切语言时被"按 prefab 原文 Mute"刷新、把 Unmute 状态冲掉。
-                if (t.transform.parent != null && t.transform.parent.name == "MuteBtn")
-                {
-                    skipped++;
-                    continue;
-                }
-
                 // Btn_Pause/Label 是"暂停 / 继续"两态文本（HudView.RefreshPauseLabel 按 GameClock.IsPaused 写），
-                // 与 MuteBtn 同理：挂了本地化组件会在切语言时被"按 prefab 原文 Pause"刷回，
+                // 挂了本地化组件会在切语言时被"按 prefab 原文 Pause"刷回，
                 // 把暂停态的 Continue 冲掉。该节点由 HudView 在语言切换时自己重算文案。
                 if (t.transform.parent != null && t.transform.parent.name == "Btn_Pause")
                 {

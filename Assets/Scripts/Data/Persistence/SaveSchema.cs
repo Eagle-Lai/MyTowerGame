@@ -22,7 +22,7 @@ namespace FTProject
     ///   加密后以 TEXT 列承载 Base64 信封（见 AesCryptoService）。
     ///   代价是这些列**不能用于 SQL 排序/聚合** —— 本工程不需要：
     ///   总星数、已通关数都是在 C# 里遍历累加的（见 SaveManager）。
-    ///   会话设置（音量/静音）与局内快照属于"改了也没收益、且要频繁读写"的数据，保持明文。
+    ///   会话设置（语言偏好）与局内快照属于"改了也没收益、且要频繁读写"的数据，保持明文。
     ///
     /// 【版本迁移】
     ///   meta 表里存 schema_version。新库写入当前版本；老库按 <see cref="CurrentVersion"/>
@@ -36,7 +36,7 @@ namespace FTProject
         /// <remarks>
         /// v2（UI 补全 B4）：level_progress 增加 best_time_ms（最快通关的游戏内毫秒数）。
         /// </remarks>
-        public const int CurrentVersion = 3;
+        public const int CurrentVersion = 4;
 
         public const string MetaSchemaVersion = "schema_version";
         public const string MetaCreatedAt = "created_at";
@@ -91,8 +91,6 @@ namespace FTProject
             // 会话设置（单行，明文）
             "CREATE TABLE IF NOT EXISTS game_settings (" +
             "  id         INTEGER PRIMARY KEY CHECK (id = 1)," +
-            "  volume     REAL," +
-            "  muted      INTEGER," +
             "  updated_at INTEGER" +
             ");",
 
@@ -202,6 +200,16 @@ namespace FTProject
                     case 2:
                         db.Execute("ALTER TABLE level_progress ADD COLUMN rating_payload TEXT;");
                         db.Execute("ALTER TABLE level_snapshot ADD COLUMN rating_payload TEXT;");
+                        break;
+
+                    // v3 → v4: remove obsolete sound settings without touching progress,
+                    // snapshots or the language preference stored in kv_store.
+                    // Rebuild instead of DROP COLUMN for older mobile SQLite versions.
+                    case 3:
+                        db.Execute("CREATE TABLE game_settings_v4 (id INTEGER PRIMARY KEY CHECK (id = 1), updated_at INTEGER);");
+                        db.Execute("INSERT INTO game_settings_v4 (id, updated_at) SELECT id, updated_at FROM game_settings;");
+                        db.Execute("DROP TABLE game_settings;");
+                        db.Execute("ALTER TABLE game_settings_v4 RENAME TO game_settings;");
                         break;
 
                     default:

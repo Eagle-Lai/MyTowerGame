@@ -36,7 +36,6 @@ namespace FTProject
             { "tbbulletdata", new ResAddress(ResBundle.Config, "tbbulletdata", "Assets/ConfigJson/tbbulletdata.json") },
             { "tblevelmap",   new ResAddress(ResBundle.Config, "tblevelmap",   "Assets/ConfigJson/tblevelmap.json") },
             { "tbglobal",     new ResAddress(ResBundle.Config, "tbglobal",     "Assets/ConfigJson/tbglobal.json") },
-            { "tbaudio",      new ResAddress(ResBundle.Config, "tbaudio",      "Assets/ConfigJson/tbaudio.json") },
             { "tblocalization", new ResAddress(ResBundle.Config, "tblocalization", "Assets/ConfigJson/tblocalization.json") },
             { "tblevelrating", new ResAddress(ResBundle.Config, "tblevelrating", "Assets/ConfigJson/tblevelrating.json") },
 
@@ -240,22 +239,6 @@ namespace FTProject
         static ResTable()
         {
             RegisterMonsters();
-            RegisterAudio();
-        }
-
-        /// <summary>
-        /// 把 AudioCatalog（生成代码）里的音频登记进来。
-        /// 逻辑名 = Audio_&lt;文件名&gt;，与 TBAudio.logicalName 拼上前缀后一致。
-        /// 工程里没有音频文件时这里是空循环，不产生任何条目 ——
-        /// 于是"没有音效"不会污染自检报告（不会报"登记了但文件不存在"）。
-        /// </summary>
-        private static void RegisterAudio()
-        {
-            for (int i = 0; i < AudioCatalog.Count; i++)
-            {
-                string logical = AudioCatalog.LogicalName(i);
-                _map[logical] = new ResAddress(ResBundle.Audio, AudioCatalog.Names[i], AudioCatalog.AssetPaths[i]);
-            }
         }
 
         /// <summary>

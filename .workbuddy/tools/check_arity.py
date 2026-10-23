@@ -56,13 +56,8 @@ _CHANGED = [
     'Assets/Editor/YooAsset/FTBundlePackRule.cs',
     'Assets/Editor/YooAsset/FTYooAssetDefine.cs',
     'Assets/Editor/YooAsset/FTYooAssetSetupWizard.cs',
-    # —— M4-W7：音频（BGM 通道 + 全局点击音）——
-    'Assets/Scripts/Core/Manager/AudioManager.cs',
-    'Assets/Scripts/Core/Manager/AudioFadeDriver.cs',
-    'Assets/Scripts/Core/UI/UiClickSfx.cs',
+    # —— UI 管理器 ——
     'Assets/Scripts/Core/UI/UIManager.cs',
-    'Assets/Scripts/Data/AudioName.cs',
-    'Assets/Editor/PlaceholderBgmGenerator.cs',
     # —— M4-W7：UI 深色科幻换皮 ——
     'Assets/Editor/UISkinArtGenerator.cs',
     'Assets/Editor/EditorUtil.cs',

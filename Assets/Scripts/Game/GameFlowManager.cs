@@ -285,13 +285,6 @@ namespace FTProject
             _settled = false; _pendingResult = null; _pendingSaveResult = null; _unresolvedEnemies.Clear();
             SaveManager.Instance.EnsureRatingVersion(levelId);
 
-            // 关卡配置确认可用后才切战斗 BGM。
-            // 【为什么放在校验之后】配置不完整会在上面提前 return，那时不该把音乐换成战斗曲。
-            if (AudioManager.Instance != null)
-            {
-                AudioManager.Instance.PlayBgm(AudioName.BgmBattle);
-            }
-
             float cellSize = Configs.Global.CellSize;
             // 棋盘左上角原点：让棋盘几何中心正好落在世界原点
             Vector2 origin = new Vector2(-Map.Cols * cellSize * 0.5f, Map.Rows * cellSize * 0.5f);
@@ -500,10 +493,6 @@ namespace FTProject
             _wave.BeginRound(round);
             State = GameFlowState.RoundRunning;
             EventDispatcher.TriggerEvent<int>(EventName.RoundStartEvent, _roundCursor + 1);
-            if (AudioManager.Instance != null)
-            {
-                AudioManager.Instance.Play(AudioName.RoundStart);
-            }
             Tips(Localization.Get("Wave {0}/{1}", _roundCursor + 1, _roundIds.Count)
                 ?? string.Format("第 {0}/{1} 波", _roundCursor + 1, _roundIds.Count));
         }
@@ -621,10 +610,6 @@ namespace FTProject
             }
 
             EventDispatcher.TriggerEvent<int>(EventName.RoundClearEvent, finishedIndex);
-            if (AudioManager.Instance != null)
-            {
-                AudioManager.Instance.Play(AudioName.RoundClear);
-            }
 
             _roundCursor++;
             _run.completedWaveCount = _roundCursor;
@@ -1177,17 +1162,12 @@ namespace FTProject
         }
 
         /// <summary>
-        /// 打开关卡选择界面，并切到选关 BGM。
+        /// 打开关卡选择界面。
         /// 【为什么返回 SelectView】调用方（OnConfigLoaded）要判断"是否打开成功"来决定降级路径；
-        /// 顺带把"切选关 BGM"收进这一处，避免多个入口各写一遍。
         /// </summary>
         public SelectView OpenSelect()
         {
             SelectView sv = UIManager.Instance.Open<SelectView>(SelectView.LogicalName, UILayout.NormalPanel);
-            if (sv != null && AudioManager.Instance != null)
-            {
-                AudioManager.Instance.PlayBgm(AudioName.BgmSelect);
-            }
             return sv;
         }
 

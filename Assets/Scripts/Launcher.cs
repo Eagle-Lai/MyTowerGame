@@ -19,7 +19,7 @@ namespace FTProject
         private readonly List<IManagerInterface> _managers = new List<IManagerInterface>
         {
             AStarManager.Instance,
-            // 存档最早初始化：它的设置要在 AudioManager 起来后立刻生效（见 Awake 末尾）
+            // 存档在其他业务管理器之前初始化。
             SaveManager.Instance,
             PlayerDataManager.Instance,
             EnemyManager.Instance,
@@ -27,9 +27,6 @@ namespace FTProject
             TowerManager.Instance,
             CombatSystem.Instance,
             UIManager.Instance,
-            // 音效放最后：它依赖 Configs（TBAudio 表）与 ResLoader，
-            // 但两项都是"用到时才查"，早注册晚注册都不影响正确性，放在末尾更符合阅读顺序。
-            AudioManager.Instance,
         };
 
         private bool _booted;
@@ -59,10 +56,6 @@ namespace FTProject
             // M5-3：性能探针常驻（只在按 F3 / 到达自动打印间隔时才输出，平时零日志）
             PerfProbe.Ensure();
 
-            // 所有管理器就绪后，把存档里的设置推给音频系统。
-            // 【为什么放在循环之后】SaveManager 读档时 AudioManager 可能还没 OnInit，
-            // 那时 ApplyToAudio 会因为 Instance 还没准备好而空转。
-            SaveManager.Instance.ApplyToAudio();
         }
 
         private void Start()

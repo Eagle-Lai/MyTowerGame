@@ -76,14 +76,6 @@ namespace FTProject
             GameSettings s = new GameSettings();
             try
             {
-                DbRow row = _db.QuerySingle(
-                    "SELECT volume, muted FROM game_settings WHERE id = ?1", SingleRowId);
-                if (row != null)
-                {
-                    s.volume = row.GetFloat("volume", s.volume);
-                    s.muted = row.GetBool("muted", s.muted);
-                    s.Clamp();
-                }
                 string language;
                 if (TryGetValue("settings.language", out language)) s.language = language ?? "";
             }
@@ -102,11 +94,9 @@ namespace FTProject
             }
             try
             {
-                settings.Clamp();
                 _db.Execute(
-                    "INSERT OR REPLACE INTO game_settings (id, volume, muted, updated_at) " +
-                    "VALUES (?1, ?2, ?3, ?4)",
-                    SingleRowId, settings.volume, settings.muted ? 1 : 0, SaveSchema.Now());
+                    "INSERT OR REPLACE INTO game_settings (id, updated_at) VALUES (?1, ?2)",
+                    SingleRowId, SaveSchema.Now());
                 SetValue("settings.language", settings.language ?? "", false);
             }
             catch (Exception ex)

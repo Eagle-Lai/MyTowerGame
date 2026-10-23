@@ -1,4 +1,4 @@
-﻿using SuperScrollView;
+using SuperScrollView;
 using TMPro;
 using UnityEditor;
 using UnityEngine;
@@ -1485,35 +1485,22 @@ namespace FTProject.EditorTools
             EditorUtil.EnsureFolderOfFile(SettingPath);
 
             GameObject panel;
-            // 【为什么面板从 600 加高到 720】2026-10-16 新增"语言选择"行（标签 + 下拉框）。
-            //   设置面板整体按"设置项（音量、语言）→ 操作按钮"重排：620 宽放不下新行的高，
-            //   加高后各元素间距与旧版节奏保持一致（文本贴滑动条 4.5px、按钮间 16px）。
             GameObject root = CreateDialogShell("SettingView", "Settings",
-                new Vector2(620f, 720f), report, out panel);
+                new Vector2(620f, 560f), report, out panel);
             root.AddComponent<SettingView>();
-
-            CreateText(panel.transform, "VolumeText", "Volume 80%",
-                new Vector2(0.5f, 0.5f), new Vector2(0f, 210f), new Vector2(520f, 56f),
-                TextAnchor.MiddleCenter, BigFontSize);
-
-            // 音量用滑动条拖拽调节（SettingView.OnVolumeChanged）；VolumeText 同步显示百分比。
-            // 【为什么高 65】手工版两次微调：滑块下移并加高（40/40 → 55/55 → 高 65），
-            //   与上方 VolumeText 拉开一点呼吸空间，同时进一步加粗拖拽热区（高 65 更好点）。
-            CreateSlider(panel.transform, "VolumeSlider", new Vector2(0f, 145f), new Vector2(480f, 65f), 0.8f);
 
             // ---- 语言选择行（2026-10-16）：静态标签 + TMP 下拉框 ----
             // 标签文案 "Language"（key=英文原文）由 TextLocalizer 管（菜单 308 批量挂载）；
             // 下拉框的选项（English / 简体中文 / 繁體中文）由 SettingView 运行时按
             // LocalizationSettings.supportedLanguages 填充，选了立即生效（无需重启）。
             CreateText(panel.transform, "LanguageText", "Language",
-                new Vector2(0.5f, 0.5f), new Vector2(0f, 45f), new Vector2(520f, 56f),
+                new Vector2(0.5f, 0.5f), new Vector2(0f, 95f), new Vector2(520f, 56f),
                 TextAnchor.MiddleCenter, BigFontSize);
             CreateDropdown(panel.transform, "LanguageDropdown",
-                new Vector2(0f, -30f), new Vector2(320f, 72f), 56f, 3);
+                new Vector2(0f, 20f), new Vector2(320f, 72f), 56f, 3);
 
-            CreatePanelButton(panel.transform, "MuteBtn", "Mute", new Vector2(0f, -120f));
-            CreatePanelButton(panel.transform, "ResetBtn", "Reset Save", new Vector2(0f, -208f));
-            CreatePanelButton(panel.transform, "CloseBtn", "Close", new Vector2(0f, -296f));
+            CreatePanelButton(panel.transform, "ResetBtn", "Reset Save", new Vector2(0f, -90f));
+            CreatePanelButton(panel.transform, "CloseBtn", "Close", new Vector2(0f, -178f));
 
             GameObject saved = SaveUiPrefab(root, SettingPath);
             Object.DestroyImmediate(root);
@@ -1522,7 +1509,7 @@ namespace FTProject.EditorTools
                 report.Error("保存失败：" + SettingPath);
                 return;
             }
-            report.Ok("SettingView.prefab（Bg / Panel( Title / VolumeText / VolumeSlider / LanguageText / LanguageDropdown / MuteBtn / ResetBtn / CloseBtn )）");
+            report.Ok("SettingView.prefab（Bg / Panel( Title / LanguageText / LanguageDropdown / ResetBtn / CloseBtn )）");
         }
 
         // ------------------------------------------------------------------
@@ -1656,61 +1643,6 @@ namespace FTProject.EditorTools
             lrt.pivot = new Vector2(0.5f, 0.5f);
             lrt.anchoredPosition = Vector2.zero;
             lrt.sizeDelta = Vector2.zero;
-        }
-
-        /// <summary>
-        /// 生成一个可直接使用的 uGUI Slider（对应 SettingView 的 Panel/VolumeSlider）。
-        /// 结构与 Unity 内置 DefaultControls.CreateSlider 一致：
-        /// Background / Fill Area→Fill / Handle Slide Area→Handle，
-        /// 皮肤走工程自带 sprite（ApplySlicedSkin），缺失时用纯色兜底。
-        /// </summary>
-        private static void CreateSlider(Transform parent, string name, Vector2 anchoredPos,
-            Vector2 size, float value)
-        {
-            GameObject go = new GameObject(name, typeof(RectTransform));
-            go.transform.SetParent(parent, false);
-
-            RectTransform rt = (RectTransform)go.transform;
-            rt.anchorMin = new Vector2(0.5f, 0.5f);
-            rt.anchorMax = new Vector2(0.5f, 0.5f);
-            rt.pivot = new Vector2(0.5f, 0.5f);
-            rt.anchoredPosition = anchoredPos;
-            rt.sizeDelta = size;
-
-            // 背景：整条轨道（必须可接收射线 —— Slider 根节点没有 Graphic，拖拽事件靠它命中）
-            Image trackBg = CreateSliderLeaf(go.transform, "Background",
-                new Vector2(0f, 0.25f), new Vector2(1f, 0.75f), Vector2.zero, Vector2.zero,
-                img => ApplySlicedSkin(img, "UI_Btn_Secondary", new Color(0.25f, 0.25f, 0.28f, 1f)));
-            trackBg.raycastTarget = true;
-
-            // 已填充部分：Fill Area → Fill
-            Image fill = CreateSliderLeaf(go.transform, "Fill Area",
-                new Vector2(0f, 0.25f), new Vector2(1f, 0.75f), new Vector2(7f, 0f), new Vector2(-7f, 0f),
-                img => ApplySlicedSkin(img, "UI_Btn_Primary", new Color(0.35f, 0.65f, 0.45f, 1f)),
-                "Fill");
-            fill.rectTransform.anchorMin = new Vector2(0f, 0f);
-            fill.rectTransform.anchorMax = new Vector2(0f, 1f);
-            fill.rectTransform.offsetMin = Vector2.zero;
-            fill.rectTransform.offsetMax = Vector2.zero;
-
-            // 滑块：Handle Slide Area → Handle（宽度 24，高度撑满）
-            Image handle = CreateSliderLeaf(go.transform, "Handle Slide Area",
-                new Vector2(0f, 0.25f), new Vector2(1f, 0.75f), new Vector2(10f, 0f), new Vector2(-10f, 0f),
-                img => ApplySlicedSkin(img, "UI_Btn_Primary", new Color(0.92f, 0.92f, 0.92f, 1f)),
-                "Handle");
-            handle.rectTransform.anchorMin = new Vector2(0f, 0f);
-            handle.rectTransform.anchorMax = new Vector2(0f, 1f);
-            handle.rectTransform.sizeDelta = new Vector2(24f, 0f);
-
-            Slider slider = go.AddComponent<Slider>();
-            slider.fillRect = fill.rectTransform;
-            slider.handleRect = handle.rectTransform;
-            slider.targetGraphic = handle;
-            slider.direction = Slider.Direction.LeftToRight;
-            slider.minValue = 0f;
-            slider.maxValue = 1f;
-            slider.wholeNumbers = false;
-            slider.SetValueWithoutNotify(Mathf.Clamp01(value));
         }
 
         /// <summary>
@@ -1886,38 +1818,6 @@ namespace FTProject.EditorTools
 
             // 模板默认隐藏：设置界面上只显示 caption，点开时 TMP 克隆它生成弹出列表
             template.SetActive(false);
-        }
-
-        /// <summary>
-        /// Slider 的两层子节点（Area 容器 + 内层 Image），返回内层 Image 供 Slider 引用。
-        /// innerName 指定内层节点名（Fill / Handle / Background）；area 的锚点由调用方传。
-        /// </summary>
-        private static Image CreateSliderLeaf(Transform parent, string areaName,
-            Vector2 anchorMin, Vector2 anchorMax, Vector2 offsetMin, Vector2 offsetMax,
-            System.Action<Image> skin, string innerName = "Img")
-        {
-            GameObject area = new GameObject(areaName, typeof(RectTransform));
-            area.transform.SetParent(parent, false);
-            RectTransform art = (RectTransform)area.transform;
-            art.anchorMin = anchorMin;
-            art.anchorMax = anchorMax;
-            art.pivot = new Vector2(0.5f, 0.5f);
-            art.offsetMin = offsetMin;
-            art.offsetMax = offsetMax;
-
-            GameObject inner = new GameObject(innerName, typeof(RectTransform));
-            inner.transform.SetParent(art, false);
-            RectTransform irt = (RectTransform)inner.transform;
-            irt.anchorMin = Vector2.zero;
-            irt.anchorMax = Vector2.one;
-            irt.pivot = new Vector2(0.5f, 0.5f);
-            irt.offsetMin = Vector2.zero;
-            irt.offsetMax = Vector2.zero;
-
-            Image img = inner.AddComponent<Image>();
-            img.raycastTarget = false;
-            if (skin != null) skin(img);
-            return img;
         }
 
         // ==================================================================

@@ -773,13 +773,6 @@ namespace FTProject
                 FloatingTextManager.Show(this, transform.position, Mathf.Max(1, Mathf.RoundToInt(real)), killing);
             }
 
-            // 受击音效加一道"显著伤害"门槛：几十发子弹每秒都响的话，
-            // 音效就不再是信息而是噪音了（与飘字节流同一个理由，只是判据不同）。
-            // 取最大生命的 8% 作为"这一下打得疼"的界线。
-            if (!killing && TotalHp > 0f && real >= TotalHp * 0.08f && AudioManager.Instance != null)
-            {
-                AudioManager.Instance.PlayAt(AudioName.EnemyHit, transform.position);
-            }
 
             if (killing)
             {
@@ -801,10 +794,6 @@ namespace FTProject
             EventDispatcher.TriggerEvent<BaseEnemy, int>(EventName.EnemyKilledEvent, this, reward);
 
             SetAnimState(EnemyAnimState.Death);
-            if (AudioManager.Instance != null)
-            {
-                AudioManager.Instance.PlayAt(AudioName.EnemyDeath, transform.position);
-            }
 
             // 从空间哈希移除，不再参与索敌
             if (CombatSystem.Instance != null && CombatSystem.Instance.Grid != null)
@@ -832,10 +821,6 @@ namespace FTProject
             {
                 float amp = Configs.Global.ShakeAmplitude * (1f + 0.35f * Mathf.Max(0, dmg - 1));
                 CameraController.Instance.Shake(amp, Configs.Global.ShakeDurationSec);
-            }
-            if (AudioManager.Instance != null)
-            {
-                AudioManager.Instance.Play(AudioName.EnemyLeak);
             }
 
             if (CombatSystem.Instance != null && CombatSystem.Instance.Grid != null)

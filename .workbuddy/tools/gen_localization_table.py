@@ -30,9 +30,6 @@ ROWS = [
     ('Starting...', 'Starting...', '正在启动...', '正在啟動...', '开屏状态'),
     ('Game Paused', 'Game Paused', '暂停', '暫停', '暂停界面标题'),
     ('Settings', 'Settings', '设置', '設定', '设置界面标题'),
-    ('Volume {0}%', 'Volume {0}%', '音量 {0}%', '音量 {0}%', '占位符 {0} 保留'),
-    ('Mute', 'Mute', '静音', '靜音', ''),
-    ('Unmute', 'Unmute', '取消静音', '取消靜音', ''),
     ('Reset Save', 'Reset Save', '重置存档', '重置存檔', ''),
     ('This will erase all progress. Continue?', 'This will erase all progress. Continue?', '将清空全部进度，确定吗？', '將清空全部進度，確定嗎？', ''),
     ('Save reset', 'Save reset', '存档已重置', '存檔已重置', 'Tips 提示'),
@@ -173,8 +170,6 @@ ROWS = [
     ('Sell', 'Sell', '出售', '出售', '塔面板出售按钮'),
     ('Upgrade', 'Upgrade', '升级', '升級', '塔面板升级按钮'),
     ('Restart Level', 'Restart Level', '重新开始本关', '重新開始本關', '暂停界面重开'),
-    ('Volume +', 'Volume +', '音量 ＋', '音量 ＋', '设置音量加'),
-    ('Volume -', 'Volume -', '音量 −', '音量 −', '设置音量减'),
     ('Tower Codex', 'Tower Codex', '防御塔图鉴', '防禦塔圖鑑', '图鉴页标题'),
     ('Level', 'Level', '关卡', '關卡', '选关卡片/详情页默认标签'),
     # ---- 品牌副标题（语言相关，入表） ----

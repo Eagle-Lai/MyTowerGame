@@ -59,7 +59,7 @@ namespace FTProject
         private Button _introButton;
         /// <summary>
         /// 暂停按钮的文案（2026-10-18 起由本类按状态写：未暂停 = Pause，已暂停 = Continue）。
-        /// 【为什么不用 TextLocalizer】它是**两态文本**，和 MuteBtn 同类：挂了本地化组件后，
+        /// 【为什么不用 TextLocalizer】它是**两态文本**：挂了本地化组件后，
         ///   切语言会按 prefab 原文（Pause）重刷，把"已暂停 → Continue"冲掉。
         ///   所以该节点刻意不挂 TextLocalizer（见 LocalizationPrefabBinder 的 Btn_Pause 跳过规则），
         ///   切语言时由 OnLanguageChanged → RefreshPauseLabel 按当前状态重算。
