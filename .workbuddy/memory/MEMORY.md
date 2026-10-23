@@ -23,9 +23,10 @@
 - 跑生成/挂载菜单前必须 `isCompiling == false && isPlaying == false`；改过 `Assets/Editor/*.cs` 要等编译完；动手前先确认 MCP 连的是本工程（不是 CatchFish）。
 - 编辑器脚本不弹 `DisplayDialog`（走 `Debug.Log`）；危险操作拆成两档菜单。
 - ★提交：默认**按功能分批**（2026-10-22 用户新口径：按功能拆多笔，代码契约→工具→资产→文档的先后顺序，保证每笔不悬空）；**先写完记录再提交**（当天日档 + 本文件 + 相关分册同一笔）；提交后不再写盘。旧口径「全部一起提交，不拆不挑」已被取代。
-- ★git 代理：**先试环境默认 `http_proxy`（现为 127.0.0.1:56630）**，2026-10-22 实测 7897 已握手失败（schannel/openssl 均挂），62114/60044/7890/10809 全 closed；配 `git -c http.version=HTTP/2`；>10MB 必带 HTTP/2；`cannot lock ref` = 并行竞态，先 `ls-remote` 核对，**不要装 git-lfs**。
+- ★git 代理：**先用环境默认 `http_proxy`**（2026-10-23 实测为 `127.0.0.1:61051`，26 秒推完 200MB；历史 56630/57267/62114/7897 逐个失效，别写死）；配 `git -c http.version=HTTP/2`；>10MB 必带 HTTP/2；`cannot lock ref` = 并行竞态，先 `ls-remote` 核对，**不要装 git-lfs**。
 - ★★出 APK 前核对 Build Settings：`Boot.unity` 启用 + `Main.unity` 禁用（main 只能从 AB 加载）。
 - ★★改热更码真机三件套：重编 dll → AB 有变化才重打（菜单 9 后立刻 deploy）→ 先跑 `启动热更服务器.bat`。
-- ★★v7 起配置表按关拆分：`Luban/Config/Datas/Levels/L01..L30/`（每关 6 个 xlsx），根目录只剩 `EnemyData.xlsx`（132 原型）+ 非关卡表；旧聚合 5 表已删。改数值只走 `balance_pipeline.py`，别去找 `Datas/RoundData.xlsx`。
+- ★★v7 起配置表按关拆分：`Luban/Config/Datas/Levels/L01..L30/`（每关 6 个 xlsx），根目录只剩 `EnemyData.xlsx`（132 原型）+ 非关卡表；旧聚合 5 表已删。改数值只走 `balance_pipeline.py`，别去找 `Datas/RoundData.xlsx`。（2026-10-23 注：该句"走 balance_pipeline"已被下一条取代——只能手工改表。）
 - ★★**配置表只能手工改**（2026-10-21 定规）：`balance_pipeline.py` 的 `apply`/`rollback` 与事务层已整体删除，7 个会写关卡表的旧脚本也已删；只读命令 `inspect/preview/validate/simulate/verify-layout/stage` 保留。改表流程＝改 xlsx → 跑 Luban → 重封 `runtimeContentHash`。详见 `AGENTS.md` 与 `VOL_08`。
+- ★★**证据分级入库**（2026-10-23 定规）：Docs 只提交**结论级**——每关 `完整逐波操作与测试报告.md`/`最终布阵图.png`/阶段图/`trial-index.*`/`reproducibility.json`、各怪物 `offline_`/`parts_` 审阅图与清单 json、README/REPRODUCE；**过程级**（BalanceEvidence 的 `raw-trials`/`audit`/`*/evidence`/`search-*`/`首次成功-r*`/`best-result.json`，EnemyDirectionReview 的 `runtime_*`/`generation`/`staged_art`/`frames`/`history`/`revision_0x`）全部走 `.gitignore` 第 8 节只留本机。**路径通配必须写 `runtime_*`、`首次成功-r*`**（实际有十余种后缀，写死 r01/r02 会漏 300MB+）。Docs/LevelVideos 同样不入库。
 - 日档 `YYYY-MM-DD.md` 追加写，读最近的在最前。
