@@ -29,3 +29,32 @@
     代码在 `Assets/Editor/SortingLayerNormalizer.cs`；怪物/塔生成器已内置同样规则，重跑不会回退。
   - 敌人美术源包（`_UIAssets/Monsters/**`）自带 SortingGroup 序不统一（0/1/2/3/4、100–104、201–204），
     所以 `MonsterPrefabBuilder` 克隆后必须 `NormalizeSortingGroup`，否则 31 个怪整组错位。
+- ★★放置规则 v4（2026-10-22 用户需求：路径预览 + 放置判定，权威代码 `Tower/TowerPlacement.cs`、`AStarWrapper/AStarManager.cs`、`Game/PathArrowView.cs`）
+  - ① **预览只画不改**：悬停格变化 → `AStarManager.ComputePathWithExtraWall(row,col)` 临时置墙跑一次 A* →
+    结果存 `PreviewPathWorld`，经 `EventName.PreviewPathEvent` 交给 `PathArrowView.RenderPreview`，
+    画成**红色箭头（PreviewColor = RGBA(1,0.23,0.23,0.9)，order = PathArrow+1 = 11）**，与白色真实路径（0.75 alpha）分两套对象池。
+    （2026-10-22 12:33 用户要求预览线路改红色；初版为青色 RGBA(0.55,0.95,1,0.85)，仅颜色不同。）
+    贴图 `Assets/Art/Generated/Path_Arrow.png` 本身必须是**纯白**（生成为 `PlaceholderArtGenerator.PathArrowColor = Color.white`）：
+    SpriteRenderer.color 与贴图色是**相乘**，青图会把红色压成暗红；白图才能让白色真实路径与红色预览都还原成设定值。
+  - 关键约束：`ComputePathWithExtraWall` 用 try/finally 还原 IsWall，**不写 CurrentPathWorld / 不动 _lastPathHash /
+    不置 _refreshRequested / 不发 RefreshPathEvent** → 玩家滑动期间怪物一步都不改道。
+    落地（`TowerManager.TryBuildInternal`）才置墙 + `RequestRefresh()` → `RefreshPathEvent` → `CombatSystem.OnRefreshPath` 让怪改道。
+  - ② **预览 == 实际**：落地做的是同一件事（该格 IsWall 置真后跑同一 A*、同一 StartPoint→TargetPoint），
+    唯一差别是"算完是否还原墙"。实测（编辑器内存网格 6×5 双走廊）：preview 走上方绕行 10 格，落地后 CurrentPathWorld 与之逐点相同。
+  - ③ 预览与真实路径**逐格相同则不画**（`PathArrowView.SamePath`，误差 1e-4）——否则两条箭头重叠成"重影"；
+    此时看到白色真实路径即表示"这格建上去路线不变"。
+  - ④ 清理：`ClearPreviewPath()` 挂在 `TowerPlacement.ClearHover()`，所以"悬停格消失 / 滑出棋盘 / 退出放置 / 落子成功"都会清掉。
+  - ⑤ **怪物脚下可以建塔**（原 `CombatSystem.HasAliveEnemyNear` 已删除）：放置只剩 格子可建 → 无塔 → 金币够 → 不堵死路径。
+    建好后 `CombatSystem.RerouteEnemiesThrough(row,col)`（v5 修订：原 `RerouteEnemiesNear(center, cellSize*0.5)` 已替换）
+    把"正站在该格 / 剩余路径会经过该格"的地面怪逐个 `RefreshPath()`。两个原因：
+    · 半格半径是几何漏洞 —— 格子是边长为 CellSize 的方块，格心到四角 0.707×CellSize，站在角上的怪会被漏掉；
+    · 按格 + `BaseEnemy.RemainingPathTouches(row,col)` 才能覆盖"下一格就踏进新塔"的怪（旧实现完全管不到）。
+    不能只靠 RefreshPathEvent：它按"起点→终点路径哈希"判重，主路径没变就不广播 → 脚下那只怪会穿塔而过。
+    A* 的起点不受 IsWall 限制（`AStarWrapper.FindPath` 直接 openList.Add(start)），所以"从墙里迈第一步"是合法的（实测 4 格逃出）；
+    但 `RefreshPath` 现在会丢掉 `newPath[0]`（== 自己站的墙格），否则怪会先走回塔心再出来 = 视觉穿塔。
+  - ⑥ 连带清理：`FallbackBlockReason` 删掉 `"An enemy is on this tile, try another spot"` 分支；
+    `tblocalization.json` 里那一行仍保留（导出产物，不影响）。
+  - ⑦ 验收：编译 0 error；EditMode **67/67** 通过（新增 `Assets/Tests/BalanceCombat/PlacementPathPreviewTests.cs` 4 条：
+    预览不改 CurrentPathWorld / 不发 RefreshPathEvent / 临时墙还原；预览逐点 == 落地路径且确实改道；
+    堵死格返回 null 且回滚；RemainingPathTouches 只报未走过的格）。
+    `PathArrowView` 预览层探针 = 9 个箭头、颜色 RGBA(0.55,0.95,1,0.85)、order 11、清预览后真实 9 个仍在。
