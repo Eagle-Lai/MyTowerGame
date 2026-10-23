@@ -1,0 +1,111 @@
+{
+  "schema_version": 1,
+  "record_type": "user_art_approval",
+  "project": "E:/MyTowerGame",
+  "recorded_at": "2026-10-23T11:29:47+08:00",
+  "status": "user_approved",
+  "approval": {
+    "source": "current_conversation_user_message",
+    "statement": "本次的10个修改已通过审核了",
+    "scope": "本批10个角色的最终组合版本，包含BlackBear、BlackWolf动画返修和BlueScorpion最终背面参考尾巴修订",
+    "approved_count": 10
+  },
+  "evidence_path_base": "E:/MyTowerGame",
+  "composition_order": [
+    {
+      "id": "batch01_10",
+      "directory": "Docs/EnemyDirectionReview/Batch01_10",
+      "role": "10个角色的四方向接入基础版本"
+    },
+    {
+      "id": "animation_polish_20261023",
+      "directory": "Docs/EnemyDirectionReview/AnimationPolish_20261023",
+      "role": "BlackBear、BlackWolf、BlueScorpion动画返修；BlueScorpion尾巴以随后最终修订为准"
+    },
+    {
+      "id": "bluescorpion_tail_reference_r02",
+      "directory": "Docs/EnemyDirectionReview/BlueScorpionTailReference_20261023",
+      "revision": "rear_reference_r02_centered_hook",
+      "role": "BlueScorpion最终尾巴资源及Up/Tail位置和角度曲线",
+      "static_tail_angle_degrees": 20,
+      "tail_root_fixed": true
+    }
+  ],
+  "items": [
+    { "index": 1, "name": "Bat", "prefab": "Enemy_Bat.prefab", "status": "user_approved", "versions": ["batch01_10"] },
+    { "index": 2, "name": "BattlePanther", "prefab": "Enemy_BattlePanther.prefab", "status": "user_approved", "versions": ["batch01_10"] },
+    { "index": 3, "name": "Bear", "prefab": "Enemy_Bear.prefab", "status": "user_approved", "versions": ["batch01_10"] },
+    { "index": 4, "name": "BearMounted", "prefab": "Enemy_BearMounted.prefab", "status": "user_approved", "versions": ["batch01_10"] },
+    { "index": 5, "name": "BlackBear", "prefab": "Enemy_BlackBear.prefab", "status": "user_approved", "versions": ["batch01_10", "animation_polish_20261023"] },
+    { "index": 6, "name": "BlackBoar", "prefab": "Enemy_BlackBoar.prefab", "status": "user_approved", "versions": ["batch01_10"] },
+    { "index": 7, "name": "BlackWolf", "prefab": "Enemy_BlackWolf.prefab", "status": "user_approved", "versions": ["batch01_10", "animation_polish_20261023"] },
+    { "index": 8, "name": "BlueScorpion", "prefab": "Enemy_BlueScorpion.prefab", "status": "user_approved", "versions": ["batch01_10", "animation_polish_20261023", "bluescorpion_tail_reference_r02"] },
+    { "index": 9, "name": "Boar", "prefab": "Enemy_Boar.prefab", "status": "user_approved", "versions": ["batch01_10"] },
+    { "index": 10, "name": "BoarMounted", "prefab": "Enemy_BoarMounted.prefab", "status": "user_approved", "versions": ["batch01_10"] }
+  ],
+  "historical_evidence_identity": [
+    {
+      "path": "Docs/EnemyDirectionReview/Batch01_10/progress.json",
+      "sha256": "E3B4680C7A373DA68F7772946B02A32F49C411EB811FF370043CF0884CDF679A"
+    },
+    {
+      "path": "Docs/EnemyDirectionReview/Batch01_10/implementation_manifest.json",
+      "sha256": "58A40662C0C8ABCB97ABF02D4B76439B91C43DB5833838A09DDA4852B99CB3C0"
+    },
+    {
+      "path": "Docs/EnemyDirectionReview/Batch01_10/final_frozen_fingerprints.json",
+      "sha256": "AB1C018D90C15BFBAF8E060364D5B5B08D06EF31F8B4D0B215718B4A7EFC37D8"
+    },
+    {
+      "path": "Docs/EnemyDirectionReview/AnimationPolish_20261023/progress.json",
+      "sha256": "190E37B7157A735B5EE4F21691D4CE0811A252236972C9B8AA87B6F1A2B0BC94"
+    },
+    {
+      "path": "Docs/EnemyDirectionReview/AnimationPolish_20261023/implementation_manifest.json",
+      "sha256": "8223B3751517D0E72730FD21CE6A73D091991EA5E6EF52F461DA7F562BCAC460"
+    },
+    {
+      "path": "Docs/EnemyDirectionReview/AnimationPolish_20261023/final_fingerprints.json",
+      "sha256": "BC54CC9B34189CD6B5874834F20825EDA62B8AD1BC7C006BEF965060808C2331"
+    },
+    {
+      "path": "Docs/EnemyDirectionReview/BlueScorpionTailReference_20261023/progress.json",
+      "sha256": "4DB3B51D06157B7A25325630ACDEB58A12D71D384999EA33489DD983A485FC85"
+    },
+    {
+      "path": "Docs/EnemyDirectionReview/BlueScorpionTailReference_20261023/implementation_manifest.json",
+      "sha256": "857F83952DF04CF30798566FD36D129775D3CAFDFC41F6986434AD581459453C"
+    },
+    {
+      "path": "Docs/EnemyDirectionReview/BlueScorpionTailReference_20261023/final_fingerprints.json",
+      "sha256": "13E0C39B29C35BC498D63D44800BA31C9BB2B5613A744DB38EE0ED19481941D8"
+    },
+    {
+      "path": "Docs/EnemyDirectionReview/BlueScorpionTailReference_20261023/runtime_input_identity.json",
+      "sha256": "EAF1BBEA716A1C4342D04BF75A1E9E2B49667C48B4839A54F3A783B7619D7D7A"
+    }
+  ],
+  "history_policy": {
+    "original_evidence_preserved": true,
+    "status_resolution": "本记录追加最终用户批准结论；原progress.json中的待审核状态保留为历史，不覆盖冻结证据",
+    "excluded_rejected_proposals": [
+      "Docs/EnemyDirectionReview/BlueScorpionTail_20261023",
+      "Docs/EnemyDirectionReview/BlueScorpionTailUp_20261023",
+      "Docs/EnemyDirectionReview/BlueScorpionTailOut_20261023"
+    ],
+    "tailout_rejection_remains_effective": true
+  },
+  "next": {
+    "index": 11,
+    "prefab": "Enemy_BugQueen.prefab",
+    "status": "awaiting_further_instruction",
+    "started": false
+  },
+  "archive_actions": {
+    "docs_only": true,
+    "production_assets_modified": false,
+    "unity_operations_performed": false,
+    "new_runtime_tests_performed": false,
+    "evidence_basis": "已有安装及运行记录，本次归档未重新执行运行验证或比对现场生产资源"
+  }
+}
