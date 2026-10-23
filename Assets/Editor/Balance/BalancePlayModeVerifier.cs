@@ -23,6 +23,9 @@ namespace FTProject.EditorTools
         private static readonly List<JSONNode> Operations = new List<JSONNode>();
         private static readonly List<JSONNode> Results = new List<JSONNode>();
         private static readonly List<JSONNode> Boundaries = new List<JSONNode>();
+        private static readonly List<JSONNode> EnemyOutcomes = new List<JSONNode>();
+        private static readonly List<JSONNode> OperationStages = new List<JSONNode>();
+        private static int _initialGold, _initialHp;
         private static readonly List<double> StepCosts = new List<double>();
         private static long _allocatedStart;
         private static string _out, _requestPath, _loadedCandidate, _oldStartScene;
@@ -104,6 +107,81 @@ namespace FTProject.EditorTools
             Finish("cancelled");
         }
 
+        [MenuItem("Tools/塔防/数值验证/录制关卡视频（单关）")]
+        public static void RunVideoCapture()
+        {
+            StartVideoBatch(new[] { SessionState.GetInt("FT.Balance.TestLevel", 2) });
+        }
+
+        [MenuItem("Tools/塔防/数值验证/录制全部关卡视频（L01-L30）")]
+        public static void RunAllVideoCaptures()
+        {
+            var levels = new List<int>();
+            for (int i = 1; i <= 30; i++) levels.Add(i);
+            StartVideoBatch(levels.ToArray());
+        }
+
+        private static void StartVideoBatch(int[] levels)
+        {
+            string root = BalanceWorkbenchProcess.ProjectRoot;
+            string evidence = Path.Combine(root, "Docs/BalanceEvidence/L02-L30-ManualBalance-100Gold");
+            string ffmpeg = ResolveFfmpeg();
+
+            JSONNode request = new JSONObject();
+            request["output"] = Path.Combine(root, "Library/BalanceWorkbench/Video-Batch");
+            // 0.02s matches the step used by the stored evidence; capture samples every Nth
+            // tick so the mp4 stays smooth without changing combat results.
+            request["stepSeconds"] = 0.02;
+            request["stepsPerUpdate"] = 1;
+            request["batchTimeoutSeconds"] = 36000;
+            request["keepPlaying"] = false;
+            request["runs"] = new JSONArray();
+
+            foreach (int level in levels)
+            {
+                string levelTag = "L" + level.ToString("00");
+                string operations = level == 1
+                    ? Path.Combine(evidence, "L01-reference/best-operations.json")
+                    : Path.Combine(evidence, levelTag, "best-operations.json");
+                if (!File.Exists(operations))
+                    throw new FileNotFoundException("Operations not found: " + operations);
+                JSONNode planned = JSON.Parse(File.ReadAllText(operations));
+                if (planned == null || planned.Count == 0)
+                    throw new InvalidDataException("Operations file is empty: " + operations);
+
+                JSONNode run = new JSONObject();
+                run["profileId"] = SessionState.GetString("FT.Balance.TestProfile", "D04");
+                run["levelId"] = level; run["strategy"] = "replay"; run["speed"] = 1;
+                run["waitForFunds"] = false; run["captureStages"] = false; run["screenshots"] = false;
+                run["operationsPath"] = operations; run["wallTimeoutSeconds"] = 7200;
+                run["recordVideo"] = true;
+                run["videoOutput"] = Path.Combine(root, "Docs/LevelVideos", levelTag, levelTag + "_完整通关.mp4");
+                run["videoWidth"] = 1280; run["videoHeight"] = 720; run["videoFps"] = 15;
+                run["videoFfmpeg"] = ffmpeg;
+                request["runs"].Add(run);
+            }
+
+            string path = Path.Combine(root, "Library/BalanceWorkbench/video-request-batch.json");
+            Directory.CreateDirectory(Path.GetDirectoryName(path));
+            File.WriteAllText(path, request.ToString(2));
+            UnityEngine.Debug.Log("[BalanceVideo] request written: " + path + " runs=" + levels.Length);
+            StartBatch(path);
+        }
+
+        private static string ResolveFfmpeg()
+        {
+            string configured = SessionState.GetString("FT.Balance.Ffmpeg", "");
+            if (!string.IsNullOrEmpty(configured) && File.Exists(configured)) return configured;
+            string[] candidates =
+            {
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+                    ".workbuddy/tools/ffmpeg/bin/ffmpeg.exe"),
+                @"C:\ffmpeg\bin\ffmpeg.exe"
+            };
+            foreach (var candidate in candidates) if (File.Exists(candidate)) return candidate;
+            throw new FileNotFoundException("ffmpeg not found; set Tools/塔防/数值验证 config or SessionState FT.Balance.Ffmpeg.");
+        }
+
         private static void ModeChanged(PlayModeStateChange state)
         {
             if (state == PlayModeStateChange.EnteredPlayMode && Running)
@@ -120,6 +198,7 @@ namespace FTProject.EditorTools
             }
             if (state == PlayModeStateChange.ExitingPlayMode)
             {
+                RemoveOutcomeObservers();
                 if (_manualClock != null) { _manualClock.Dispose(); _manualClock = null; }
                 SessionState.EraseString("FT.Balance.TestStorageContext");
             }
@@ -137,7 +216,9 @@ namespace FTProject.EditorTools
             try
             {
                 if (File.Exists(Path.Combine(_out, "cancel.request"))) { Finish("cancelled"); return; }
-                if (EditorApplication.timeSinceStartup - _startWall > 3600) { Finish("batch_timeout"); return; }
+                double batchLimit = _request["batchTimeoutSeconds"].AsDouble;
+                if (batchLimit <= 0) batchLimit = 3600;
+                if (EditorApplication.timeSinceStartup - _startWall > batchLimit) { Finish("batch_timeout"); return; }
                 var flow = GameFlowManager.Instance;
                 if (!_initialized)
                 {
@@ -152,6 +233,8 @@ namespace FTProject.EditorTools
                         typeof(GameFlowManager).GetMethod("StepManualSimulation", BindingFlags.Instance | BindingFlags.Public));
                     _manualClock = GameClock.BeginManualSimulation();
                     BaseTower.EvidenceTrackReentry = true;
+                    EventDispatcher.AddEventListener<BaseEnemy, int>(EventName.EnemyKilledEvent, ObserveKilled);
+                    EventDispatcher.AddEventListener<BaseEnemy, int>(EventName.EnemyReachedEndEvent, ObserveLeaked);
                     _initialized = true;
                 }
                 if (_runIndex >= Runs.Count) { Finish("complete"); return; }
@@ -183,6 +266,9 @@ namespace FTProject.EditorTools
                     UIManager.Instance.Close("LoadingView");
                     LevelLoadingMask.Hide();
                     flow.InitLevel(run["levelId"].AsInt);
+                    _initialGold = PlayerDataManager.Instance.Gold;
+                    _initialHp = PlayerDataManager.Instance.Hp;
+                    EnemyOutcomes.Clear(); OperationStages.Clear();
                     if (flow.State != GameFlowState.Preparing) throw new InvalidOperationException("Level did not enter Preparing");
                     GameClock.Speed = run["speed"].AsFloat > 0 ? run["speed"].AsFloat : 1;
                     Time.timeScale = 1; GameClock.SetBackground(false);
@@ -209,11 +295,36 @@ namespace FTProject.EditorTools
                     }
                     BalanceCheckpointVerifier.Begin(flow, run);
                     _runWall = EditorApplication.timeSinceStartup;
+                    if (run["recordVideo"].AsBool)
+                    {
+                        if (_plannedOperations == null)
+                            throw new InvalidOperationException(
+                                "recordVideo requires a valid operationsPath; refusing to record the auto-shop fallback.");
+                        string videoPath = run["videoOutput"].Value;
+                        if (string.IsNullOrEmpty(videoPath))
+                            throw new InvalidOperationException("recordVideo requires videoOutput on the run.");
+                        BalanceVideoRecorder.Begin(videoPath,
+                            run["videoWidth"].AsInt > 0 ? run["videoWidth"].AsInt : 1280,
+                            run["videoHeight"].AsInt > 0 ? run["videoHeight"].AsInt : 720,
+                            run["videoFps"].AsDouble > 0 ? run["videoFps"].AsDouble : 15,
+                            _request["stepSeconds"].AsDouble,
+                            run["videoFfmpeg"].Value);
+                    }
                     WriteStatus("running");
                     // Let Unity realize the newly instantiated scene objects for one rendered frame.
                     return;
                 }
                 int count = Math.Max(1, _request["stepsPerUpdate"].AsInt);
+                // Video capture is strictly one fixed tick per captured frame, otherwise the
+                // simulated clock and the video timeline drift apart.
+                if (BalanceVideoRecorder.Running) count = 1;
+                if (BalanceVideoRecorder.Running && !BalanceVideoRecorder.Ready)
+                {
+                    // Resolution changes land a few frames late; resolve readiness outside PushFrame,
+                    // otherwise Ready would never be set and the replay would stall forever.
+                    BalanceVideoRecorder.ProbeReady();
+                    return;
+                }
                 if (_request["renderedPerformance"].AsBool && BalanceRenderSampler.Completed && !_performanceScreensCaptured)
                 {
                     _performanceScreensCaptured = true;
@@ -254,7 +365,9 @@ namespace FTProject.EditorTools
                     if (flow.State == GameFlowState.GameOver) { RecordResult(flow, run, "finished"); return; }
                     var metrics = (LevelRunMetrics)RunField.GetValue(flow);
                     if (metrics != null && metrics.levelElapsedMs > 2400000) { RecordResult(flow, run, "simulation_timeout"); return; }
-                    if (EditorApplication.timeSinceStartup - _runWall > 300) { RecordResult(flow, run, "wall_timeout"); return; }
+                    double wallLimit = run["wallTimeoutSeconds"].AsDouble;
+                    if (wallLimit <= 0) wallLimit = 300;
+                    if (EditorApplication.timeSinceStartup - _runWall > wallLimit) { RecordResult(flow, run, "wall_timeout"); return; }
                     int nextWave = flow.CurrentRoundIndex + 1;
                     if ((flow.State == GameFlowState.Preparing || flow.State == GameFlowState.RoundComplete) && _shopWave != nextWave)
                     {
@@ -273,8 +386,10 @@ namespace FTProject.EditorTools
                         var waveMetrics = flow.RunMetrics.waves;
                         double begin = waveMetrics[waveMetrics.Count - 1].combatStartSeconds;
                         long elapsed = LevelRunMetrics.ToMilliseconds(GameClock.CombatElapsedSeconds - begin);
+                        int countBeforeReplay = Operations.Count;
                         if (!ReplayOperations(flow.CurrentRoundIndex, elapsed, false))
                         { RecordResult(flow, run, "operation_rejected"); return; }
+                        if (Operations.Count > countBeforeReplay && !string.IsNullOrEmpty(_pendingScreenshot)) return;
                     }
                     // Fixed game-time step permits meaningful 1x/2x/3x comparisons.
                     double stepStart = EditorApplication.timeSinceStartup;
@@ -285,6 +400,12 @@ namespace FTProject.EditorTools
                     _flowLate();
                     BalanceCheckpointVerifier.AfterStep(flow);
                     StepCosts.Add((EditorApplication.timeSinceStartup - stepStart) * 1000);
+                    if (BalanceVideoRecorder.Running)
+                    {
+                        BalanceVideoRecorder.PushFrame();
+                        if (!string.IsNullOrEmpty(BalanceVideoRecorder.LastError))
+                            throw new InvalidOperationException("Video capture failed: " + BalanceVideoRecorder.LastError);
+                    }
                 }
                 UnityEngine.Rendering.SortingGroup.UpdateAllSortingGroups();
                 WriteStatus("running");
@@ -355,6 +476,10 @@ namespace FTProject.EditorTools
 
         private static bool ReplayOperations(int wave, long elapsed, bool boundary)
         {
+            int operationCountBefore = Operations.Count;
+            bool observedBefore = false;
+            try
+            {
             int index = -1;
             foreach (var kv in _plannedOperations)
             {
@@ -373,6 +498,10 @@ namespace FTProject.EditorTools
                 // Returning preserves operation order. Unexecuted actions may not silently cross a wave boundary.
                 if (_waitForFunds && op["action"].Value != "sell" && cfg.Prices > PlayerDataManager.Instance.Gold)
                     return true;
+                if (!boundary && !observedBefore && Runs[_runIndex]["captureStages"].AsBool)
+                {
+                    CaptureOperationStage(wave, elapsed, "before"); observedBefore = true;
+                }
                 BaseTower result = null;
                 if (op["action"].Value == "build") result = TowerManager.Instance.TryBuild(cfg.Type, cfg.Level, row, col);
                 else if (op["action"].Value == "upgrade")
@@ -403,6 +532,33 @@ namespace FTProject.EditorTools
                 ReplayedOperations.Add(index);
             }
             return true;
+            }
+            finally
+            {
+                if (observedBefore && Operations.Count > operationCountBefore)
+                    CaptureOperationStage(wave, elapsed, "after");
+            }
+        }
+
+        // Opt-in observations only. No simulation step occurs between a transaction group and its screenshot.
+        private static void CaptureOperationStage(int wave, long elapsed, string phase)
+        {
+            JSONNode row = new JSONObject();
+            row["waveOrdinal"] = wave; row["timeMs"] = elapsed; row["phase"] = phase;
+            row["operationCount"] = Operations.Count;
+            row["cash"] = PlayerDataManager.Instance.Gold; row["hp"] = PlayerDataManager.Instance.Hp;
+            row["pathCells"] = new JSONArray();
+            var path = AStarManager.Instance.GetPath();
+            if (path != null) foreach (var point in path)
+            { var coordinate = new JSONArray(); coordinate.Add(point.X); coordinate.Add(point.Y); row["pathCells"].Add(coordinate); }
+            row["layout"] = TowerContributions(); OperationStages.Add(row);
+            if (phase == "after" && Runs[_runIndex]["screenshots"].AsBool)
+            {
+                _pendingScreenshot = Path.Combine(_out, "run" + _runIndex + "-L" + Runs[_runIndex]["levelId"].AsInt +
+                    "-wave" + wave + "-at" + elapsed + "-op" + Operations.Count + ".png");
+                _pendingScreenshotWave = wave; row["screenshot"] = _pendingScreenshot;
+                row["screenshotTiming"] = "After recorded transactions, before next simulation step; rendered frame";
+            }
         }
 
         private static float UpgradeValue(BaseTower tower, string strategy)
@@ -451,6 +607,35 @@ namespace FTProject.EditorTools
         private static void LogOperation(string action, BaseTower tower, int wave, int cost)
         {
             LogOperation(action, tower.Cell.Row, tower.Cell.Col, tower.Config.Id, wave, cost);
+        }
+
+        // Read-only settlement evidence: callbacks run before pooled enemies are recycled.
+        private static void ObserveKilled(BaseEnemy enemy, int reward) { ObserveOutcome(enemy, false, reward); }
+        private static void ObserveLeaked(BaseEnemy enemy, int damage) { ObserveOutcome(enemy, true, damage); }
+        private static void ObserveOutcome(BaseEnemy enemy, bool leaked, int amount)
+        {
+            if (!_levelInitialized || _request == null || !_request["captureOutcomes"].AsBool || enemy == null || enemy.Config == null) return;
+            var flow = GameFlowManager.Instance;
+            JSONNode row = new JSONObject();
+            row["waveOrdinal"] = flow.CurrentRoundIndex;
+            row["spawnSerial"] = enemy.EvidenceSpawnSerial;
+            row["enemyId"] = enemy.Config.Id;
+            row["isFlying"] = enemy.Config.IsFlying;
+            row["type"] = (int)enemy.Config.Type;
+            row["leaked"] = leaked;
+            row["rewardOrDamage"] = amount;
+            row["remainingHp"] = enemy.CurrentHp;
+            row["combatMs"] = GameClock.CombatElapsedMs;
+            row["worldX"] = enemy.Position.x; row["worldY"] = enemy.Position.y;
+            int r, c;
+            if (BoardView.Instance.WorldToCell(enemy.Position, out r, out c))
+            { row["row"] = r; row["col"] = c; }
+            EnemyOutcomes.Add(row);
+        }
+        private static void RemoveOutcomeObservers()
+        {
+            EventDispatcher.RemoveEventListener<BaseEnemy, int>(EventName.EnemyKilledEvent, ObserveKilled);
+            EventDispatcher.RemoveEventListener<BaseEnemy, int>(EventName.EnemyReachedEndEvent, ObserveLeaked);
         }
 
         private static void LogOperation(string action, int row, int col, int towerId, int wave, int cost)
@@ -518,7 +703,7 @@ namespace FTProject.EditorTools
             row["layout"] = TowerContributions(); Boundaries.Add(row);
             if (run["screenshots"].AsBool && (wave == 1 || wave == 10 || wave == 25))
             {
-                string path = Path.Combine(_out, run["profileId"].Value + "-L" + run["levelId"].AsInt + "-wave" + wave + ".png");
+                string path = Path.Combine(_out, "run" + _runIndex + "-" + run["profileId"].Value + "-L" + run["levelId"].AsInt + "-wave" + wave + ".png");
                 _pendingScreenshot = path; _pendingScreenshotWave = wave;
                 row["screenshot"] = path;
                 row["screenshotTiming"] = "Queued at boundary; capture after this wave first successful spawn; yield simulation for the rendered HUD";
@@ -549,6 +734,13 @@ namespace FTProject.EditorTools
             entry["wallSeconds"] = EditorApplication.timeSinceStartup - _runWall;
             entry["operations"] = new JSONArray(); foreach (var op in Operations) entry["operations"].Add(op);
             entry["finalGold"] = PlayerDataManager.Instance.Gold;
+            entry["initialGold"] = _initialGold; entry["initialHp"] = _initialHp;
+            entry["enemyOutcomes"] = new JSONArray(); foreach (var outcome in EnemyOutcomes) entry["enemyOutcomes"].Add(outcome);
+            entry["operationStages"] = new JSONArray(); foreach (var stage in OperationStages) entry["operationStages"].Add(stage);
+            entry["finalPathCells"] = new JSONArray();
+            var finalPath = AStarManager.Instance.GetPath();
+            if (finalPath != null) foreach (var point in finalPath)
+            { var coordinate = new JSONArray(); coordinate.Add(point.X); coordinate.Add(point.Y); entry["finalPathCells"].Add(coordinate); }
             entry["waveBoundaries"] = new JSONArray(); foreach (var boundary in Boundaries) entry["waveBoundaries"].Add(boundary);
             entry["towerContributions"] = TowerContributions();
             StepCosts.Sort();
@@ -566,6 +758,17 @@ namespace FTProject.EditorTools
             entry["checkpointChecks"] = BalanceCheckpointVerifier.Complete(flow);
             Results.Add(entry);
             WriteResults();
+            // One mp4 per run: flush here so a multi-level batch produces one file per level.
+            if (BalanceVideoRecorder.Running)
+            {
+                if (state == "finished") BalanceVideoRecorder.End();
+                else BalanceVideoRecorder.Abort();
+                if (!string.IsNullOrEmpty(BalanceVideoRecorder.LastError))
+                    File.WriteAllText(Path.Combine(_out, "video-error-L" + run["levelId"].AsInt + ".txt"),
+                        BalanceVideoRecorder.LastError);
+                entry["videoFrames"] = BalanceVideoRecorder.FrameCount;
+                WriteResults();
+            }
             _runIndex++; _levelInitialized = false;
             WriteStatus("next_run");
         }
@@ -597,8 +800,27 @@ namespace FTProject.EditorTools
         {
             bool keepPlaying = phase == "complete" && _request != null && _request["keepPlaying"].AsBool;
             WriteStatus(phase); WriteResults();
+            // A stale cancel flag would abort the next batch the instant it starts.
+            try
+            {
+                if (!string.IsNullOrEmpty(_out))
+                {
+                    string cancelFlag = Path.Combine(_out, "cancel.request");
+                    if (File.Exists(cancelFlag)) File.Delete(cancelFlag);
+                }
+            }
+            catch { }
+            // Single收口点: normally flush the mp4, otherwise kill ffmpeg immediately.
+            if (BalanceVideoRecorder.Running)
+            {
+                if (phase == "complete") BalanceVideoRecorder.End();
+                else BalanceVideoRecorder.Abort();
+                if (!string.IsNullOrEmpty(BalanceVideoRecorder.LastError))
+                    File.WriteAllText(Path.Combine(_out, "video-error.txt"), BalanceVideoRecorder.LastError);
+            }
             if (_manualClock != null) { _manualClock.Dispose(); _manualClock = null; }
             BaseTower.EvidenceTrackReentry = false;
+            RemoveOutcomeObservers();
             BalanceRenderSampler.Dispose();
             if (Launcher.Instance != null) Launcher.Instance.enabled = _launcherEnabled;
             if (GameFlowManager.Instance != null) GameFlowManager.Instance.enabled = _flowEnabled;
