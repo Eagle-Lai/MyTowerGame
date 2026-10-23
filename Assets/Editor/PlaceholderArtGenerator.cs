@@ -29,7 +29,14 @@ namespace FTProject.EditorTools
         private static readonly Color SpawnBorder = new Color(0.208f, 0.878f, 1f, 0.85f);
         private static readonly Color EndFill = new Color(0.227f, 0.086f, 0.125f, 1f);
         private static readonly Color EndBorder = new Color(1f, 0.302f, 0.369f, 0.85f);
-        private static readonly Color PathArrowColor = new Color(0.208f, 0.878f, 1f, 0.95f);
+        /// <summary>
+        /// 路径箭头贴图色：**纯白**，颜色一律交给运行时 `SpriteRenderer.color` 决定。
+        /// 【为什么不能画成青色】贴图色与 renderer.color 是**相乘**关系：
+        ///   白图 × 任意颜色 = 该颜色；青图 × 红色 = 暗红偏青（红分量被青图的 R=0.21 压掉大半）。
+        ///   真实路径（白 0.75 alpha）与预览路径（红）共用这张图，只有白图才能让两边都还原成预期颜色。
+        /// 与 `HP_Bar_Fill.png` 同一条约定（见下方血条注释）。
+        /// </summary>
+        private static readonly Color PathArrowColor = Color.white;
         private static readonly Color RangeRingColor = new Color(0.208f, 0.878f, 1f, 0.80f);
 
         [MenuItem("Tools/塔防/高级（单步重建）/生成占位美术", false, 300)]

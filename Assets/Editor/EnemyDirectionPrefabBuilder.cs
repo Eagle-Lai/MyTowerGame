@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using FTProject;
@@ -16,6 +16,7 @@ namespace FTProject.EditorTools
         public string ArtDir;          // .../Directions
         public string PrefabPath;      // Assets/Prefabs/Enemy/Enemy_X.prefab
         public string ControllerSource; // family AnimatorController whose clips drive the rig
+        public bool UseSeparateViewRigs;
         public bool UseRealController;  // true: copy the family controller and add WalkUp/WalkDown states (code controls Dir); false: AnimatorOverrideController (AdvancedHen pattern)
         public Vector2 TorsoPos, HeadPos, WingPos, LegPos;
         public Vector2 TorsoSize, HeadSize, WingSize, LegSize;   // target box (0 = fall back to the height below)
@@ -38,10 +39,10 @@ namespace FTProject.EditorTools
             ArtDir = "Assets/_UIAssets/Monsters/Birds/AdvancedHen/Directions",
             PrefabPath = "Assets/Prefabs/Enemy/Enemy_AdvancedHen.prefab",
             ControllerSource = "Assets/_UIAssets/Monsters/_Common/Animations/Rooster/Controller.controller",
-            TorsoPos = new Vector2(0f, 1.6f), HeadPos = new Vector2(0f, 2.65f),
-            WingPos = new Vector2(0.82f, 1.55f), LegPos = new Vector2(0.42f, 0.4f),
-            TorsoHeight = 1.85f, HeadHeight = 1.8f, WingHeight = 1.35f, LegHeight = 0.8f,
-            TorsoBob = 0.05f, HeadBob = 0.06f, LegStep = 0.17f,
+            TorsoPos = new Vector2(0f, 1.4f), HeadPos = new Vector2(0f, 2.65f),
+            WingPos = new Vector2(0.91f, 1.4f), LegPos = new Vector2(0.32f, 0.4f),
+            TorsoHeight = 2.1f, HeadHeight = 1.8f, WingHeight = 1.32f, LegHeight = 0.8f,
+            TorsoBob = 0.05f, HeadBob = 0.06f, LegStep = 0.09f,
             TorsoIdleBob = 0.02f, HeadIdleBob = 0.03f
         };
 
@@ -69,6 +70,7 @@ namespace FTProject.EditorTools
 
         public static bool TryGetSpec(string monsterName, out EnemyDirectionSpec spec)
         {
+            if (EnemyDirectionalRigBuilder.TryGetSpec(monsterName, out spec)) return true;
             foreach (var s in Specs)
             {
                 if (s.Name == monsterName) { spec = s; return true; }
@@ -142,6 +144,7 @@ namespace FTProject.EditorTools
 
         public static void Build(EnemyDirectionSpec spec)
         {
+            if (spec.UseSeparateViewRigs) { EnemyDirectionalRigBuilder.Build(spec); return; }
             if (EditorApplication.isPlayingOrWillChangePlaymode || EditorApplication.isCompiling)
                 throw new InvalidOperationException("请在非 Play、编译完成后接入方向资源。");
             // Validate all inputs before importing or editing a prefab.
@@ -161,6 +164,7 @@ namespace FTProject.EditorTools
             var parts = ImportAtlas(spec);
             profile.Up = ImportParts(parts, "Up");
             profile.Down = ImportParts(parts, "Down");
+            profile.Down.WingsBehindBody = spec.Name == "AdvancedHen";
             profile.Controller = BuildController(spec);
             EditorUtility.SetDirty(profile);
             AssetDatabase.SaveAssets();
@@ -185,7 +189,8 @@ namespace FTProject.EditorTools
             if (!TryGetSpec(name, out spec)) return false;
             var profile = AssetDatabase.LoadAssetAtPath<EnemyDirectionalProfile>(folder + "/Directions/" + name + "_Directions.asset");
             if (!profile || !profile.IsComplete) return false;
-            Apply(root, profile, spec);
+            if (spec.UseSeparateViewRigs) EnemyDirectionalRigBuilder.Apply(root, profile, spec);
+            else Apply(root, profile, spec);
             return true;
         }
 
@@ -317,7 +322,11 @@ namespace FTProject.EditorTools
             }
 
             RuntimeAnimatorController result;
-            if (spec.UseRealController)
+            if (spec.Name == "AdvancedHen")
+            {
+                result = BuildAdvancedHenController(spec, dirClips);
+            }
+            else if (spec.UseRealController)
             {
                 result = BuildRealController(spec, source, dirClips);
                 // the old override controller is superseded; remove it so nobody previews the wrong asset
@@ -346,6 +355,57 @@ namespace FTProject.EditorTools
                 result = controller;
             }
             return result;
+        }
+
+        internal static RuntimeAnimatorController BuildAdvancedHenController(EnemyDirectionSpec spec,
+            Dictionary<string, AnimationClip> clips)
+        {
+            string path = spec.AnimDir + "/" + spec.Name + "_Directions.controller";
+            var controller = AssetDatabase.LoadAssetAtPath<AnimatorController>(path);
+            if (!controller) controller = AnimatorController.CreateAnimatorControllerAtPath(path);
+            controller.parameters = new[]
+            {
+                new AnimatorControllerParameter { name = "State", type = AnimatorControllerParameterType.Int },
+                new AnimatorControllerParameter { name = "Speed", type = AnimatorControllerParameterType.Float, defaultFloat = 1f },
+                new AnimatorControllerParameter { name = "Attack", type = AnimatorControllerParameterType.Trigger },
+                new AnimatorControllerParameter { name = "Action", type = AnimatorControllerParameterType.Bool }
+            };
+            var sm = controller.layers[0].stateMachine;
+            sm.anyStateTransitions = new AnimatorStateTransition[0];
+            string[] names = { "Idle", "Ready", "Walk", "Run", "Death", "Attack" };
+            int[] values = { 0, 1, 2, 3, 9 };
+            var states = new AnimatorState[names.Length];
+            for (int i = 0; i < names.Length; i++)
+            {
+                states[i] = FindStateOrNull(sm, names[i]) ?? sm.AddState(names[i], new Vector2(i % 3 * 230f, i / 3 * 100f));
+                states[i].transitions = new AnimatorStateTransition[0];
+                states[i].motion = clips[i < 2 ? "Ready" : i < 4 ? "Walk" : names[i]];
+                states[i].writeDefaultValues = true;
+                states[i].speedParameter = "Speed";
+                states[i].speedParameterActive = true;
+            }
+            sm.defaultState = states[0];
+            AddAnyState(sm, states[4], new DirCond(AnimatorConditionMode.Equals, 9, "State"));
+            AddAnyState(sm, states[5], new DirCond(AnimatorConditionMode.If, 0, "Attack"),
+                new DirCond(AnimatorConditionMode.NotEqual, 9, "State"));
+            // Locomotion has no AnyState re-entry. Direction changes only swap sprites.
+            for (int from = 0; from < states.Length; from++)
+            {
+                if (from == 4) continue;
+                for (int to = 0; to < 4; to++)
+                {
+                    if (from == to) continue;
+                    var transition = states[from].AddTransition(states[to]);
+                    transition.hasExitTime = from == 5;
+                    transition.exitTime = 1f;
+                    transition.hasFixedDuration = true;
+                    transition.duration = 0f;
+                    transition.AddCondition(AnimatorConditionMode.Equals, values[to], "State");
+                    transition.AddCondition(AnimatorConditionMode.IfNot, 0, "Action");
+                }
+            }
+            EditorUtility.SetDirty(controller);
+            return controller;
         }
 
         /// <summary>
@@ -695,10 +755,10 @@ namespace FTProject.EditorTools
                 t.AddCondition(c.Mode, c.Threshold, c.Name);
         }
 
-        private static void Curve(AnimationClip clip, string node, string property, float[] values)
+        private static void Curve(AnimationClip clip, string node, string property, float[] values, float length)
         {
             var keys = new Keyframe[values.Length];
-            float length = Mathf.Max(0.01f, clip.length);
+            length = Mathf.Max(0.01f, length);
             for (int i = 0; i < keys.Length; i++) keys[i] = new Keyframe(length * i / (keys.Length - 1), values[i]);
             var curve = new AnimationCurve(keys);
             for (int i = 0; i < keys.Length; i++)
@@ -712,6 +772,8 @@ namespace FTProject.EditorTools
 
         private static void AddVerticalCurves(AnimationClip clip, string state, EnemyDirectionSpec s)
         {
+            float duration = clip.length;
+            void RigCurve(string node, string property, float[] values) { Curve(clip, node, property, values, duration); }
             bool walking = state.IndexOf("Walk", StringComparison.OrdinalIgnoreCase) >= 0;
             bool attack = state.IndexOf("Attack", StringComparison.OrdinalIgnoreCase) >= 0;
             bool death = state.IndexOf("Death", StringComparison.OrdinalIgnoreCase) >= 0;
@@ -719,35 +781,38 @@ namespace FTProject.EditorTools
             // Position is stored as a full Vector3 curve, so an axis left unkeyed is baked as 0.
             // Without these, every left/right part collapses onto the centre line (legs merge into
             // one and the arms sit at x=0, behind the torso) as soon as the Animator plays a state.
-            Curve(clip, "/Torso", "m_LocalPosition.x", new[] { s.TorsoPos.x, s.TorsoPos.x });
-            Curve(clip, "/Head", "m_LocalPosition.x", new[] { s.HeadPos.x, s.HeadPos.x });
-            Curve(clip, "/WingL", "m_LocalPosition.x", new[] { -s.WingPos.x, -s.WingPos.x });
-            Curve(clip, "/WingR", "m_LocalPosition.x", new[] { s.WingPos.x, s.WingPos.x });
-            Curve(clip, "/LegL", "m_LocalPosition.x", new[] { -s.LegPos.x, -s.LegPos.x });
-            Curve(clip, "/LegR", "m_LocalPosition.x", new[] { s.LegPos.x, s.LegPos.x });
+            RigCurve("/Torso", "m_LocalPosition.x", new[] { s.TorsoPos.x, s.TorsoPos.x });
+            RigCurve("/Head", "m_LocalPosition.x", new[] { s.HeadPos.x, s.HeadPos.x });
+            RigCurve("/WingL", "m_LocalPosition.x", new[] { -s.WingPos.x, -s.WingPos.x });
+            RigCurve("/WingR", "m_LocalPosition.x", new[] { s.WingPos.x, s.WingPos.x });
+            RigCurve("/LegL", "m_LocalPosition.x", new[] { -s.LegPos.x, -s.LegPos.x });
+            RigCurve("/LegR", "m_LocalPosition.x", new[] { s.LegPos.x, s.LegPos.x });
             // Same for the z axis and for the arms' height: every axis of a position curve that
             // exists must be keyed, otherwise the unkeyed ones are baked as 0 as well.
             string[] rigNodes = { "", "/Torso", "/Head", "/WingL", "/WingR", "/LegL", "/LegR" };
             for (int i = 0; i < rigNodes.Length; i++)
-                Curve(clip, rigNodes[i], "m_LocalPosition.z", new[] { 0f, 0f });
-            Curve(clip, "/WingL", "m_LocalPosition.y", new[] { s.WingPos.y, s.WingPos.y });
-            Curve(clip, "/WingR", "m_LocalPosition.y", new[] { s.WingPos.y, s.WingPos.y });
-            Curve(clip, "", "localEulerAnglesRaw.z", death ? new[] { 0f, -12f, -65f, -80f, -80f } : new[] { 0f, 0f });
-            Curve(clip, "", "m_LocalPosition.y", new[] { 0f, 0f });
-            Curve(clip, "/Torso", "m_LocalPosition.y", walking
+                RigCurve(rigNodes[i], "m_LocalPosition.z", new[] { 0f, 0f });
+            RigCurve("/WingL", "m_LocalPosition.y", new[] { s.WingPos.y, s.WingPos.y });
+            RigCurve("/WingR", "m_LocalPosition.y", new[] { s.WingPos.y, s.WingPos.y });
+            RigCurve("", "localEulerAnglesRaw.z", death ? new[] { 0f, -12f, -65f, -80f, -80f } : new[] { 0f, 0f });
+            RigCurve("", "m_LocalPosition.y", new[] { 0f, 0f });
+            RigCurve("/Torso", "m_LocalPosition.y", walking
                 ? new[] { t, t + s.TorsoBob, t, t + s.TorsoBob, t } : new[] { t, t + s.TorsoIdleBob, t });
-            Curve(clip, "/Head", "m_LocalPosition.y", walking
+            RigCurve("/Head", "m_LocalPosition.y", walking
                 ? new[] { h, h + s.HeadBob, h, h + s.HeadBob, h } : new[] { h, h + s.HeadIdleBob, h });
-            Curve(clip, "/Head", "localEulerAnglesRaw.z", attack
+            RigCurve("/Head", "localEulerAnglesRaw.z", attack
                 ? new[] { 0f, -6f, 12f, -5f, 0f } : new[] { 0f, 0f });
-            Curve(clip, "/LegL", "m_LocalPosition.y", walking
+            RigCurve("/LegL", "m_LocalPosition.y", walking
                 ? new[] { l, l + s.LegStep, l, l, l } : new[] { l, l });
-            Curve(clip, "/LegR", "m_LocalPosition.y", walking
+            RigCurve("/LegR", "m_LocalPosition.y", walking
                 ? new[] { l, l, l, l + s.LegStep, l } : new[] { l, l });
-            Curve(clip, "/WingL", "localEulerAnglesRaw.z", attack
+            RigCurve("/WingL", "localEulerAnglesRaw.z", attack
                 ? new[] { 0f, -25f, -40f, -15f, 0f } : walking ? new[] { -3f, 3f, -3f, 3f, -3f } : new[] { 0f, 0f });
-            Curve(clip, "/WingR", "localEulerAnglesRaw.z", attack
+            RigCurve("/WingR", "localEulerAnglesRaw.z", attack
                 ? new[] { 0f, 25f, 40f, 15f, 0f } : walking ? new[] { 3f, -3f, 3f, -3f, 3f } : new[] { 0f, 0f });
+            var settings = AnimationUtility.GetAnimationClipSettings(clip);
+            settings.stopTime = duration;
+            AnimationUtility.SetAnimationClipSettings(clip, settings);
         }
 
         private static void Apply(GameObject root, EnemyDirectionalProfile profile, EnemyDirectionSpec s)
@@ -755,6 +820,11 @@ namespace FTProject.EditorTools
             if (!profile.IsComplete) throw new InvalidOperationException("方向配置未完成。");
             var old = root.transform.Find("DirectionVisual");
             if (old) Object.DestroyImmediate(old.gameObject);
+            // User art rule: all directions of each newly adapted enemy have no ground shadow.
+            // Editor-only removal is reapplied by MonsterPrefabBuilder, with no runtime traversal.
+            foreach (var node in root.GetComponentsInChildren<Transform>(true))
+                if (node && node != root.transform && node.name == "Shadow")
+                    Object.DestroyImmediate(node.gameObject);
             var side = new List<SpriteRenderer>();
             Transform hpBar = root.transform.Find("HpBar");
             foreach (var sr in root.GetComponentsInChildren<SpriteRenderer>(true))
@@ -778,6 +848,21 @@ namespace FTProject.EditorTools
             visual.LegL = Part(motion, "LegL", parts.Leg, new Vector2(-s.LegPos.x, s.LegPos.y), s.LegSize, s.LegHeight, 5);
             visual.LegR = Part(motion, "LegR", parts.Leg, s.LegPos, s.LegSize, s.LegHeight, 5);
             root.GetComponent<Animator>().runtimeAnimatorController = profile.Controller;
+            if (s.Name == "AdvancedHen")
+            {
+                string materialPath = s.ArtDir + "/AdvancedHenFlash.mat";
+                var material = AssetDatabase.LoadAssetAtPath<Material>(materialPath);
+                if (!material)
+                {
+                    var shader = AssetDatabase.LoadAssetAtPath<Shader>(s.ArtDir + "/AdvancedHenFlash.shader");
+                    if (!shader) throw new InvalidOperationException("AdvancedHen hit-flash shader missing.");
+                    material = new Material(shader);
+                    AssetDatabase.CreateAsset(material, materialPath);
+                }
+                foreach (var sr in side) sr.sharedMaterial = material;
+                foreach (var sr in new[] { visual.Head, visual.Body, visual.WingL, visual.WingR, visual.LegL, visual.LegR })
+                    sr.sharedMaterial = material;
+            }
             visual.ResetForSpawn();
         }
 
@@ -809,6 +894,7 @@ namespace FTProject.EditorTools
         /// <summary>Editor-time integrity checks; writes a report for unattended runs.</summary>
         public static bool Verify(EnemyDirectionSpec s, out string report)
         {
+            if (s.UseSeparateViewRigs) return EnemyDirectionalRigBuilder.Verify(s, out report);
             var lines = new List<string>();
             bool ok = true;
             var profile = AssetDatabase.LoadAssetAtPath<EnemyDirectionalProfile>(s.ProfilePath);
