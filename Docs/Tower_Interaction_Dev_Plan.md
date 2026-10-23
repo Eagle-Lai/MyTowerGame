@@ -414,7 +414,9 @@ HudView
   - 升级按钮：不足置灰 + 价格红字（B-4 已含）
   - 接线已有的 `HudView.SetTowerButtonInteractable(bool)`（当前无调用者）或随 BuildBar 改造一并废弃
   - 监听 `GoldChangeEvent` 刷新所有价格类 UI 的可点状态（**统一入口，避免各界面各写一遍**）
-  - 其它异常：资源加载失败（`TryBuild` 已回滚+退钱）、满级、塔被怪围住时的建造拒绝（`HasAliveEnemyNear` 已实现）
+  - 其它异常：资源加载失败（`TryBuild` 已回滚+退钱）、满级、会把路**完全堵死**的格子拒绝建造
+    （`AStarManager.ComputePathWithExtraWall` 返回 null）；2026-10-22 起**不再**因"格上有怪物"拒绝
+    （原 `HasAliveEnemyNear` 已删除，落地后由 `CombatSystem.RerouteEnemiesThrough` 让脚下的怪立刻改道）
 - **涉及模块**：`UI/BuildBarView.cs`、`UI/TowerInfoView.cs`、`UI/HudView.cs`、`EventName.cs`（复用 `GoldChangeEvent`）
 - **验收标准**：
   1. 金币从充足降到不足时，建造栏与升级按钮**自动**变灰（无需手动刷新）
