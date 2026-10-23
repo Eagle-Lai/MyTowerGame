@@ -1,0 +1,9 @@
+"""Test high observed ground contribution and slow coverage using remaining real cash."""
+from formal_tools import *
+tag='l10-last-investment-r4-v';source=ROOT/'Library/BalanceWorkbench/l10-investment-r4-t/unity-results.json';rows=json.loads(source.read_text(encoding='utf-8'));r=rows[2];assert r['levelId']==10 and r['metrics']['completedWaveCount']==25
+base=[{k:o[k]for k in ['waveOrdinal','timeMs','action','row','col','towerId']}for o in r['operations']];runs=[];decisions=[]
+for name,points in [('terminal-group',[(4,13,6)]),('terminal-and-slow',[(4,13,6),(6,9,9)]),('slow-first',[(6,9,9),(4,13,6)]),('terminal-two',[(4,13,6),(5,11,6)])]:
+ extra=[dict(waveOrdinal=25,timeMs=35000,action='upgrade',row=row,col=col,towerId=tid)for row,col,tid in points];out=REPORT/f'L10/search-{tag}';out.mkdir(exist_ok=True);f=out/f'{name}.json';assert not f.exists();f.write_text(json.dumps(base+extra,ensure_ascii=False,indent=2),encoding='utf-8')
+ runs.append(dict(profileId='D04',levelId=10,strategy=tag+'-'+name,speed=1,operationsPath=str(f),waitForFunds=True,screenshots=True,captureStages=True))
+ decisions.append(dict(sourceRunId=r['metrics']['runId'],sourceIndex=2,observedTerminalGroupDamage=next(x['damage']for x in r['towerContributions']if x['row']==4 and x['col']==13),cashAfterPriorActions=r['operations'][-1]['balanceAfter'],extra=extra,purpose='One BugQueen still leaked with96.1HP while defense retained508gold at end. Reinvest in the actual highest contributing terminal group and/or existing slow coverage; no enemy changes.'))
+f=REPORT/f'requests/{tag}.json';assert not f.exists();f.write_text(json.dumps(dict(output=str(ROOT/'Library/BalanceWorkbench'/tag),stepSeconds=.02,stepsPerUpdate=4000,captureOutcomes=True,runs=runs),ensure_ascii=False,indent=2),encoding='utf-8');(REPORT/f'audit/{tag}-bounds.json').write_text(json.dumps(decisions,ensure_ascii=False,indent=2),encoding='utf-8');print(len(runs),'additional earned-income investment candidates')
