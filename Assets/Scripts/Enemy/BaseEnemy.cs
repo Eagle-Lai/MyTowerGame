@@ -93,6 +93,7 @@ namespace FTProject
         // ---- 打击感（M2-W5）----
         /// <summary>身体部位的 SpriteRenderer 缓存（不含血条）。闪白 / 死亡淡出都改它。</summary>
         private SpriteRenderer[] _bodyRenderers;
+        private Color[] _directionalBaseColors;
         private float _flashTimer;
         private float _deathFade = 1f;
         /// <summary>出生时的最终缩放（配置缩放已生效）。死亡收缩在它基础上插值。</summary>
@@ -245,7 +246,14 @@ namespace FTProject
                 _anim = GetComponentInChildren<Animator>(true);
             }
             // Controller 只需要换一次（对象池复用同一个实例，家族不会变）
-            if (_anim != null && !_animCtrlApplied && Config != null &&
+            if (_anim != null && _directionalVisual != null && _directionalVisual.IsConfigured)
+            {
+                // Opt-in prefab references own their controller; a family config must not replace it.
+                if (_anim.runtimeAnimatorController != _directionalVisual.Profile.Controller)
+                    _anim.runtimeAnimatorController = _directionalVisual.Profile.Controller;
+                _animCtrlApplied = true;
+            }
+            else if (_anim != null && !_animCtrlApplied && Config != null &&
                 !string.IsNullOrEmpty(Config.AnimController))
             {
                 LoadAnimatorController(Config.AnimController);
@@ -374,6 +382,8 @@ namespace FTProject
             // 死亡动画播完 → 真正回收
             if (_pendingRecycle)
             {
+                // The opt-in white silhouette must expire even after a lethal hit.
+                if (_directionalVisual != null && _directionalVisual.IsConfigured) TickFlash(dt);
                 _recycleTimer -= dt;
                 TickDeathFade(dt);
                 if (_recycleTimer <= 0f)
@@ -413,7 +423,9 @@ namespace FTProject
         /// 【飞行单位的副作用，都是有意为之】
         ///   · 不参与"禁止完全堵路"的判定（塔墙拦不住它）
         ///   · 不参与路径重算（建塔/拆塔不影响它）
-        ///   · 不阻止玩家在它脚下建塔（见 CombatSystem.HasAliveEnemyNear）
+        ///   · 不参与"建塔后定点改道"（CombatSystem.RerouteEnemiesThrough 会跳过飞行单位）。
+        ///     注意：玩家可以在**任何**怪物脚下建塔（含飞行怪）—— 这条自 2026-10-22 起是全类型规则，
+        ///     不再是飞行单位专属。地面怪被压到墙里时靠 RerouteEnemiesThrough 立刻走出去。
         /// </summary>
         private void SetupFlyingPath(List<Point> path)
         {
@@ -621,7 +633,8 @@ namespace FTProject
                 for (int i = _pathIndex; i < _path.Count; i++)
                 {
                     Vector2 direction = _path[i].Center - Position;
-                    if (direction.sqrMagnitude < 0.000001f) continue;
+                    if (direction.sqrMagnitude <= ArriveThreshold * ArriveThreshold) continue;
+                    _pathIndex = i;
                     _lastDir = direction;
                     FaceMoveDirection();
                     break;
@@ -657,6 +670,32 @@ namespace FTProject
         }
     }
 
+        /// <summary>
+        /// 当前**剩余**路径（_pathIndex 及其后的格子）是否经过 (row, col)。
+        ///
+        /// 【为什么需要】建塔后只靠"起点→终点主路径哈希变化"来广播改道是不够的：
+        /// 若新塔落在某只怪手上那条**旧路线**上（主路径恰好没变，例如它已被前一座塔引到支路），
+        /// 哈希判重不会广播，这只怪就会直直走进塔里。建塔时用本方法把"路径会穿过新墙"的怪挑出来。
+        ///
+        /// 飞行单位恒 false：它们走直线，不读 A* 路径（见 SetupFlyingPath）。
+        /// </summary>
+        public bool RemainingPathTouches(int row, int col)
+        {
+            if (_flying || _path == null)
+            {
+                return false;
+            }
+            for (int i = _pathIndex; i < _path.Count; i++)
+            {
+                Point p = _path[i];
+                if (p != null && p.Row == row && p.Col == col)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
         /// <summary>路径重算（建塔/拆塔后由事件触发）</summary>
         public void RefreshPath()
         {
@@ -686,6 +725,13 @@ namespace FTProject
             List<Point> newPath = AStarManager.Instance.UpdatePathByEnemyPoint(from);
             if (newPath != null && newPath.Count > 0)
             {
+                // 【怪物脚下建塔的收尾】此刻 from 自己已经变成墙，A* 会把起点原样放进路径，
+                // 于是首点就是塔心。若保留它，怪物会"先走回塔的正中心再往外走" —— 视觉上是穿塔。
+                // 直接丢掉首点，让它朝下一格（必然可走）离开。
+                if (from.IsWall && newPath.Count > 1 && ReferenceEquals(newPath[0], from))
+                {
+                    newPath.RemoveAt(0);
+                }
                 SetPath(newPath);
             }
         }
@@ -905,6 +951,12 @@ namespace FTProject
                 list.Add(sr);
             }
             _bodyRenderers = list.ToArray();
+            if (_directionalVisual != null && _directionalVisual.IsConfigured)
+            {
+                _directionalBaseColors = new Color[_bodyRenderers.Length];
+                for (int i = 0; i < _bodyRenderers.Length; i++)
+                    _directionalBaseColors[i] = _bodyRenderers[i].color;
+            }
         }
 
         /// <summary>受击闪白。由 Hurt 在伤害达到门槛时调用（DOT 的碎伤害不闪）。</summary>
@@ -915,7 +967,9 @@ namespace FTProject
             {
                 return;
             }
-            for (int i = 0; i < _bodyRenderers.Length; i++)
+            if (_directionalVisual != null && _directionalVisual.IsConfigured)
+                _directionalVisual.SetFlash(1f);
+            else for (int i = 0; i < _bodyRenderers.Length; i++)
             {
                 _bodyRenderers[i].color = FlashColor;
             }
@@ -935,7 +989,9 @@ namespace FTProject
             }
             _flashTimer = 0f;
             // 还原成白色：本工程的怪物美术没有被额外染色，白色即"原样"
-            for (int i = 0; i < _bodyRenderers.Length; i++)
+            if (_directionalVisual != null && _directionalVisual.IsConfigured)
+                _directionalVisual.SetFlash(0f);
+            else for (int i = 0; i < _bodyRenderers.Length; i++)
             {
                 _bodyRenderers[i].color = Color.white;
             }
@@ -964,11 +1020,12 @@ namespace FTProject
             for (int i = 0; i < _bodyRenderers.Length; i++)
             {
                 Color c = _bodyRenderers[i].color;
-                if (Mathf.Approximately(c.a, a))
+                float alpha = _directionalBaseColors != null ? _directionalBaseColors[i].a * a : a;
+                if (Mathf.Approximately(c.a, alpha))
                 {
                     continue;
                 }
-                c.a = a;
+                c.a = alpha;
                 _bodyRenderers[i].color = c;
             }
         }

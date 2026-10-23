@@ -18,6 +18,10 @@ namespace FTProject
             public Sprite Body;
             public Sprite Wing;
             public Sprite Leg;
+            // False preserves the existing view; the example front torso covers its folded wings.
+            public bool WingsBehindBody;
+
+            public bool HasHeadAndBody { get { return NormalHead && AngryHead && DeadHead && Body; } }
 
             public bool IsComplete
             {
@@ -30,13 +34,19 @@ namespace FTProject
             }
         }
 
+        // Optional complete per-view rigs for wings, quadrupeds and multi-legged enemies.
+        // Existing six-part profiles retain their serialized behavior.
+        public bool SeparateViewRigs;
+
         public Parts Up = new Parts();
         public Parts Down = new Parts();
         public RuntimeAnimatorController Controller;
 
         public bool IsComplete
         {
-            get { return Up != null && Down != null && Up.IsComplete && Down.IsComplete && Controller; }
+            get { return Up != null && Down != null && Controller && (SeparateViewRigs
+                    ? Up.HasHeadAndBody && Down.HasHeadAndBody
+                    : Up.IsComplete && Down.IsComplete); }
         }
     }
 }

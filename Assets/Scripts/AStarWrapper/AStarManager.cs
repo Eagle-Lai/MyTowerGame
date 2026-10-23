@@ -49,6 +49,16 @@ namespace FTProject
         /// <summary>当前最短路径的世界坐标（含首尾），供路径箭头渲染</summary>
         public Vector3[] CurrentPathWorld { get; private set; }
 
+        /// <summary>
+        /// 放置预览路径的世界坐标（"如果在这一格建塔，怪物会改走哪里"）。null = 当前没有预览。
+        ///
+        /// ★ 必须与 <see cref="CurrentPathWorld"/> 严格分开：
+        ///   CurrentPathWorld 是**已生效**的路径，怪物行走与路径箭头都读它；
+        ///   PreviewPathWorld 只是玩家在棋盘上滑动时的**推演结果**，
+        ///   怪物逻辑一行都不读 —— 预览期间怪物继续按旧路径走，松手建成后才改道。
+        /// </summary>
+        public Vector3[] PreviewPathWorld { get; private set; }
+
         private bool _refreshRequested;
         private int _lastPathHash = -1;
         private readonly List<Point> _pathBuffer = new List<Point>(512);
@@ -65,6 +75,7 @@ namespace FTProject
             StartPoint = null;
             TargetPoint = null;
             CurrentPathWorld = null;
+            PreviewPathWorld = null;
         }
 
         // ------------------------------------------------------------------
@@ -128,6 +139,8 @@ namespace FTProject
             }
 
             _lastPathHash = -1;
+            // 换关/重开时旧关的预览必须作废，否则新地图上会飘着上一关的箭头
+            PreviewPathWorld = null;
             RecomputePath(force: true);
         }
 
@@ -263,6 +276,96 @@ namespace FTProject
         }
 
         // ------------------------------------------------------------------
+        // 放置预览（只推演，不落地）
+        // ------------------------------------------------------------------
+
+        /// <summary>
+        /// 推演"临时把 (row, col) 设为墙"之后，起点 → 终点的完整路径。
+        ///
+        /// 【只读语义 —— 这是"预览不作用于怪物"的全部实现依据】
+        ///   进来时记下该格原本的 IsWall，算完**立刻还原**（try/finally 保证异常路径也还原）；
+        ///   全程不写 CurrentPathWorld、不动 _lastPathHash、不置 _refreshRequested、
+        ///   也不发 RefreshPathEvent。所以玩家在棋盘上怎么滑，怪物都不会改道，
+        ///   路径箭头（读 CurrentPathWorld）也保持原样。
+        ///
+        /// 【为什么预览一定等于落地后的真实路径】
+        ///   落地时（`TowerManager.TryBuildInternal`）做的是同一件事：该格 IsWall 置真 → 跑一次 A*。
+        ///   两边共用同一个网格、同一套搜索、同一对起终点（StartPoint → TargetPoint），
+        ///   唯一区别只是"算完要不要把墙标记留下"。没有第二套算法，也就没有"预览和实际不一样"的可能。
+        ///
+        /// 【返回值】世界坐标路径（含首尾）；null = 这格建上去会让起点到终点不可达（= 会堵死路径），
+        /// 或网格尚未就绪。调用方据此判定"不可建造"。
+        /// </summary>
+        public Vector3[] ComputePathWithExtraWall(int row, int col)
+        {
+            if (Map == null || StartPoint == null || TargetPoint == null)
+            {
+                return null;
+            }
+            Point point = GetPoint(row, col);
+            // 已经是墙的格子没有"临时设墙"的语义，直接判为不可用
+            if (point == null || point.IsWall)
+            {
+                return null;
+            }
+
+            bool oldWall = point.IsWall;
+            Vector3[] world;
+            try
+            {
+                point.IsWall = true;
+                world = ToWorldPath(GetPath());
+            }
+            finally
+            {
+                // ★ 必须还原：预览是"假设"，地图绝不能因为玩家滑过就被改坏
+                point.IsWall = oldWall;
+            }
+            return world != null && world.Length >= 2 ? world : null;
+        }
+
+        /// <summary>
+        /// 显示放置预览路径（只驱动箭头显示，不驱动怪物）。
+        /// 每次悬停格变化调用一次；长度 &lt; 2 时等价于 <see cref="ClearPreviewPath"/>。
+        /// </summary>
+        public void ShowPreviewPath(Vector3[] world)
+        {
+            if (world == null || world.Length < 2)
+            {
+                ClearPreviewPath();
+                return;
+            }
+            PreviewPathWorld = world;
+            EventDispatcher.TriggerEvent(EventName.PreviewPathEvent);
+        }
+
+        /// <summary>清掉放置预览（退出放置态 / 悬停到不可建格 / 建塔落地后调用）。</summary>
+        public void ClearPreviewPath()
+        {
+            if (PreviewPathWorld == null)
+            {
+                return;
+            }
+            PreviewPathWorld = null;
+            EventDispatcher.TriggerEvent(EventName.PreviewPathEvent);
+        }
+
+        /// <summary>把寻路结果转成世界坐标数组（渲染用）</summary>
+        private static Vector3[] ToWorldPath(List<Point> path)
+        {
+            if (path == null)
+            {
+                return null;
+            }
+            Vector3[] world = new Vector3[path.Count];
+            for (int i = 0; i < path.Count; i++)
+            {
+                world[i] = new Vector3(path[i].Center.x, path[i].Center.y, 0f);
+            }
+            return world;
+        }
+
+        // ------------------------------------------------------------------
         // 路径刷新节流
         // ------------------------------------------------------------------
 
@@ -304,12 +407,7 @@ namespace FTProject
             _lastPathHash = hash;
 
             // 缓存世界坐标供路径箭头渲染
-            Vector3[] world = new Vector3[path.Count];
-            for (int i = 0; i < path.Count; i++)
-            {
-                world[i] = new Vector3(path[i].Center.x, path[i].Center.y, 0f);
-            }
-            CurrentPathWorld = world;
+            CurrentPathWorld = ToWorldPath(path);
 
             if (changed)
             {

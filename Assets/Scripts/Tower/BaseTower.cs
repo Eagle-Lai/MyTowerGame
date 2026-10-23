@@ -911,13 +911,9 @@ namespace FTProject
                 return null;
             }
 
-            // 怪物脚下的格子不允许建塔：否则怪物会瞬间被墙包住，视觉上像卡死
-            CombatSystem combat = CombatSystem.Instance;
-            if (combat != null && combat.HasAliveEnemyNear(cell.Center, board.CellSize * 0.5f))
-            {
-                Tips(Localization.Get("An enemy is on this tile, try another spot") ?? "该格上正有怪物，换个位置吧");
-                return null;
-            }
+            // 【2026-10-22 规则调整】不再禁止"该格上正有怪物"。
+            // 需求：只要建上去不会堵死路径就允许建 —— 怪物压在脚下属于玩家的正当操作
+            // （补刀/围堵），落地后由本方法末尾的 RerouteEnemiesThrough 让它立刻走出去。
 
             AStarManager astar = AStarManager.Instance;
             Point point = astar.GetPoint(row, col);
@@ -987,6 +983,18 @@ namespace FTProject
                 AudioManager.Instance.PlayAt(AudioName.TowerBuild, cell.Center);
             }
             astar.RequestRefresh();      // 节流重算，敌人改道
+
+            // 【怪物脚下建塔的收尾】建好的瞬间，正站在这一格上的怪就被墙包住了。
+            // 它的路径是建塔**之前**算的，未必经过新墙的位置；而 RequestRefresh 走的是
+            // "路径哈希判重"——若本次"起点→终点"主路径恰好没变（例如这只怪已被前一座塔引到支路），
+            // RefreshPathEvent 不会广播，它就会沿着旧路径从塔身里穿出去。
+            // 这里按"格"精确补一次改道（脚下那只 + 剩余路径会踏进这一格的），
+            // 让"允许脚下建塔"这件事的行为是确定的。
+            CombatSystem combat = CombatSystem.Instance;
+            if (combat != null)
+            {
+                combat.RerouteEnemiesThrough(row, col);
+            }
 
             return tower;
         }

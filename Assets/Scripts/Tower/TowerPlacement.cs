@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using AStar;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
@@ -16,7 +15,15 @@ namespace FTProject
     ///
     /// 【校验顺序（与 TowerManager.TryBuild 一致）】
     ///   格子在棋盘内 → 可建造（非障碍/空洞/装饰） → 无塔 → 金币够 → 不会堵死路径
-    ///   前 4 项是廉价判断，A* 探测只在"悬停格变化"时做一次（16×9 网格下开销可忽略）。
+    ///   前 4 项是廉价判断，A* 推演只在"悬停格变化"时做一次（16×9 网格下开销可忽略）。
+    ///
+    /// 【2026-10-22：两条放置规则调整（需求）】
+    ///   ① **预览只画不改**：悬停格变化时就推演出"建成后怪物会走的新路径"并实时画出来，
+    ///      但该路径只存在 AStarManager.PreviewPathWorld（箭头视图读），
+    ///      怪物逻辑一行都不读 —— 玩家滑动期间怪物仍旧走原路，松手落地后才真正改道
+    ///      （落地时 TryBuild 置墙 + RequestRefresh → RefreshPathEvent → CombatSystem 让怪物改道）。
+    ///   ② **怪物脚下可以建塔**：只要求"不会把路彻底堵死"，不再禁止"该格上有怪物"。
+    ///      建好后由 CombatSystem.RerouteEnemiesThrough 让脚下那只怪立刻重新寻路走出去。
     ///
     /// 【2026-10-14：两种放置态（对标《坚守阵地》Fieldrunners）】
     ///   · 经典（_dragMode=false）：快速点塔按钮进入，ghost 跟鼠标、点击落子 —— 原交互全保留；
@@ -679,71 +686,87 @@ namespace FTProject
             ExitPlacement(false);
         }
 
-        /// <summary>校验某个格子能否建塔。只做廉价判断 + 一次 A* 探测。</summary>
+        /// <summary>校验某个格子能否建塔。只做廉价判断 + 一次 A* 推演（推演结果同时用作预览）。</summary>
         private void EvaluateCell(BoardView board, int row, int col)
         {
             _canBuild = false;
+            _blockArg = null;
             CellData cell = board.GetCell(row, col);
 
             if (cell == null)
             {
                 _blockReason = "Cannot Build Here";
+                ClearPreview();
                 return;
             }
             if (!cell.IsBuildable)
             {
                 _blockReason = "Not Buildable Here";
+                ClearPreview();
                 return;
             }
             if (cell.HasTower)
             {
                 _blockReason = "Tower already there";
+                ClearPreview();
                 return;
             }
-            CombatSystem combat = CombatSystem.Instance;
-            if (combat != null && combat.HasAliveEnemyNear(cell.Center, board.CellSize * 0.5f))
-            {
-                _blockReason = "An enemy is on this tile, try another spot";
-                return;
-            }
+            // 【2026-10-22】原先这里还有一条"该格上正有怪物 → 不可建造"。
+            // 需求改为：只要不堵死路径就允许建，怪物压在脚下由落地后的定点改道解决
+            // （见 TowerManager.TryBuildInternal → CombatSystem.RerouteEnemiesThrough）。
             if (!PlayerDataManager.Instance.TryPeek(_cfg.Prices))
             {
                 // 带参数的 key：语序可随语言调整
                 _blockReason = "Not enough gold, need {0}";
                 _blockArg = _cfg.Prices;
+                ClearPreview();
                 return;
             }
-            if (WouldBlockPath(row, col))
+            if (!PreviewPathThrough(row, col))
             {
                 _blockReason = "Cannot fully block the path";
-                return;
+                return;   // 预览已在 PreviewPathThrough 内部清掉
             }
             _canBuild = true;
             _blockReason = string.Empty;
-            _blockArg = null;
         }
 
         /// <summary>
-        /// 临时把该格设为墙跑一次 A*，判断是否会彻底堵死路径。
-        /// 这是《坚守阵地》的核心规则：可以拖延、可以绕路，但不能 100% 封死。
+        /// 推演"在这格建塔后怪物会怎么走"，并把结果挂成**预览路径**。
+        /// 返回 false = 这格会把路彻底堵死（预览同时被清空）。
+        ///
+        /// 【预览为什么不作用于怪物】推演只写 AStarManager.PreviewPathWorld，不写 CurrentPathWorld、
+        /// 不发 RefreshPathEvent；怪物与"已生效路径"完全读不到它。落地后 TryBuild 才真正置墙重算。
+        /// 【预览为什么一定等于实际】落地做的是同一件事（该格 IsWall 置真后跑一次 A*），
+        /// 同一个网格、同一套搜索、同一对起终点 —— 两边不会算出不同的路。
         /// </summary>
-        private static bool WouldBlockPath(int row, int col)
+        private static bool PreviewPathThrough(int row, int col)
         {
             AStarManager astar = AStarManager.Instance;
             if (astar == null || !astar.IsGridReady)
             {
-                return false;
+                // 没有寻路数据时不做堵路判定：悬停高亮不该因为 A* 未就绪就整片变红。
+                // 注意落地仍会拦 —— TowerManager.TryBuildInternal 里 `IsFindPath()` 在 Map==null 时返回 false，
+                // 会以"不能完全阻断怪物路径"拒绝。这是"棋盘/配置异常"下的降级，不是正常路径。
+                return true;
             }
-            Point point = astar.GetPoint(row, col);
-            if (point == null)
+            Vector3[] preview = astar.ComputePathWithExtraWall(row, col);
+            if (preview == null)
             {
+                astar.ClearPreviewPath();
                 return false;
             }
-            bool old = point.IsWall;
-            point.IsWall = true;
-            bool reachable = astar.IsFindPath();
-            point.IsWall = old;   // ★ 无论结果如何都必须还原，否则地图会被永久改坏
-            return !reachable;
+            astar.ShowPreviewPath(preview);
+            return true;
+        }
+
+        /// <summary>清掉预览路径（幂等：没有预览时是空操作，不会白广播事件）。</summary>
+        private static void ClearPreview()
+        {
+            if (AStarManager.Instance != null)
+            {
+                AStarManager.Instance.ClearPreviewPath();
+            }
         }
 
         private void TryPlace(BoardView board, int row, int col)
@@ -769,6 +792,9 @@ namespace FTProject
             _hoverRow = -1;
             _hoverCol = -1;
             _hoverState = CellHighlight.None;
+            // 悬停格没了，针对那一格的预览路径也必须一起消失
+            // （否则箭头会指向一个玩家已经不在看的格子，滑出棋盘后尤其明显）
+            ClearPreview();
         }
 
         // ------------------------------------------------------------------
@@ -844,7 +870,6 @@ namespace FTProject
                 case "Cannot Build Here": return "超出棋盘范围";
                 case "Not Buildable Here": return "该位置不可建造";
                 case "Tower already there": return "该位置已有防御塔";
-                case "An enemy is on this tile, try another spot": return "该格上正有怪物";
                 case "Not enough gold, need {0}": return "金币不足（需要 {0}）";
                 case "Cannot fully block the path": return "不能完全阻断怪物路径";
                 default: return "无法建造";

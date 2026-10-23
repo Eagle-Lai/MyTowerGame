@@ -24,8 +24,6 @@ namespace FTProject
         private readonly List<BaseEnemy> _enemies = new List<BaseEnemy>(256);
         private readonly List<BaseTower> _towers = new List<BaseTower>(64);
         private readonly List<BaseBullet> _bullets = new List<BaseBullet>(256);
-        /// <summary>索敌/查询的复用缓冲，避免每次查询都分配 List（GC Alloc = 0 的前提）</summary>
-        private readonly List<BaseEnemy> _queryBuffer = new List<BaseEnemy>(64);
         /// <summary>TickEnemies 的遍历快照：避免 Tick 期间列表被回调修改导致索引失效</summary>
         private readonly List<BaseEnemy> _tickSnapshot = new List<BaseEnemy>(256);
 
@@ -140,35 +138,59 @@ namespace FTProject
         }
 
         // ------------------------------------------------------------------
-        // 供建塔校验用
+        // 供建塔流程用
         // ------------------------------------------------------------------
 
         /// <summary>
-        /// 指定圆内是否有存活怪物。
-        /// 建塔前用它拦住"在怪物脚下盖塔"——否则怪物会瞬间被墙包住，
-        /// 虽然 A* 保证它还能走出去，但视觉上很怪，也容易被误判成卡死。
+        /// 让"正站在 (row, col) 这一格上、或剩余路径会经过这一格"的存活地面怪**立刻**重新寻路。
+        ///
+        /// 【什么时候需要】2026-10-22 起放置规则允许"怪物脚下建塔"（只要不堵死路径）。
+        /// 建好的瞬间，那只怪就被墙包在格子里，而它手上的路径是建塔**之前**算的。
+        /// 通常 RequestRefresh → RefreshPathEvent 会让所有怪改道，但那条链用"路径哈希判重"：
+        /// 若主路径（起点→终点）恰好没变，就不会广播，脚下那只怪会沿着旧路径穿塔而过。
+        /// 这里点对点补一次，把"允许脚下建塔"的行为钉死。
+        ///
+        /// 【为什么按"格"而不是按"半径"挑怪】早先的实现用 `QueryCircle(格心, CellSize*0.5)`：
+        ///   格子是边长 CellSize 的方块，从格心到角落有 0.707×CellSize ——
+        ///   半径只取半格时，站在格子四角附近的怪会被漏掉（它明明就在塔格里，却不会改道）。
+        ///   改成"当前所在格 == 目标格，或剩余路径含目标格"就没有这个几何漏洞，
+        ///   而且顺带覆盖了"下一格就要踏进新塔"的怪（旧实现完全管不到）。
+        ///
+        /// 【跳过飞行单位】它们走直线，重新寻路反而会把它们从直线拽回地面路线。
         /// </summary>
-        public bool HasAliveEnemyNear(Vector2 center, float radius)
+        /// <returns>实际改道的怪物数（自检/日志用）</returns>
+        public int RerouteEnemiesThrough(int row, int col)
         {
-            if (Grid == null)
+            if (_enemies.Count == 0)
             {
-                return false;
+                return 0;
             }
-            _queryBuffer.Clear();
-            Grid.QueryCircle(center, radius, _queryBuffer);
-            float r2 = radius * radius;
-            for (int i = 0; i < _queryBuffer.Count; i++)
+            BoardView board = BoardView.Instance;
+            int rerouted = 0;
+            for (int i = 0; i < _enemies.Count; i++)
             {
-                BaseEnemy e = _queryBuffer[i];
-                // 飞行单位不参与"脚下不能建塔"的判定：它从空中过去，
-                // 在它下面盖塔既困不住它，也不该抢走玩家的一个格子。
-                if (e != null && e.IsAlive && e.Config != null && !e.Config.IsFlying &&
-                    (e.Position - center).sqrMagnitude <= r2)
+                BaseEnemy e = _enemies[i];
+                if (e == null || !e.IsAlive || e.Config == null || e.Config.IsFlying)
                 {
-                    return true;
+                    continue;
+                }
+                bool onCell = false;
+                if (board != null)
+                {
+                    int er, ec;
+                    if (board.WorldToCell(e.Position, out er, out ec))
+                    {
+                        onCell = er == row && ec == col;
+                    }
+                }
+                // RefreshPath 内部只做 A* 与自身路径重设，不会增删 _enemies，可以安全地边遍历边改道
+                if (onCell || e.RemainingPathTouches(row, col))
+                {
+                    e.RefreshPath();
+                    rerouted++;
                 }
             }
-            return false;
+            return rerouted;
         }
 
         // ------------------------------------------------------------------

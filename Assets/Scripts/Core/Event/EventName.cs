@@ -26,6 +26,16 @@ namespace FTProject
         /// <summary>请求刷新敌人路径（建塔/拆塔后触发）</summary>
         public const string RefreshPathEvent = "RefreshPathEvent";
 
+        /// <summary>
+        /// 放置预览路径变化（玩家滑动时实时推演"这一格建塔后怪物会怎么走"）。
+        ///
+        /// ★ 与 RefreshPathEvent 是**两件事**，不能合并：
+        ///   PreviewPathEvent 只让箭头视图画一条预览，怪物一只都不改道；
+        ///   RefreshPathEvent 才是"路径已生效"，CombatSystem 收到后会让所有存活怪物重新寻路。
+        /// 如果把预览也走 RefreshPathEvent，玩家手指扫过棋盘就会把怪物吓得来回改道。
+        /// </summary>
+        public const string PreviewPathEvent = "PreviewPathEvent";
+
         /// <summary>地图显隐（调试用）</summary>
         public const string SetMapActiveState = "SetMapActiveState";
 
