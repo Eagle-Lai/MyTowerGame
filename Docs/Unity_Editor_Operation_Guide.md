@@ -262,7 +262,7 @@ Console 报告里全是 ✔（以 `[M0] 自检报告（通过，警告 0）：` 
 
 **【启动与配置】**
 - [ ] 1. Play 全程 Console 无 `Exception` / `NullReferenceException`
-- [ ] 2. Console 打印 **9** 张表的记录数，与 Excel 行数一致（M2 起新增 `TBAudio`）
+- [ ] 2. Console 打印已登记配置表的记录数，与源表一致；声音表已移除，不再固定假设表数量。
 - [ ] 3. 棋盘行列数（16×9）、起终点位置与 `TBLevelMap` 配置一致
 
 **【配置驱动验证（关键）】**
@@ -301,7 +301,7 @@ Console 报告里全是 ✔（以 `[M0] 自检报告（通过，警告 0）：` 
 
 ### 验收清单 · M2 新增项（20 项，逐条勾）
 
-> 覆盖 M2 的 8 个目标（多塔型 / 升级出售 / 子弹特性 / 怪物扩展 / 飞行 / 音效 / 打击感 / 平衡）。
+> 覆盖 M2 的 8 个目标（多塔型 / 升级出售 / 子弹特性 / 怪物扩展 / 飞行 / 打击感 / 平衡）。
 > 上面 23 项仍然要全过 —— M2 不应让 M0 的任何一条回退。
 
 **【多塔型 3 类】**（2026-10-14 三塔型收敛，原穿透/激光检查项作废）
@@ -331,13 +331,9 @@ Console 报告里全是 ✔（以 `[M0] 自检报告（通过，警告 0）：` 
 - [ ] M18. 命中时弹出**伤害数字**（致命一击是红色）；同一只怪的数字不会糊成一片
 - [ ] M19. 受击有一次**闪白**；死亡时**淡出**；漏怪时**屏幕震动**（越疼的怪震得越明显）
 
-**【音效（系统先行）】**
-- [ ] M20. Console **没有** `[Audio]` 报错刷屏（当前工程 0 个音频文件，属预期的静默降级）。
-  想让它发声：把 `.wav/.ogg` 丢进 `Assets/Audio/` → 跑 `python .workbuddy/tools/gen_audio_catalog.py` → **不用改任何代码**。
-
-> M5 / M7 / M12 / M16 是最能证明"这轮真的接上线了"的四条，建议重点看。
-
-### 验收清单 · M3 新增项（关卡与元进度）
+**【无声版本】**
+- [ ] M20. 游戏全流程无声，运行时没有项目声音管理器、AudioSource 或 AudioListener；设置仅保留语言、重置及关闭。
+- [ ] Luban 导出、UI 重建和资源收集设置重建后仍不出现声音表、声音控件或声音收集组。
 
 **【关卡选择与解锁】**
 - [ ] N1. Play 后**先出现关卡选择界面**（不是直接进第 1 关），能看到 8 个关卡按钮
@@ -560,7 +556,6 @@ Console 首行变为：
 │   ├── Editor\                         ★ Editor 工具（菜单 Tools ▸ 塔防）
 │   ├── Art\Generated\                  程序生成的占位美术
 │   ├── ConfigJson\                     ★ Luban 导出的配置 json（编辑器直读 + 进 config 包）
-│   ├── Audio\                          ★ 音效文件放这里（M2；当前为空 → 静默无音效）
 │   ├── Prefabs\
 │   │   ├── Tower\Tower_Normal/Power/Retard.prefab   世界空间 SpriteRenderer
 │   │   ├── Bullet\Bullet_Normal.prefab
@@ -570,7 +565,7 @@ Console 首行变为：
 │   └── Scripts\
 │       ├── Core\Res\                   ★ AB 资源系统（ResTable 是唯一寻址源）
 │       ├── Core\Combat\                ★ 去物理战斗系统（EnemyGrid + CombatSystem）
-│       ├── Core\Manager\               管理器基类 + 玩家数据 + 音效 + **存档(SaveManager)** + 性能探针
+│       ├── Core\Manager\               管理器基类 + 玩家数据 + **存档(SaveManager)** + 性能探针
 │       ├── Data\                       配置读取层（Configs + 包装类 + 生成清单 + **SaveData**）
 │       ├── Game\                       棋盘 / 关卡流程 / 路径渲染 / **背景视差**
 │       ├── Round\WaveManager.cs        波次时间轴
@@ -581,7 +576,7 @@ Console 首行变为：
 │
 ├── .workbuddy\tools\                   ★ 无 Unity 时的替代验证与生成脚本
 │   ├── check_*.py                       5 个静态校验（括号/事件/成员/using/Unity API）
-│   ├── gen_*_catalog.py                 怪物 / 音频清单生成
+│   ├── gen_*_catalog.py                 怪物清单生成
 │   ├── gen_m3_levelmaps.py              ★ 8 张关卡棋盘生成（含 BFS 连通性自检）
 │   ├── gen_m3_waves_rounds.py           ★ 40 波/40 回合战役编排（目标血量法）
 │   ├── apply_m2_*.py                    M2 的配置表变更脚本（带自动备份）
@@ -620,7 +615,6 @@ Console 首行变为：
 | 飞行单位 | `Enemy/BaseEnemy.cs` 的 `SetupFlyingPath` / `MoveStraight`；开关是 `EnemyData.isFlying` |
 | 射程圈 | `Tower/RangeIndicatorView.cs`（贴图由占位生成器产出） |
 | 伤害飘字 / 震动 | `UI/FloatingTextManager.cs` / `Camera/CameraController.cs`；参数在 `Global.xlsx` |
-| 音效 | `Core/Manager/AudioManager.cs` + `Data/AudioName.cs`；参数在 `TBAudio` |
 
 ---
 
@@ -674,7 +668,6 @@ M0 的 HUD 使用 Unity **内置动态字体**（`LegacyRuntime.ttf`）。
 | **Console 报 `[HUD] 缺少按钮节点「Btn_Tower_xxx」`** | HudView.prefab 还是旧的 3 按钮版本 | 同上，先跑「补缺 UI 预制体」；若仍缺，用「生成 UI 预制体（全量重建）」重建 |
 | 跑完一键向导后手工改的 HudView / 塔 prefab 被覆盖了 | 用了「全量重建」入口 | M2 起向导已改调 `EnsureMissing`（只补缺失）。重建类入口都在「高级（单步重建）」下，用前请先备份 |
 | **升级之后塔不见了 / 格子空了** | 旧版本 `TryUpgrade` 会先拆旧塔再建新塔，新塔加载失败就什么都没了 | M2 已改为**先建后拆**：失败时退还金币且原塔保持不变。若仍复现请反馈 |
-| Console 刷 `[Audio] 「sfx_xxx」找不到音频资源` | 工程内没有音频文件（预期） | 属静默降级，不影响玩法。要消除：把音频丢进 `Assets/Audio/` 并跑 `gen_audio_catalog.py`（见 `.workbuddy/tools/`） |
 | ~~**穿透塔打不到第二只怪**~~ | 旧版本穿透逻辑失效（M2 已修） | 历史条目；穿透塔已于 2026-10-14 随三塔型收敛整体移除 |
 | 伤害数字不显示 | 配置表开关关了 | `Global.xlsx` 的 `showDamageText` 置 1（同时确认 `damageTextThrottleMs` 不过大） |
 | 屏幕震动停不下来 / 相机偏了 | 震动期间调用了 `FitBoard` | 已在 `FitBoard` 与空格归位里清 `_shakeOffset`；若仍复现请反馈 |
@@ -698,12 +691,11 @@ M0 的 HUD 使用 Unity **内置动态字体**（`LegacyRuntime.ttf`）。
 |---|---|
 | ~~选关界面~~ | ✅ **M3 已完成**（`SelectView`，含解锁/星级/难度标签）。开机先进选关；调试可填 `GameFlowManager.startLevelId` 跳过 |
 | ~~塔升级 / 出售 UI~~ | ✅ **M2 已完成**（`TowerInfoView` + 换实例升级 + 两段式出售确认） |
-| ~~伤害飘字 / 击杀特效 / 音效~~ | ✅ **M2 已完成**（飘字/闪白/消散/震动；音效为"系统先行"，等音频文件） |
+| 伤害飘字 / 击杀特效 | ✅ **已完成**（飘字/闪白/消散/震动；当前为无声版本） |
 | ~~多塔型 / AOE / 减速~~ | ✅ **M2 已完成**；2026-10-14 起收敛为 3 类（穿透/激光整体移除） |
 | 结算界面 | 仍用 `TipsView` 文本代替（原计划 M3） |
 | 切关时的 AB 整包释放 | `ReleaseBundle` 已实现，但只有一关，未接入流程 |
 | 塔面板的正式美术 | 目前：面板是纯色占位。换皮 = 改 `resName` + `ResTable`，零代码（原穿透/激光美术待办已随塔型移除作废） |
-| 音频文件 | 工程内 0 个。丢进 `Assets/Audio/` + 跑生成器即生效 |
 | 后期难度曲线 | 顶演显示第 6~8 回合余量 8~9 倍偏宽裕；整体经济调优属 M3 |
 | 其余 118 个怪物 prefab 的战斗接入 | M0 只接了 `Enemy_Rat`；`ResTable` 加条目 + `EnemyData.resName` 指向即可扩展 |
 | `Common/Animations` 下其余家族 | 同上，`EnemyData.animController` 填家族名即可 |
@@ -800,3 +792,5 @@ M0 的 HUD 使用 Unity **内置动态字体**（`LegacyRuntime.ttf`）。
 
 > 第 5 条就是设计文档 M5 的"低端机 200 怪 + 50 塔 60fps"验收 ——
 > **它必须在真机上跑**，编辑器里的数字不作数（PC 与手机差一个数量级）。
+
+设置 prefab 统一使用 `UIPrefabBuilder.RebuildSettingOnly()` 重建，语言下拉框、重置、关闭应完整保留；旧离线 M3 生成器不再处理设置界面。

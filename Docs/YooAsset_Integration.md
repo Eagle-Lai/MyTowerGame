@@ -345,7 +345,6 @@ Address already exists: 'Bat' in collector: 'Assets/Prefabs'
 
 | 现象 | 原因 | 处理 |
 |---|---|---|
-| `Default asset cannot be packed: 'Assets/Audio/README.md'` | `.md` 被 Unity 认成 `DefaultAsset`，被 `NormalIgnoreRule` 挡下并打一句 warning | 无需处理；若嫌吵可把 README 移出 `Assets/` |
 | 向导报告里 `Assets/_UIAssets/Monsters/<家族>/<怪名>/<怪名>.prefab` 属"未登记资源" | 那是**怪物源预制体**，ResTable 只登记了两样产出物：战斗预制体与图集 | 走"跟随同目录"降级，仍会进 `enemy_<家族>` 包，符合预期 |
 | 向导报告里 `Assets/Font/SiYuanSongTi.ttf` 属"未登记资源" | ResTable 登记的是 TMP 字体资产与描边材质，不含源 ttf | 同上，会落进 `font` 包 |
 | `Explicit folder is not exist` 之类收集路径告警 | 某个收集目录被删了 | 向导「生成 / 修复收集器配置」会跳过不存在的目录并提示 |
@@ -392,3 +391,5 @@ Address already exists: 'Bat' in collector: 'Assets/Prefabs'
 
 另一种是源码内嵌：把仓库 `Assets/YooAsset/` 整个拷进本工程 `Packages/`（或 `Assets/`），
 完全离线、可二次修改，代价是升级要手动替换。
+
+2026-10-23 无声版本：收集器计划仅含配置、美术、预制体及字体。声音收集组已移除；生成/修复收集设置不会重新加入声音目录。历史构建、发布清单和线上资源不在本次清理范围内，新版本按正常构建发布流程生成。

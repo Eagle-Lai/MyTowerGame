@@ -57,7 +57,6 @@ UICanvas                 UIManager 三层
 │   ├── _UIAssets/                   美术：Monsters(16族系+_Common) / Tower / Backgrounds
 │   ├── Art/Generated/               程序生成占位图 9 张（PlaceholderArtGenerator.cs 产物）
 │   ├── Font/                        思源宋体 ttf + TMP SDF + Outline 材质
-│   ├── Audio/                       音频目录（当前仅 README，P3 阶段填入）
 │   ├── StreamingAssets/             AB 产物输出（P4 重打）
 │   ├── SuperScrollView/ TextMesh Pro/ Demigiant(DOTween) / Reporter/ Plugins/   第三方
 │   └── Plugins/Android/libs/        libsqlite3.so（arm64-v8a + armeabi-v7a）
@@ -83,13 +82,13 @@ UICanvas                 UIManager 三层
 | 启动 | `Launcher.cs`、`GameSceneLauncher.cs` | 管理器注册/配置加载编排；场景引用校验与注入 |
 | Core/Res（11） | `IResLoader/ResLoader/EditorResLoader/BundleResLoader/YooAssetResLoader/ResTable/ResAddress/ResBundle/ResPathUtil/ResLoaderRunner(+Behaviour)` | AB 资源系统。**ResTable 是唯一寻址源**（逻辑名→包名+资产名+编辑器路径）；编辑器直读/真机 Bundle/YooAsset 三实现按宏与平台切换 |
 | Core/Combat（2） | `CombatSystem`、`EnemyGrid` | 全局唯一 UpdateEvent 订阅者，固定顺序 tick（怪→塔→子弹）；均匀网格空间哈希索敌 |
-| Core/Manager（6） | `BaseManager/IManagerInterface/PlayerDataManager/AudioManager/SaveManager/PerfProbe` | 单例基类；金币/生命经济；音效（配置→ResLoader→AudioSource 池三段查找，无文件静默降级）；存档门面；性能探针（F3，p50/p95/p99） |
+| Core/Manager | `BaseManager/IManagerInterface/PlayerDataManager/SaveManager/PerfProbe` | 单例基类；金币/生命经济；存档门面；性能探针（F3，p50/p95/p99） |
 | Core/Event（3） | `EventDispatcher/EventController/EventName` | 事件总线（0–4 参数），事件名常量表 |
 | Core/UI（3） | `UIManager/SafeAreaFitter/UIFader` | 三层面板管理（View=prefab 上 MonoBehaviour，BaseView 已废弃）；刘海屏适配；淡入（unscaled） |
 | Core/Enum（1） | `EnumFile.cs` | 怪物类型等枚举 |
 | Core（1·P2b 新增） | `GameClock` | 全局模拟速度参数：`Speed`（float 1/2/3，默认 1）+ 每帧 `Tick()` 缓存 `DeltaTime = Time.deltaTime × Speed`；**全工程唯一速度源**，timeScale 不参与倍速 |
 | AStarWrapper（4） | `AStarManager/AStarWrapper/Point/Singleton` | A\* 寻路（建塔堵路校验 + 路径刷新），namespace `AStar` |
-| Data（12） | `Configs/MonsterCatalog/TowerConfig/EnemyConfig/BulletConfig/LevelConfig/WaveConfig/GlobalConfig/AudioConfig/AudioCatalog/AudioName/SaveData` | Luban 9 表加载与包装；怪物/音频目录 |
+| Data | `Configs/MonsterCatalog/TowerConfig/EnemyConfig/BulletConfig/LevelConfig/WaveConfig/GlobalConfig/SaveData` | Luban 配置加载与包装；怪物目录；语言、进度及局内快照 |
 | Data/Persistence（12） | `ISaveStorage/SaveStorageFactory/JsonSaveStorage/SqliteSaveStorage/IDatabase/SqliteDatabase/SqliteNative/SqliteTransaction/DbRow/CryptoService/KeyProvider/SaveSchema` | JSON+SQLite 双存储、加密、事务、schema 版本 |
 | Game（6） | `Board/BoardView/CellView/GameFlowManager/PathArrowView/BackgroundParallax` | 棋盘数据与视图；关卡流程状态机；路径箭头；视差 |
 | Round（1） | `WaveManager` | 回合→(时刻,怪id) 扁平时间轴，单计时器推进 |
@@ -134,7 +133,6 @@ UICanvas                 UIManager 三层
 | 关卡 | tbsceneinfo | 8 | id/RoundList[]/mapId/initialGold/initialHp/waveIntervalMs/difficulty（`CameraRotration`/`EenemyPosition` 为历史拼写，**保留不改**，生成代码沿用） |
 | 棋盘 | tblevelmap | 8 | 格子布局（空地/障碍/S/E） |
 | 全局 | tbglobal | 1 | cellSize/池大小/maxEnemyAlive=200/sellRefundRate/autoNextRoundDelayMs=5000/deathRecycleDelayMs=600 等 |
-| 音频 | tbaudio | 16 | logicalName/volume/pitch/loop/is3d |
 
 ### 4.3 改表落地 SOP（AI 执行顺序）
 
@@ -157,7 +155,6 @@ UICanvas                 UIManager 三层
 | UI prefab/脚本 | 视图名 = 类名 = prefab 名，`<Name>View` | `HudView.prefab` ↔ `HudView.cs` |
 | 子弹 | `Bullet_<Name>` | `Bullet_Normal` |
 | 配置 json | `tb<表名>` 全小写 | `tbtowerinfo.json` |
-| 音频逻辑名 | `sfx_<动作>_<对象>` / `bgm_<场景>` | `sfx_tower_fire_normal` |
 | 资源逻辑名（ResTable） | 与 prefab 名一致，一处登记 | `Tower_Normal0` |
 | 拼写修正 | `Enemy_WolfMounfed.prefab` → `Enemy_WolfMounted.prefab`（P1 阶段连同 meta 改名，并同步 tbenemydata.resName 与 MonsterCatalog） | |
 
@@ -225,36 +222,23 @@ UICanvas                 UIManager 三层
 7. **Animator 同步**：BaseEnemy/Boss 的 Animator 在初始化与 `GameSpeedChangedEvent` 时设 `animator.speed = GameClock.Speed`，死亡/回收时还原 1（防对象池复用残留）；暂停冻结依赖 timeScale=0（Animator 默认 Normal 更新模式），无需额外处理；
 8. 全局校验：grep 全工程 `Time.timeScale` 确认除 PauseView/GameFlowManager 暂停恢复外无任何赋值；grep `Time.deltaTime` 确认战斗系统无遗漏未迁移点（UI/Tips/PerfProbe 除外）；静态校验后【Unity】编译、自检。
 
-**改动文件与脚本要点**：只许追加不许改写既有行为（§3.3 勿动文件清单约束），**唯一豁免见 §3.3「P2b 唯一豁免」条款（仅限第 6 步时间消费点单行替换）**；`GameClock` 是全工程唯一速度源，禁止任何系统自行 `Time.deltaTime * Speed`；**禁止绕过事件总线让 HudView 直接调 GameFlowManager**；音效 pitch 不随倍速变化（AudioManager 现状即满足，无需改）；Tips（1.2s/条）、出售确认（3s，unscaledDeltaTime）、全部 UI 动画与 PerfProbe 保持实时/unscaled，不受倍速影响。
+**改动文件与脚本要点**：只许追加不许改写既有行为（§3.3 勿动文件清单约束），**唯一豁免见 §3.3「P2b 唯一豁免」条款（仅限第 6 步时间消费点单行替换）**；`GameClock` 是全工程唯一速度源，禁止任何系统自行 `Time.deltaTime * Speed`；**禁止绕过事件总线让 HudView 直接调 GameFlowManager**；Tips（1.2s/条）、出售确认（3s，unscaledDeltaTime）、全部 UI 动画与 PerfProbe 保持实时/unscaled，不受倍速影响。
 
 **验收检查点**
 - [ ] ×3 时出怪/移动/攻击/弹道/飘字/减速倒计时/回合倒计时节奏均为 3 倍；切回 ×1 完全还原
 - [ ] 倍速切换前后 `Time.timeScale` 恒为 1，仅暂停时为 0（grep 校验通过）
 - [ ] 暂停→继续后保持所选档位并立即生效；倍速按钮在 GameOver 后不可用；重开/下一关/回选关回 ×1
 - [ ] Animator 速度随档位同步，对象池复用无残留（×3 怪死亡回收后再刷出即为当前档位速度）
-- [ ] 音效 pitch 不变；Tips 1.2s 与出售确认 3s 仍为实时
+- [ ] Tips 1.2s 与出售确认 3s 仍为实时
 - [ ] ×3 下 PerfProbe p95 ≤16.6ms（不达标按 §7 风险表降档处理：`GameClock.Speed` 为 float，可直接降 ×2.5）
 - [ ] 静态校验（check_code/events/members）通过，Unity 编译 0 错误
 
-### P3 音频接入（依赖外部资源，接口已就位）
+### P3 无声版本维护（2026-10-23）
 
-**目标**：16 项音效 + 2 首 BGM 全部接入，AudioManager 不再静默降级。
-
-**前置条件**：音频资源到位（策划案 §8 清单：wav/ogg、SFX ≤1.5s、BGM ogg ≤128kbps 循环）；P2 完成。
-
-**操作步骤（命令级）**
-1. 音频文件放入 `Assets/Audio/`（命名 = tbaudio 的 logicalName，如 `sfx_tower_fire_normal.wav`、`bgm_battle.ogg`）；
-2. openpyxl 改 `Audio.xlsx`：增 2 行 BGM（loop=1，volume 0.5/0.4），走 §4.3 SOP 导出；
-3. 跑音频目录生成流程刷新 `Assets/Scripts/Data/AudioCatalog.cs` 与 `AudioName.cs`（增 `BgmBattle`/`BgmSelect` 常量）；
-4. `ResTable.cs` 登记音频地址（逻辑名→包名/资产名）；【Unity】`Tools▸塔防▸4. 按 ResTable 打 AB 标记` 把音频打进 audio 包；
-5. `SelectView.cs`/`HudView.cs` 进入界面时 `AudioManager.Instance.Play(AudioName.BgmXxx)`。
-
-**改动文件与脚本要点**：AudioManager 三段式查找（配置→ResLoader→AudioSource 池）已就绪，**不许改 AudioManager 本体**；BGM 播放点在 View 层追加，走既有 Play 接口。
-
-**验收检查点**
-- [ ] 战斗全流程有音：建塔/升级/出售/开火×5 型/受击/死亡/漏怪/回合起止/胜负/UI 点击
-- [ ] AudioManager 日志无「缺省静默」；静音/音量 ± 实时生效
-- [ ] BGM 循环无缝，切界面（选关⇄战斗）正确切换
+项目声音系统、声音资源、源表登记、设置控件及声音生成工具均已移除。
+维护时使用现有 LubanExporter 导出配置、UIPrefabBuilder 重建设置、YooAsset 向导重建收集设置；这些入口不得重新创建声音内容。
+旧 JSON 的声音字段安全忽略，SQLite v3→v4 迁移保留进度、评级、语言与快照。
+Unity 通用音频模块和共享插件 API 按编译依赖保留，业务层不创建声音对象；工程音频输出关闭。
 
 ### P4 AB 重打与真链冒烟
 
@@ -328,4 +312,4 @@ UICanvas                 UIManager 三层
 | `CameraRotration`/`EenemyPosition` 拼写修正诱惑 | 低 | **明确不修**：改名需 Gen 代码+表+引用全链路同步，收益为零 |
 | 倍速 ×3 下帧率跌破目标 | 中 | PerfProbe 实测；不达标则 ×3 档降为 ×2.5（`GameClock.Speed` 为 float，直接改档即可，无需改结构）或对 maxEnemyAlive 分档 |
 | 无发布 keystore 管理经验 | 低 | P5 步骤 2 由人执行，AI 只出命令模板 |
-| 音频/美术外部资源延期 | 低 | AudioManager 静默降级 + 占位图机制保证 P5 不依赖 P3/P6 |
+| 美术外部资源延期 | 低 | 占位图机制保证 P5 不依赖 P6 |

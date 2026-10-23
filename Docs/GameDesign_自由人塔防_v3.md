@@ -222,7 +222,7 @@
 | 建造预览 | 无独立 prefab（BoardView 高亮 + RangeIndicatorView） | 世界层 | 可建=绿色高亮/不可建=红色高亮；射程圈预览；跟随塔影 | [02b](ui_mockups/02b_HudView_BuildMode.svg) |
 | 升级/出售面板 | `TowerInfoView` | Normal | 选中塔：等级/攻击/攻速/射程/DPS；「升级(费用)」「出售(+返还)，两段确认」「关闭」 | [07](ui_mockups/07_TowerInfoView_Normal.svg) / [07b 出售确认](ui_mockups/07b_TowerInfoView_SellConfirm.svg) |
 | 暂停 | `PauseView` | Normal | timeScale=0 + 半透明遮罩；继续/重开本关/设置/回选关 | [03](ui_mockups/03_PauseView.svg) |
-| 设置 | `SettingView` | Normal | 音量 ±10%、静音开关、重置存档、关闭 | [04](ui_mockups/04_SettingView.svg) |
+| 设置 | `SettingView` | Normal | 语言切换、重置存档、关闭 | 以当前 Unity SettingView.prefab 为准 |
 | 结算 | `LevelClearView`(+`LevelClearInfo`) | Normal | 胜/败标题；星级（1–3）与"新纪录"标记；剩余生命/击杀/漏怪；下一关/重打/回选关 | [05 胜利](ui_mockups/05_LevelClearView_Win.svg) / [05b 失败](ui_mockups/05b_LevelClearView_Lose.svg) |
 | 浮动提示 | `TipsView` | Tips | 队列式浮字（金币不足/禁堵路/回合倒计时等） | [06](ui_mockups/06_TipsView.svg) |
 | 塔图鉴（美术参考，无 prefab） | `Assets/_UIAssets/Tower` | — | 三塔竖卡（2026-10-14 收敛）：塔形大图 220×220 / 定位 / Lv.1 数值 | [14](ui_mockups/14_TowerCodex.svg) |
@@ -266,16 +266,15 @@
 
 实现约束：OnEnable `timeScale=0`，OnDisable 无条件恢复 1；重开/返回前先恢复 timeScale；按钮走 unscaled。
 
-#### 6.2.4 SettingView — Panel 620×600 居中
+#### 6.2.4 SettingView — Panel 620×560 居中
 
 | 元素 | 位置/尺寸 | 文案/规则 |
 |---|---|---|
 | Title | 顶中 (0,-36)，560×56 | "设置" |
-| VolumeText | 中心 (0,120)，520×56 | "音量 {n}%"，步长 ±10% |
-| VolDownBtn / VolUpBtn | 中心 (±170,40)，320×72 | "音量 −/＋" |
-| MuteBtn | 中心 (0,-50)，320×72 | "静音"⇄"取消静音" |
-| ResetBtn | 中心 (0,-140)，320×72 | "重置存档" → Tips"存档已重置" |
-| CloseBtn | 中心 (0,-230)，320×72 | "关闭"（按来源原路返回） |
+| LanguageText | 中心 (0,95)，520×56 | 当前语言的语言标签 |
+| LanguageDropdown | 中心 (0,20)，320×72 | 切换语言并持久化 |
+| ResetBtn | 中心 (0,-90)，320×72 | "重置存档" → Tips"存档已重置" |
+| CloseBtn | 中心 (0,-178)，320×72 | "关闭"（按来源原路返回） |
 
 #### 6.2.5 LevelClearView — Panel 640×680 居中
 
@@ -363,7 +362,7 @@ TipText：anchor(0.5,0.3)，1100×60，38 号居中；队列最多 3 条（超�
 | 功能         | 规则                                                                                                                                 | 现状                     |
 | ---------- | ---------------------------------------------------------------------------------------------------------------------------------- | ---------------------- |
 | 暂停         | `Time.timeScale=0` + PauseView 遮罩；UI 走 unscaled 时间；热键轮询用 `unscaledDeltaTime`                                                       | ✅ 已实现                  |
-| 倍速         | ×1/×2/×3 三档循环按钮，实现为**单一速度参数 `GameClock.Speed`（float，默认 1）**——`Time.timeScale` 恒为 1，**绝不参与倍速**（timeScale 语义收窄为暂停开关，仅允许 0/1）；全部模拟系统统一消费 `GameClock.DeltaTime`（每帧由 `GameClock.Tick()` 缓存一次 `Time.deltaTime × Speed`，同帧同值，消费清单见 7.3.1）；HUD 同步按钮文案；**音效 pitch 不随倍速变化**（避免尖锐化）；PerfProbe 统计走 unscaled 不受影响 | ❌ **未实现，列入程序案 P2b 新增** |
+| 倍速         | ×1/×2/×3 三档循环按钮，实现为**单一速度参数 `GameClock.Speed`（float，默认 1）**——`Time.timeScale` 恒为 1，**绝不参与倍速**（timeScale 语义收窄为暂停开关，仅允许 0/1）；全部模拟系统统一消费 `GameClock.DeltaTime`（每帧由 `GameClock.Tick()` 缓存一次 `Time.deltaTime × Speed`，同帧同值，消费清单见 7.3.1）；HUD 同步按钮文案；PerfProbe 统计走 unscaled 不受影响 | ❌ **未实现，列入程序案 P2b 新增** |
 | 快捷键（调试/PC） | 空格=暂停/继续；右键=取消建造；滚轮=缩放；F1/F2 调试；F3 性能报告                                                                                            | ✅ 已实现                  |
 
 #### 7.3.1 速度参数消费清单（P2b 迁移范围，所有与运行速度相关的内容必须使用 `GameClock.Speed` / `GameClock.DeltaTime`）
@@ -379,7 +378,7 @@ TipText：anchor(0.5,0.3)，1100×60，38 号居中；队列最多 3 条（超�
 | 同上 | 回合倒计时（RoundComplete 5s 自动开波）与 StartButton 倒计时显示 | 替换时间源 |
 | 同上 | BackgroundParallax 视差滚动（表现层，×3 时世界观感同步加速） | 替换时间源 |
 | Animator | BaseEnemy / Boss 动画机 | `animator.speed = GameClock.Speed`（初始化与切档时同步；回收时还原 1，防对象池残留） |
-| 保持实时（不用参数） | Tips 队列（1.2s/条）、出售确认 3s（unscaledDeltaTime）、全部 UI 动画、音效、PerfProbe | 实时 / unscaled，倍速不影响 |
+| 保持实时（不用参数） | Tips 队列（1.2s/条）、出售确认 3s（unscaledDeltaTime）、全部 UI 动画、PerfProbe | 实时 / unscaled，倍速不影响 |
 
 **硬性约束**：① `Time.timeScale` 全工程仅允许 0（暂停）/ 1（运行）两个值，禁止任何系统把倍速写入 timeScale；② 同帧内所有系统必须使用同一份 `GameClock.DeltaTime` 缓存值，禁止各自再乘 Speed；③ 倍速档位在 GameOver / 重开 / 回选关 / 进 Loading 时重置为 ×1；④ 暂停期间倍速请求无效（PauseView 遮罩挡按钮 + GameFlowManager 校验双保险）；⑤ 降档扩展（如 ×2.5）只需改 Speed 值，无需改结构。
 
@@ -417,9 +416,9 @@ TipText：anchor(0.5,0.3)，1100×60，38 号居中；队列最多 3 条（超�
 
 | 类别 | 数量 | 规格 | 挂接点 |
 |---|---|---|---|
-| 音效 | 16 项（tbaudio 已配好逻辑名） | wav/ogg，≤1.5s（UI 与开火类 ≤0.5s），44.1kHz | `Assets/Audio/` → 跑 gen_audio_catalog → AudioManager 三段式查找自动生效 |
-| BGM | 2 首（战斗/选关，循环） | ogg，码率 ≤128kbps | tbaudio 增 2 行（loop=1） |
 | 塔美术 | ~~Pierce/Laser 两型 ×3 级~~ | 已作废（2026-10-14 三塔型收敛，无需新美术）；三塔各自 128px PNG，基座+炮管分件 | `Assets/_UIAssets/Tower/` → prefab 转换工具 |
 | 战斗背景 | 8 张（每关 1 张） | 2048×1152 PNG，替换 Paper.png 复用现状 | `Assets/_UIAssets/Backgrounds/` |
 | 打击粒子 | 命中/死亡/AOE 爆炸 3 组 | ParticleSystem prefab，MaxParticles ≤50 | 事件已抛出，挂到 Bullet/Enemy 表现层 |
 | 怪物帧动画 | 119 怪的 Ready/Walk/Attack/Death | 沿用分部件骨骼式 Animator 方案 | `MonsterAnimEventReceiver` 已挂接 |
+
+当前版本为无声游戏：不接入声音资源、声音表或音量设置。历史迭代记录与旧界面示意图仅用于追溯，界面以当前 Unity prefab 为准。

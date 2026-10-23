@@ -61,7 +61,7 @@
 | `meta` | 多行 | `schema_version` / `created_at`；重置存档时**保留** |
 | `player_profile` | 单行 `CHECK(id=1)` | 账号级数据（昵称/金币/钻石/等级），预留 |
 | `level_progress` | 每关一行 | `stars` / `best_hp_left` / `clear_count` —— **加密列** |
-| `game_settings` | 单行 | 音量、静音（明文） |
+| `game_settings` | 单行 | 设置更新时间；语言偏好位于 `kv_store` 的 `settings.language` |
 | `level_snapshot` | 单行 | 局内快照主表（明文） |
 | `snapshot_tower` | 多行 | 快照的塔列表，按 `slot` 排序；保存时整批替换 |
 | `kv_store` | 多行 | 通用键值，`sensitive` 逐行标记是否加密 |
@@ -86,8 +86,7 @@ int star  = SaveManager.Instance.GetStars(levelId);
 int total = SaveManager.Instance.TotalStars;
 
 // 设置
-SaveManager.Instance.SetVolume(0.6f);
-SaveManager.Instance.SetMuted(true);
+SaveManager.Instance.SetLanguage(Language.ChineseSimplified);
 
 // 局内快照
 SaveManager.Instance.SetSnapshot(snap);
@@ -291,3 +290,5 @@ SQLite 属系统库且被静态链接，用 `__Internal`，无需分发。
 - Unity 里选中 `libsqlite3.so` 确认 Plugin Inspector 显示 Android / CPU 正确（应与 `.meta` 一致）；
 - **Android 真机**：打包后确认 APK 内含 `lib/arm64-v8a/libsqlite3.so` 与 `lib/armeabi-v7a/libsqlite3.so`，
   且日志显示后端是 `SQLite`（而不是回退成 `JSON 文件`）。
+
+2026-10-23 无声版本：SQLite schema v4。v3→v4 在事务内重建 `game_settings`，保留 id/updated_at，移除旧声音列；语言、进度、评级载荷与快照表保持原数据。采用建表复制再重命名，兼容不支持 DROP COLUMN 的 SQLite。旧 JSON 声音字段由 JsonUtility 忽略，新序列化只保留语言设置。迁移不清档。
