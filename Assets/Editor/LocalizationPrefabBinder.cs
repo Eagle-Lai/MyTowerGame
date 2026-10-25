@@ -140,6 +140,15 @@ namespace FTProject.EditorTools
                 }
                 string nm = t.gameObject.name;
 
+                // SelectLevelItem's rich name/stars/difficulty text is owned by SelectView.
+                if (path == LevelPreviewCardLayout.PrefabPath && nm == "Label")
+                {
+                    TextLocalizer dynamicLocalizer = t.GetComponent<TextLocalizer>();
+                    if (dynamicLocalizer != null) dynamicLocalizer.enabled = false;
+                    skipped++;
+                    continue;
+                }
+
                 // SpeedButton/Label 是倍速显示（HudView.SetSpeedLabel 运行时覆盖），不本地化
                 if (t.transform.parent != null && t.transform.parent.name == "SpeedButton")
                 {

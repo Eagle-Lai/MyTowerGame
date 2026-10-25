@@ -239,6 +239,11 @@ namespace FTProject
         static ResTable()
         {
             RegisterMonsters();
+            foreach (int levelId in LevelPreviewIds.All)
+            {
+                string key = LevelPreviewCatalog.LogicalName(levelId);
+                _map[key] = new ResAddress(ResBundle.UiHud, key, LevelPreviewCatalog.AssetPath(levelId));
+            }
         }
 
         /// <summary>

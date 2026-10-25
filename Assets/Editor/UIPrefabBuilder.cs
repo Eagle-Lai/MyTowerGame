@@ -1235,6 +1235,8 @@ namespace FTProject.EditorTools
             //   这里保留 false 只是为了"生成器产出 == 磁盘事实"，避免下次全量重建把手工状态冲掉。
             //   ⚠️ 但它是个"迷惑点"：若日后有人改用别的池化/实例化路径（不强制激活），
             //      卡片会整片不可见 —— 到那时记得把这一行删掉。
+            LevelPreviewCardLayout.Apply(go);
+
             go.SetActive(false);
 
             GameObject saved = SaveUiPrefab(go, SelectItemPath);
@@ -1244,7 +1246,7 @@ namespace FTProject.EditorTools
                 report.Error("保存失败：" + SelectItemPath);
                 return null;
             }
-            report.Ok("SelectLevelItem.prefab（关卡卡片：LoopListViewItem2 + Body(Image/Button/CanvasGroup/Label)）");
+            report.Ok("SelectLevelItem.prefab（关卡卡片：地图预览 + 关卡信息）");
             return saved;
         }
 

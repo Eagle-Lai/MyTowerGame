@@ -126,11 +126,21 @@ namespace FTProject
 
         private void OnEnable()
         {
+            EventDispatcher.AddEventListener<int>(EventName.LanguageChangedEvent, OnLanguageChanged);
             Build();
+        }
+
+        private bool _languageRefreshPending;
+        private void OnLanguageChanged(int language) { _languageRefreshPending = true; }
+        private void OnDisable()
+        {
+            EventDispatcher.RemoveEventListener<int>(EventName.LanguageChangedEvent, OnLanguageChanged);
+            _languageRefreshPending = false;
         }
 
         private void LateUpdate()
         {
+            if (_languageRefreshPending) { _languageRefreshPending = false; Build(); }
             if (_list == null || _levels == null)
             {
                 return;
@@ -607,9 +617,14 @@ namespace FTProject
             item.UserIntData1 = levelId;
             item.UserIntData2 = unlocked ? 1 : 0;
 
-            TMP_Text label = item.GetComponentInChildren<TMP_Text>(true);
+            SelectLevelItemView card = item.GetComponent<SelectLevelItemView>();
+            if (card != null) card.Bind(levelId);
+            Transform labelNode = item.transform.Find("Body/Label");
+            TMP_Text label = card != null ? card.Label
+                : labelNode != null ? labelNode.GetComponent<TMP_Text>() : null;
             if (label != null)
             {
+                LanguageManager.ApplyFont(label);
                 // 【为什么要着色】效果图里实心星是金色、空心星与难度是暗蓝灰，
                 //   全靠富文本在**一段文本内**分色，否则得拆成三个 TMP 节点。
                 // 【字号为什么逐行给】卡片只有三行文案，名称/星级要压住难度，
