@@ -136,7 +136,11 @@ def composition(recipe,L,w,n):
     air_first=min((u['wave'] for u in recipe['unlockSchedule'] if u['role']=='air'),default=None)
     share=float(recipe['roles']['air'].get('share',.13))
     air=0 if (not air_pool or air_first is None or w<air_first) else max(1,math.floor(n*share+.5))
-    if w==final_wave:air=min(air,max(1,math.floor(n*.2)))
+    # Keep the air share formula for the final wave as well.  The previous
+    # special cap (20% of the final wave) could make W25's flying count drop
+    # below W24 even though the total wave count grows.  The compact-system
+    # contract requires a strict W06..W25 increase; the normal share already
+    # leaves ground units in W25, so no cap is needed here.
     pool=air_pool
     for i in range(air): slots.append((pool[(w+i)%len(pool)],'air'))
     if w==final_wave:
