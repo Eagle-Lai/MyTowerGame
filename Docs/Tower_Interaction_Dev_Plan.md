@@ -20,25 +20,25 @@
 
 一行 = **某个塔型的某个等级**。已具备升级/出售所需的全部字段：
 
-| 字段 | 含义 | 现有数据（3 行） |
-|---|---|---|
-| `id` | 唯一 id | 1 / 2 / 3 |
-| `type` | 塔型（1 普通单体 / 2 火力 AOE / 3 减速光环；2026-10-14 三塔型收敛） | 全部 = 1 |
-| `name` | 显示名 | 全为 `NormalTower` |
-| `resName` | AB 资源逻辑名 | 全为 `Tower_Normal` |
-| `level` | 等级 | 1 / 2 / 3 |
-| `radius` | 攻击半径（格） | 3 / 4 / 6 |
-| `power` | 伤害 | 10 / 12 / 15 |
-| `CD` | 攻击间隔（ms） | 300 / 200 / 100 |
-| `prices` | **本等级价格**（L1 建造价，L2/L3 升级价） | 20 / 30 / 50 |
-| `bulletId` | 子弹 id | 全为 1 |
-| `targetMode` | 索敌策略 0/1/2 | 0 |
-| `searchIntervalMs` | 索敌节流 | 100 |
-| `rotateSpeed` | 炮管转速 | 360 |
-| `upgradeTo` | **下一等级 id，0 = 满级** | 2 / 3 / **0** |
-| `sellPrice` | **出售返还基数** | 14 / 35 / 70 |
-| `effectType` / `effectValue` | 效果类型/数值（AOE/减速用） | 0 / 0 |
-| `desc` | 描述 | 空 |
+| 字段 | 含义 |
+|---|---|
+| `id` | 唯一 id |
+| `type` | 塔型（1 普通单体 / 2 火力 AOE / 3 减速光环；2026-10-14 三塔型收敛） |
+| `name` | 显示名 |
+| `resName` | AB 资源逻辑名 |
+| `level` | 等级 |
+| `radius` | 攻击半径（格） |
+| `power` | 伤害 |
+| `CD` | 攻击间隔（ms） |
+| `prices` | **本等级价格**（L1 建造价，L2/L3 升级价） |
+| `bulletId` | 子弹 id |
+| `targetMode` | 索敌策略 0/1/2 |
+| `searchIntervalMs` | 索敌节流 |
+| `rotateSpeed` | 炮管转速 |
+| `upgradeTo` | **下一等级 id，0 = 满级** |
+| `sellPrice` | **出售返还基数** |
+| `effectType` / `effectValue` | 效果类型/数值（AOE/减速用） |
+| `desc` | 描述 |
 
 **配置访问层（`Assets/Scripts/Data/TowerConfig.cs` + `Configs.cs`）**
 - `TowerConfig` 是 `TowerInfo` 的只读包装，已暴露 `Prices` / `SellPrice` / `UpgradeTo` / `IsMaxLevel` / `EffectType` / `EffectValue` 等。
@@ -46,8 +46,6 @@
 - `Configs.GetTower(id)` — 按 id 取（升级链用得上）。
 - `RadiusWorld = radius × Global.CellSize` — 射程已有"格→世界单位"换算，**射程圈可直接复用**。
 
-> ⚠️ **关键缺口**：表里 3 行**全是 `type=1`**，`TowerInfo.xlsx` 里**没有 `type=2/3` 的行**。
-> 而工作区已有 `Tower_Power` / `Tower_Retard` 两个 prefab 与美术（未提交），**属"资源先到、数据未补"的半成品状态**。
 
 ### 1.2 已有塔基类与建造链路
 

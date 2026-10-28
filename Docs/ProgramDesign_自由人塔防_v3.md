@@ -1,8 +1,8 @@
 # 《自由人塔防》程序案（v3.0）
 
-> **2026-10-17 实施版本说明**：本文保留为 v3.0 历史架构与阶段计划。20 关 × 20 波、八档难度、五星评价、续玩校验和配置工作台已按 [`LevelBalance_Redesign_Executable_Prompt.md`](LevelBalance_Redesign_Executable_Prompt.md) 实施。当前数值唯一权威是 `Luban/BalanceDesign/balance_design.json`，数据管线与验证证据见 [`LevelBalance_Data_Design_And_Evidence.md`](LevelBalance_Data_Design_And_Evidence.md)，运行时与存档见 [`LevelRating_Runtime_And_Save.md`](LevelRating_Runtime_And_Save.md)。下文引用旧策划案为“唯一来源”的表述仅描述当时版本，不再覆盖新管线、20 波和五星规则。
+> 本文保留技术架构与开发流程。运行时及存档契约见 [`LevelRating_Runtime_And_Save.md`](LevelRating_Runtime_And_Save.md)；配置维护遵守当前 `AGENTS.md`。
 
-> 配套文档：`Docs/GameDesign_自由人塔防_v3.md`（策划案，数值与规则的唯一来源）
+> 配套文档：`Docs/GameDesign_自由人塔防_v3.md`（玩法与交互设计）
 > 工程：本工程　Unity 2022.3.62f3c1　|　目标平台：Android（minSdk 22 / IL2CPP / arm64-v8a + armeabi-v7a）
 > 基线：2026-10-08 工程实测（89 运行时脚本 / 21 编辑器工具 / 23 Luban 生成文件，namespace 分别为 `FTProject` / `FTProject.EditorTools` / `cfg`）
 > 读者：按本文档分步执行的 AI 或开发。每阶段含**执行步骤 + 验收标准**，严格按 P1→P5 顺序执行，P6 依赖外部资源不阻塞。
@@ -123,20 +123,20 @@ UICanvas                 UIManager 三层
 
 ### 4.2 九张表
 
-| 表 | json | 行数 | 关键字段 |
-|---|---|---|---|
-| 塔 | tbtowerinfo | 15 | id/type/name/resName/level/radius/power/CD/prices/bulletId/targetMode/searchIntervalMs/rotateSpeed/upgradeTo/sellPrice/effectType/effectValue/canAttackAir |
-| 子弹 | tbbulletdata | 4 | id/speed/hitRadius/lifeTimeMs/aoeRadius/effectType/effectValue/scale（pierce 列已随穿透塔删除） |
-| 敌人 | tbenemydata | 132 | id/speed/hp/name/type/resName/armor/reward/damageToPlayer/scale/bodyRadius/isFlying |
-| 波次编组 | tbenemylist | 40 | id/EnemyIndexs[]/interval/enemyInterval |
-| 回合 | tbrounddata | 40 | id/EnemyIndexs[]/interval/rewardGold |
-| 关卡 | tbsceneinfo | 8 | id/RoundList[]/mapId/initialGold/initialHp/waveIntervalMs/difficulty（`CameraRotration`/`EenemyPosition` 为历史拼写，**保留不改**，生成代码沿用） |
-| 棋盘 | tblevelmap | 8 | 格子布局（空地/障碍/S/E） |
-| 全局 | tbglobal | 1 | cellSize/池大小/maxEnemyAlive=200/sellRefundRate/autoNextRoundDelayMs=5000/deathRecycleDelayMs=600 等 |
+| 表 | json | 关键字段 |
+|---|---|---|
+| 塔 | tbtowerinfo | id/type/name/resName/level/radius/power/CD/prices/bulletId/targetMode/searchIntervalMs/rotateSpeed/upgradeTo/sellPrice/effectType/effectValue/canAttackAir |
+| 子弹 | tbbulletdata | id/speed/hitRadius/lifeTimeMs/aoeRadius/effectType/effectValue/scale（pierce 列已随穿透塔删除） |
+| 敌人 | tbenemydata | id/speed/hp/name/type/resName/armor/reward/damageToPlayer/scale/bodyRadius/isFlying |
+| 波次编组 | tbenemylist | id/EnemyIndexs[]/interval/enemyInterval |
+| 回合 | tbrounddata | id/EnemyIndexs[]/interval/rewardGold |
+| 关卡 | tbsceneinfo | id/RoundList[]/mapId/initialGold/initialHp/waveIntervalMs/difficulty（`CameraRotration`/`EenemyPosition` 为历史拼写，**保留不改**，生成代码沿用） |
+| 棋盘 | tblevelmap | 格子布局（空地/障碍/S/E） |
+| 全局 | tbglobal | cellSize/池大小/maxEnemyAlive=200/sellRefundRate/autoNextRoundDelayMs=5000/deathRecycleDelayMs=600 等 |
 
 ### 4.3 改表落地 SOP（AI 执行顺序）
 
-1. 用 Python（openpyxl，managed python 3.13.12）**直接改 xlsx 值**，不改列结构、不改 id 主键；
+1. 按当前 `AGENTS.md` 手工维护受保护 xlsx，不使用批量写表脚本；
 2. 检查 `Luban/Config/Datas/` 无 `~$*.xlsx` 锁文件（有则先删）；
 3. 执行 `Luban/gen_code_json.bat`；
 4. 校验：`Assets/ConfigJson/` 9 个 json 刷新时间与行数符合预期；`Assets/Gen/` 重新生成；
@@ -186,31 +186,10 @@ UICanvas                 UIManager 三层
 - [ ] 全局搜索 `UIEventListenerManager|EventManager|PopMain|TestTileMap|WolfMounfed` 零残留
 - [ ] 关卡 1 完整打完一遍无回归
 
-### P2 数值落地（策划案 §3/§4 新数值进表）
-
-**目标**：策划案重新设计的塔/敌人/波次数值全部进 Luban 源表并导出，游戏实际运行新数值。
-
-**前置条件**：P1 完成；先备份 `Luban/Config/Datas/` 到 `backup_YYYYMMDD/`；确认 Excel 全部关闭、无 `~$*.xlsx` 锁文件。
-
-**操作步骤（命令级）**
-1. 用 managed python（`C:\Users\lzy\.workbuddy\binaries\python\versions\3.13.12\python.exe`，venv 内装 openpyxl）写改表脚本 `change_tower.py`：按策划案 §3.2 表逐行改 `TowerInfo.xlsx` 15 行的 power/CD/prices/sellPrice/radius/effectValue/bulletId 字段 + `BulletData.xlsx` id=2 的 aoeRadius→1.5；**只改值，不动列结构与 id**；
-2. 写 `change_enemy.py`：按策划案 §4.2「原型×梯度」规则回填 `EnemyData.xlsx` 132 行——先建 resName→原型归类映射（16 族系→5 原型），再按梯度 T（=所属关卡难度）套公式 hp=base×k^(T-1)、reward=基础+T；**先输出 diff 预览（行数/旧值/新值）人工确认后再写回**；
-3. 写 `change_wave.py`：按策划案 §2.2 血量预算 `HP(w)=1400×1.10^(w-1)` 与 §2.3 编组模板重排 `EnemyList.xlsx` 40 波（EnemyIndexs/interval/enemyInterval，enemyInterval 由 560ms 逐波递减 ~8ms）与 `RoundData.xlsx` 40 回合（rewardGold=30+4×(n−1)）；约束：每关第 5 波重甲/Boss 档占比 ≥40%，第 3 关起每波 ≥1 只 isFlying=1；
-4. 走 §4.3 SOP：删锁文件 → `Luban/gen_code_json.bat` → 校验 ConfigJson/Gen 刷新 → 【Unity】`Tools▸塔防▸0. 自检`。
-
-**改动文件与脚本要点**：仅 4 张 xlsx + 导出产物（`Assets/ConfigJson/`、`Assets/Gen/`）；不改任何 .cs。 enemies 映射脚本归类表是唯一人工决策点，需按族系语义判断（如 Pigs/Giants→重甲，Bats/Birds→飞行，Rats/Bunnies→杂兵）。
-
-**验收检查点**
-- [ ] ConfigJson 行数不变：15/5/132/40/40/8/8/16/1
-- [ ] 抽查：Normal L1 = power 12/CD 400/prices 25/sellPrice 18；Retard L1 bulletId=4；子弹 id=2 aoeRadius=1.5
-- [ ] 第 1 波总血量 ∈ [1300,1500]；第 40 波含 Boss 档且重甲+Boss ≥40%
-- [ ] 关卡 1 实测：开局 100 金建 4 座 Normal L1 无漏怪过第 1 波（策划案 §5 平衡约束 1）
-
 ### P2b 倍速功能（新增代码，唯一的功能开发项）
 
 **目标**：HUD 增加 ×1/×2/×3 倍速按钮（策划案 §7.3，效果图 02 中标注的新增元素）。实现方式为**单一速度参数 `GameClock.Speed` 驱动全部模拟系统**，`Time.timeScale` 不参与倍速（仅作暂停开关 0/1）。
 
-**前置条件**：P2 完成（避免数值与代码改动互相干扰排查）。
 
 **操作步骤（命令级）**
 1. `Assets/Scripts/Core/Event/EventName.cs` 追加常量 `GameSpeedChangeRequestEvent`、`GameSpeedChangedEvent`；
@@ -233,7 +212,7 @@ UICanvas                 UIManager 三层
 - [ ] ×3 下 PerfProbe p95 ≤16.6ms（不达标按 §7 风险表降档处理：`GameClock.Speed` 为 float，可直接降 ×2.5）
 - [ ] 静态校验（check_code/events/members）通过，Unity 编译 0 错误
 
-### P3 无声版本维护（2026-10-23）
+### P3 无声版本维护（2026-10-23 历史记录）
 
 项目声音系统、声音资源、源表登记、设置控件及声音生成工具均已移除。
 维护时使用现有 LubanExporter 导出配置、UIPrefabBuilder 重建设置、YooAsset 向导重建收集设置；这些入口不得重新创建声音内容。
@@ -290,7 +269,7 @@ Unity 通用音频模块和共享插件 API 按编译依赖保留，业务层不
 
 **操作步骤（命令级）**
 1. ~~Pierce/Laser 塔皮~~【2026-10-14 已随三塔型收敛移除，此条作废】；
-2. 8 关背景：替换 `Assets/_UIAssets/Backgrounds/`，按 mapId 挂接（BoardView/BackgroundParallax 配置点）；
+2. 各关背景：替换 `Assets/_UIAssets/Backgrounds/`，按 mapId 挂接（BoardView/BackgroundParallax 配置点）；
 3. 打击粒子：命中/死亡/AOE 爆炸 3 组 prefab 挂到 Bullet/Enemy 表现层已抛出的事件点；
 4. 怪物帧动画：接入 `MonsterAnimEventReceiver` 既有挂点；
 5. 每接入一批跑 `Tools▸塔防▸0. 自检` + 关卡 1 冒烟。
@@ -299,7 +278,7 @@ Unity 通用音频模块和共享插件 API 按编译依赖保留，业务层不
 
 **验收检查点**
 - [ ] `Art/Generated/` 9 张占位图全部退役（全局无引用）
-- [ ] 5 塔型视觉可区分；8 关背景不重复
+- [ ] 5 塔型视觉可区分；各关背景不重复
 - [ ] 风格统一走查通过；性能不回退（复测 P5 性能项）
 
 ---
@@ -308,8 +287,17 @@ Unity 通用音频模块和共享插件 API 按编译依赖保留，业务层不
 
 | 风险 | 等级 | 应对 |
 |---|---|---|
-| P2 数值重排波及 132 行敌人 + 80 行波次/回合 | 中 | 映射脚本先输出 diff 预览再写表；保留改前 xlsx 备份（`Luban/Config/Datas/backup_YYYYMMDD/`） |
 | `CameraRotration`/`EenemyPosition` 拼写修正诱惑 | 低 | **明确不修**：改名需 Gen 代码+表+引用全链路同步，收益为零 |
 | 倍速 ×3 下帧率跌破目标 | 中 | PerfProbe 实测；不达标则 ×3 档降为 ×2.5（`GameClock.Speed` 为 float，直接改档即可，无需改结构）或对 maxEnemyAlive 分档 |
 | 无发布 keystore 管理经验 | 低 | P5 步骤 2 由人执行，AI 只出命令模板 |
 | 美术外部资源延期 | 低 | 占位图机制保证 P5 不依赖 P6 |
+
+## 8. 原创声音接入（2026-10-27 当前补充）
+
+本轮基于现有 93 个原创 WAV 建立新声音服务，替代 P3 的历史无声约束；不恢复旧声音表或生成器。`AudioManager` 接在 Launcher 管理器链，常驻 `AudioRuntime` 等待存档、资源及正式启动就绪后发声；统一监听器、27 个受控声源、Mixer Music/SFX 分组。语义由 `SoundCue` 表达，策略集中于 catalog，地址经 AudioResourceMap→ResTable→ResLoader。
+
+音乐依真实 GameFlow 状态切换 menu/prepare/battle/pressure；暂停、倍速、后台与局代次独立处理。普通/爆破攻击接在 `BaseTower.Fire` 即时命中链，AOE 外层一次爆炸，冰霜只在光环实际影响目标时发声；建造、升级、出售成功后通知，恢复快照和程序 UI 同步不补播历史声音。胜负按每局唯一结算事件去重，评级等胜利短曲结束后播放，关闭结算或离关取消。
+
+当前 Tactical Forge 设置页保留语言、重置/确认、关闭，并增加总音量、音乐、音效、静音。偏好复用 `GameSettings.audio` 与 SQLite `settings.audio.*`，JSON 2 / schema 4 不变，旧音量字段继续忽略；本地化仅按本轮授权新增四个词条并标准导出。设置 prefab、两条 UI 构建链、收集器及裁剪配置同步维护。
+
+已完成本工程 MCP 编译、7 个隔离存档测试及三语言设置预览。游戏播放、人工听感、循环接缝与 Android Player 验收仍由用户执行。完整 API、映射、参数、加载释放与验收清单见[声音接入实施记录](AudioIntegration_Implementation_2026-10-27.md)。

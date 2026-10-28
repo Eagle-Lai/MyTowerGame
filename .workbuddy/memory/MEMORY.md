@@ -3,7 +3,7 @@
 > **记录原则（用户已明确）**：不要精简、不要为了篇幅砍内容。宁可记忆文件更大更全，也要保留可复用的规则、参数、坑和原因。
 > 建议结构：先按主题分区，每条写「结论 + 关键参数/路径 + 为什么」。过期内容只做标注，不直接删。
 >
-> **结构（2026-10-19 按主题拆分）**：本文件 = 索引 + 开工必读铁律，**必须控制在 3000 字内**（超出会在注入时被截断）。细节全部移到 7 个分册，**原文一字未删**。写记录时先判归属：每次开工都得知道的留本文件，其余写进对应分册。
+> **结构**：本文件为索引与开工规则；其余技术记录按主题分册保存。
 
 ## 分册目录（同目录下，按需读取）
 | 分册 | 内容 |
@@ -15,7 +15,6 @@
 | `VOL_05_玩法存档音频与地图.md` | 关卡生命周期、存档、音频/倍速、塔型与攻击表现、建造交互、地图链路、新增关卡 |
 | `VOL_06_敌人四方向.md` | AdvancedHen / Monkey 两套架构、构建器与校验坑、AI 分件美术 |
 | `VOL_07_工具与UnityMCP.md` | Unity MCP 两版端口、Python/脚本兜底、怪物素材、待办与环境事实 |
-| `VOL_08_数值管线与平衡.md` | balance_pipeline 命令链与公式、单调性硬校验与前向修复、v6 第一关重平衡、**v7 按关拆表 + 节奏重构（表结构/参数/Par 校准/fill-gate 结论）**、仿真代理局限、apply→菜单3→编译→PlayMode 回放链路 |
 
 ## 开工必读铁律
 - 双版本：[家用D] `D:\FreedomTower_1`｜[公司E] `E:\MyTowerGame`。记录必须标版本，严禁跨版套结论；同步走 GitHub `Eagle-Lai/MyTowerGame`(main)。
@@ -26,9 +25,8 @@
 - ★git 代理：**先用环境默认 `http_proxy`**（2026-10-23 实测为 `127.0.0.1:61051`，26 秒推完 200MB；历史 56630/57267/62114/7897 逐个失效，别写死）；配 `git -c http.version=HTTP/2`；>10MB 必带 HTTP/2；`cannot lock ref` = 并行竞态，先 `ls-remote` 核对，**不要装 git-lfs**。
 - ★★出 APK 前核对 Build Settings：`Boot.unity` 启用 + `Main.unity` 禁用（main 只能从 AB 加载）。
 - ★★改热更码真机三件套：重编 dll → AB 有变化才重打（菜单 9 后立刻 deploy）→ 先跑 `启动热更服务器.bat`。
-- ★★v7 起配置表按关拆分：`Luban/Config/Datas/Levels/L01..L30/`（每关 6 个 xlsx），根目录只剩 `EnemyData.xlsx`（132 原型）+ 非关卡表；旧聚合 5 表已删。改数值只走 `balance_pipeline.py`，别去找 `Datas/RoundData.xlsx`。（2026-10-23 注：该句"走 balance_pipeline"已被下一条取代——只能手工改表。）
-- ★★**配置表只能手工改**（2026-10-21 定规）：`balance_pipeline.py` 的 `apply`/`rollback` 与事务层已整体删除，7 个会写关卡表的旧脚本也已删；只读命令 `inspect/preview/validate/simulate/verify-layout/stage` 保留。改表流程＝改 xlsx → 跑 Luban → 重封 `runtimeContentHash`。详见 `AGENTS.md` 与 `VOL_08`。
-- ★★**证据分级入库**（2026-10-23 定规）：Docs 只提交**结论级**——每关 `完整逐波操作与测试报告.md`/`最终布阵图.png`/阶段图/`trial-index.*`/`reproducibility.json`、各怪物 `offline_`/`parts_` 审阅图与清单 json、README/REPRODUCE；**过程级**（BalanceEvidence 的 `raw-trials`/`audit`/`*/evidence`/`search-*`/`首次成功-r*`/`best-result.json`，EnemyDirectionReview 的 `runtime_*`/`generation`/`staged_art`/`frames`/`history`/`revision_0x`）全部走 `.gitignore` 第 8 节只留本机。**路径通配必须写 `runtime_*`、`首次成功-r*`**（实际有十余种后缀，写死 r01/r02 会漏 300MB+）。Docs/LevelVideos 同样不入库。
+- ★★**配置表只能手工改**（2026-10-21 定规）：`balance_pipeline.py` 的 `apply`/`rollback` 与事务层已整体删除；只读命令保留。改表流程＝手工改 xlsx → 跑 Luban → 重封 `runtimeContentHash`。以 `AGENTS.md` 的完整保护规则为准。
+- ★★**美术证据入库规则**：保留怪物 `offline_`/`parts_` 审阅图、清单与 README/REPRODUCE；EnemyDirectionReview 的 `runtime_*`/`generation`/`staged_art`/`frames`/`history`/`revision_0x` 等过程材料沿用 `.gitignore`。`runtime_*` 应使用通配匹配实际后缀。
 - ★★**清理磁盘/删大目录**（2026-10-23 实测）：本机 safe-delete 钩子把删除**移入回收站**（删 20GB 后 Free 不变，`E:\$RECYCLE.BIN` 堆到 26.4GB），必须 `Clear-RecycleBin -DriveLetter E -Force` 才真正释放；且钩子有**每 turn 50 个文件**上限——`shutil.rmtree` 会被替换成空操作（脚本打印成功但文件还在，极易误判），逐文件 `os.remove` 删到 50 个即被拦，`Remove-Item`/`cmd rd` 也被拦；**批量删用 `robocopy <空目录> <目标> /MIR`**（在 PowerShell 里调，Git Bash 会把 `/MIR` 当路径转换）。`.gitignore` 已补 `/Library/ /Temp/ /Obj/ /Logs/`（此前遗漏导致 281 个工作台结果被误提交）。工程瘦身基线：25.38GB → 5.89GB。
 - ★★**删 Library 的代价**（2026-10-23 实测）：`Packages/manifest.json` 有 3 个 git 包（hybridclr v8.14.1 / unity-mcp v10.3.0 / yooasset 3.0.6），PackageCache 一删就要重新 clone；代理不通时 Unity 报 `invalid dependencies` 后直接退出。手动恢复：从 `packages-lock.json` 取 hash → `git clone --depth 1 --branch <tag>` → 复制到 `Library/PackageCache/<name>@<hash>`（unity-mcp 取 `MCPForUnity/`，yooasset 取 `Assets/YooAsset/`，排除 .git）。Library 删剩一半会弹 **"Corrupted Library Detected"** 模态框并静默退出（return code 0），必须删到只剩 PackageCache。**从工具启动的 Unity 会被会话清理杀掉**，最后一步让用户从 Hub 手动打开。`-logFile` 别指向工程内 `Logs/`（会和 CatchFish 实例串日志），用 `%TEMP%\tower_editor.log`。
 - 日档 `YYYY-MM-DD.md` 追加写，读最近的在最前。

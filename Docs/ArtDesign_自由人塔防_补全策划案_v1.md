@@ -545,7 +545,7 @@ LevelDetailView                [RectTransform, 铺满, +LevelDetailView.cs]
    ├─ Divider1                 [Image, 880×1, y_svg=302, α=0.3]
    ├─ InfoGrid                 [RectTransform, 880×174, y_svg 322..496, +GridLayoutGroup]
    │                          cellSize=(430,50), spacing=(20,12), 2列×3行
-   │                          「回合数 5」「波次 5」「初始金币 380」「初始生命 20」
+   │                          「回合数」「波次」「初始金币」「初始生命」均从当前关卡配置读取
    │                          「难度 ★☆☆」「最佳用时 --:--」
    ├─ Divider2                 [Image, 880×1, y_svg=522, α=0.3]
    ├─ EnemyPreview             [RectTransform, 880×110, y_svg 540..650]

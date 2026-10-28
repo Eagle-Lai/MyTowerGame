@@ -1,6 +1,6 @@
 # 单机 2D 塔防《自由人塔防》设计与实施文档
 
-> **历史档案（2026-10-17 标记）**：本文为 2026-09-26 的 v2.1 记录，保留用于理解演进过程。当前 20 关 × 20 波、八档难度、塔与经济、怪物变体、五星评价及配置工作台，以 [`LevelBalance_Redesign_Executable_Prompt.md`](LevelBalance_Redesign_Executable_Prompt.md)、[`LevelBalance_Data_Design_And_Evidence.md`](LevelBalance_Data_Design_And_Evidence.md) 和实际生成配置为准；本文的关卡数、回合数、评分和旧数值不再用于修改当前数据。
+> **历史技术档案**：本文保留架构、接口与实施说明；实际行为以当前代码与配置表为准。配置维护遵守当前 `AGENTS.md`。
 
 > 目标定位：实现一款**单机 2D** 版、核心机制对标《坚守阵地》（Fieldrunners）的塔防游戏。
 > 文档版本：**v2.1**（2D 重构版 · SpriteRenderer 路线修正）　|　编制日期：2026-09-26
@@ -110,15 +110,15 @@
 
 #### C. 数据驱动管线（已设计完成）
 
-`Luban/Config/Datas/*.xlsx` 已有 5 张表，**数据基本够用，只是代码没读**：
+`Luban/Config/Datas/*.xlsx` 提供配置字段，读取入口需要统一接入：
 
-| 表 | 记录数 | 关键字段 |
-|---|---|---|
-| `TBEnemyData` | 9+ 种 | id, **speed**, **hp**, name, type(1/2/3), interval |
-| `TBEnemyList` | 40 波 | id, EnemyIndexs(编组), interval(本波开始 ms), enemyInterval(波内单敌间隔 ms), desc |
-| `TBRoundData` | 21 回合 | id, EnemyIndexs(引用 EnemyList id), interval |
-| `TBSceneInfo` | 8 关 | id, RoundList, CameraPosition, CameraRotration, MapName, EenemyPosition, MapPosition, PointScale |
-| `TBTowerInfo` | 3 级 | id, type, name, path, **level**, **radius**, **power**, **CD**, **prices** |
+| 表 | 关键字段 |
+|---|---|
+| `TBEnemyData` | id, **speed**, **hp**, name, type, interval |
+| `TBEnemyList` | id, EnemyIndexs(编组), interval(本波开始 ms), enemyInterval(波内单敌间隔 ms), desc |
+| `TBRoundData` | id, EnemyIndexs(引用 EnemyList id), interval |
+| `TBSceneInfo` | id, RoundList, CameraPosition, CameraRotration, MapName, EenemyPosition, MapPosition, PointScale |
+| `TBTowerInfo` | id, type, name, path, **level**, **radius**, **power**, **CD**, **prices** |
 
 ### 1.3 阻塞问题（不改就跑不起来）
 
@@ -169,7 +169,7 @@
 | G3 | 波次推进 | 靠手动按钮 / `R` 键调试触发 | 无波次状态机、无自动推进、无胜负 |
 | G4 | 塔升级 | `TowerInfoView.OnClickUpgradBtn()` 空函数 | `TBTowerInfo` 从未被读取（M2 再做） |
 | G5 | 塔出售 | `ShellTower()` 有实现 | 缺金币返还、缺打开面板的入口（M2 再做） |
-| G6 | 数值配置化 | 塔/怪数值硬编码于 `GlobalConst`、`TowerCofig` | 与配置表脱节（表里 hp 100+ vs 常量 6） |
+| G6 | 配置加载 | 旧实现存在硬编码 | 需要统一读取配置表 |
 | G7 | 索敌系统 | `Targetter.GetNearsetTarget()` 返回 `_enemyList[0]` | 无空检查会崩；非"路径进度最靠前"策略；`NormalTower` 根本没用它 |
 | G8 | 敌人类型 | `EnemyType` 只有 Normal/Quick | 表里 type=3 无法生成；池化字典键硬编码 Bug |
 | G9 | 伤害结算 | 子弹固定 `Hurt(1)` | 与塔 `power` 无关 |
@@ -548,8 +548,6 @@ TBGlobal（全局参数表，单行）
 | **effectType / effectValue** | int/float | 特殊效果（如减速比例、持续时长） | ★新增（M2） |
 | desc | string | 备注 | ★新增 |
 
-> **当前数据状态**：`TowerInfo.xlsx` 已有 `NormalTower` 的 3 个等级（level 1/2/3，radius 3/4/6，power 10/12/15，CD 300/200/100，prices 20/30/50）。
-> **M0 只用 id=1（level=1）**，但升级链数据已就绪，M2 接 `upgradeTo` 即可。
 
 #### 3.3.4 `TBBullet`（子弹）★全新表
 
@@ -569,7 +567,6 @@ TBGlobal（全局参数表，单行）
 | effectValue | float | 效果参数 |
 | resScale | float | 显示缩放 |
 
-**M0 最少配置 1 行**（普通子弹：speed 900、hitRadius 24、lifeTimeMs 3000）。
 
 #### 3.3.5 `TBWave`（波次编组）+ `TBRound`（回合）
 
@@ -641,12 +638,6 @@ TBGlobal（全局参数表，单行）
 | `X` | 空洞（不可通行且不可建造） | ✗ | ✗ |
 | `P` | 装饰地砖（可通行、不可建造） | ✗ | ✓ |
 
-**配置示例**（`TBLevelMap` id=1，12×8 棋盘，`|` 分隔每行）
-
-```
-id | levelId | cols | rows | cells                                                                          | desc
-1  | 1       | 12   | 8    | #..S....#..|>.|..#....E.|..#..........|..#.....|...|.....|.. | #...  | 第一关测试棋盘
-```
 
 > **设计建议**：`cells` 使用 `(list#sep=|),string`。地图字符集不含 `|`，因此分隔是安全的。
 > **备选方案（棋盘很大时）**：改用稀疏表 `TBLevelCell(id, levelId, row, col, cellType)`，只配非 `.` 的格子，可显著减小表体积。M0 用主方案即可。
@@ -661,8 +652,8 @@ id | levelId | cols | rows | cells                                              
 | defaultReward | int | 怪物未配 `reward` 时的默认击杀奖励 | 新增 |
 | defaultDamageToPlayer | int | 怪物未配 `damageToPlayer` 时的默认漏怪伤害 | 新增 |
 | defaultBodyRadius | float | 默认受击半径（格） | 新增 |
-| defaultBulletSpeed | float | 默认子弹速度（像素/秒） | `GlobalConst.BulletSpeed = 25` |
-| defaultBulletLifeMs | int | 默认子弹存活时间 | `GlobalConst.BulletResetTimeInterval = 3` |
+| defaultBulletSpeed | float | 默认子弹速度（像素/秒） | `GlobalConst.BulletSpeed` |
+| defaultBulletLifeMs | int | 默认子弹存活时间 | `GlobalConst.BulletResetTimeInterval` |
 | cellSize | float | 棋盘格子像素尺寸 | 新增 |
 | boardPadding | float | 棋盘边距 | 新增 |
 | enemyPoolSize | int | 怪物对象池初始容量 | 新增 |
@@ -2267,17 +2258,16 @@ public List<Point> GetAStarPath(Point start, Point target)
 | 多塔型 | 补齐 `TBTower.type` 的 5 类：单体 / AOE / 减速 / 穿透 / 激光；各自独立特效与音效 | ✅ 5 类全部落地；**减速塔于 M3 后改为范围光环**（见 §Z.9）；穿透/激光的外观暂复用普通塔（美术待补，换皮只改表 + ResTable） |
 | 塔升级与出售 | 接 `TBTower.upgradeTo` / `sellPrice`；`TowerInfoView` 接线；点击已建塔的入口 | ✅ 含"换实例"升级、原地两段式出售确认、DPS 展示 |
 | 子弹特性 | `TBBullet` 的 `pierce` / `aoeRadius` / `effectType`（减速、持续伤害） | ✅ 同时修掉了"穿透完全失效"与"AOE 每次命中都 GC"两个真实缺陷 |
-| 怪物扩展 | 接入更多 `TBEnemy` 行；护甲、飞行（`isFlying`）、Boss | ✅ 新增 3 Boss + 1 高护甲精英（type=5 从 0 行变为 3 行），并编入第 10/11/12 波 |
+| 怪物扩展 | 接入 `TBEnemy` 配置、护甲、飞行与 Boss | ✅ 对应运行时功能已接入 |
 | 飞行单位 | 单独 grid 或直线寻路；塔增加 `canAttackAir` | ✅ 取"直线寻路"方案；`isFlying` 原有 5 行数据终于被代码接上 |
 | 音效系统 | 新增 `AudioManager` + `TBAudio` 配置表 | ✅ 系统/表/调用点齐备；**工程内 0 个音频文件**，属"系统先行"（见 §Z.7 假设 D-F） |
 | 打击感 | 伤害数字、屏幕震动、命中闪白、死亡消散 | ✅ 四项全部落地，参数进 `Global.xlsx` |
-| 数值平衡 | 建立 DPS vs 血量曲线，跑模拟脚本验证难度 | ✅ `.workbuddy/tools/balance_sim.py`；据此修掉"激光塔被严格压制"与"升级边际性价比为负" |
 
 ### M3　关卡与元进度　✅ **已交付**（2026-10-02，见 §Z.8）
 
 | 项 | 内容 | 状态 |
 |---|---|---|
-| 多关卡 | `TBLevel` / `TBLevelMap` 扩充到 8 关；难度曲线 | ✅ 8 张棋盘（可建造格 142→70 递减）+ 40 波/40 回合；单回合有效血量 1.9k→94k 严格单调 |
+| 多关卡 | `TBLevel` / `TBLevelMap` 配置驱动 | ✅ 支持多地图与各关回合链 |
 | 关卡选择 | `SelectView` 强化：解锁状态、星级评价、难度标签 | ✅ 按钮按 `TBSceneInfo` **运行时生成**，加关卡 = 加配置行 |
 | 地图编辑工具 | 可视化棋盘编辑器：刷格子、标起终点、一键导出 cells 字符串 | ✅ `LevelMapEditorWindow`（含 BFS 连通性自检）+ `apply_levelmap_export.py` 回写 xlsx |
 | 存档系统 | 新建 `SaveManager`（与编辑器 API 完全解耦）；关卡解锁、星级、设置 | ✅ 零 UnityEditor 依赖；损坏/版本不符一律降级为新档 |
@@ -2335,20 +2325,20 @@ public List<Point> GetAStarPath(Point start, Point target)
 
 | 现有常量 | 位置 | 迁移目标 |
 |---|---|---|
-| `GlobalConst.PlayerHp = 10` | 玩家生命 | → **`TBLevel.initialHp`** |
-| `GlobalConst.GoldCoin = 100` | 初始金币 | → **`TBLevel.initialGold`** |
-| `GlobalConst.EnemyHp = 6` | 怪物血量 | → **`TBEnemy.hp`** |
-| `GlobalConst.EnemySpeed = 12` | 怪物速度 | → **`TBEnemy.speed`**（单位改像素/秒） |
-| `GlobalConst.FireInterval = 0.2` | 塔攻击间隔 | → **`TBTower.CD / 1000`** |
-| `GlobalConst.BulletSpeed = 25` | 子弹速度 | → **`TBBullet.speed`**（单位改像素/秒） |
-| `GlobalConst.EnemyScale = 1.2` | 怪物缩放 | → **`TBEnemy.scale`** |
-| `GlobalConst.RoundCount = 10` | 回合数 | → `TBLevel.roundIds.Count` |
-| `GlobalConst.EnemyGenerateInterval = 1.0` | 生成间隔 | → **`TBWave.spawnIntervalMs / 1000`** |
-| `GlobalConst.RoundEnemyNumber = 10` | 每波数量 | → `TBWave.enemyIds.Count` |
+| `GlobalConst.PlayerHp` | 玩家生命 | → **`TBLevel.initialHp`** |
+| `GlobalConst.GoldCoin` | 初始金币 | → **`TBLevel.initialGold`** |
+| `GlobalConst.EnemyHp` | 怪物血量 | → **`TBEnemy.hp`** |
+| `GlobalConst.EnemySpeed` | 怪物速度 | → **`TBEnemy.speed`**（单位改像素/秒） |
+| `GlobalConst.FireInterval` | 塔攻击间隔 | → **`TBTower.CD / 1000`** |
+| `GlobalConst.BulletSpeed` | 子弹速度 | → **`TBBullet.speed`**（单位改像素/秒） |
+| `GlobalConst.EnemyScale` | 怪物缩放 | → **`TBEnemy.scale`** |
+| `GlobalConst.RoundCount` | 回合数 | → `TBLevel.roundIds.Count` |
+| `GlobalConst.EnemyGenerateInterval` | 生成间隔 | → **`TBWave.spawnIntervalMs / 1000`** |
+| `GlobalConst.RoundEnemyNumber` | 每波数量 | → `TBWave.enemyIds.Count` |
 | `GlobalConst.BuildDistance` / `UnbuildYPosition` / `BuildYVector3` / `PointScale` / `PointVector3` | 3D 建造参数 | → **2D 下作废**；格子尺寸改用 `TBGlobal.cellSize` |
-| `TowerCofig.Radius = 6` | 塔射程 | → **`TBTower.radius`**（单位改格） |
-| `TowerCofig.RotateSpeed = 60` | 塔转向速度 | → **`TBTower.rotateSpeed`** |
-| `TowerCofig.BulletSpeed = 20` | 子弹速度 | → `TBBullet.speed` |
+| `TowerCofig.Radius` | 塔射程 | → **`TBTower.radius`**（单位改格） |
+| `TowerCofig.RotateSpeed` | 塔转向速度 | → **`TBTower.rotateSpeed`** |
+| `TowerCofig.BulletSpeed` | 子弹速度 | → `TBBullet.speed` |
 | `TowerCofig.cs` 整体 | — | 文件删除，改名 `TowerConfig` 前先在 M0 后段处理 |
 | `AssetData.AssetDictionary` | 资源路径字典 | → **`ResTable`**（bundle + asset） |
 
@@ -2628,7 +2618,7 @@ public static List<SpawnEntry> BuildTimeline(int roundId, TBRound tbRound, TBWav
 | 关卡流程 | 新增 `GameSceneLauncher` 驱动 `GameFlowManager` | 保留，但 `GameSceneLauncher` 改为**组合根**：集中持有全部场景引用并在 `Awake` 里校验后注入 | 引用散落在各组件上时，漏连只会以随机时刻的 `NullReference` 暴露 |
 | `Tower_Normal` 结构 | 未明确 | `Tower_Normal → barbette → Img_gun → BarrelPoint` | `BaseTower` 用 `transform.Find("barbette/Img_gun")` 取炮管、取 `BarrelPoint` 作为出膛点 |
 | 格子缩放 | 未明确 | `CellView` 按 **精灵原生尺寸**折算：`scale = cellSize*0.94 / sprite.bounds.size` | 格子贴图 128px、PPU=100 → 原生 1.28 单位；直接写 `0.94` 会让格子重叠 |
-| M0 回合数 | 单回合闭环 | 关卡 1 实际有 **10 个回合**，`GameFlowManager` 实现了完整的多回合链 | 成本几乎为零，且"打完 10 回合通关"是更好的验收场景 |
+| 回合推进 | 单回合闭环 | `GameFlowManager` 实现完整多回合链 | 按当前关卡配置推进与结算 |
 | AB 释放流程 | 切关整包释放 | `ReleaseBundle` 已实现，但 M0 只有单关卡，**未接入切关流程**（排 M1） | 无第二关卡可切 |
 | 怪物尺寸 | 未定 | 约定为**最终缩放 = prefab 根节点缩放 × `EnemyData.scale`**；M0 默认 `scale = 0.5`（怪物约 1.6 格宽），`scale = 1` 表示保持美术在 prefab 里的授权缩放 | 美术在怪物 prefab 根节点设了 `scale 0.5`；代码若直接覆盖会放大 2 倍，故改为**相乘** |
 | 配置表路径 | 单一 `EditorPath` | 仍是单一路径，但**位置从 `Assets/StreamingAssets/json/` 改为 `Assets/ConfigJson/`**（Luban 的 `--output_data_dir` 直接指向那里） | StreamingAssets 下的文件不会被导入成 `TextAsset`，编辑器读不到内容（详见 Z.2 第 16 条）。中途曾尝试"双路径 + 构建时同步副本"，但那是基于错误前提的过度设计，已回退 |
@@ -2726,12 +2716,12 @@ M0 交付时**无法在本机编译**（安全策略明确禁止调用 `csc`，`
 | 无目标不开火 | ✅ 已实现，且有「空放次数」自检计数器保证恒为 0 |
 | 怪物沿路径行进、被击杀获得资源 | ✅ 已实现（奖励走 `TBEnemyData.reward`） |
 | 漏怪扣玩家生命、生命归零失败 | ✅ 已实现（v1.0 是直接回收不扣血，玩家永不失败） |
-| 多回合推进、通关判定 | ✅ 已实现（关卡 1 共 10 回合） |
+| 多回合推进、通关判定 | ✅ 已实现，回合链由配置提供 |
 | 塔升级 / 出售 | ⚠️ 数据与 `TowerManager.Sell()` 已就绪，缺 UI 接线（M2） |
 | 多塔型（AOE / 减速 / 激光） | ⚠️ 配置字段已留（`effectType` / `effectValue` / `aoeRadius` / `pierce`），实现排 M2 |
-| **119 种怪物 + 递进波次** | ✅ 已实现。`Assets/_UIAssets/Monsters/**` 下 119 个怪物全部转成战斗预制体（去物理 / BaseEnemy / 自适应血条），
-  `EnemyData` 128 行（9 个梯度档 + 119 个具体怪）、`EnemyList` 15 个波次编组（6→20 只、2→20 种、间隔 0→35s）、
-  `RoundData` 12 个回合（波次数 2→14 递进）；怪物**按家族分包**（`enemy_<家族>`，只加载本关用到的家族） |
+| **怪物资源接入** | ✅ 怪物资源转为战斗预制体（去物理 / BaseEnemy / 自适应血条），
+  怪物按家族分包（`enemy_<家族>`），
+  只加载当前关卡使用的家族 |
 | 金币经济闭环 | ✅ 已实现（建塔扣费 / 击杀奖励 / 回合奖励 / 出售返还） |
 
 ## Z.5 M0 之后的第一优先级
@@ -2778,8 +2768,6 @@ M0 交付时**无法在本机编译**（安全策略明确禁止调用 `csc`，`
 | 7 | **`CellView` 选中色缺失** | `CellHighlight` 只有 None/Buildable/Blocked |
 | 8 | **升级会搅乱 HUD** | `TryUpgrade` 复用 `BuildTowerSuccess` → HudView 误以为"新建了一座塔"而退出放置态 |
 | 9 | **生成器会把手工按钮冲掉** | `UIPrefabBuilder.BuildInternal` 无条件 DeleteAsset；新增 `EnsureMissing` 只补缺失，向导改调它 |
-| 10 | **激光塔被严格压制** | 性价比 0.700 vs 穿透 2.500，没有任何理由建它。调 power 后 1.200 |
-| 11 | **所有塔的 L1→L2 升级都是坏选择** | 边际性价比 0.889/0.812/0.167/0.948/0.200，全部低于各自 L1。重排 power 后回到 0.59~1.60 |
 
 ### Z.7.3 本机环境的关键突破（对后续工作价值很高）
 
@@ -2804,7 +2792,6 @@ M0 交付时**无法在本机编译**（安全策略明确禁止调用 `csc`，`
 | 穿透/激光塔的美术 | 暂复用普通塔外观。换皮 = 改 `TowerInfo.xlsx` 的 `resName` 一格 + `ResTable` 两行 |
 | 无声版本 | 2026-10-23 已移除游戏声音系统及生成入口；此节其余内容为 M2 历史记录 |
 | 面板正式美术 | `TowerInfoView` 目前是程序生成的纯色占位 |
-| 后期难度曲线 | 顶演显示第 6~8 回合余量充裕（8~9 倍）；建造位用尽后回落。整体经济调优属 M3 |
 | 飞行单位的表现 | 目前是"贴地直线飞行"，没有高度/影子等表现层 |
 
 
@@ -2819,10 +2806,6 @@ M0 交付时**无法在本机编译**（安全策略明确禁止调用 `csc`，`
 
 | # | 决策 | 理由 |
 |---|---|---|
-| E-A | **重排全部 40 波**，而不是只补 13~40 | 实测两代波次数据强度互相穿插（波 10 = 53586，波 13 = 3281，波 21 = 8326）。根因是 M1 的 1~12 波为"**累积引用**的回合"设计（回合 r 重放 1..r 波），单看每一波就已经很大；新波次是"一波一回合"。两套口径混在一起，关卡怎么切都是非单调 |
-| E-B | 难度曲线改为**目标血量法**：先定几何递增的目标有效血量，再按目标"填"敌人 | 让曲线是**构造出来**的，而不是"填完再看运气"。出怪数也因此自然随强度变化（强怪少、弱怪多） |
-| E-C | **每关独立经济**，initialGold 随关卡增长（100→2400） | 每关从头攒钱且不跨关继承。金币若还是 100 出头，玩家在第 5 关之后连 4 座塔都买不起 —— 实测正是这一点让 3~8 关**数学上无解** |
-| E-D | 关卡 1 由 10 回合改为 **12 回合**（原 1~12 全部用上） | 回合 11/12 原本无任何关卡引用（孤儿），而 M2 给波次 11/12 加的 Boss 会因此永远打不到 |
 | E-E | 存档只用 `persistentDataPath` + `JsonUtility` | 设计文档硬约束：`SaveManager` 不得引用 UnityEditor。本项目历史上就踩过 `JsonDataManager` 顶层 `using UnityEditor` 导致打包必炸的坑 |
 | E-F | 快照粒度 = **回合边界** | 只有此刻状态自洽（场上无残留怪物、金币与塔已结算）。半途存盘要额外记录每只怪的位置/血量/波次进度，复杂度与收益不成比例 |
 | E-G | 暂停热键用 **P**，不用 ESC | ESC 已被 `TowerPlacement` 用作取消放置/取消选中，同帧抢同一个键会"按一下既取消选中又暂停" |
@@ -2834,9 +2817,7 @@ M0 交付时**无法在本机编译**（安全策略明确禁止调用 `csc`，`
 
 | # | 问题 | 症状与处置 |
 |---|---|---|
-| 1 | **3~8 关数学上无解** | balance_sim 报出余量 0.81→0.09。根因：敌人按几何曲线加难，初始金币却留在 100 出头。→ 金币随关卡增长 |
-| 2 | **M8 地图 S→E 不可达** | 我第一版把相邻障碍行的缺口列错开（一行留 4/7/10/13、下一行留 0/3/6/9…），上下就断了。地图生成脚本的 BFS 自检当场拦下，未写文件 |
-| 3 | **M8 可建造位被路径长度吃掉** | "起终点同排"把路径压到 15 格，半径内可覆盖路径的格子从 74 掉到 44 —— 塔数上限砍掉四成，余量 0.09。→ 改回全长路径，难度交给障碍密度与敌人强度 |
+| 2 | **地图 S→E 不可达** | 障碍布局造成断路；BFS 连通性检查应在写入前拒绝无效地图 |
 | 4 | **C# 字符串里的 \n 变成了真换行** | 我在生成代码时把 TS 模板串的 `\n` 直接写进了 C# 字符串字面量，编译报 CS1010「常量中有换行符」。MSBuild 当场指出行号，比肉眼找快得多 |
 | 5 | **GameFlowManager 出现两个 Update** | 新增暂停热键时没注意到已有 Update，CS0111。→ 合并进原有 Update |
 | 6 | **SelectView 结构被替换破坏** | 修上一个问题时替换块少了一个 `{`，导致后续方法全部"顶级语句"。编译错误直接指到行，修复后独立复核了按钮结构 |
@@ -2849,8 +2830,8 @@ M0 交付时**无法在本机编译**（安全策略明确禁止调用 `csc`，`
 - **配置表变更一律走脚本 + 自动备份**（`.workbuddy/tools/gen_m3_*.py`）：
   这一轮又踩到"列号写死"（把 `EnemyIndexs` 当成 `interval`，拿一串敌人 id 去转 float）。
   脚本一律按**列名**定位，不按列号。
-- **棋盘/波次这类数据必须有自检**：地图用 BFS 验连通性，难度用 balance_sim 验单调性。
-  这一轮两个真问题（M8 不可达、3~8 关无解）都是自检发现的，不是靠看。
+- **地图与配置需要有效性检查**：地图用 BFS 验连通性，表格检查引用完整性。
+  不可达地图应在写入前被拒绝。
 
 ### Z.8.4 M3 / M4 / M5 的交付边界（重要）
 
@@ -2959,7 +2940,6 @@ Tick() ① 制导：_dir = (_target.Position - transform.position).normalized
 ### Z.10.4 未改动的部分与理由
 
 - **`TowerInfo` 的强力塔行（id 4/5/6）未动**：`bulletId=2`、`effectType=3`、`aoeRadius` 由子弹表承载，本就正确；本轮只修"弹体如何到达爆炸点"这一环。
-- **爆炸半径 `aoeRadius=1.2` 未调**：属数值平衡，与本轮"攻击方式"修复无关，避免把两件事混在一次改动里。
 - **未给强力塔加独立射程圈表现**：现有 `RangeIndicatorView` 只在**放置预览**时显示塔射程；AOE 的"爆炸半径"是另一回事（子弹命中表现），本轮不引入新表现资产。
 
 

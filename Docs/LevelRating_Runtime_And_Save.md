@@ -18,18 +18,14 @@ SQLite schema 由 2 增量升至 3，关卡进度及快照新增受保护 rating
 
 编辑器测试入口：进入 Play 前设置 `UnityEditor.SessionState.SetString("FT.Balance.TestStorageContext", "唯一测试名称")`，让管理器初始化即使用 `persistentDataPath/BalanceTests/<context>/` 的独立 SQLite/JSON；退出后清除该 SessionState。已运行的测试可使用 `SaveManager.Instance.SetTestStorageContext(...)` 的 IDisposable 作用域切换并恢复。工作台候选通过 `Configs.LoadTestCandidate(directory)` 加载，要求独立测试存储与无活动关卡。固定步长 PlayMode 回放可用 `GameClock.BeginManualSimulation()`、`StepManualFrame(dt)` 和 `GameFlowManager.StepManualSimulation()`；这条路径仍使用真实波次、敌人、塔、寻路和唯一评分器，报告应明确其与普通实时帧实测的区别。半波回退的开波检查点发生在原帧 Combat 阶段之后，恢复验证通过真实 Next 请求完成原帧剩余 Flow 阶段，不额外插入一次时钟或 Combat 步进；波边界继续直接使用快照剩余自动等待，不通过反射补时。
 
-必要 EditMode 测试位于 `Assets/Tests/BalanceRating/`，覆盖生命/毫秒边界、精英及首领上限、缺失/调试/版本无效证据、旧成绩归档幂等、双时钟与帧幂等、SQLite/JSON 4/5 星重启回读、计时小数反复存取、旧后端升级、完整终局游标及损坏快照拒绝。末只出生且战斗存活缓存为零的回归验证不得提前奖励或胜利；SQLite 只读连接与 JSON 临时路径被目录占用的实际故障验证快照写入/清除失败保持原边界、重启可读、解除故障后可重试。塔相位测试经过 30 次 JSON 往返，验证冷却/索敌/炮管恢复与非有限数据拒绝；时钟恢复测试覆盖 0.0625 秒小数边界、启动标记、暂停与后台冻结。2026-10-17 的统一 Unity MCP 编译成功，`scriptCompilationFailed=false`；EditMode 运行 54 项全通过，失败及跳过均为 0，原始结果见 [editmode-final-54.json](BalanceEvidence/editmode-final-54.json)。最新 HUD、怪物构建及安全夹具修改统一编译后再次运行，仍为 54/54 通过，见 [editmode-final-54-recheck.json](BalanceEvidence/editmode-final-54-recheck.json)。
+EditMode 测试位于 `Assets/Tests/BalanceRating/`，覆盖评级输入完整性、版本失效、旧成绩归档幂等、双时钟、帧幂等、存储升级、损坏快照拒绝、塔相位恢复与写入故障后的检查点保留。测试 fixture 只说明接口及数据完整性要求。
 
-最终正式数据应用后再次完成 EditMode 验证，54/54 通过、失败与跳过均为 0，见 [editmode-final-postapply-54.json](BalanceEvidence/editmode-final-postapply-54.json)。此报告与下述运行安全报告为分别执行的检查，不能将构造夹具混入玩法回放证据。
+回归 `SqliteBusyBeginRetainsTerminalCheckpointAndRetriesSameClear` 使用第二个原生 SQLite 连接占写锁，要求结算返回 false、旧成绩和终局检查点保持；释放后用同一 runId 重试，避免重复通关。
 
-真实 Unity 固定步长检查点回放见 [unity-results.json](BalanceEvidence/PlayMode-checkpoints/unity-results.json) 与 [speed-comparison.json](BalanceEvidence/PlayMode-checkpoints/speed-comparison.json)。D04 第 1 关同一份余额驱动操作在 1×/2×/3×、波边界退出继续、实际半波消费后回退、终局重复事件共六局均为 5 星、350 只出生和击杀、零漏怪、余额 78，原始战斗时钟 379 秒、整局时钟 474.0625 秒完全相同。比较器仅规范化 runId，逐波统计、现金流、原始 double、塔布局及最终塔相位均严格一致；这组证据证明该回放的继续等价与倍速口径，不替代全部关卡或普通实时帧的平衡验证。
+`TimeScalePauseAndResumeCannotAccrueOrCatchUpEitherTimer` 检查暂停时两种计时均冻结，恢复后只累计当前步长。
 
-回归 `SqliteBusyBeginRetainsTerminalCheckpointAndRetriesSameClear` 使用第二个原生 SQLite 连接的真实写事务占锁，要求结算返回 false 而不抛出、旧成绩和终局检查点完整保留；释放写锁后用同一 runId 及证据重试，重启读回只观察到一次通关和原子清除的快照。该项已在上述 54 项统一运行中通过。
+`BalanceRuntimeSafetyVerifier.Run(outputPath)` 用于隔离存储中的资源失败、容量暂缓、无效波次、解锁规则和结算重试故障测试。`UseProductionUnlockRulesForTest()` 只用于编辑器测试真实解锁分支，不进入玩家构建。
 
-三档 `TimeScalePauseAndResumeCannotAccrueOrCatchUpEitherTimer` 直接设置 `Time.timeScale=0`，验证两种计时均冻结，恢复后只累计当前步长，不追赶暂停期间时间；三个档位均已在上述 54 项统一运行中通过。
+资源故障注入需要穿过实际加载器路径，结束后恢复资源登记、句柄、定位地址与对象池引用；同步场景开始时应重算存活缓存，避免前一夹具状态影响后续测试。
 
-独立 `BalanceRuntimeSafetyVerifier.Run(outputPath)` 已在隔离 main 场景 PlayMode 实际执行，八个场景全部通过，见 [runtime-safety.json](BalanceEvidence/runtime-safety.json)，顶层 `passed=true`、`resourceLoader=YooAssetResLoader`。通过场景覆盖实际同屏容量暂缓及首只成功出生计时、实际资源加载失败、F2 的 Win/GameOver 弹窗链、未完成波统计和跳到末波的拒绝、旧档迁移后的正常解锁及版本总星数隔离，以及 SQLite 只读连接和 JSON 临时文件受阻下的 CompleteVictory→待保存弹窗→Next 门禁→同一 runId 重试→重复回调及重开回读。只在独立存储作用域内使用 `UseProductionUnlockRulesForTest()` 绕过编辑器全解锁例外，从而运行真实玩家解锁分支；该接口不存在于玩家构建。
-
-资源故障场景实际目标为 `Enemy_Chick`：临时移除目标对象池与 YooAsset 已缓存句柄入口，保留原句柄且不 Release，将定位缓存改为唯一不存在地址，穿过真实 YooAsset 加载路径。场景确认生成计数及战斗时间仍为 0、正式评级失效且无奖励，最后恢复原资源登记、句柄、定位地址和对象池引用；机器结果 `resourceStateRestored=true`。每个同步场景开始时通过真实 `TickEnemies(0)` 重算存活缓存，避免上一夹具的同屏上限缓存阻止本场景触及资源故障。实际加载失败、无效波次与两后端写入故障产生的 12 条 Warning/Error 全部保留，按场景、UTC 和 `expectedFault=true` 写入结果；底层 YooAsset 日志仅在含本次唯一故障地址时归为该预期注入。
-
-安全验证器中的完整终局统计是明确构造的故障测试 fixture，只用于验证评分拒绝、存档原子性和 UI 门禁；八场景通过不认证实战通关、平衡校准或五星可达性。前两次夹具未能触发预期资源故障的 7/8 结果保留在 [runtime-safety-initial-failed.json](BalanceEvidence/runtime-safety-initial-failed.json) 与 [runtime-safety-second-failed.json](BalanceEvidence/runtime-safety-second-failed.json)；修正同帧存活缓存同步及实际加载器缓存注入后，以上最新报告才达到 8/8。
+安全验证器中的终局统计是故障测试 fixture，只验证输入拒绝、存档原子性与 UI 门禁。

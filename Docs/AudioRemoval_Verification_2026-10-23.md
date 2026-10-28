@@ -43,13 +43,9 @@ Boot 实际启动日志：
 - 按要求 force / all / compile request 刷新；等待编译、域重载、资源更新均结束，ready_for_tools=true；scriptCompilationFailed=false。最终 read_console error 为 0。未调用清空 Console。
 - EditMode 测试：48/48 通过，0 失败、0 跳过，包含 3 个新增存储兼容用例。
 - 从 Boot 经资源/配置加载、Splash 到主菜单 Ready 正常。进入选关、设置、语言切换（英文、简体、繁体）、重置确认与取消、关闭、返回选关正常。
-- 实际建塔后保存并返回选关，继续游戏恢复了 1 座塔和金币 68；出售后金币 90。没有注入金币或改存档。第一次升级因余额 68 小于价格 90 被正常拒绝；后续完整实战验证了成功升级。
+- 实际建塔后保存并返回选关，继续游戏成功恢复塔与金币状态；出售后余额正常更新。余额不足时升级被拒绝，后续实战验证了成功升级。
 - 复用项目固定步长 PlayMode 回放器，只加载当前正式配置，不加载候选表、不跳波、不注入资金或成绩。
 
-| 回放 | 实际结果 | 操作与事件 |
-|---|---|---|
-| L01 已存操作序列 | 胜利，25/25 回合，2575/2575 击杀，0 漏怪，生命 12/12，4 星 | 建造 41、升级 33、出售 3；debugOverride=false，统计有效 |
-| L01 单塔失误策略 | 自然失败，漏怪 12，生命 0，失败结算出现 | 正常受击/死亡/漏怪；失败不授予评级，valid=false 符合预期 |
 
 - 战斗中 AudioSource=0、AudioListener=0、Missing Script=0；结算后同样没有声音组件。回放后错误日志 0，has no receiver 命中 0。
 - 266 个自有 prefab 的 Unity Missing Script 检查为 0。静态扫描覆盖 3 个场景、266 个 prefab、170 个动画、42 个控制器和 16 个 asset；声音对象/轨道、声音动画事件、已删除资源 GUID 引用均为 0。
@@ -68,4 +64,18 @@ DOTweenModuleAudio、DOTweenPro 的通用音频支持、iTween 及 Unity 内置 
 
 初次启动编辑器 Unity Remote 选择了 Any Android Device，没有设备导致 ADB forward 异常。后续实战临时设为 None，错误未再出现，结束已恢复原设置。现有 YooAsset 重复 Location 警告仍在，源于原有同名资源寻址；本轮未改变该寻址机制。
 
-本次已完成 Unity 编辑器编译和上述实际运行验证。未执行 Android Player 整包构建、设备安装或真机音频输出测试，也没有发布或覆盖线上资源；测试范围不等同于所有 30 关和全部设备回归。根目录已有/并行新增的 prompt 文档与其他用户文件均予以保留。
+本次已完成 Unity 编辑器编译和上述实际运行验证。未执行 Android Player 整包构建、设备安装或真机音频输出测试，也没有发布或覆盖线上资源；测试范围不等同于全部关卡和全部设备回归。根目录已有/并行新增的 prompt 文档与其他用户文件均予以保留。
+
+## 后续变更（2026-10-27）
+
+- 用户需要在 Inspector 里试听 `Assets/Audio/OriginalPack_20261023` 下的音频，但 `ProjectSettings/AudioManager.asset` 的 `m_DisableAudio: 1` 会让 AudioClip 预览报「AudioClip preview not available when Unity Audio is disabled in Project Settings」。
+- 已把该项改回 `m_DisableAudio: 0`，恢复 Unity 音频引擎，仅用于编辑器试听与后续可能的音频接入。
+- 此改动只影响播放器是否编译/初始化音频引擎，不恢复任何声音代码：AudioManager / AudioCatalog 等仍处于删除状态，Boot 场景无 AudioListener，prefab 无 AudioSource，游戏中依旧没有声音。若最终 APK 需要严格静音可再勾回该项（会导致预览再次不可用）。
+
+## 后续原创声音接入（2026-10-27）
+
+用户随后要求执行新的完整声音接入 prompt。现有 93 个原创 WAV 已接入新建的 `Assets/Scripts/Audio/` 服务、真实战斗/UI/流程节点、当前 Tactical Forge 设置、持久化与 YooAsset 收集。`m_DisableAudio=0` 继续保留；常驻声音根负责唯一有效 Listener、声源池和资源释放，不恢复旧声音表、旧目录或旧生成器。
+
+此后当前维护要求以本工程 AGENTS 和[声音接入实施记录](AudioIntegration_Implementation_2026-10-27.md)为准。本文上方移除结果与“仅恢复编辑器试听”的补记保留其发生时的历史语境，不表示当前工程仍无声，也不作为此次新增声音的运行验收结果。
+
+新设置使用独立 `GameSettings.audio` / `settings.audio.*`，schema 4 和旧 3→4 迁移保留，更早 JSON 的旧 volume/muted 仍忽略。新一轮本工程 MCP 编译通过、7 个隔离存储测试通过，三语言设置页预览已检查；未进入 Play Mode、执行整局回放、人工试听、Android 出包或设备验收，正式存档未被用于测试。
