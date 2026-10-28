@@ -44,6 +44,13 @@ namespace FTProject.EditorTools
             new[] { "Art", "Assets/_UIAssets" },
             new[] { "Prefab", "Assets/Prefabs" },
             new[] { "Font", "Assets/Font" },
+            new[] { "Audio", "Assets/Audio/OriginalPack_20261023/BGM" },
+            new[] { "Audio", "Assets/Audio/OriginalPack_20261023/Stingers" },
+            new[] { "Audio", "Assets/Audio/OriginalPack_20261023/SFX/UI" },
+            new[] { "Audio", "Assets/Audio/OriginalPack_20261023/SFX/Tower" },
+            new[] { "Audio", "Assets/Audio/OriginalPack_20261023/SFX/Enemy" },
+            new[] { "Audio", "Assets/Audio/OriginalPack_20261023/SFX/Feedback" },
+            new[] { "Audio", "Assets/Audio/Runtime" },
         };
 
         private string _version = "1.0.0";

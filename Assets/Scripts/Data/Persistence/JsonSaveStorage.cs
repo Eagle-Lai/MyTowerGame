@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
@@ -150,6 +150,7 @@ namespace FTProject
         {
             if (d.levels == null) d.levels = new List<LevelProgress>();
             if (d.settings == null) d.settings = new GameSettings();
+            d.settings.audio = AudioPreferences.Normalize(d.settings.audio);
             if (d.snapshot == null) d.snapshot = new LevelSnapshot();
             if (d.snapshot.towers == null) d.snapshot.towers = new List<TowerSnapshot>();
             foreach (LevelProgress p in d.levels)
@@ -263,7 +264,9 @@ namespace FTProject
 
         public GameSettings LoadSettings()
         {
-            return _data != null ? Clone(_data.settings) : new GameSettings();
+            var settings = _data != null ? Clone(_data.settings) : new GameSettings();
+            settings.audio = AudioPreferences.Normalize(settings.audio);
+            return settings;
         }
 
         public void SaveSettings(GameSettings settings)
@@ -274,6 +277,7 @@ namespace FTProject
             }
             SaveData candidate = Clone(_data);
             candidate.settings = Clone(settings);
+            candidate.settings.audio = AudioPreferences.Normalize(candidate.settings.audio);
             if (WriteSaveFile(candidate)) _data = candidate;
         }
 

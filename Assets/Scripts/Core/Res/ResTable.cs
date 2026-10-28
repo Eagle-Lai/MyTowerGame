@@ -239,6 +239,7 @@ namespace FTProject
         static ResTable()
         {
             RegisterMonsters();
+            AudioResourceMap.Register(_map);
             foreach (int levelId in LevelPreviewIds.All)
             {
                 string key = LevelPreviewCatalog.LogicalName(levelId);

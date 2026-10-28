@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Linq;
 using NUnit.Framework;
@@ -33,11 +33,12 @@ namespace FTProject.Tests
                 Assert.That(storage.LoadSettings().language, Is.EqualTo("zh-Hant"));
                 Assert.That(storage.LoadLevels()[0].stars, Is.EqualTo(4));
                 Assert.That(storage.LoadSnapshot().roundCursor, Is.EqualTo(3));
+                Assert.That(storage.LoadSettings().audio.muted, Is.False);
                 storage.SaveSettings(storage.LoadSettings());
                 Assert.That(storage.LastError, Is.Null.Or.Empty);
             }
             string json = File.ReadAllText(path);
-            Assert.That(json, Does.Not.Contain("\"volume\"").And.Not.Contain("\"muted\""));
+            Assert.That(json, Does.Not.Contain("\"volume\""));
             using (var storage = new JsonSaveStorage(null, _directory))
             {
                 storage.Initialize();

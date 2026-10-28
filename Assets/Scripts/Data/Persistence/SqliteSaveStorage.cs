@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
 using UnityEngine;
@@ -78,12 +78,36 @@ namespace FTProject
             {
                 string language;
                 if (TryGetValue("settings.language", out language)) s.language = language ?? "";
+                var audio = AudioPreferences.Defaults();
+                string version;
+                if (TryGetValue("settings.audio.version", out version) && version == "1")
+                {
+                    audio.master = ReadAudioFloat("master", audio.master);
+                    audio.music = ReadAudioFloat("music", audio.music);
+                    audio.sfx = ReadAudioFloat("sfx", audio.sfx);
+                    string muted;
+                    if (TryGetValue("settings.audio.muted", out muted)) audio.muted = muted == "1" || string.Equals(muted, "true", StringComparison.OrdinalIgnoreCase);
+                }
+                s.audio = AudioPreferences.Normalize(audio);
             }
             catch (Exception ex)
             {
                 Fail("读取会话设置失败", ex);
             }
+            s.audio = AudioPreferences.Normalize(s.audio);
             return s;
+        }
+
+        private float ReadAudioFloat(string field, float fallback)
+        {
+            string text; float value;
+            return TryGetValue("settings.audio." + field, out text) && float.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out value)
+                ? value : fallback;
+        }
+
+        private void WriteSetting(string key, string value)
+        {
+            _db.Execute("INSERT OR REPLACE INTO kv_store (k,v,sensitive,updated_at) VALUES (?1,?2,0,?3)", key, value, SaveSchema.Now());
         }
 
         public void SaveSettings(GameSettings settings)
@@ -94,10 +118,19 @@ namespace FTProject
             }
             try
             {
-                _db.Execute(
-                    "INSERT OR REPLACE INTO game_settings (id, updated_at) VALUES (?1, ?2)",
-                    SingleRowId, SaveSchema.Now());
-                SetValue("settings.language", settings.language ?? "", false);
+                var audio = AudioPreferences.Normalize(settings.audio);
+                using (IDbTransaction tx = _db.BeginTransaction())
+                {
+                    _db.Execute("INSERT OR REPLACE INTO game_settings (id, updated_at) VALUES (?1, ?2)", SingleRowId, SaveSchema.Now());
+                    WriteSetting("settings.language", settings.language ?? "");
+                    WriteSetting("settings.audio.master", audio.master.ToString("R", CultureInfo.InvariantCulture));
+                    WriteSetting("settings.audio.music", audio.music.ToString("R", CultureInfo.InvariantCulture));
+                    WriteSetting("settings.audio.sfx", audio.sfx.ToString("R", CultureInfo.InvariantCulture));
+                    WriteSetting("settings.audio.muted", audio.muted ? "1" : "0");
+                    WriteSetting("settings.audio.version", "1");
+                    tx.Commit();
+                }
+                LastError = null;
             }
             catch (Exception ex)
             {

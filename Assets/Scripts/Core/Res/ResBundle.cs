@@ -19,6 +19,10 @@ namespace FTProject
     {
         /// <summary>配置表 JSON（TextAsset），常驻不卸载</summary>
         public const string Config = "config";
+        public const string AudioRuntime = "audio_runtime";
+        public const string AudioMusic = "audio_music";
+        public const string AudioUI = "audio_ui";
+        public const string AudioCombat = "audio_combat";
 
         /// <summary>程序生成的占位美术（格子/箭头/血条/子弹点），常驻不卸载</summary>
         public const string CoreArt = "core_art";
@@ -72,7 +76,7 @@ namespace FTProject
         /// <summary>不随怪物清单变化的固定包</summary>
         public static readonly string[] Fixed =
         {
-            Config, CoreArt, Font, TowerNormal, TowerPower, TowerRetard, BulletNormal, UiHud, BootUi, Reporter
+            Config, CoreArt, Font, TowerNormal, TowerPower, TowerRetard, BulletNormal, UiHud, BootUi, Reporter, AudioRuntime, AudioMusic, AudioUI, AudioCombat
         };
 
         /// <summary>常驻包：初始化后不参与卸载</summary>

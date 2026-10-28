@@ -392,4 +392,19 @@ Address already exists: 'Bat' in collector: 'Assets/Prefabs'
 另一种是源码内嵌：把仓库 `Assets/YooAsset/` 整个拷进本工程 `Packages/`（或 `Assets/`），
 完全离线、可二次修改，代价是升级要手动替换。
 
-2026-10-23 无声版本：收集器计划仅含配置、美术、预制体及字体。声音收集组已移除；生成/修复收集设置不会重新加入声音目录。历史构建、发布清单和线上资源不在本次清理范围内，新版本按正常构建发布流程生成。
+历史记录（2026-10-23 无声版本）：收集器计划仅含配置、美术、预制体及字体。声音收集组已移除；当时生成/修复收集设置不会重新加入声音目录。历史构建、发布清单和线上资源不在当次清理范围内。
+
+## 2026-10-27 原创声音接入
+
+当前收集器和 `FTYooAssetSetupWizard.CollectPlan` 已同步恢复声音收集，保留已有组与 `EnableAddressable=false`。新增 7 个精确目录：`Assets/Audio/Runtime`，以及 `Assets/Audio/OriginalPack_20261023` 下的 `BGM`、`Stingers`、`SFX/UI`、`SFX/Tower`、`SFX/Enemy`、`SFX/Feedback`。不收集该素材包根目录的 README、CSV，亦不收集生产源码或预览。
+
+| 逻辑包 | 内容 |
+|---|---|
+| `audio_runtime` | catalog 与 mixer |
+| `audio_music` | 4 首 BGM 与 3 段 Stinger |
+| `audio_ui` | 12 个 UI 与 16 个 Feedback |
+| `audio_combat` | 34 个 Tower 与 24 个 Enemy |
+
+唯一地址源仍为 `ResTable`：`AudioResourceMap.Register` 显式登记 93 个 WAV 和两个运行配置；catalog 只引用这些逻辑名。`FTBundlePackRule` 从该登记决定归包，不按文件名可寻址假设另建地址源。声音走现有 `ResLoader.LoadAsync<T>` 和释放链，UI 常驻、战斗资源入关预热/离关释放、BGM 按需交叉淡化；不新增 Persistent 包预加载引用。
+
+当前已检查全部 93 个 AudioClip 和实际归包一致性，尚未构建或发布真实资源包。后续发版需按项目标准链生成匹配的资源包与热更 DLL，旧包不会自动获得新增声音。重建菜单、完整映射和生命周期见[声音接入实施记录](AudioIntegration_Implementation_2026-10-27.md)。

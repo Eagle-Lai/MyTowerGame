@@ -160,6 +160,7 @@ namespace FTProject
                 rt.localScale = Vector3.one;
             }
             _opened[logicalName] = go;
+            UiAudio.Bind(go);
             EnsureFadeIn(go);
             return go;
         }

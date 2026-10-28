@@ -1,17 +1,17 @@
-# FreedomTower_1 —— 项目工作规范
+﻿# FishTestGame —— 项目工作规范
 
 ## 工程与 MCP
 
-- 工程根目录：`D:\FreedomTower_1`；Unity `2022.3.62f3c1`，实际版本以 `ProjectSettings/ProjectVersion.txt` 为准。
+- 工程根目录：`D:\FishTestGame`；Unity `2022.3.62f3c1`，实际版本以 `ProjectSettings/ProjectVersion.txt` 为准。
 - MCP 插件：`com.coplaydev.unity-mcp`；Codex 服务名 `unityMCP`，工具前缀 `mcp__unityMCP__*`，HTTP 地址 `http://127.0.0.1:8082/mcp`。
 - 插件使用 HTTP Local `http://127.0.0.1:8082` 并启用 Auto-Start on Editor Load。8080 是另一个 Unity 2020 工程 CatchFish_Android 的桥接端口；本项目验证使用 8082。
-- 操作前先读取 `mcpforunity://custom-tools`、`mcpforunity://instances`（`server="unityMCP"`），选择当前列表中 FreedomTower_1 的完整 ID，调用 `set_active_instance`；再读 `mcpforunity://project/info`，确认 `data.projectRoot=D:/FreedomTower_1` 与 Unity 版本正确。新会话、重连、域重载后重新选定并核对，不依赖窗口焦点或上个会话的实例 ID。
+- 操作前先读取 `mcpforunity://custom-tools`、`mcpforunity://instances`（`server="unityMCP"`），选择当前列表中 FishTestGame 的完整 ID，调用 `set_active_instance`；再读 `mcpforunity://project/info`，确认 `data.projectRoot=D:/FishTestGame` 与 Unity 版本正确。新会话、重连、域重载后重新选定并核对，不依赖窗口焦点或上个会话的实例 ID。
 
 ## MCP 未开启时
 
 - 用户允许为本项目开发与验证自主启动/重连已有 MCP，无需逐次询问。先检查 8082 服务和本工程桥接实例；复用在线服务，优先使用插件 HTTP Local 自动启动或 MCP 窗口的启动/连接功能。服务离线时可通过可用的本机进程/编辑器界面操作恢复；不要依赖已离线的 MCP 工具启动自身。
 - 编译重载短暂断线先等约 5 秒再重试；无进展则限次尝试，不重复启动服务、抢占端口或连接另一个工程。
-- 无法自主恢复时，及时提示用户打开 `D:\FreedomTower_1` 的 Unity 2022.3.62f3c1，在 MCP 窗口开启 HTTP Local `http://127.0.0.1:8082` 服务并连接，并在 Codex 启用/重连 `unityMCP`；说明实际失败环节。恢复后重新选定实例、核对工程身份并补做验证；最终未连接则明确说明编辑器验证未完成。
+- 无法自主恢复时，及时提示用户打开 `D:\FishTestGame` 的 Unity 2022.3.62f3c1，在 MCP 窗口开启 HTTP Local `http://127.0.0.1:8082` 服务并连接，并在 Codex 启用/重连 `unityMCP`；说明实际失败环节。恢复后重新选定实例、核对工程身份并补做验证；最终未连接则明确说明编辑器验证未完成。
 
 ## 代码修改后的强制验证
 
@@ -32,7 +32,12 @@
 - 仍然保留的两个人工工具：`apply_levelmap_export.py`（地图编辑器「一键写入」只写当前关的 `LevelMap.xlsx`）、`_manual_l1_tune.py`（第一关数值手工调整，按倍率写入）。
 
 
-## 无声版本维护（2026-10-23）
+## 原创声音维护（2026-10-27）
 
-- 本轮用户明确允许删除声音表，并以自动方式定点移除 `__tables__.xlsx` 中的声音登记和 `Localization.xlsx` 中仅服务于声音的条目；该授权不适用于关卡、敌人及其他数值表。
-- 项目声音系统及声音生成入口已移除。Luban、UI 与资源收集器重建必须维持无声版本；保留语言、存档、评级、动画、特效及共享插件通用 API。
+- 当前用户已执行 `Docs/prompts/2026-10-27-audio-integration-executable-prompt.md`，本工程接入现有 93 个原创 WAV，覆盖历史“维持无声版本”限制。历史移除报告保留为历史证据。
+- 声音入口与生命周期统一由 `Assets/Scripts/Audio/` 管理；语义策略在 `Assets/Audio/Runtime/GameAudioCatalog.asset`，寻址由 `AudioResourceMap` 登记并接入 `ResTable`。不得恢复旧 Luban 声音表或旧生成器。
+- 保留 WAV 母版、GUID、源文件和质量报告；人工听感与 Android Player 验收须单独说明，不能由编译或旧技术 QA 代替。
+- 声音设置使用 `GameSettings.audio` 与 SQLite `settings.audio.*` 键，沿用 schema 4；不得恢复旧 `game_settings.volume/muted` 列、另开 PlayerPrefs，或修改评级/快照语义。
+- 用户在本轮单独授权：仅定点新增 `Localization.xlsx` 的 Master Volume、Music Volume、SFX Volume、Mute 四个三语言词条，并执行标准 Luban 导出。该授权不扩展为其他源表的自动维护权限；上述关卡、敌人和表登记保护条款继续有效。
+- 设置 prefab 更新必须同步 `AudioSettingsPrefabBuilder` 与 Tactical Forge / UIPrefabBuilder 调用链。声音收集同时维护现有资产与 `FTYooAssetSetupWizard.CollectPlan`，不得收集 README、CSV、预览或制作源码。
+- 实施、接口、存档兼容、实际检查结果和用户验收步骤见 `Docs/AudioIntegration_Implementation_2026-10-27.md`。

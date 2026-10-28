@@ -421,3 +421,11 @@ curl -L -o clt6.zip https://dl.google.com/android/repository/commandlinetools-wi
   > ✅ APK 内 `StreamingAssets` 读不到 dll 的问题**已有解法**：
   > `HotUpdateAssembler.PrefetchStreamingAssetsToPersistent` 用 `UnityWebRequest` 异步读，
   > 首启一次性释放到 `persistentDataPath`（Boot 第一步就会跑）。
+
+## 十一、原创声音接入与裁剪（2026-10-27）
+
+新声音服务位于 `FTProject.Runtime`，在 main 的 Launcher 正式就绪后初始化；AOT Boot/下载界面未挂热更声音组件，继续使用既有 AOT→热更入口边界。此次新增对 Unity AudioModule、AudioMixer/AudioMixerGroup、AudioListener、AudioSettings 配置事件以及 UI Slider/Toggle 的真实引用。
+
+本轮在当前 Android 目标下执行标准 `HybridCLR.Editor.Commands.LinkGeneratorCommand.GenerateLinkXml()`，由其本地编译热更 DLL 并更新 `Assets/HybridCLRGenerate/link.xml`；已核对上述音频/UI 类型包含在输出中。没有手工伪造裁剪记录，也未发布 DLL、覆盖热更清单或构建/安装 APK。
+
+下次发版仍执行本项目标准 HybridCLR 生成与拷贝流程，按现有规则核对 AOT 补充元数据和泛型引用，再与新声音 YooAsset 资源包一起发布。编辑器编译与 link.xml 生成不能证明旧 IL2CPP Player 能热更支持所有新增 AOT 引用；对应 Player 的裁剪、音频输出及设备行为须单独构建验收。当前接入边界和已执行检查见[声音接入实施记录](AudioIntegration_Implementation_2026-10-27.md)。

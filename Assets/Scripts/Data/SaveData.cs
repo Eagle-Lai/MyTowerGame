@@ -50,6 +50,7 @@ namespace FTProject
         /// 【为什么存字符串码而不是枚举 int】将来在枚举中间插语言会让老存档的 int 含义漂移。
         /// </summary>
         public string language = "";
+        public AudioPreferences audio;
 
     }
 

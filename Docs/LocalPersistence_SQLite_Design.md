@@ -291,4 +291,26 @@ SQLite 属系统库且被静态链接，用 `__Internal`，无需分发。
 - **Android 真机**：打包后确认 APK 内含 `lib/arm64-v8a/libsqlite3.so` 与 `lib/armeabi-v7a/libsqlite3.so`，
   且日志显示后端是 `SQLite`（而不是回退成 `JSON 文件`）。
 
-2026-10-23 无声版本：SQLite schema v4。v3→v4 在事务内重建 `game_settings`，保留 id/updated_at，移除旧声音列；语言、进度、评级载荷与快照表保持原数据。采用建表复制再重命名，兼容不支持 DROP COLUMN 的 SQLite。旧 JSON 声音字段由 JsonUtility 忽略，新序列化只保留语言设置。迁移不清档。
+历史记录（2026-10-23 无声版本）：SQLite schema v4。v3→v4 在事务内重建 `game_settings`，保留 id/updated_at，移除旧声音列；语言、进度、评级载荷与快照表保持原数据。采用建表复制再重命名，兼容不支持 DROP COLUMN 的 SQLite。当时旧 JSON 声音字段由 JsonUtility 忽略，新序列化只保留语言设置。迁移不清档。
+
+## 2026-10-27 独立声音偏好
+
+新声音接入复用 `GameSettings.audio`、SaveManager 与现有 JSON/SQLite 后端，不另建 PlayerPrefs 或声音配置文件。JSON 文件版本仍为 2，SQLite schema 仍为 4；没有表结构变化，不恢复旧 `game_settings.volume/muted` 列，原 3→4 迁移继续生效。
+
+```json
+{"settings":{"language":"zh-Hans","audio":{"version":1,"master":0.8,"music":0.65,"sfx":0.8,"muted":false}}}
+```
+
+| kv_store 键 | 默认值 | 序列化 |
+|---|---|---|
+| `settings.audio.version` | 1 | 整数 |
+| `settings.audio.master` | 0.8 | InvariantCulture / R |
+| `settings.audio.music` | 0.65 | InvariantCulture / R |
+| `settings.audio.sfx` | 0.8 | InvariantCulture / R |
+| `settings.audio.muted` | false | 0 / 1 |
+
+语言 `settings.language`、上述五键与 game_settings 时间戳同事务提交；失败时回滚，LastError 报告真实异常。音量变化即时更新内存并合并延迟 0.35 秒保存，提交调整、关闭设置、后台/失焦/退出时 Flush；失败保留 dirty 并延后重试。
+
+无声旧档缺少 audio、audio=null、缺版本或未知版本均补默认；更早 JSON 的 `settings.volume/muted` 继续忽略。version=1 的显式 0 与 mute=true 保留，越界截到 [0,1]，非有限/无效文本采用字段默认。语言、评级载荷、关卡进度及快照语义不变。既有重置流程成功后应用声音默认，不为测试重置正式档。
+
+本轮 7 个隔离 EditMode 用例通过，覆盖旧/新 JSON、schema 3/4、重复迁移、0/静音、fr-FR 小数、非有限值和故意写失败后的事务回滚；未覆盖或改写玩家正式存档。接口、具体测试结果和用户验收步骤见[声音接入实施记录](AudioIntegration_Implementation_2026-10-27.md)。

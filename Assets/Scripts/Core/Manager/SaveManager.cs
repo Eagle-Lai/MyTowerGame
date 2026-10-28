@@ -146,6 +146,7 @@ namespace FTProject
                 _data.levels = _storage.LoadLevels() ?? new List<LevelProgress>();
                 _data.snapshot = _storage.LoadSnapshot() ?? new LevelSnapshot();
                 if (_data.settings == null) _data.settings = new GameSettings();
+                _data.settings.audio = AudioPreferences.Normalize(_data.settings.audio);
                 if (_data.levels == null) _data.levels = new List<LevelProgress>();
                 if (_data.snapshot == null) _data.snapshot = new LevelSnapshot();
                 if (_data.snapshot.towers == null) _data.snapshot.towers = new List<TowerSnapshot>();
@@ -193,20 +194,29 @@ namespace FTProject
         /// <summary>清空存档（设置界面用）。表结构/后端实例保留，只清业务数据。</summary>
         public void ResetAll()
         {
+            TryResetAll();
+        }
+
+        public bool TryResetAll()
+        {
             EnsureLoaded();
-            _data = new SaveData();
-            _loaded = true;
             if (_storage == null)
             {
-                return;
+                return false;
             }
             try
             {
                 _storage.ResetAll();
+                _data = new SaveData();
+                _data.settings.audio = AudioPreferences.Defaults();
+                GameAudio.ApplySettings();
+                _loaded = true;
+                return true;
             }
             catch (Exception ex)
             {
                 Debug.LogWarning("[Save] 重置存档失败：" + ex.Message);
+                return false;
             }
         }
 
@@ -516,6 +526,29 @@ namespace FTProject
         }
 
         /// <summary>写玩家选择的语言并落盘。</summary>
+        public void SetAudioPreferences(AudioPreferences preferences)
+        {
+            EnsureLoaded();
+            _data.settings.audio = AudioPreferences.Normalize(preferences);
+            GameAudio.ApplySettings();
+        }
+
+        public bool SaveAudioSettings()
+        {
+            EnsureLoaded();
+            if (_storage == null) return false;
+            try
+            {
+                _data.settings.audio = AudioPreferences.Normalize(_data.settings.audio);
+                _storage.SaveSettings(_data.settings);
+                _storage.Flush();
+                if (!string.IsNullOrEmpty(_storage.LastError))
+                { Debug.LogWarning("[Audio] Settings persistence failed: " + _storage.LastError); return false; }
+                return true;
+            }
+            catch (Exception ex) { Debug.LogWarning("[Audio] Settings persistence failed: " + ex.Message); return false; }
+        }
+
         public void SetLanguage(Language lang)
         {
             EnsureLoaded();
