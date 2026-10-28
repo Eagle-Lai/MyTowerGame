@@ -49,7 +49,8 @@ namespace FTProject
             get { return _g.DefaultSearchIntervalMs > 0 ? _g.DefaultSearchIntervalMs : 100; }
         }
 
-        public int TargetFrameRate { get { return _g.TargetFrameRate > 0 ? _g.TargetFrameRate : 60; } }
+        // 帧率由启动层统一固定，旧配置字段不再覆盖运行策略。
+        public int TargetFrameRate { get { return FTProject.AOT.FrameRatePolicy.TargetFrameRate; } }
 
         /// <summary>死亡动画播完后延迟回收的时间（毫秒）</summary>
         public int DeathRecycleDelayMs { get { return _g.DeathRecycleDelayMs > 0 ? _g.DeathRecycleDelayMs : 600; } }

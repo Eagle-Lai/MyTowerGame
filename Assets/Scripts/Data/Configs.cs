@@ -323,10 +323,7 @@ namespace FTProject
 
         private static void ApplyGlobalSettings()
         {
-            if (Global != null)
-            {
-                Application.targetFrameRate = Global.TargetFrameRate;
-            }
+            FTProject.AOT.FrameRatePolicy.Apply();
         }
 
         // ------------------------------------------------------------------

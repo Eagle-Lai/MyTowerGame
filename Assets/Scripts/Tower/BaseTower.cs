@@ -264,7 +264,7 @@ namespace FTProject
 
         public void TickAttack(float dt)
         {
-            if (!IsBuilt || Config == null)
+            if (!IsBuilt || Config == null || dt <= 0f)
             {
                 return;
             }
@@ -289,10 +289,8 @@ namespace FTProject
             //    · 已锁定**地面**目标 → 每个节拍复查一次，只要圈里有飞行单位就立刻抢断
             //      （否则塔会一直咬着地面怪，飞行怪整队从头顶溜过去 —— 这正是本次需求的由来）。
             //    · 已锁定飞行目标 → 不再复查，保持地面目标原有的"锁定不抖动"手感。
-            _searchTimer += dt;
-            if (_searchTimer >= Config.SearchIntervalSec)
+            if (ConsumeCadence(ref _searchTimer, dt, Config.SearchIntervalSec) > 0)
             {
-                _searchTimer = 0f;
                 if (_target == null)
                 {
                     _target = FindTarget();
@@ -316,14 +314,32 @@ namespace FTProject
             RotateBarrelTowards(_target.Position, dt);
             TickRecoil(dt);
 
-            // ⑤ 冷却结束才开火
-            _fireTimer += dt;
-            if (_fireTimer < Config.CooldownSec)
+            // ⑤ 保留冷却余量；低帧率/倍速跨过多个周期时补齐有效攻击。
+            //    无目标时不积攒冷却，补射途中目标死亡则重新索敌，剩余空放不储存。
+            int shots = ConsumeCadence(ref _fireTimer, dt, Config.CooldownSec);
+            for (int i = 0; i < shots; i++)
             {
-                return;
+                if (_target == null || !_target.IsAlive || !InRange(_target))
+                {
+                    _target = FindTarget();
+                }
+                if (_target == null)
+                {
+                    break;
+                }
+                Fire(_target);
             }
-            _fireTimer = 0f;
-            Fire(_target);
+        }
+
+        /// <summary>消耗完整周期并保留余量，避免每帧舍入把表中攻速变慢。</summary>
+        internal static int ConsumeCadence(ref float timer, float dt, float interval)
+        {
+            if (dt <= 0f) return 0;
+            double elapsed = (double)timer + dt;
+            // 秒级的小容差只吸收浮点误差，避免恰好到点时多等一帧。
+            int count = (int)System.Math.Floor((elapsed + 0.000001d) / interval);
+            timer = (float)System.Math.Max(0d, elapsed - count * (double)interval);
+            return count;
         }
 
         /// <summary>
@@ -349,12 +365,11 @@ namespace FTProject
         /// </summary>
         private void TickSlowAura(float dt)
         {
-            _fireTimer += dt;
-            if (_fireTimer < Config.CooldownSec)
+            // 同一帧只按当前站位施加一次光环，仍保留脉冲周期的余量。
+            if (ConsumeCadence(ref _fireTimer, dt, Config.CooldownSec) == 0)
             {
                 return;
             }
-            _fireTimer = 0f;
 
             CombatSystem cs = CombatSystem.Instance;
             if (cs == null || cs.Grid == null)
@@ -403,6 +418,7 @@ namespace FTProject
             // 有怪被减速才算"开火"，供自检区分"空放"与"有效作用"
             if (applied > 0)
             {
+                GameAudio.FrostPulse(this);
                 FireCount++;
                 _auraPulseTimer = AuraPulseSec;   // 触发一次视觉脉冲
             }
@@ -667,8 +683,10 @@ namespace FTProject
                 return;
             }
 
+            GameAudio.Play(Config.IsAoe ? SoundCue.BlastFire : SoundCue.NormalFire);
             if (Config.IsAoe)
             {
+                GameAudio.Play(SoundCue.BlastHit);
                 // 火力塔：落点 = 发射瞬间锁定的目标位置（与原"落点弹"锁定时机一致），
                 // 对落点 aoeRadius（格）内全部存活敌人造成同等伤害 + 命中效果。
                 Vector2 center = target.Position;
@@ -684,6 +702,7 @@ namespace FTProject
             else
             {
                 // 普通塔：单体即时命中（原为追踪弹命中才结算，此处只去掉飞行环节）
+                GameAudio.Play(SoundCue.NormalHit);
                 HurtEnemy(target, Config.Power, bulletCfg);
             }
 
@@ -973,6 +992,7 @@ namespace FTProject
             _towers.Add(tower);
 
             CombatSystem.Instance.RegisterTower(tower);
+            if (charge) GameAudio.Play(cfg.IsSlowAura ? SoundCue.FrostActivate : SoundCue.TowerBuild);
             EventDispatcher.TriggerEvent<BaseTower>(EventName.BuildTowerSuccess, tower);
             astar.RequestRefresh();      // 节流重算，敌人改道
 
@@ -1126,6 +1146,7 @@ namespace FTProject
 
             // 【为什么不用 BuildTowerSuccess】它的语义是"新建了一座塔"，
             // HudView 收到会退出放置态并复位按钮 —— 升级时发它会把 HUD 状态搅乱。
+            GameAudio.Play(SoundCue.TowerUpgrade);
             EventDispatcher.TriggerEvent<BaseTower>(EventName.TowerUpgradeSuccess, tower);
             Tips(Localization.Get("Upgraded to {0} Lv.{1}", nextCfg.DisplayName, nextCfg.Level)
                 ?? string.Format("已升级为 {0} Lv.{1}", nextCfg.DisplayName, nextCfg.Level));
@@ -1159,6 +1180,7 @@ namespace FTProject
             CombatSystem.Instance.UnregisterTower(tower);
 
             PlayerDataManager.Instance.AddGold(refund);
+            GameAudio.Play(SoundCue.TowerSell);
             EventDispatcher.TriggerEvent<BaseTower>(EventName.DestroyTower, tower);
             ResLoader.Instance.ReleaseInstance(resName, tower.gameObject);
             AStarManager.Instance.RequestRefresh();

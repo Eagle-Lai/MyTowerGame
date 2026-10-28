@@ -15,7 +15,7 @@ namespace FTProject.AOT
         {
             if (_instance != null && _instance != this) { Destroy(gameObject); return; }
             _instance = this;
-            Application.targetFrameRate = 60;
+            FrameRatePolicy.Apply();
             BootLocalization.Initialize();
             BootUiSymbolKeeper.Ensure();
             StartCoroutine(BootRoutine());
