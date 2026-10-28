@@ -37,6 +37,9 @@ namespace FTProject
         private Button _cancelBtn;
 
         private BaseTower _tower;
+        private bool _pending;
+
+        private void OnDisable() { StopAllCoroutines(); _pending = false; _tower = null; }
 
         /// <summary>弹出出售确认。<paramref name="tower"/> 为 null 时不弹（避免出现"确认卖掉空气"）。</summary>
         public static void Show(BaseTower tower)
@@ -96,6 +99,7 @@ namespace FTProject
         private void Setup(BaseTower tower)
         {
             _tower = tower;
+            _pending=false;_confirmBtn.interactable=true;_cancelBtn.interactable=true;
             TowerConfig cfg = tower.Config;
             if (cfg == null)
             {
@@ -105,7 +109,7 @@ namespace FTProject
             if (_towerName != null)
             {
                 // DisplayName：过多语言表（"普通塔"），缺条目回退英文原文
-                _towerName.text = cfg.DisplayName;
+                _towerName.text = cfg.DisplayName + "  Lv." + cfg.Level;
             }
 
             float rate = Configs.Global != null ? Configs.Global.SellRefundRate : 1f;
@@ -141,6 +145,13 @@ namespace FTProject
 
         private void OnClickConfirm()
         {
+            if (_pending || _tower == null) return;
+            StartCoroutine(CommitSale());
+        }
+        private System.Collections.IEnumerator CommitSale()
+        {
+            _pending=true;_confirmBtn.interactable=false;_cancelBtn.interactable=false;
+            yield return null;
             BaseTower t = _tower;
             _tower = null;
             UIManager.Instance.Close(LogicalName);
@@ -154,6 +165,7 @@ namespace FTProject
 
         private void OnClickCancel()
         {
+            if (_pending) return;
             _tower = null;
             UIManager.Instance.Close(LogicalName);
         }

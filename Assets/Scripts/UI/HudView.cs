@@ -246,6 +246,7 @@ namespace FTProject
 
         private void RefreshBottomLayout()
         {
+            if (GetComponent<TacticalForgeLayout>() != null) return;
             if (_hudRect == null || _speedRect == null || _towerButtonRects == null ||
                 _towerButtonRects.Length == 0 || _towerButtonRects[0] == null)
                 return;

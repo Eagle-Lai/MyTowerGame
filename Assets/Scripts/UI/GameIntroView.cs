@@ -36,6 +36,8 @@ namespace FTProject
         private Button _closeBtn;
         private TMP_Text _title;
         private TMP_Text[] _infos;
+        private bool _fromBriefing;
+        public void SetBriefingSource(bool value) { _fromBriefing=value; if(_backBtn!=null)_backBtn.gameObject.SetActive(!value); }
 
         /// <summary>正文四行的多语言 key（key = 英文原文，表的主键口径）。</summary>
         private static readonly string[] InfoKeys =
@@ -84,6 +86,7 @@ namespace FTProject
         /// </summary>
         private void OnEnable()
         {
+            SetBriefingSource(false);
             Refresh();
         }
 

@@ -15,7 +15,7 @@ namespace FTProject
     public class TipsView : MonoBehaviour
     {
         /// <summary>单条提示的显示时长（秒）</summary>
-        private const float HoldSec = 1.2f;
+        private const float HoldSec = 2.8f;
         /// <summary>淡入/淡出时长（秒）</summary>
         private const float FadeSec = 0.15f;
 
@@ -23,6 +23,7 @@ namespace FTProject
         {
             public string Message;
             public float Remain;
+            public Color Color;
         }
 
         private readonly Queue<Tip> _queue = new Queue<Tip>(8);
@@ -81,7 +82,22 @@ namespace FTProject
             Tip t = new Tip();
             t.Message = message;
             t.Remain = HoldSec;
+            bool warning=Matches(message,"Cannot fully block the path");
+            bool failure=warning || Matches(message,"Cannot Build Here") || Matches(message,"Not Buildable Here")
+                || Matches(message,"Tower already there") || Matches(message,"Not enough gold, need {0}")
+                || Matches(message,"Not enough gold") || Matches(message,"Failed to load tower asset")
+                || Matches(message,"Upgrade failed: tower asset missing, gold refunded")
+                || Matches(message,"Record could not be saved; retry save");
+            t.Color=warning?new Color(1,.788f,.302f):failure?new Color(1,.302f,.369f):new Color(.208f,.878f,1);
+            if(failure){_queue.Clear();_showing=false;}
             _queue.Enqueue(t);
+        }
+
+        private static bool Matches(string message,string key)
+        {
+            string prefix=Localization.Get(key)??key;
+            int slot=prefix.IndexOf('{');if(slot>=0)prefix=prefix.Substring(0,slot);
+            return message.StartsWith(prefix,System.StringComparison.Ordinal);
         }
 
         private void Update()
@@ -97,6 +113,8 @@ namespace FTProject
                 if (_text != null)
                 {
                     _text.text = next.Message;
+                    _text.color = next.Color;
+                    LanguageManager.ApplyFont(_text);
                 }
                 _showing = true;
                 _fadeTarget = 1f;
@@ -112,14 +130,14 @@ namespace FTProject
             // 淡入保持 → 计时结束后淡出
             if (_holdRemain > 0f)
             {
-                _holdRemain -= Time.deltaTime;
+                _holdRemain -= Time.unscaledDeltaTime;
                 if (_holdRemain <= 0f)
                 {
                     _fadeTarget = 0f;
                 }
             }
 
-            float step = Time.deltaTime / Mathf.Max(0.01f, FadeSec);
+            float step = Time.unscaledDeltaTime / Mathf.Max(0.01f, FadeSec);
             _alpha = Mathf.MoveTowards(_alpha, _fadeTarget, step);
             if (_group != null)
             {

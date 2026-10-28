@@ -21,6 +21,7 @@ namespace FTProject
             AStarManager.Instance,
             // 存档在其他业务管理器之前初始化。
             SaveManager.Instance,
+            AudioManager.Instance,
             PlayerDataManager.Instance,
             EnemyManager.Instance,
             BulletManager.Instance,
@@ -172,11 +173,15 @@ namespace FTProject
                 StartCoroutine(RetryConfigLoadCo());
                 return;
             }
-            ShowFailure("Configuration failed after 3 attempts: " + string.Join(", ", Configs.FailedTables), () =>
+            Phase = BootPhase.Failed;
+            var view = UIManager.Instance.Open<LoadingView>(LoadingView.LogicalName, UILayout.NormalPanel);
+            if (view == null) { ShowFailure("LoadingView unavailable", () => BeginHotUpdate(true)); return; }
+            view.SetFailed(Localization.Get("Config load failed, see Console") ?? "Config load failed, see Console");
+            view.SetRecovery(() =>
             {
                 _configLoadAttempts = 0;
                 BeginHotUpdate(true);
-            });
+            }, () => Application.Quit());
         }
         private IEnumerator RetryConfigLoadCo()
         {
@@ -223,6 +228,7 @@ namespace FTProject
             }
             EventDispatcher.RemoveEventListener(EventName.SplashFinishedEvent, OnSplashFinished);
             BootUpdateSession.Controls();
+            if (AudioRuntime.Current != null) AudioRuntime.Current.FlushSettings();
             for (int i = 0; i < _managers.Count; i++)
             {
                 _managers[i].OnDestroy();

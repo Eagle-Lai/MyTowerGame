@@ -774,6 +774,7 @@ namespace FTProject
             }
 
 
+            if (!killing && real >= 1f) GameAudio.EnemyHit(this);
             if (killing)
             {
                 Die();

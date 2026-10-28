@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 namespace FTProject
@@ -33,6 +33,27 @@ namespace FTProject
     public class GameFlowManager : MonoBehaviour
     {
         public static GameFlowManager Instance { get; private set; }
+
+        /// <summary>Read-only menu query; never discards a player's checkpoint.</summary>
+        public static bool TryGetResumableCheckpoint(out int levelId, out int nextWave)
+        {
+            levelId = 0;
+            nextWave = 0;
+            SaveManager save = SaveManager.Instance;
+            if (save == null || !save.HasSnapshot || !Configs.IsLoaded) return false;
+            LevelSnapshot snapshot = save.Snapshot;
+            if (snapshot == null || !save.IsUnlocked(snapshot.levelId)) return false;
+            LevelConfig level = Configs.GetLevel(snapshot.levelId);
+            if (level == null) return false;
+            LevelRatingProfile profile = Configs.GetLevelRating(level.Id);
+            string reason;
+            int waves = level.RoundIds != null ? level.RoundIds.Count : 0;
+            if (!LevelCheckpointValidator.IsCompatible(snapshot, profile, waves, out reason) ||
+                save.IsRunCommitted(level.Id, snapshot.metrics != null ? snapshot.metrics.runId : null)) return false;
+            levelId = level.Id;
+            nextWave = Mathf.Min(snapshot.roundCursor + 1, waves);
+            return true;
+        }
 
         [Header("场景引用（由 SceneMainBuilder 自动填充）")]
         public BoardView boardView;
@@ -79,8 +100,6 @@ namespace FTProject
         public LevelRunMetrics RunMetrics { get { return _run != null ? _run.Clone() : null; } }
         public LevelRatingProfile RatingProfile { get { return _ratingProfile != null ? _ratingProfile.Clone() : null; } }
 
-        /// <summary>塔升级/出售面板是否已打开（惰性打开，见 OnTowerSelected）</summary>
-        private bool _towerPanelOpened;
 
         /// <summary>当前回合序号（从 1 计，0 = 尚未开始）</summary>
         public int CurrentRoundIndex { get { return _roundCursor + (State == GameFlowState.RoundRunning ? 1 : 0); } }
@@ -102,7 +121,6 @@ namespace FTProject
             EventDispatcher.AddEventListener(EventName.StartRoundRequestEvent, OnStartRequest);
             EventDispatcher.AddEventListener<bool>(EventName.GameOverEvent, OnGameOver);
             // M2：塔选中 → 打开升级/出售面板；升级/出售请求 → 执行
-            EventDispatcher.AddEventListener<BaseTower>(EventName.TowerSelectedEvent, OnTowerSelected);
             EventDispatcher.AddEventListener<BaseTower>(EventName.TowerUpgradeRequestEvent, OnTowerUpgradeRequest);
             EventDispatcher.AddEventListener<BaseTower>(EventName.TowerSellRequestEvent, OnTowerSellRequest);
             // UI 补全 C1：出售必须经确认弹窗后才真正执行（只监听"确认"事件）
@@ -133,7 +151,6 @@ namespace FTProject
             EventDispatcher.RemoveEventListener<BaseEnemy, int>(EventName.EnemyReachedEndEvent, OnRatedEnemyLeaked);
             EventDispatcher.RemoveEventListener(EventName.StartRoundRequestEvent, OnStartRequest);
             EventDispatcher.RemoveEventListener<bool>(EventName.GameOverEvent, OnGameOver);
-            EventDispatcher.RemoveEventListener<BaseTower>(EventName.TowerSelectedEvent, OnTowerSelected);
             EventDispatcher.RemoveEventListener<BaseTower>(EventName.TowerUpgradeRequestEvent, OnTowerUpgradeRequest);
             EventDispatcher.RemoveEventListener<BaseTower>(EventName.TowerSellRequestEvent, OnTowerSellRequest);
             EventDispatcher.RemoveEventListener<int>(EventName.SelectLevelRequestEvent, OnSelectLevelRequest);
@@ -156,6 +173,7 @@ namespace FTProject
         {
             if (Instance == this)
             {
+                GameAudio.EndLevel();
                 Instance = null;
             }
         }
@@ -221,10 +239,8 @@ namespace FTProject
             UIManager.Instance.Close("MainMenuView");
             if (!isTower)
             {
-                // 怪物图鉴（B3）尚未实现：明确提示，不静默失败
-                EventDispatcher.TriggerEvent<string>(EventName.ShowTipEvent,
-                    Localization.Get("Monster codex: UI not ready yet") ?? "怪物图鉴：界面生成中");
-                UIManager.Instance.Open<MainMenuView>("MainMenuView", UILayout.NormalPanel);
+                if (UIManager.Instance.Open<MonsterCodexView>(MonsterCodexView.LogicalName, UILayout.NormalPanel) == null)
+                    UIManager.Instance.Open<MainMenuView>("MainMenuView", UILayout.NormalPanel);
                 return;
             }
             TowerCodexView view = UIManager.Instance.Open<TowerCodexView>("TowerCodexView", UILayout.NormalPanel);
@@ -241,6 +257,7 @@ namespace FTProject
 
         public void InitLevel(int levelId)
         {
+            GameAudio.BeginLevel();
             State = GameFlowState.Loading;
             // 进 Loading 就把倍速复位 ×1（P2b 硬性约束③）：新一局应当从最慢档开始
             ResetGameSpeed();
@@ -252,6 +269,7 @@ namespace FTProject
                 Debug.LogError(string.Format("[Flow] 关卡 {0} 配置不完整，无法建关", levelId));
                 Tips(Localization.Get("Level config incomplete") ?? "关卡配置不完整");
                 State = GameFlowState.None;
+                GameAudio.EndLevel();
                 return;
             }
 
@@ -273,6 +291,7 @@ namespace FTProject
             {
                 Debug.LogError("[Rating] Level cannot start: rating config missing, invalid, or content hash mismatch");
                 State = GameFlowState.None;
+                GameAudio.EndLevel();
                 return;
             }
             _run = new LevelRunMetrics { runId = System.Guid.NewGuid().ToString("N"), statisticsValid = true, timingValid = true };
@@ -297,6 +316,7 @@ namespace FTProject
             {
                 Debug.LogError("[Flow] boardView 未连线，请执行「Tools ▸ 塔防 ▸ 搭建 main 场景」重新生成场景");
                 State = GameFlowState.None;
+                GameAudio.EndLevel();
                 return;
             }
             boardView.Build(Map, cellSize, origin, boardRoot);
@@ -528,6 +548,7 @@ namespace FTProject
             }
 
             GameClock.Speed = requested;
+            GameAudio.Play(SoundCue.SpeedChange);
             EventDispatcher.TriggerEvent<float>(EventName.GameSpeedChangedEvent, GameClock.Speed);
         }
 
@@ -1043,6 +1064,7 @@ namespace FTProject
         /// </summary>
         public void TeardownLevel()
         {
+            GameAudio.EndLevel();
             _autoNextTimer = 0f;
             // 离开对局必须解除暂停：走统一写入口（原先是裸写 Time.timeScale = 1f）
             SetPausedState(false);
@@ -1060,7 +1082,6 @@ namespace FTProject
                 TowerPlacement.Instance.Deselect();
             }
             // 面板的"已打开过"标记跟着实例一起作废，否则下次选中塔会走错分支
-            _towerPanelOpened = false;
 
             // ② 战斗实体（互相引用，一起清）
             _wave.Stop();
@@ -1226,6 +1247,7 @@ namespace FTProject
             {
                 return;   // 已结算就别再开菜单了（结算界面在那儿）
             }
+            SetPausedState(true);
             PauseView view = UIManager.Instance.Open<PauseView>(PauseView.LogicalName, UILayout.NormalPanel);
             if (view == null)
             {
@@ -1340,59 +1362,14 @@ namespace FTProject
         // 塔选中 / 升级 / 出售（M2）
         // ------------------------------------------------------------------
 
-        /// <summary>
-        /// 选中塔 → 惰性打开升级/出售面板。
-        ///
-        /// 【为什么打开后要显式 Show(tower)】面板是**在 TowerSelectedEvent 的分发过程中**实例化的，
-        /// 它的 OnEnable（订阅事件）发生在本次分发之后 —— 于是它收不到"这一次"选中事件。
-        /// 所以这里打开后必须手动喂一次，否则面板打开是空白。
-        /// </summary>
-        private void OnTowerSelected(BaseTower tower)
-        {
-            if (tower == null)
-            {
-                return;
-            }
-
-            // 【真机诊断埋点】"点塔没反应/不能升级"时，先看这条有没有出现：
-            //   有 → 选中链路通，问题在面板；没有 → 点击没选中（输入/射线问题）。
-            Debug.Log("[Flow] OnTowerSelected: " + tower.name);
-
-            TowerInfoView view;
-            if (!_towerPanelOpened)
-            {
-                view = UIManager.Instance.Open<TowerInfoView>(
-                    TowerInfoView.LogicalName, UILayout.NormalPanel);
-                if (view == null)
-                {
-                    // 面板资源未就绪时降级：提示玩家升级/出售暂不可用（逻辑本身没坏）
-                    // 【真机诊断埋点】"点塔后不弹面板"若出现这条，说明 TowerInfoView 资源加载失败
-                    Debug.LogWarning("[Flow] TowerInfoView 打开失败（面板资源未就绪），升级/出售入口不可用");
-                    Tips(Localization.Get("Tower panel not ready, cannot upgrade/sell yet")
-                        ?? "塔操作面板资源未就绪，暂无法升级/出售（补齐 TowerInfoView 后可用）");
-                    return;
-                }
-                _towerPanelOpened = true;
-            }
-            else
-            {
-                UIManager.Instance.Open(TowerInfoView.LogicalName, UILayout.NormalPanel);
-                view = UIManager.Instance.Get<TowerInfoView>(TowerInfoView.LogicalName);
-            }
-
-            if (view != null)
-            {
-                view.Show(tower);
-            }
-        }
-
+        // Tower selection is presented by the HUD TowerActionMenu; More opens details.
         private void OnTowerUpgradeRequest(BaseTower tower)
         {
             // 【真机诊断埋点】面板 UpgradeBtn → 这里 → TryUpgrade。
             //   有这条但没升级 → TryUpgrade 内部失败（金币/满级/资源），Tips 有提示；
             //   连这条都没有 → 按钮点击没发事件（prefab 节点缺失或点击被吞）。
             Debug.Log("[Flow] OnTowerUpgradeRequest: " + (tower != null ? tower.name : "null"));
-            TowerManager.Instance.TryUpgrade(tower);
+            if (TowerManager.Instance.TryUpgrade(tower) == null) GameAudio.Play(SoundCue.UiInvalid);
         }
 
         private void OnTowerSellRequest(BaseTower tower)

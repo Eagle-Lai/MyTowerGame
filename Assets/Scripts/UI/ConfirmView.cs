@@ -24,18 +24,11 @@ namespace FTProject
     ///   调用点关心的是"我要确认一件事"，不是"我要打开某个界面"。
     ///   静态入口把 Open→Show 的样板收在一处，接新调用点只要一行。
     ///
-    /// 【高度为什么不做自适应】策划案 §3 C2 写了"高随正文行数自适应（480~700）"，
-    ///   但**固定 760×560** 才是效果图 22 的实测几何，而且自适应高度会破坏
-    ///   UIPrefabBuilder 的静态布局（生成器产出的节点坐标是写死的，运行期改面板高
-    ///   就得同时重排 6 个子节点，很容易出错）。
-    ///   按"以 SVG 为准"的裁定：**固定 760×560**，正文限 3 行内，超出自动缩字号。
+    /// 面板根据本地化正文的实际排版高度调整；图标随提示类型改变，所有内容限制在底板内。
     /// </summary>
     public class ConfirmView : MonoBehaviour
     {
         public const string LogicalName = "ConfirmView";
-
-        /// <summary>正文最长行数（超过就缩字号，而不是撑破面板）。</summary>
-        private const int MaxBodyLines = 3;
 
         private static readonly Color Cyan = new Color(0.208f, 0.878f, 1f, 1f);          // #35E0FF
         private static readonly Color Gold = new Color(1f, 0.788f, 0.302f, 1f);          // #FFC94D
@@ -111,13 +104,50 @@ namespace FTProject
             if (_topBar != null) _topBar.color = accent;
             if (_dangerIcon != null) _dangerIcon.color = accent;
 
-            // 正文超长就缩字号（固定高度面板下的兜底，总比文字溢出到面板外好）
-            if (_body != null)
-            {
-                int lines = 1 + Mathf.Max(0, body != null ? body.Length / 22 : 0);
-                int size = lines <= MaxBodyLines ? 28 : Mathf.Max(20, 28 - (lines - MaxBodyLines) * 2);
-                _body.fontSize = size;
-            }
+            ArrangeContent(type);
+        }
+
+        /// <summary>Shared by runtime and the prefab generator; measures text rather than character count.</summary>
+        public void ArrangeContent(ConfirmType type)
+        {
+            var panel = transform.Find("Panel") as RectTransform;
+            if (panel == null) return;
+            var body = transform.Find("Panel/BodyText").GetComponent<TMP_Text>();
+            body.enableWordWrapping = true;
+            body.enableAutoSizing = true;
+            body.fontSize = body.fontSizeMax = 30;
+            body.fontSizeMin = 20;
+            body.overflowMode = TextOverflowModes.Ellipsis;
+            float bodyHeight = Mathf.Clamp(body.GetPreferredValues(body.text, 712, Mathf.Infinity).y + 32, 132, 380);
+            float height = 140 + bodyHeight + 152;
+            panel.anchorMin = panel.anchorMax = panel.pivot = new Vector2(.5f, .5f);
+            panel.anchoredPosition = Vector2.zero;
+            panel.sizeDelta = new Vector2(960, height);
+            Place(panel.Find("TopBar") as RectTransform, 32, 28, 896, 80);
+            Place(body.rectTransform, 160, 140, 752, bodyHeight);
+            Place(panel.Find("DangerIcon") as RectTransform, 48, 140 + (bodyHeight - 84) * .5f, 84, 84);
+            Place(panel.Find("ConfirmBtn") as RectTransform, 48, height - 120, 416, 88);
+            Place(panel.Find("CancelBtn") as RectTransform, 496, height - 120, 416, 88);
+            var icon = panel.Find("DangerIcon").GetComponent<Image>();
+            Color accent = ColorFor(type);
+            icon.color = accent;
+            var glyph = icon.transform.Find("StatusGlyph");
+            if (glyph != null) glyph.GetComponent<TMP_Text>().text = type == ConfirmType.Success ? "✓" : type == ConfirmType.Info ? "i" : "!";
+            panel.Find("TopBar").GetComponent<Image>().color = accent;
+            panel.Find("ConfirmBtn").GetComponent<Image>().color = accent;
+            panel.Find("ConfirmBtn/Label").GetComponent<TMP_Text>().color = new Color(.03f, .04f, .07f);
+            var surfaces = GetComponent<UIContentSurfaces>();
+            if (surfaces != null) surfaces.Refresh();
+            var fit = panel.GetComponent<UIFitInParent>();
+            if (fit != null) fit.Refresh();
+        }
+
+        private static void Place(RectTransform rect, float x, float y, float width, float height)
+        {
+            if (rect == null) return;
+            rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0, 1);
+            rect.anchoredPosition = new Vector2(x, -y);
+            rect.sizeDelta = new Vector2(width, height);
         }
 
         private static Color ColorFor(ConfirmType type)

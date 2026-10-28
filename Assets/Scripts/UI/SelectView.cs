@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using SuperScrollView;
 using TMPro;
 using UnityEngine;
@@ -83,6 +83,16 @@ namespace FTProject
 
         private TMP_Text _title;
         private TMP_Text _summary;
+        [SerializeField] private GameObject gridItemPrefab;
+        private Transform _gridContent;
+        private TMP_Text _previewTitle;
+        private TMP_Text _previewStats;
+        private LevelMapPreviewGraphic _mapPreview;
+        private Button _briefingButton;
+        private readonly List<GameObject> _gridItems = new List<GameObject>();
+        private int _selectedLevelId;
+
+        public void ConfigureGrid(GameObject item) { gridItemPrefab = item; }
         private LoopListView2 _list;
         private Button _closeBtn;
         private Button _leftBtn;
@@ -183,6 +193,17 @@ namespace FTProject
         {
             _title = FindText("Panel/Title");
             _summary = FindText("Panel/Summary");
+            _gridContent = transform.Find("Panel/Grid/Viewport/Content");
+            if (_gridContent != null)
+            {
+                _previewTitle = FindText("Panel/Preview/Name");
+                _previewStats = FindText("Panel/Preview/Stats");
+                _mapPreview = transform.Find("Panel/Preview/Map").GetComponent<LevelMapPreviewGraphic>();
+                _briefingButton = FindButton("Panel/Preview/BriefingBtn");
+                _briefingButton.onClick.AddListener(OpenBriefing);
+                FindButton("Panel/CloseBtn").onClick.AddListener(OnClickClose);
+                return;
+            }
 
             RectTransform listRect = FindRect("Panel/List");
             if (listRect != null)
@@ -226,6 +247,7 @@ namespace FTProject
         /// <summary>按 TBSceneInfo 重建关卡条目。可重复调用（界面是复用的，每次打开都会走一遍）。</summary>
         public void Build()
         {
+            if (_gridContent != null) { BuildGrid(); return; }
             if (_list == null)
             {
                 return;
@@ -263,6 +285,87 @@ namespace FTProject
             }
 
             RefreshHeader(_levels.Count);
+        }
+
+        private void BuildGrid()
+        {
+            _levels = Configs.LevelTable != null ? Configs.LevelTable.DataList : null;
+            int count = _levels != null ? _levels.Count : 0;
+            if (gridItemPrefab == null) throw new System.InvalidOperationException("SelectView grid item is not assigned");
+            while (_gridItems.Count < count)
+            {
+                GameObject item = Instantiate(gridItemPrefab, _gridContent, false);
+                UiAudio.Bind(item);
+                item.SetActive(true);
+                Button button = item.transform.Find("Body").GetComponent<Button>();
+                int index = _gridItems.Count;
+                button.onClick.AddListener(() => SelectGridLevel(_levels[index].Id));
+                _gridItems.Add(item);
+            }
+            for (int i = 0; i < _gridItems.Count; i++) _gridItems[i].SetActive(i < count);
+            if (count == 0)
+            {
+                _previewTitle.text = Localization.Get("Level config incomplete") ?? "Level config incomplete";
+                _previewStats.text = Localization.Get("Config load failed, see Console") ?? "Config load failed, see Console";
+                _briefingButton.interactable = false; return;
+            }
+            if (_selectedLevelId <= 0 || !_levels.Exists(x => x.Id == _selectedLevelId))
+            {
+                int resume, wave;
+                _selectedLevelId = GameFlowManager.TryGetResumableCheckpoint(out resume, out wave)
+                    ? resume : _levels[Mathf.Max(0, FirstUnclearedIndex())].Id;
+            }
+            RefreshHeader(count);
+            SelectGridLevel(_selectedLevelId);
+        }
+
+        private void SelectGridLevel(int id)
+        {
+            _selectedLevelId = id;
+            SaveManager save = SaveManager.Instance;
+            int resume, wave;
+            bool hasResume = GameFlowManager.TryGetResumableCheckpoint(out resume, out wave);
+            for (int i = 0; i < _levels.Count; i++)
+            {
+                int levelId = _levels[i].Id;
+                int stars = save != null ? save.GetStars(levelId) : 0;
+                bool unlocked = save == null || save.IsUnlocked(levelId);
+                Transform body = _gridItems[i].transform.Find("Body");
+                body.GetComponent<Image>().color = levelId == id ? new Color(.10f,.27f,.34f) : new Color(.118f,.161f,.224f);
+                body.GetComponent<Outline>().effectColor = levelId == id ? new Color(.208f,.878f,1f) : new Color(.325f,.404f,.498f);
+                TMP_Text label = body.Find("Label").GetComponent<TMP_Text>();
+                string status = !unlocked ? Localization.Get("Locked") ?? "Locked"
+                    : hasResume && resume == levelId ? Localization.Get("Continue") ?? "Continue"
+                    : stars > 0 ? new string('★', stars) + new string('☆', LevelRatingEvaluator.MaxStars - stars)
+                    : save != null && save.GetLegacyStars(levelId) > 0
+                        ? Localization.Get("Legacy clear; current version unrated") ?? "Legacy clear; current version unrated"
+                        : Localization.Get("Current version unrated") ?? "Current version unrated";
+                label.text = FormatGridLabel(levelId, levelId == id, status);
+                label.color = unlocked ? Color.white : new Color(.624f,.702f,.784f);
+                LanguageManager.ApplyFont(label);
+            }
+            LevelConfig level = Configs.GetLevel(id);
+            _previewTitle.text = Localization.LevelName(id, level.Name);
+            int best = save != null ? save.GetStars(id) : 0;
+            _previewStats.text = (Localization.Get("Waves     {0}", level.RoundCount) ?? string.Format("Waves {0}", level.RoundCount))
+                + "\n" + (Localization.Get("Current version best: {0}/5", best) ?? string.Format("Current version best: {0}/5", best));
+            if (save != null && !save.IsUnlocked(id))
+                _previewStats.text += "\n" + (Localization.Get("Clear the previous level first") ?? "Clear the previous level first");
+            LanguageManager.ApplyFont(_previewTitle); LanguageManager.ApplyFont(_previewStats);
+            _mapPreview.Bind(id);
+            // Locked levels remain inspectable. The briefing exposes the exact unlock reason.
+            _briefingButton.interactable = true;
+        }
+
+        /// <summary>Relative sizes let TMP fit both lines together for long localized statuses.</summary>
+        public static string FormatGridLabel(int levelId, bool selected, string status)
+        {
+            return string.Format("<size=133%>{0:00} {1}</size>\n<size=70%>{2}</size>", levelId, selected ? "✓" : "", status);
+        }
+
+        private void OpenBriefing()
+        {
+            if (_selectedLevelId > 0) LevelDetailView.Show(_selectedLevelId);
         }
 
         /// <summary>
@@ -600,6 +703,7 @@ namespace FTProject
             if (!item.IsInitHandlerCalled)
             {
                 item.IsInitHandlerCalled = true;
+                UiAudio.Bind(item.gameObject);
 
                 // 卡片的视觉层（缩放/淡化都作用在它身上）缓存一次，省掉每帧 GetComponent。
                 // 取"第一个子节点"即可 —— 卡片预制体的结构由生成器固定为 Body 一个子节点。

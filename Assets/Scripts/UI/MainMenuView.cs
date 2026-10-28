@@ -29,7 +29,9 @@ namespace FTProject
         private TMP_Text _clearText;
         private TMP_Text _version;
         private Button _startBtn;
+        private Button _continueBtn;
         private Button _codexBtn;
+        private Button _monsterCodexBtn;
         private Button _settingBtn;
         private Button _quitBtn;
 
@@ -41,12 +43,16 @@ namespace FTProject
             _clearText = FindText("Panel/StatBg/ClearText");
             _version = FindText("Panel/Version");
             _startBtn = FindButton("Panel/StartBtn");
+            _continueBtn = FindButton("Panel/ContinueBtn");
             _codexBtn = FindButton("Panel/CodexBtn");
+            _monsterCodexBtn = FindButton("Panel/MonsterCodexBtn");
             _settingBtn = FindButton("Panel/SettingBtn");
             _quitBtn = FindButton("Panel/QuitBtn");
 
             if (_startBtn != null) _startBtn.onClick.AddListener(OnClickStart);
+            if (_continueBtn != null) _continueBtn.onClick.AddListener(OnClickContinue);
             if (_codexBtn != null) _codexBtn.onClick.AddListener(OnClickCodex);
+            if (_monsterCodexBtn != null) _monsterCodexBtn.onClick.AddListener(OnClickMonsterCodex);
             if (_settingBtn != null) _settingBtn.onClick.AddListener(OnClickSetting);
             if (_quitBtn != null) _quitBtn.onClick.AddListener(OnClickQuit);
 
@@ -136,6 +142,31 @@ namespace FTProject
             // 字体跟随语言（这两行是手动拼写的文本，不在 TextLocalizer 管辖内）
             LanguageManager.ApplyFont(_starText);
             LanguageManager.ApplyFont(_clearText);
+            RefreshContinueState();
+        }
+
+        private void RefreshContinueState()
+        {
+            int levelId;
+            int nextWave;
+            bool canContinue = GameFlowManager.TryGetResumableCheckpoint(out levelId, out nextWave);
+            if (_startBtn != null)
+            {
+                _startBtn.GetComponent<Image>().color = canContinue ? new Color(.118f,.161f,.224f) : new Color(.208f,.878f,1f);
+                _startBtn.GetComponentInChildren<TMP_Text>(true).color = canContinue ? new Color(.91f,.941f,.98f) : new Color(.031f,.043f,.071f);
+            }
+            if (_continueBtn == null) return;
+            _continueBtn.gameObject.SetActive(canContinue);
+            TMP_Text label = FindText("Panel/ContinueBtn/Label");
+            if (label != null && canContinue)
+            {
+                LevelConfig level = Configs.GetLevel(levelId);
+                string levelName = level != null ? Localization.LevelName(levelId, level.Name) : levelId.ToString();
+                label.text = string.Format("{0}  ·  {1}",
+                    Localization.Get("Continue") ?? "继续游戏",
+                    levelName);
+                LanguageManager.ApplyFont(label);
+            }
         }
 
         // ------------------------------------------------------------------
@@ -147,10 +178,27 @@ namespace FTProject
             EventDispatcher.TriggerEvent(EventName.StartGameRequestEvent);
         }
 
+        private void OnClickContinue()
+        {
+            int levelId;
+            int nextWave;
+            if (!GameFlowManager.TryGetResumableCheckpoint(out levelId, out nextWave))
+            {
+                RefreshContinueState();
+                return;
+            }
+            EventDispatcher.TriggerEvent<int>(EventName.SelectLevelRequestEvent, levelId);
+        }
+
         private void OnClickCodex()
         {
             // 参数 true = 塔图鉴；怪物图鉴用 false（同一事件，少一个事件名）
             EventDispatcher.TriggerEvent<bool>(EventName.OpenCodexRequestEvent, true);
+        }
+
+        private void OnClickMonsterCodex()
+        {
+            EventDispatcher.TriggerEvent<bool>(EventName.OpenCodexRequestEvent, false);
         }
 
         private void OnClickSetting()

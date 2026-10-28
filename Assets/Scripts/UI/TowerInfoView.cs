@@ -5,31 +5,9 @@ using UnityEngine.UI;
 namespace FTProject
 {
     /// <summary>
-    /// 已建塔的升级 / 出售面板（M2-B3/B4/B5，v1 纯逻辑优先版）。
-    ///
-    /// 【为什么先做"逻辑优先"】升级/出售的**规则**（升级链、费用、返还、点击响应）
-    /// 与美术资源无关，先把这部分打通并可用占位 UI 验证，等升级面板美术到位后
-    /// 只换 prefab、不改本脚本。所以本脚本对节点**全部做了容错**：
-    /// 缺哪个节点就跳过它的刷新，只打一条 warning，不阻断游戏。
-    ///
-    /// 【节点约定（与 UIPrefabBuilder 生成的一致）】
-    ///   TowerInfoView
-    ///   ├── Bg            半透明底（点它关闭面板）
-    ///   ├── Panel
-    ///   │   ├── Title     塔名 + 等级
-    ///   │   ├── Stats     攻击力 / 射程 / 攻速 文本
-    ///   │   ├── UpgradeBtn（→ Label）  升级
-    ///   │   ├── SellBtn  （→ Label）  出售
-    ///   │   └── CloseBtn （→ Label）  关闭
-    ///
-    /// 【交互约定】
-    ///   - 打开：收到 TowerSelectedEvent(BaseTower)
-    ///   - 关闭：收到 TowerDeselectedEvent，或点 Bg / CloseBtn
-    ///   - 升级：发 TowerUpgradeRequestEvent(tower)，由 TowerManager.TryUpgrade 执行（换实例）
-    ///   - 出售：本面板弹二次确认（LogWarning 占位 + 直接执行），执行后关闭
-    ///
-    /// 【不做的事】不直接持有 TowerManager 做业务判断，只发事件；
-    /// 但升级/出售的"结果"需要立刻反映到面板（等级/费用），所以订阅升级成功事件来刷新。
+    /// Explicit tower details dialog, opened only from TowerActionMenu.More.
+    /// Closing returns to radial actions without deselecting the tower.
+    /// Upgrade/sell dispatch the existing gameplay requests; no economy is implemented here.
     /// </summary>
     public class TowerInfoView : MonoBehaviour
     {
@@ -44,6 +22,10 @@ namespace FTProject
         private TMP_Text _sellLabel;
         private Button _closeBtn;
         private Button _bgBtn;
+        private Button _rangeBtn;
+        private TMP_Text _upgradeInfo;
+        private Image _towerIcon;
+        private bool _rangeVisible = true;
 
         /// <summary>当前面板展示的塔</summary>
         private BaseTower _tower;
@@ -65,7 +47,6 @@ namespace FTProject
 
         private void OnEnable()
         {
-            EventDispatcher.AddEventListener<BaseTower>(EventName.TowerSelectedEvent, OnTowerSelected);
             EventDispatcher.AddEventListener(EventName.TowerDeselectedEvent, OnTowerDeselected);
             EventDispatcher.AddEventListener<BaseTower>(EventName.TowerUpgradeSuccess, OnUpgradeSuccess);
             EventDispatcher.AddEventListener<BaseTower>(EventName.DestroyTower, OnTowerDestroyed);
@@ -77,12 +58,12 @@ namespace FTProject
 
         private void OnDisable()
         {
-            EventDispatcher.RemoveEventListener<BaseTower>(EventName.TowerSelectedEvent, OnTowerSelected);
             EventDispatcher.RemoveEventListener(EventName.TowerDeselectedEvent, OnTowerDeselected);
             EventDispatcher.RemoveEventListener<BaseTower>(EventName.TowerUpgradeSuccess, OnUpgradeSuccess);
             EventDispatcher.RemoveEventListener<BaseTower>(EventName.DestroyTower, OnTowerDestroyed);
             EventDispatcher.RemoveEventListener<int, int>(EventName.GoldChangeEvent, OnGoldChanged);
             EventDispatcher.RemoveEventListener<int>(EventName.LanguageChangedEvent, OnLanguageChanged);
+            _tower = null;
         }
 
         /// <summary>语言已切换 → 重刷当前展示的塔（Refresh 内部同时刷按钮文案）。</summary>
@@ -119,6 +100,10 @@ namespace FTProject
             _sellLabel = FindText("Panel/SellBtn/Label");
             _closeBtn = FindButton("Panel/CloseBtn");
             _bgBtn = FindButton("Bg");
+            _rangeBtn = FindButton("Panel/RangeBtn");
+            _upgradeInfo = FindText("Panel/UpgradeInfo");
+            _towerIcon = transform.Find("Panel/TowerIcon").GetComponent<Image>();
+            if (_rangeBtn != null) _rangeBtn.onClick.AddListener(ToggleRange);
 
             if (_upgradeBtn != null)
             {
@@ -166,17 +151,7 @@ namespace FTProject
         // 事件 → 面板
         // ------------------------------------------------------------------
 
-        private void OnTowerSelected(BaseTower tower)
-        {
-            Show(tower);
-        }
-
-        /// <summary>
-        /// 打开面板并展示指定塔。
-        /// 【为什么是公开方法】面板实例化发生在 TowerSelectedEvent 的分发过程中，
-        /// 它的 OnEnable 订阅晚于本次分发 → 收不到"这一次"事件。GameFlowManager 打开后
-        /// 必须显式调用本方法喂一次数据（详见 GameFlowManager.OnTowerSelected 注释）。
-        /// </summary>
+        /// <summary>More opens the dialog, then supplies its currently selected tower.</summary>
         public void Show(BaseTower tower)
         {
             if (tower == null)
@@ -185,6 +160,7 @@ namespace FTProject
                 return;
             }
             _tower = tower;
+            _rangeVisible = RangeIndicatorView.Instance != null && RangeIndicatorView.Instance.gameObject.activeSelf;
             // 【真机诊断埋点】面板被打开并喂了数据 —— 升级面板本身是活的
             Debug.Log("[TowerInfoView] Show: " + tower.name);
             _lastUpgradeInteractable = -1;   // 诊断状态随塔切换重置（新塔首次刷新必打一条可用性日志）
@@ -196,6 +172,7 @@ namespace FTProject
         {
             _tower = null;
             SetContentVisible(false);
+            UIManager.Instance.Close(LogicalName);
         }
 
         /// <summary>
@@ -207,6 +184,7 @@ namespace FTProject
         /// </summary>
         private void OnUpgradeSuccess(BaseTower newTower)
         {
+            if (TowerPlacement.Instance == null || TowerPlacement.Instance.SelectedTower != newTower) return;
             _tower = newTower;
             Refresh();
         }
@@ -215,8 +193,7 @@ namespace FTProject
         {
             if (_tower == tower)
             {
-                _tower = null;
-                SetContentVisible(false);
+                OnTowerDeselected();
             }
         }
 
@@ -256,6 +233,14 @@ namespace FTProject
             }
 
             TowerConfig cfg = _tower.Config;
+            if (_towerIcon != null)
+            {
+                string suffix = cfg.Type == 2 ? "Power" : cfg.Type == 3 ? "Retard" : "Normal";
+                Sprite icon = ResLoader.Instance.IsReady ? ResLoader.Instance.Load<Sprite>("UI_TowerIcon_" + suffix) : null;
+                _towerIcon.sprite = icon;
+                _towerIcon.enabled = icon != null;
+                _towerIcon.preserveAspect = true;
+            }
             // 塔名走 DisplayName（多语言表；缺条目回退英文原文）
             SetText(_title, string.Format("{0}  Lv.{1}", cfg.DisplayName, cfg.Level));
             // 带上 DPS：升级值不值得，玩家看"攻击力"是看不出来的，
@@ -268,11 +253,12 @@ namespace FTProject
                         cfg.EffectValue, cfg.RadiusGrid, cfg.CooldownSec));
             }
             else SetText(_stats, Localization.Get("ATK {0}  RNG {1}  SPD {2}s  DPS {3}",
-                    cfg.Power, cfg.RadiusGrid, cfg.CooldownSec, cfg.Power / cfg.CooldownSec)
+                    cfg.Power, cfg.RadiusGrid, cfg.CooldownSec, cfg.CooldownSec > 0 ? Mathf.Round(cfg.Power / cfg.CooldownSec * 10f) / 10f : 0f)
                 ?? string.Format("攻击 {0:0.#}   射程 {1:0.#} 格   攻速 {2:0.00}s   DPS {3:0.#}",
-                    cfg.Power, cfg.RadiusGrid, cfg.CooldownSec, cfg.Power / cfg.CooldownSec));
+                    cfg.Power, cfg.RadiusGrid, cfg.CooldownSec, cfg.CooldownSec > 0 ? Mathf.Round(cfg.Power / cfg.CooldownSec * 10f) / 10f : 0f));
 
             RefreshButtons();
+            RefreshRange();
         }
 
         /// <summary>
@@ -307,6 +293,11 @@ namespace FTProject
                         ? (Localization.Get("Upgrade ({0})", cost) ?? string.Format("升级 ({0})", cost))
                         : (Localization.Get("No Next Level") ?? "无下一级"));
                 }
+                string detail = cfg.IsMaxLevel ? (Localization.Get("MAX") ?? "MAX")
+                    : next == null ? (Localization.Get("No Next Level") ?? "No Next Level")
+                    : TowerPresentation.UpgradeSummary(cfg, next);
+                if(next != null && pd.Gold < next.Prices) detail += "\n" + (Localization.Get("Not enough gold") ?? "Not enough gold") + "  −" + (next.Prices-pd.Gold);
+                SetText(_upgradeInfo,detail);
 
                 // 【真机诊断埋点】升级按钮可用性**变化时**打一条：置灰的 Button 不会触发
                 // onClick，"点升级没反应"时先看这条——若为"置灰"，原因（金币不足/无下一级/
@@ -367,15 +358,18 @@ namespace FTProject
 
         private void OnClickClose()
         {
-            // 交给 TowerPlacement 统一取消选中（单一状态源）
-            if (TowerPlacement.Instance != null)
-            {
-                TowerPlacement.Instance.Deselect();
-            }
-            else
-            {
-                OnTowerDeselected();
-            }
+            // Closing details returns to the selected tower's radial actions.
+            UIManager.Instance.Close(LogicalName);
+        }
+
+        private void ToggleRange() { _rangeVisible=!_rangeVisible;RefreshRange(); }
+        private void RefreshRange()
+        {
+            if(_tower==null || _tower.Config==null)return;
+            RangeIndicatorView range=RangeIndicatorView.Ensure();
+            if(range!=null) {if(_rangeVisible)range.Show(_tower.Position,_tower.Config.RadiusWorld);else range.Hide();}
+            if(_rangeBtn!=null)SetText(_rangeBtn.GetComponentInChildren<TMP_Text>(),
+                (_rangeVisible?"✓ ":"○ ")+(Localization.Get("Range")??"Range"));
         }
 
         private static void SetText(TMP_Text t, string value)

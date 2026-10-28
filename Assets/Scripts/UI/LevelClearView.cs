@@ -1,4 +1,4 @@
-using TMPro;
+﻿using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -48,6 +48,7 @@ namespace FTProject
 
         /// <summary>当前展示的结算数据。按钮回调要用到 nextLevelId / hasNext。</summary>
         private LevelClearInfo _info;
+        private bool _saving;
 
         private void Awake()
         {
@@ -61,7 +62,10 @@ namespace FTProject
 
         private void OnDisable()
         {
+            GameAudio.CancelRating();
             EventDispatcher.RemoveEventListener<int>(EventName.LanguageChangedEvent, OnLanguageChanged);
+            StopAllCoroutines();
+            _saving = false;
         }
 
         private void OnLanguageChanged(int language)
@@ -126,32 +130,35 @@ namespace FTProject
             if (info.victory)
             {
                 SetText(_starDetail, Localization.Get("This {0}    Best {1}",
-                        SelectView.StarRichText(info.stars), SelectView.StarRichText(info.previousBest))
+                        info.stars + "/5", info.previousBest + "/5")
                     ?? string.Format(
                         "<color=#9FB3C8>本次</color> {0}　　<color=#9FB3C8>历史最高</color> {1}",
-                        SelectView.StarRichText(info.stars), SelectView.StarRichText(info.previousBest)));
+                        info.stars + "/5", info.previousBest + "/5"));
             }
             else
             {
                 // 失败不给星，但历史成绩仍然要显示 —— 这正是"重新进游戏也能看到记录"的体现
                 SetText(_starDetail, Localization.Get("<color=#9FB3C8>Best</color> {0}",
-                        SelectView.StarRichText(info.previousBest))
+                        info.previousBest + "/5")
                     ?? string.Format(
                         "<color=#9FB3C8>历史最高</color> {0}",
-                        SelectView.StarRichText(info.previousBest)));
+                        info.previousBest + "/5"));
             }
 
             // "新纪录"只在真的超过历史最好成绩时出现
             if (_recordTip != null)
             {
-                bool show = info.victory && info.progressSaved && !info.savePending && info.newRecord;
+                bool show = info.savePending || _saving || (info.victory && info.progressSaved && info.newRecord);
                 if (_recordTip.gameObject.activeSelf != show)
                 {
                     _recordTip.gameObject.SetActive(show);
                 }
                 if (show)
                 {
-                    SetText(_recordTip, Localization.Get("★ New Record! Best stars improved") ?? "★ 新纪录！刷新了本关最高星级");
+                    _recordTip.color = info.savePending ? new Color(1f,.302f,.369f) : new Color(1f,.788f,.302f);
+                    SetText(_recordTip, _saving ? (Localization.Get("Saving...") ?? "Saving...")
+                        : info.savePending ? (Localization.Get("Record could not be saved; retry save") ?? "Record could not be saved; retry save")
+                        : (Localization.Get("★ New Record! Best stars improved") ?? "★ 新纪录！刷新了本关最高星级"));
                 }
             }
 
@@ -192,7 +199,7 @@ namespace FTProject
                 else
                 {
                     bool canGo = info.hasNext && info.nextLevelId > 0 && result != null && result.valid;
-                    _nextBtn.gameObject.SetActive(true);
+                    _nextBtn.gameObject.SetActive(canGo);
                     _nextBtn.interactable = canGo;
                     if (!canGo)
                     {
@@ -215,6 +222,8 @@ namespace FTProject
                 : info.victory
                     ? (Localization.Get("Replay") ?? "重玩本关")
                     : (Localization.Get("Try Again") ?? "重新挑战"));
+            if(_selectBtn!=null)_selectBtn.interactable=!_saving;
+            if(_retryBtn!=null)_retryBtn.interactable=!_saving;
         }
 
         // ------------------------------------------------------------------
@@ -238,7 +247,7 @@ namespace FTProject
         {
             if (_info != null && _info.savePending)
             {
-                if (GameFlowManager.Instance != null) GameFlowManager.Instance.RetryPendingClearSave();
+                if (!_saving) StartCoroutine(RetrySave());
                 return;
             }
             EventDispatcher.TriggerEvent(EventName.RestartLevelRequestEvent);
@@ -246,7 +255,25 @@ namespace FTProject
 
         private void OnClickSelect()
         {
+            if (_info == null || _saving) return;
+            if (_info.savePending)
+            {
+                ConfirmView.Show(Localization.Get("Retry Save") ?? "Retry Save",
+                    Localization.Get("Record could not be saved; retry save") ?? "Record could not be saved; retry save",
+                    ConfirmType.Warning, OnClickRetry,
+                    Localization.Get("Retry Save") ?? "Retry Save", Localization.Get("Cancel") ?? "Cancel");
+                return;
+            }
             EventDispatcher.TriggerEvent(EventName.QuitToSelectRequestEvent);
+        }
+        private System.Collections.IEnumerator RetrySave()
+        {
+            _saving=true;_retryBtn.interactable=false;_selectBtn.interactable=false;
+            Show(_info);
+            SetText(_retryLabel,Localization.Get("Saving...")??"Saving...");
+            yield return null;
+            if(GameFlowManager.Instance!=null)GameFlowManager.Instance.RetryPendingClearSave();
+            _saving=false;Show(_info);
         }
 
         // ------------------------------------------------------------------

@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using TMPro;
 using UnityEditor;
 using UnityEngine;
@@ -139,6 +139,24 @@ namespace FTProject.EditorTools
                     continue;
                 }
                 string nm = t.gameObject.name;
+                string page = System.IO.Path.GetFileNameWithoutExtension(path);
+                string parentName = t.transform.parent != null ? t.transform.parent.name : string.Empty;
+                bool stateLabel = nm == "Label" && (
+                    (page == "HudView" && t.transform.parent != null && t.transform.parent.parent != null && t.transform.parent.parent.name == "TowerActions")
+                    ||
+                    (page == "MainMenuView" && parentName == "ContinueBtn")
+                    || (page == "LevelDetailView" && parentName == "PlayBtn")
+                    || (page == "LevelClearView" && (parentName == "NextBtn" || parentName == "RetryBtn"))
+                    || (page == "TowerInfoView" && (parentName == "UpgradeBtn" || parentName == "SellBtn" || parentName == "RangeBtn"))
+                    || (page == "TowerCodexView" && parentName == "CompareBtn")
+                    || (page == "HudView" && parentName == "StartButton"));
+                if (stateLabel)
+                {
+                    var localizer = t.GetComponent<TextLocalizer>();
+                    if (localizer != null) Object.DestroyImmediate(localizer);
+                    skipped++;
+                    continue;
+                }
 
                 // SelectLevelItem's rich name/stars/difficulty text is owned by SelectView.
                 if (path == LevelPreviewCardLayout.PrefabPath && nm == "Label")
@@ -182,7 +200,7 @@ namespace FTProject.EditorTools
                     continue;
                 }
 
-                if (DynamicNames.Contains(nm) && !ForceStaticNames.Contains(nm))
+                if (nm == "StatusGlyph" || nm.StartsWith("Audio", System.StringComparison.Ordinal) || (DynamicNames.Contains(nm) && !ForceStaticNames.Contains(nm)))
                 {
                     skipped++;
                     continue;

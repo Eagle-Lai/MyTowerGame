@@ -32,6 +32,7 @@ namespace FTProject.EditorTools
 
         public static void Apply(GameObject root)
         {
+            if (TacticalForgePrefabBuilder.Applies(root.name)) { TacticalForgePrefabBuilder.Apply(root); return; }
             string name = root.name;
             if (name == "TowerCodexItem")
             {

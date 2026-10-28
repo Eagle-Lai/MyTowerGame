@@ -72,6 +72,18 @@ namespace FTProject
         private bool _hasFit;
         private int _lastPixW = -1, _lastPixH = -1;
         private Rect _lastSafeArea;
+        private Rect _displayArea = new Rect(0f, 0f, 1f, 1f);
+        private bool _centeredHudFit;
+
+        /// <summary>UI content area in full-screen normalized coordinates; never changes the camera pixel rect.</summary>
+        public void SetDisplayArea(Rect area, bool centeredHudFit = false)
+        {
+            area=Rect.MinMaxRect(Mathf.Clamp01(area.xMin),Mathf.Clamp01(area.yMin),Mathf.Clamp01(area.xMax),Mathf.Clamp01(area.yMax));
+            if(area.width<.1f || area.height<.1f || (area==_displayArea && centeredHudFit==_centeredHudFit))return;
+            _displayArea=area;
+            _centeredHudFit=centeredHudFit;
+            ApplyBoardFit();
+        }
 
         // ---- 屏幕震动（M2-W5）----
         private Vector3 _shakeOffset;
@@ -191,6 +203,8 @@ namespace FTProject
             float padT = Mathf.Max(0f, topMarginCells) * _boardCellSize;
             float padL = Mathf.Max(0f, sideMarginCells) * _boardCellSize;
             float padR = padL;
+            // The compact HUD already reserves its pixel gutters. Do not count old cell margins twice.
+            if (_centeredHudFit) padB=padT=padL=padR=_boardCellSize*.12f;
 
             float aspect = _cam.aspect > 0.0001f ? _cam.aspect : (16f / 9f);
             // 正交尺寸是"半高"，所以要同时满足高度与宽度（宽度需按宽高比折算）
@@ -199,7 +213,8 @@ namespace FTProject
 
             // 安全区（刘海/挖孔）内缩换算成世界单位。像素↔世界换算依赖 ortho，
             // 先估一版再折算一次即可收敛（留白变化 → 视野变化很小，一遍足够）。
-            if (fitSafeArea && Screen.width > 0 && Screen.height > 0 && _cam.pixelHeight > 0)
+            bool useUiArea = _centeredHudFit || _displayArea != new Rect(0f, 0f, 1f, 1f);
+            if (!useUiArea && fitSafeArea && Screen.width > 0 && Screen.height > 0 && _cam.pixelHeight > 0)
             {
                 Rect sa = Screen.safeArea;
                 float pxPerUnit = _cam.pixelHeight / (2f * ortho);
@@ -214,18 +229,32 @@ namespace FTProject
                 }
             }
 
+            if(useUiArea)
+                ortho=Mathf.Max((halfHBoard+.5f*(padB+padT))/_displayArea.height,
+                    (halfWBoard+.5f*(padL+padR))/(aspect*_displayArea.width));
             _fitSize = ortho;
             _cam.orthographicSize = ortho;
 
             // 相机位置：底边留白精确 = padB（顶边余量 = 2·ortho − 棋盘高 − padB ≥ padT 恒成立）
             float camY = (_boardCenter.y - halfHBoard) - padB + ortho;
             _homePos = new Vector3(_boardCenter.x, camY, DefaultZ);
+            if(useUiArea)
+                _homePos=new Vector3(_boardCenter.x+.5f*(padR-padL)-(_displayArea.center.x-.5f)*2f*ortho*aspect,
+                    _boardCenter.y+.5f*(padT-padB)-(_displayArea.center.y-.5f)*2f*ortho,DefaultZ);
 
             // 平移夹取框 = 棋盘 + 四周留白（取景归位时视口恰好贴合该框 → 锁定中心）
             _frameMinX = _boardCenter.x - halfWBoard - padL;
             _frameMaxX = _boardCenter.x + halfWBoard + padR;
             _frameMinY = (_boardCenter.y - halfHBoard) - padB;
             _frameMaxY = (_boardCenter.y + halfHBoard) + padT;
+            if(useUiArea)
+            {
+                // Panning/home clamping uses the enlarged frame, including the UI reservation.
+                _frameMinX=Mathf.Min(_frameMinX,_homePos.x-ortho*aspect);
+                _frameMaxX=Mathf.Max(_frameMaxX,_homePos.x+ortho*aspect);
+                _frameMinY=Mathf.Min(_frameMinY,_homePos.y-ortho);
+                _frameMaxY=Mathf.Max(_frameMaxY,_homePos.y+ortho);
+            }
 
             transform.position = _homePos;
             // 归位时清掉震动状态：否则上一关结束前触发的震动会带进新关卡，

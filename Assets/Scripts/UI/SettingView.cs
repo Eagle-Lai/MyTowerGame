@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -14,6 +14,10 @@ namespace FTProject
         private Button _closeBtn;
         private TMP_Text _title;
         private TMP_Dropdown _languageDropdown;
+        private readonly Slider[] _volume = new Slider[3];
+        private readonly TMP_Text[] _volumeLabels = new TMP_Text[3], _volumeValues = new TMP_Text[3];
+        private Toggle _mute;
+        private TMP_Text _muteLabel;
 
         /// <summary>下拉框第 i 项 ↔ Language 的映射（顺序 = LocalizationSettings.supportedLanguages）。</summary>
         private readonly List<Language> _languages = new List<Language>();
@@ -32,6 +36,7 @@ namespace FTProject
             Button bg = FindButton("Bg");
             if (bg != null) bg.onClick.AddListener(OnClickClose);
 
+            InitializeAudioControls();
             BuildLanguageOptions();
         }
 
@@ -45,6 +50,11 @@ namespace FTProject
         private void OnDisable()
         {
             Unsubscribe();
+            if (AudioRuntime.Current != null) AudioRuntime.Current.FlushSettings();
+            StopAllCoroutines();
+            _resetting = false;
+            if (_resetBtn != null) _resetBtn.interactable = true;
+            if (_closeBtn != null) _closeBtn.interactable = true;
         }
 
         // ------------------------------------------------------------------
@@ -106,6 +116,7 @@ namespace FTProject
             {
                 return;
             }
+            if (LanguageManager.Current != _languages[index]) GameAudio.Play(SoundCue.UiToggle);
             LanguageManager.SetLanguage(_languages[index]);
             Refresh();
         }
@@ -172,14 +183,30 @@ namespace FTProject
 
         private void DoReset()
         {
-            SaveManager.Instance.ResetAll();
+            StartCoroutine(ResetRoutine());
+        }
+        private bool _resetting;
+        private System.Collections.IEnumerator ResetRoutine()
+        {
+            if (_resetting) yield break;
+            _resetting = true;
+            if(_resetBtn!=null)_resetBtn.interactable=false;
+            if(_closeBtn!=null)_closeBtn.interactable=false;
+            yield return null;
+            bool ok = SaveManager.Instance != null && SaveManager.Instance.TryResetAll();
+            _resetting=false;
+            if(_resetBtn!=null)_resetBtn.interactable=true;
+            if(_closeBtn!=null)_closeBtn.interactable=true;
             Refresh();
-            EventDispatcher.TriggerEvent<string>(EventName.ShowTipEvent,
-                Localization.Get("Save reset") ?? "存档已重置");
+            if(ok)EventDispatcher.TriggerEvent<string>(EventName.ShowTipEvent,Localization.Get("Save reset")??"Save reset");
+            else ConfirmView.Show(Localization.Get("Reset Save")??"Reset Save",
+                Localization.Get("Save reset failed")??"Save reset failed. Please retry.",ConfirmType.Danger,DoReset,
+                Localization.Get("Retry")??"Retry",Localization.Get("Cancel")??"Cancel");
         }
 
         private void OnClickClose()
         {
+            if (_resetting) return;
             EventDispatcher.TriggerEvent(EventName.CloseSettingsRequestEvent);
         }
 
@@ -194,6 +221,55 @@ namespace FTProject
             }
 
             SyncLanguageDropdown();
+            SyncAudioControls();
+        }
+
+
+        private void InitializeAudioControls()
+        {
+            string[] names = { "Master", "Music", "Sfx" };
+            for (int i = 0; i < names.Length; i++)
+            {
+                int index = i;
+                var node = transform.Find("Panel/Audio" + names[i] + "Slider");
+                _volume[i] = node != null ? node.GetComponent<Slider>() : null;
+                _volumeLabels[i] = FindText("Panel/Audio" + names[i] + "Label");
+                _volumeValues[i] = FindText("Panel/Audio" + names[i] + "Value");
+                if (_volume[i] != null) _volume[i].onValueChanged.AddListener(value => ChangeVolume(index, value));
+            }
+            var muteNode = transform.Find("Panel/AudioMuteToggle");
+            _mute = muteNode != null ? muteNode.GetComponent<Toggle>() : null;
+            _muteLabel = FindText("Panel/AudioMuteToggle/AudioMuteLabel");
+            if (_mute != null) _mute.onValueChanged.AddListener(value =>
+            {
+                var audio = AudioPreferences.Normalize(SaveManager.Instance.Settings.audio);
+                if (audio.muted == value) return;
+                audio.muted = value; SaveManager.Instance.SetAudioPreferences(audio);
+                if (AudioRuntime.Current != null) AudioRuntime.Current.FlushSettings();
+                GameAudio.Play(SoundCue.UiToggle);
+            });
+        }
+        private void ChangeVolume(int index, float value)
+        {
+            var audio = AudioPreferences.Normalize(SaveManager.Instance.Settings.audio);
+            if (index == 0) audio.master = value; else if (index == 1) audio.music = value; else audio.sfx = value;
+            SaveManager.Instance.SetAudioPreferences(audio);
+            if (_volumeValues[index] != null) _volumeValues[index].text = Mathf.RoundToInt(value * 100) + "%";
+            var feedback = _volume[index].GetComponent<AudioSliderFeedback>(); if (feedback != null) feedback.MarkChanged();
+        }
+        private void SyncAudioControls()
+        {
+            var audio = AudioPreferences.Normalize(SaveManager.Instance.Settings.audio);
+            float[] values = { audio.master, audio.music, audio.sfx };
+            string[] keys = { "Master Volume", "Music Volume", "SFX Volume" };
+            for (int i = 0; i < 3; i++)
+            {
+                if (_volume[i] != null) _volume[i].SetValueWithoutNotify(values[i]);
+                if (_volumeValues[i] != null) { _volumeValues[i].text = Mathf.RoundToInt(values[i] * 100) + "%"; LanguageManager.ApplyFont(_volumeValues[i]); }
+                if (_volumeLabels[i] != null) { _volumeLabels[i].text = Localization.Get(keys[i]) ?? keys[i]; LanguageManager.ApplyFont(_volumeLabels[i]); }
+            }
+            if (_mute != null) _mute.SetIsOnWithoutNotify(audio.muted);
+            if (_muteLabel != null) { _muteLabel.text = Localization.Get("Mute") ?? "Mute"; LanguageManager.ApplyFont(_muteLabel); }
         }
 
         private TMP_Text FindText(string path)

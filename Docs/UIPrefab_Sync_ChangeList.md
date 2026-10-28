@@ -1,5 +1,9 @@
 # UI 预制体手工改动同步清单
 
+> **2026-10-26 当前生效说明（FishTestGame）**：正式 UI 已应用 Tactical Forge。现行入口为 `Tools/塔防/Tactical Forge/更新实际 UI（保留 GUID）`；UIPrefabBuilder 与 UIResolutionLayout 的正常页面入口已同步新样式。选关改为网格点选后明确查看简报，图鉴改为塔型标签页/比较和怪物卡片/详情。HUD 资源节点仍保留 `Bg_Gold/GoldText`、`Bg_Hp/HpText`、`Bg_Round/RoundText`；实际几何由 TacticalForgeLayout 按比例计算，不能再按下文固定坐标重建。
+>
+> 当前实施、85 状态映射及未验证项见 [本轮交付](D:/FishTestGame/Docs/UI_Redesign/Implementation/2026-10-26/README.md)。以下旧文保留为历史记录，旧 `.workbuddy/cache/ui_prefabs.json` 不是新布局的生成输入，旧卡片尺寸、轮播规则和皮肤不是当前标准。
+
 > 本文档记录一次「手工改 prefab → 反向同步生成器 / 缓存 / 引用代码」的完整交付。
 > 约定：所有路径均为**工程相对路径**（不写盘符，双版本 D: / E: 通用）。
 > 生成器 = `Assets/Editor/UIPrefabBuilder.cs`（Editor 程序集）；预制体在 `Assets/Prefabs/UI/`。

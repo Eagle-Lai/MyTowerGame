@@ -1,5 +1,6 @@
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace FTProject
 {
@@ -63,6 +64,14 @@ namespace FTProject
         private float _velocity;
         private float _tipTimer;
         private int _tipIndex = -1;
+        private Button _retryBtn, _returnBtn;
+        private System.Action _retry, _return;
+        public void SetRecovery(System.Action retry, System.Action back)
+        {
+            _retry=retry;_return=back;
+            if(_retryBtn!=null)_retryBtn.gameObject.SetActive(retry!=null);
+            if(_returnBtn!=null)_returnBtn.gameObject.SetActive(back!=null);
+        }
 
         private void Awake()
         {
@@ -71,6 +80,11 @@ namespace FTProject
             _tipText = FindText("Panel/TipText");
             _fill = FindRect("Panel/ProgressBar/Fill");
             _glow = FindRect("Panel/ProgressBar/Glow");
+            _retryBtn=transform.Find("Panel/RetryBtn").GetComponent<Button>();
+            _returnBtn=transform.Find("Panel/ReturnBtn").GetComponent<Button>();
+            _retryBtn.onClick.AddListener(()=>{var action=_retry;SetRecovery(null,null);action?.Invoke();});
+            _returnBtn.onClick.AddListener(()=>{var action=_return;SetRecovery(null,null);action?.Invoke();});
+            SetRecovery(null,null);
 
             if (_percentText != null) _percentText.color = Gold;
             if (_tipText != null) _tipText.color = TextSecondary;
@@ -80,6 +94,9 @@ namespace FTProject
 
         private void OnEnable()
         {
+            _target = _shown = _velocity = 0f;
+            ApplyProgress(0f);
+            SetRecovery(null, null);
             EventDispatcher.AddEventListener<string, float>(EventName.LoadingProgressEvent, OnProgress);
             _tipIndex = -1;
             ShowNextTip();
@@ -134,6 +151,8 @@ namespace FTProject
         /// <summary>加载失败：状态文字转红并把原因显示出来，**绝不静默卡住**。</summary>
         public void SetFailed(string reason)
         {
+            _target = _shown;
+            _velocity = 0f;
             if (_statusText != null)
             {
                 _statusText.text = reason;

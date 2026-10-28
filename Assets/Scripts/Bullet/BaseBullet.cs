@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 namespace FTProject
@@ -247,6 +247,7 @@ namespace FTProject
 
         private void OnHit(BaseEnemy e)
         {
+            if (_aoeRadius <= 0f) GameAudio.Play(SoundCue.NormalHit);
             e.Hurt(_damage);
             ApplyEffect(e);
             _hitSet.Add(e);
@@ -271,6 +272,7 @@ namespace FTProject
         /// </summary>
         private void Explode(Vector2 center)
         {
+            GameAudio.Play(SoundCue.BlastHit);
             // 屏幕震动（UI 补全 C3）：范围攻击爆炸是最"有分量"的打击反馈。
             // 系数 0.3 —— 爆炸发生得很频繁，按漏怪的 1.0 会晃到没法玩。
             if (CameraController.Instance != null && Configs.Global != null)
@@ -480,6 +482,7 @@ namespace FTProject
             b.transform.SetParent(BulletParent, false);
             b.transform.position = new Vector3(fromPos.x, fromPos.y, 0f);
             b.Init(target, damage, cfg, towerEffectValue);
+            GameAudio.Play(cfg.AoeRadius > 0 ? SoundCue.BlastFire : SoundCue.NormalFire);
 
             if (CombatSystem.Instance != null)
             {

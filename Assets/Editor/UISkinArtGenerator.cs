@@ -77,6 +77,7 @@ namespace FTProject.EditorTools
         /// <summary>供一键向导/自动化调用（不弹窗）</summary>
         public static void GenerateAll(EditorUtil.Report report)
         {
+            TacticalForgePrefabBuilder.GenerateArt();
             report.Head("生成深色科幻 UI 皮肤 → " + UiArtDir);
             EditorUtil.EnsureFolder(UiArtDir);
 

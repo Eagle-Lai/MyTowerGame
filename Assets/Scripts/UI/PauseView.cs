@@ -134,7 +134,10 @@ namespace FTProject
             // 【为什么这里不再写 timeScale】重开走 RestartLevel → StartLevel → TeardownLevel，
             //   而 TeardownLevel 里已经有唯一的解除暂停入口（GameClock.SetPaused(false)）。
             //   在 UI 里再写一次就是双写，容易与流程层状态脱钩。
-            EventDispatcher.TriggerEvent(EventName.RestartLevelRequestEvent);
+            ConfirmView.Show(Localization.Get("Restart Level")??"Restart Level",
+                Localization.Get("Restart this level?")??"Restart this level? Current battle will restart.",
+                ConfirmType.Warning,()=>EventDispatcher.TriggerEvent(EventName.RestartLevelRequestEvent),
+                Localization.Get("Restart Level")??"Restart Level",Localization.Get("Cancel")??"Cancel");
         }
 
         private void OnClickSettings()
@@ -145,7 +148,10 @@ namespace FTProject
         private void OnClickQuit()
         {
             // 同上：退出对局由 QuitToSelect → TeardownLevel 统一解除暂停
-            EventDispatcher.TriggerEvent(EventName.QuitToSelectRequestEvent);
+            ConfirmView.Show(Localization.Get("Back to Levels")??"Back to Levels",
+                Localization.Get("Leave this battle?")??"Leave this battle? The last saved checkpoint is kept.",
+                ConfirmType.Warning,()=>EventDispatcher.TriggerEvent(EventName.QuitToSelectRequestEvent),
+                Localization.Get("Back to Levels")??"Back to Levels",Localization.Get("Cancel")??"Cancel");
         }
 
         private TMP_Text FindText(string path)

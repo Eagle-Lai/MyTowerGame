@@ -1,4 +1,4 @@
-using SuperScrollView;
+﻿using SuperScrollView;
 using TMPro;
 using UnityEditor;
 using UnityEngine;
@@ -641,6 +641,7 @@ namespace FTProject.EditorTools
 
         private static void BuildHud(EditorUtil.Report report)
         {
+            if (_layoutPreviewFolder == null && TacticalForgePrefabBuilder.UpdateExisting(HudPath)) return;
             report.Head("生成 HUD → " + HudPath);
 
             // ★ 安全护栏：prefab 里若有生成器不认识的节点，说明有人手工改过，中止而不是抹掉
@@ -828,6 +829,7 @@ namespace FTProject.EditorTools
 
         private static void BuildTips(EditorUtil.Report report)
         {
+            if (_layoutPreviewFolder == null && TacticalForgePrefabBuilder.UpdateExisting(TipsPath)) return;
             report.Head("生成提示层 → " + TipsPath);
 
             DeleteUiPrefab(TipsPath);
@@ -881,6 +883,7 @@ namespace FTProject.EditorTools
 
         private static void BuildTowerInfo(EditorUtil.Report report)
         {
+            if (_layoutPreviewFolder == null && TacticalForgePrefabBuilder.UpdateExisting(TowerInfoPath)) return;
             report.Head("生成塔信息面板 → " + TowerInfoPath);
 
             // 安全护栏：有生成器不认识的一级子节点 → 中止
@@ -1023,6 +1026,7 @@ namespace FTProject.EditorTools
 
         private static void BuildSelect(EditorUtil.Report report)
         {
+            if (_layoutPreviewFolder == null && TacticalForgePrefabBuilder.UpdateExisting(SelectPath)) return;
             report.Head("生成关卡选择 → " + SelectPath);
             string extra;
             if (!EditorUtil.IsSafeToRebuild(SelectPath, SelectChildren, out extra))
@@ -1292,6 +1296,7 @@ namespace FTProject.EditorTools
 
         private static void BuildPause(EditorUtil.Report report)
         {
+            if (_layoutPreviewFolder == null && TacticalForgePrefabBuilder.UpdateExisting(PausePath)) return;
             report.Head("生成暂停界面 → " + PausePath);
             string extra;
             if (!EditorUtil.IsSafeToRebuild(PausePath, PauseChildren, out extra))
@@ -1346,6 +1351,7 @@ namespace FTProject.EditorTools
         /// </summary>
         private static void BuildGameIntro(EditorUtil.Report report)
         {
+            if (_layoutPreviewFolder == null && TacticalForgePrefabBuilder.UpdateExisting(GameIntroPath)) return;
             report.Head("生成游戏介绍弹窗 → " + GameIntroPath);
             string extra;
             if (!EditorUtil.IsSafeToRebuild(GameIntroPath, GameIntroChildren, out extra))
@@ -1476,6 +1482,7 @@ namespace FTProject.EditorTools
 
         private static void BuildSetting(EditorUtil.Report report)
         {
+            if (_layoutPreviewFolder == null && TacticalForgePrefabBuilder.UpdateExisting(SettingPath)) return;
             report.Head("生成设置界面 → " + SettingPath);
             string extra;
             if (!EditorUtil.IsSafeToRebuild(SettingPath, SettingChildren, out extra))
@@ -1504,6 +1511,7 @@ namespace FTProject.EditorTools
             CreatePanelButton(panel.transform, "ResetBtn", "Reset Save", new Vector2(0f, -90f));
             CreatePanelButton(panel.transform, "CloseBtn", "Close", new Vector2(0f, -178f));
 
+            AudioSettingsPrefabBuilder.Apply(root);
             GameObject saved = SaveUiPrefab(root, SettingPath);
             Object.DestroyImmediate(root);
             if (saved == null)
@@ -1523,6 +1531,7 @@ namespace FTProject.EditorTools
 
         private static void BuildLevelClear(EditorUtil.Report report)
         {
+            if (_layoutPreviewFolder == null && TacticalForgePrefabBuilder.UpdateExisting(LevelClearPath)) return;
             report.Head("生成关卡结算界面 → " + LevelClearPath);
             if (SyncExistingRatingView(LevelClearPath, false, report)) return;
             string extra;
@@ -1834,6 +1843,7 @@ namespace FTProject.EditorTools
 
         private static void BuildSplash(EditorUtil.Report report)
         {
+            if (_layoutPreviewFolder == null && TacticalForgePrefabBuilder.UpdateExisting(SplashPath)) return;
             report.Head("生成开屏页 → " + SplashPath);
             string extra;
             if (!EditorUtil.IsSafeToRebuild(SplashPath, SplashChildren, out extra))
@@ -1906,6 +1916,7 @@ namespace FTProject.EditorTools
 
         private static void BuildLoading(EditorUtil.Report report)
         {
+            if (_layoutPreviewFolder == null && TacticalForgePrefabBuilder.UpdateExisting(LoadingPath)) return;
             report.Head("生成加载进度界面 → " + LoadingPath);
             string extra;
             if (!EditorUtil.IsSafeToRebuild(LoadingPath, LoadingChildren, out extra))
@@ -2013,6 +2024,7 @@ namespace FTProject.EditorTools
 
         private static void BuildHotUpdate(EditorUtil.Report report)
         {
+            if (_layoutPreviewFolder == null && TacticalForgePrefabBuilder.UpdateExisting(HotUpdatePath)) return;
             report.Head("生成热更新界面 → " + HotUpdatePath);
             string extra;
             if (!EditorUtil.IsSafeToRebuild(HotUpdatePath, HotUpdateChildren, out extra))
@@ -2234,6 +2246,7 @@ namespace FTProject.EditorTools
 
         private static void BuildMainMenu(EditorUtil.Report report)
         {
+            if (_layoutPreviewFolder == null && TacticalForgePrefabBuilder.UpdateExisting(MainMenuPath)) return;
             report.Head("生成主菜单 → " + MainMenuPath);
             string extra;
             if (!EditorUtil.IsSafeToRebuild(MainMenuPath, MainMenuChildren, out extra))
@@ -2312,6 +2325,7 @@ namespace FTProject.EditorTools
 
         private static void BuildLevelDetail(EditorUtil.Report report)
         {
+            if (_layoutPreviewFolder == null && TacticalForgePrefabBuilder.UpdateExisting(LevelDetailPath)) return;
             report.Head("生成本关关卡详情 → " + LevelDetailPath);
             if (SyncExistingRatingView(LevelDetailPath, true, report)) return;
             string extra;
@@ -2519,6 +2533,7 @@ namespace FTProject.EditorTools
 
         private static void BuildSellConfirm(EditorUtil.Report report)
         {
+            if (_layoutPreviewFolder == null && TacticalForgePrefabBuilder.UpdateExisting(SellConfirmPath)) return;
             report.Head("生成出售确认 → " + SellConfirmPath);
             string extra;
             if (!EditorUtil.IsSafeToRebuild(SellConfirmPath, SellConfirmChildren, out extra))
@@ -2583,6 +2598,7 @@ namespace FTProject.EditorTools
 
         private static void BuildConfirm(EditorUtil.Report report)
         {
+            if (_layoutPreviewFolder == null && TacticalForgePrefabBuilder.UpdateExisting(ConfirmPath)) return;
             report.Head("生成通用确认弹窗 → " + ConfirmPath);
             string extra;
             if (!EditorUtil.IsSafeToRebuild(ConfirmPath, ConfirmChildren, out extra))
@@ -2639,6 +2655,7 @@ namespace FTProject.EditorTools
 
         private static void BuildTowerCodex(EditorUtil.Report report)
         {
+            if (_layoutPreviewFolder == null && TacticalForgePrefabBuilder.UpdateExisting(TowerCodexPath)) return;
             report.Head("生成防御塔图鉴 → " + TowerCodexPath);
             string extra;
             if (!EditorUtil.IsSafeToRebuild(TowerCodexPath, TowerCodexChildren, out extra))
@@ -3109,7 +3126,8 @@ namespace FTProject.EditorTools
 
         private static bool DeleteUiPrefab(string path)
         {
-            return AssetDatabase.DeleteAsset(LayoutOutputPath(path));
+            // SaveAsPrefabAsset updates the existing file while preserving its GUID.
+            return false;
         }
         private static void Stretch(RectTransform rt)
         {

@@ -165,7 +165,7 @@ namespace FTProject
     ///
     /// 【层内顺序】数值越大越靠前：
     ///   Cell 0 → PathArrow 10 → RangeIndicator 100 → Tower 200 → Enemy 300 → Bullet 400
-    /// 2026-10-21 定案：**永远怪压塔**（Tower 必须小于 Enemy），任何情况下不允许塔盖住怪。
+    /// 常态怪压塔；2026-10-26 用户要求选中塔临时抬高，取消/出售/升级换实例时恢复。
     ///
     /// 【SortingGroup】塔与怪的根节点各挂一个 SortingGroup，组序取下方的 Tower / Enemy；
     /// 组内的子渲染器只用相对序号（TowerBody / TowerBarrel / EnemyHpBarBack…）。
@@ -189,8 +189,10 @@ namespace FTProject
         public const int PathArrow = 10;
         /// <summary>射程提示圈 / 减速光环（格子之上、塔与怪之下）</summary>
         public const int RangeIndicator = 100;
-        /// <summary>塔的 SortingGroup 根序。★ 必须小于 Enemy：永远怪压塔。</summary>
+        /// <summary>未选中塔的 SortingGroup 根序。</summary>
         public const int Tower = 200;
+        /// <summary>仅当前选中塔临时使用，仍位于 Pop 飘字和屏幕 UI 之下。</summary>
+        public const int SelectedTower = 450;
         /// <summary>怪的 SortingGroup 根序。★ 必须大于 Tower。</summary>
         public const int Enemy = 300;
         public const int Bullet = 400;

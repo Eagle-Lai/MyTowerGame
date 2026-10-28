@@ -39,6 +39,12 @@ namespace FTProject
         private Button _replayBtn;
         private Button _closeBtn;
         private TMP_Text _playLabel;
+        private LevelMapPreviewGraphic _map;
+        private TMP_Text _lockReason;
+        [SerializeField] private GameObject enemyItemPrefab;
+        [SerializeField] private List<MonsterCodexPortrait> enemyPortraits=new List<MonsterCodexPortrait>();
+        private readonly List<GameObject> _enemyItems=new List<GameObject>();
+        public void ConfigureEnemyPortraits(GameObject prefab,List<MonsterCodexPortrait> portraits){enemyItemPrefab=prefab;enemyPortraits=portraits;}
 
         private int _levelId;
 
@@ -87,6 +93,13 @@ namespace FTProject
             _replayBtn = FindButton("Panel/ReplayBtn");
             _closeBtn = FindButton("Panel/CloseBtn");
             _playLabel = FindText("Panel/PlayBtn/Label");
+            _map = transform.Find("Panel/Map").GetComponent<LevelMapPreviewGraphic>();
+            _lockReason = FindText("Panel/LockReason");
+            FindButton("Panel/IntroBtn").onClick.AddListener(() =>
+            {
+                GameIntroView view = UIManager.Instance.Open<GameIntroView>(GameIntroView.LogicalName, UILayout.NormalPanel);
+                if (view != null) view.SetBriefingSource(true);
+            });
 
             // ⚠️ 逐个写开而不是循环：`transform.Find("Panel/Star" + i)` 这种拼接写法会让
             //   节点契约校验脚本只取到字面量前缀（"Panel/Star"），从而误报"生成器不产出该节点"。
@@ -136,6 +149,9 @@ namespace FTProject
             SaveManager sm = SaveManager.Instance;
             int stars = sm != null ? sm.GetStars(levelId) : 0;
             bool unlocked = sm == null || sm.IsUnlocked(levelId);
+            _map.Bind(levelId);
+            SetText(_lockReason, unlocked ? string.Empty : Localization.Get("Clear the previous level first") ?? "Clear the previous level first");
+            if (_lockReason != null) _lockReason.gameObject.SetActive(!unlocked);
 
             for (int i = 0; i < _stars.Length; i++)
             {
@@ -210,6 +226,7 @@ namespace FTProject
 
             SetText(_enemyLabel, Localization.Get("Enemies in this level") ?? "本关出现怪物");
             SetText(_enemyIcons, BuildEnemySummary(enemyIds));
+            FillEnemyPortraits(enemyIds);
 
             // 未解锁的关卡不给"开始挑战"，只留"返回"（效果图 21 的既定行为）
             if (_playBtn != null && _playBtn.gameObject.activeSelf != unlocked)
@@ -218,7 +235,9 @@ namespace FTProject
             }
             if (_playLabel != null)
             {
-                _playLabel.text = stars > 0
+                int resumeId, nextWave;
+                bool resume = GameFlowManager.TryGetResumableCheckpoint(out resumeId, out nextWave) && resumeId == levelId;
+                _playLabel.text = resume ? (Localization.Get("Continue") ?? "Continue") : stars > 0
                     ? (Localization.Get("Challenge Again") ?? "再次挑战")
                     : (Localization.Get("Start Challenge") ?? "开始挑战");
             }
@@ -226,6 +245,26 @@ namespace FTProject
             {
                 _replayBtn.gameObject.SetActive(unlocked);
             }
+        }
+
+        private void FillEnemyPortraits(HashSet<int> ids)
+        {
+            Transform content=transform.Find("Panel/EnemyPortraits/Viewport/Content");
+            var enemies=new List<EnemyConfig>();var seen=new HashSet<string>();var sorted=new List<int>(ids);sorted.Sort();
+            foreach(int id in sorted){EnemyConfig enemy=Configs.GetEnemy(id);if(enemy!=null && seen.Add(enemy.ResName))enemies.Add(enemy);}
+            bool available=content!=null && enemyItemPrefab!=null && enemies.Count>0;
+            transform.Find("Panel/EnemyPortraits").gameObject.SetActive(available);
+            _enemyIcons.gameObject.SetActive(!available);
+            if(!available)return;
+            while(_enemyItems.Count<enemies.Count)_enemyItems.Add(Instantiate(enemyItemPrefab,content,false));
+            for(int i=0;i<_enemyItems.Count;i++)
+            {
+                var item=_enemyItems[i];item.SetActive(i<enemies.Count);if(i>=enemies.Count)continue;
+                var portrait=enemyPortraits.Find(x=>x.resource==enemies[i].ResName);
+                var icon=item.transform.Find("Icon").GetComponent<Image>();icon.sprite=portrait!=null?portrait.sprite:null;icon.enabled=icon.sprite!=null;
+                var label=item.transform.Find("Label").GetComponent<TMP_Text>();label.text=Localization.Get(enemies[i].Name)??enemies[i].Name;LanguageManager.ApplyFont(label);
+            }
+            content.parent.parent.GetComponent<ScrollRect>().horizontalNormalizedPosition=0;
         }
 
         /// <summary>
@@ -284,6 +323,7 @@ namespace FTProject
 
         private void OnClickPlay()
         {
+            if (SaveManager.Instance != null && !SaveManager.Instance.IsUnlocked(_levelId)) return;
             int id = _levelId;
             UIManager.Instance.Close(LogicalName);
             // 复用既有入口：选关界面与结算界面都发这个事件
@@ -291,6 +331,14 @@ namespace FTProject
         }
 
         private void OnClickReplay()
+        {
+            if (SaveManager.Instance != null && !SaveManager.Instance.IsUnlocked(_levelId)) return;
+            ConfirmView.Show(Localization.Get("Restart Level") ?? "Restart Level",
+                Localization.Get("Restart this level?") ?? "Restart this level?", ConfirmType.Warning, RestartConfirmed,
+                Localization.Get("Restart Level") ?? "Restart Level", Localization.Get("Cancel") ?? "Cancel");
+        }
+
+        private void RestartConfirmed()
         {
             SaveManager save = SaveManager.Instance;
             // 选关入口会续玩兼容快照；“从头重打”须先确认清除已落盘，再进入同一入口。

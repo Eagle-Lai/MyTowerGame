@@ -1,6 +1,7 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.Rendering;
 
 namespace FTProject
 {
@@ -65,6 +66,8 @@ namespace FTProject
 
         /// <summary>当前选中的已建造塔（M2-B1）。未选中为 null。</summary>
         private BaseTower _selected;
+        private SortingGroup _selectionGroup;
+        private int _selectionOrder;
 
         public bool IsPlacing { get { return _active; } }
 
@@ -81,6 +84,7 @@ namespace FTProject
             EventDispatcher.AddEventListener(EventName.CancelBuildRequestEvent, OnCancelRequest);
             // 拖拽建造（2026-10-14）：HudView 长按塔按钮触发
             EventDispatcher.AddEventListener<int, int>(EventName.TowerDragBeginEvent, OnDragBegin);
+            EventDispatcher.AddEventListener<BaseTower>(EventName.DestroyTower, OnSelectedTowerDestroyed);
         }
 
         private void OnDisable()
@@ -88,6 +92,8 @@ namespace FTProject
             EventDispatcher.RemoveEventListener<int, int>(EventName.BuildTowerRequestEvent, OnBuildRequest);
             EventDispatcher.RemoveEventListener(EventName.CancelBuildRequestEvent, OnCancelRequest);
             EventDispatcher.RemoveEventListener<int, int>(EventName.TowerDragBeginEvent, OnDragBegin);
+            EventDispatcher.RemoveEventListener<BaseTower>(EventName.DestroyTower, OnSelectedTowerDestroyed);
+            Deselect();
         }
 
         private void OnDestroy()
@@ -346,6 +352,7 @@ namespace FTProject
             // 也正因为如此，清理方法必须**接收参数**，不能内部读 _selected。
             ClearSelectionHighlight(_selected);
             _selected = tower;
+            GameAudio.Play(SoundCue.TowerSelect);
             ApplySelectionHighlight(_selected);
             // 【真机诊断埋点】选中切换成功（重复点同一座塔会在上方相等判断处静默返回）
             Debug.Log("[Place] Select: " + tower.name);
@@ -357,11 +364,17 @@ namespace FTProject
         {
             if (_selected == null)
             {
+                RestoreSelectionOrder();
                 return;
             }
             ClearSelectionHighlight(_selected);
             _selected = null;
             EventDispatcher.TriggerEvent(EventName.TowerDeselectedEvent);
+        }
+
+        private void OnSelectedTowerDestroyed(BaseTower tower)
+        {
+            if (_selected == tower) Deselect();
         }
 
         /// <summary>
@@ -375,6 +388,7 @@ namespace FTProject
             {
                 return;
             }
+            ClearSelectionHighlight(old);
             _selected = newer;
             // 新实例是刚 Instantiate + Init 出来的，Init 内部已经 SetTint(white)，
             // 所以这里必须把"选中"的视觉重新贴回去，否则升级后高亮会莫名消失。
@@ -398,6 +412,13 @@ namespace FTProject
                 return;
             }
             tower.SetTint(SelectedTint);
+            RestoreSelectionOrder();
+            _selectionGroup=tower.GetComponent<SortingGroup>();
+            if (_selectionGroup!=null)
+            {
+                _selectionOrder=_selectionGroup.sortingOrder;
+                _selectionGroup.sortingOrder=BoardSorting.SelectedTower;
+            }
             SetCellHighlight(tower.Cell, CellHighlight.Selected);
             ShowRange(tower.Position, tower.Config != null ? tower.Config.RadiusWorld : 0f);
         }
@@ -409,6 +430,7 @@ namespace FTProject
         /// </summary>
         private void ClearSelectionHighlight(BaseTower tower)
         {
+            RestoreSelectionOrder();
             if (tower == null)
             {
                 return;
@@ -416,6 +438,12 @@ namespace FTProject
             tower.SetTint(Color.white);
             ResetCellHighlight(tower.Cell);
             HideRange();
+        }
+
+        private void RestoreSelectionOrder()
+        {
+            if (_selectionGroup!=null) _selectionGroup.sortingOrder=_selectionOrder;
+            _selectionGroup=null;
         }
 
         // ------------------------------------------------------------------
@@ -612,6 +640,7 @@ namespace FTProject
                     }
                     else
                     {
+                        GameAudio.Play(SoundCue.TowerBuildFail);
                         Tips(BlockReasonText());
                     }
                 }
@@ -673,6 +702,7 @@ namespace FTProject
                 return;
             }
 
+            GameAudio.Play(SoundCue.TowerBuildFail);
             // 松手在不可建格：给出具体原因并取消（需求：不通过则取消放置并给出提示）
             CellData hitCell = board.GetCell(rUp, cUp);
             if (hitCell != null && hitCell.Tower != null)
@@ -774,6 +804,7 @@ namespace FTProject
             BaseTower tower = TowerManager.Instance.TryBuild(_type, _level, row, col);
             if (tower == null)
             {
+                GameAudio.Play(SoundCue.TowerBuildFail);
                 // TryBuild 内部已通过 ShowTipEvent 给出具体原因
                 ClearHover();
                 return;

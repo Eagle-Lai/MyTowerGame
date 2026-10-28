@@ -32,6 +32,13 @@ namespace FTProject
         private TMP_Text _speedRow;
         private TMP_Text _priceRow;
         private TMP_Text _desc;
+        private TowerConfig _config;
+        private bool _comparison;
+
+        private void OnRectTransformDimensionsChange()
+        {
+            if(_body!=null)TacticalForgeLayout.ArrangeTowerCard(transform,_comparison);
+        }
 
         /// <summary>供 LoopListView2 做缩放/淡化（挂在 Body 上，不缩根节点）。</summary>
         public RectTransform Body { get { return _body; } }
@@ -68,6 +75,7 @@ namespace FTProject
                 return;
             }
 
+            _config = cfg;
             Color theme = ThemeColor(cfg.Type);
             if (_topBar != null) _topBar.color = theme;
             if (_typeName != null)
@@ -87,7 +95,7 @@ namespace FTProject
             if (_priceRow != null) _priceRow.text = Localization.Get("Cost     {0}", cfg.Prices) ?? string.Format("造价　{0} 金币", cfg.Prices);
             if (_desc != null)
             {
-                _desc.text = string.IsNullOrEmpty(cfg.Desc) ? roleText : cfg.Desc;
+                _desc.text = TowerPresentation.Description(cfg);
             }
 
             if (_icon != null)
@@ -105,6 +113,51 @@ namespace FTProject
             {
                 _cardBg.color = new Color(0.118f, 0.161f, 0.224f, 0.96f);   // L3 面板色
             }
+            foreach (TMP_Text text in GetComponentsInChildren<TMP_Text>(true)) LanguageManager.ApplyFont(text);
+        }
+
+        public void ShowComparison(bool show)
+        {
+            if (_config == null) return;
+            _comparison=show;
+            _icon.gameObject.SetActive(!show);
+            _dpsRow.gameObject.SetActive(!show);
+            _rangeRow.gameObject.SetActive(!show);
+            _speedRow.gameObject.SetActive(!show);
+            _priceRow.gameObject.SetActive(!show);
+            transform.Find("Body/Divider").gameObject.SetActive(!show);
+            Position(_typeName, show ? 24 : 275, 60);
+            Position(_role, show ? 92 : 340, 56);
+            Position(_desc, show ? 168 : 565, show ? 440 : 65);
+            _desc.alignment = show ? TextAlignmentOptions.TopLeft : TextAlignmentOptions.Center;
+            TacticalForgeLayout.ArrangeTowerCard(transform,show);
+            if (!show) return;
+            var levels = new System.Collections.Generic.List<TowerConfig>();
+            if (Configs.TowerTable != null)
+                foreach (var row in Configs.TowerTable.DataList)
+                    if (row.Type == _config.Type) levels.Add(new TowerConfig(row));
+            levels.Sort((a, b) => a.Level.CompareTo(b.Level));
+            var text = new System.Text.StringBuilder();
+            foreach (TowerConfig level in levels)
+            {
+                text.Append("<color=#35E0FF>Lv.").Append(level.Level).Append("</color>\n");
+                text.AppendLine(level.IsSlowAura
+                    ? (Localization.Get("Slow {0:P0} · DPS 0", level.EffectValue) ?? string.Format("Slow {0:P0} · DPS 0", level.EffectValue))
+                    : (Localization.Get("Damage   {0}", level.Power) ?? string.Format("Damage {0}", level.Power)));
+                text.Append(Localization.Get("Range    {0:F1}", level.RadiusGrid) ?? string.Format("Range {0:F1}", level.RadiusGrid));
+                text.Append(" · ").Append(level.CooldownSec.ToString("0.00")).Append("s\n");
+                text.AppendLine(Localization.Get("Cost     {0}", level.Prices) ?? string.Format("Cost {0}", level.Prices));
+                text.AppendLine();
+            }
+            _desc.text = text.ToString();
+            LanguageManager.ApplyFont(_desc);
+        }
+
+        private static void Position(TMP_Text text, float y, float height)
+        {
+            RectTransform rect = text.rectTransform;
+            rect.anchorMin = new Vector2(0, 1); rect.anchorMax = new Vector2(1, 1); rect.pivot = new Vector2(.5f, 1);
+            rect.anchoredPosition = new Vector2(0, -y); rect.sizeDelta = new Vector2(-48, height);
         }
 
         /// <summary>塔型主题色（2026-10-14 三塔型收敛后的三色映射）。</summary>
