@@ -1,0 +1,3271 @@
+[
+  {
+    "id": "01_splash",
+    "title": "开屏",
+    "family": "splash",
+    "state": "boot",
+    "condition": "启动游戏",
+    "live": "规划界面",
+    "width": 1920,
+    "height": 1080,
+    "folder": "screens",
+    "targets": []
+  },
+  {
+    "id": "02_loading_reading",
+    "title": "加载资源",
+    "family": "loading",
+    "state": "reading",
+    "condition": "加载流程处于加载资源",
+    "live": "规划界面",
+    "width": 1920,
+    "height": 1080,
+    "folder": "screens",
+    "targets": []
+  },
+  {
+    "id": "02_loading_failed",
+    "title": "加载失败",
+    "family": "loading",
+    "state": "failed",
+    "condition": "加载流程处于加载失败",
+    "live": "规划界面",
+    "width": 1920,
+    "height": 1080,
+    "folder": "screens",
+    "targets": [
+      {
+        "x": 80,
+        "y": 900,
+        "w": 420,
+        "h": 84,
+        "label": "重试载入",
+        "kind": "primary"
+      },
+      {
+        "x": 524,
+        "y": 900,
+        "w": 280,
+        "h": 84,
+        "label": "返回选关",
+        "kind": "secondary"
+      }
+    ]
+  },
+  {
+    "id": "03_update_checking",
+    "title": "检查更新",
+    "family": "update",
+    "state": "checking",
+    "condition": "资源服务支持更新且处于检查更新",
+    "live": "规划界面 / 条件适用",
+    "width": 1920,
+    "height": 1080,
+    "folder": "screens",
+    "targets": [
+      {
+        "x": 64,
+        "y": 40,
+        "w": 148,
+        "h": 72,
+        "label": "返回",
+        "kind": "ghost"
+      },
+      {
+        "x": 88,
+        "y": 872,
+        "w": 420,
+        "h": 84,
+        "label": "请稍候",
+        "kind": "disabled"
+      },
+      {
+        "x": 532,
+        "y": 872,
+        "w": 280,
+        "h": 84,
+        "label": "返回",
+        "kind": "secondary"
+      }
+    ]
+  },
+  {
+    "id": "03_update_download",
+    "title": "下载更新",
+    "family": "update",
+    "state": "download",
+    "condition": "资源服务支持更新且处于下载更新",
+    "live": "规划界面 / 条件适用",
+    "width": 1920,
+    "height": 1080,
+    "folder": "screens",
+    "targets": [
+      {
+        "x": 64,
+        "y": 40,
+        "w": 148,
+        "h": 72,
+        "label": "返回",
+        "kind": "ghost"
+      },
+      {
+        "x": 88,
+        "y": 872,
+        "w": 420,
+        "h": 84,
+        "label": "暂停下载",
+        "kind": "secondary"
+      },
+      {
+        "x": 532,
+        "y": 872,
+        "w": 280,
+        "h": 84,
+        "label": "返回",
+        "kind": "secondary"
+      }
+    ]
+  },
+  {
+    "id": "03_update_validating",
+    "title": "校验内容",
+    "family": "update",
+    "state": "validating",
+    "condition": "资源服务支持更新且处于校验内容",
+    "live": "规划界面 / 条件适用",
+    "width": 1920,
+    "height": 1080,
+    "folder": "screens",
+    "targets": [
+      {
+        "x": 64,
+        "y": 40,
+        "w": 148,
+        "h": 72,
+        "label": "返回",
+        "kind": "ghost"
+      },
+      {
+        "x": 88,
+        "y": 872,
+        "w": 420,
+        "h": 84,
+        "label": "请稍候",
+        "kind": "disabled"
+      },
+      {
+        "x": 532,
+        "y": 872,
+        "w": 280,
+        "h": 84,
+        "label": "返回",
+        "kind": "secondary"
+      }
+    ]
+  },
+  {
+    "id": "03_update_complete",
+    "title": "更新完成",
+    "family": "update",
+    "state": "complete",
+    "condition": "资源服务支持更新且处于更新完成",
+    "live": "规划界面 / 条件适用",
+    "width": 1920,
+    "height": 1080,
+    "folder": "screens",
+    "targets": [
+      {
+        "x": 64,
+        "y": 40,
+        "w": 148,
+        "h": 72,
+        "label": "返回",
+        "kind": "ghost"
+      },
+      {
+        "x": 88,
+        "y": 872,
+        "w": 420,
+        "h": 84,
+        "label": "进入游戏",
+        "kind": "primary"
+      }
+    ]
+  },
+  {
+    "id": "03_update_paused",
+    "title": "暂停下载",
+    "family": "update",
+    "state": "paused",
+    "condition": "资源服务支持更新且处于暂停下载",
+    "live": "规划界面 / 条件适用",
+    "width": 1920,
+    "height": 1080,
+    "folder": "screens",
+    "targets": [
+      {
+        "x": 64,
+        "y": 40,
+        "w": 148,
+        "h": 72,
+        "label": "返回",
+        "kind": "ghost"
+      },
+      {
+        "x": 88,
+        "y": 872,
+        "w": 420,
+        "h": 84,
+        "label": "继续下载",
+        "kind": "primary"
+      },
+      {
+        "x": 532,
+        "y": 872,
+        "w": 280,
+        "h": 84,
+        "label": "返回",
+        "kind": "secondary"
+      }
+    ]
+  },
+  {
+    "id": "03_update_resuming",
+    "title": "继续下载",
+    "family": "update",
+    "state": "resuming",
+    "condition": "资源服务支持更新且处于继续下载",
+    "live": "规划界面 / 条件适用",
+    "width": 1920,
+    "height": 1080,
+    "folder": "screens",
+    "targets": [
+      {
+        "x": 64,
+        "y": 40,
+        "w": 148,
+        "h": 72,
+        "label": "返回",
+        "kind": "ghost"
+      },
+      {
+        "x": 88,
+        "y": 872,
+        "w": 420,
+        "h": 84,
+        "label": "请稍候",
+        "kind": "disabled"
+      },
+      {
+        "x": 532,
+        "y": 872,
+        "w": 280,
+        "h": 84,
+        "label": "返回",
+        "kind": "secondary"
+      }
+    ]
+  },
+  {
+    "id": "03_update_retry",
+    "title": "重试连接",
+    "family": "update",
+    "state": "retry",
+    "condition": "资源服务支持更新且处于重试连接",
+    "live": "规划界面 / 条件适用",
+    "width": 1920,
+    "height": 1080,
+    "folder": "screens",
+    "targets": [
+      {
+        "x": 64,
+        "y": 40,
+        "w": 148,
+        "h": 72,
+        "label": "返回",
+        "kind": "ghost"
+      },
+      {
+        "x": 88,
+        "y": 872,
+        "w": 420,
+        "h": 84,
+        "label": "请稍候",
+        "kind": "disabled"
+      },
+      {
+        "x": 532,
+        "y": 872,
+        "w": 280,
+        "h": 84,
+        "label": "返回",
+        "kind": "secondary"
+      }
+    ]
+  },
+  {
+    "id": "03_update_failed",
+    "title": "更新失败",
+    "family": "update",
+    "state": "failed",
+    "condition": "资源服务支持更新且处于更新失败",
+    "live": "规划界面 / 条件适用",
+    "width": 1920,
+    "height": 1080,
+    "folder": "screens",
+    "targets": [
+      {
+        "x": 64,
+        "y": 40,
+        "w": 148,
+        "h": 72,
+        "label": "返回",
+        "kind": "ghost"
+      },
+      {
+        "x": 88,
+        "y": 872,
+        "w": 420,
+        "h": 84,
+        "label": "重试连接",
+        "kind": "primary"
+      },
+      {
+        "x": 532,
+        "y": 872,
+        "w": 280,
+        "h": 84,
+        "label": "返回启动页",
+        "kind": "secondary"
+      }
+    ]
+  },
+  {
+    "id": "04_menu_new",
+    "title": "主菜单·首次开始",
+    "family": "menu",
+    "state": "new",
+    "condition": "尚无可继续检查点",
+    "live": "规划界面",
+    "width": 1920,
+    "height": 1080,
+    "folder": "screens",
+    "targets": [
+      {
+        "x": 1688,
+        "y": 54,
+        "w": 168,
+        "h": 76,
+        "label": "设置",
+        "kind": "ghost"
+      },
+      {
+        "x": 72,
+        "y": 752,
+        "w": 520,
+        "h": 106,
+        "label": "开始游戏",
+        "kind": "primary"
+      },
+      {
+        "x": 72,
+        "y": 938,
+        "w": 220,
+        "h": 80,
+        "label": "选择关卡",
+        "kind": "secondary"
+      },
+      {
+        "x": 308,
+        "y": 938,
+        "w": 220,
+        "h": 80,
+        "label": "炮塔图鉴",
+        "kind": "secondary"
+      },
+      {
+        "x": 544,
+        "y": 938,
+        "w": 220,
+        "h": 80,
+        "label": "怪物图鉴",
+        "kind": "secondary"
+      },
+      {
+        "x": 1650,
+        "y": 960,
+        "w": 210,
+        "h": 72,
+        "label": "退出游戏",
+        "kind": "ghost"
+      }
+    ]
+  },
+  {
+    "id": "04_menu_continue",
+    "title": "主菜单·继续进度",
+    "family": "menu",
+    "state": "continue",
+    "condition": "存在已保存且有效的波次检查点",
+    "live": "规划界面",
+    "width": 1920,
+    "height": 1080,
+    "folder": "screens",
+    "targets": [
+      {
+        "x": 1688,
+        "y": 54,
+        "w": 168,
+        "h": 76,
+        "label": "设置",
+        "kind": "ghost"
+      },
+      {
+        "x": 72,
+        "y": 752,
+        "w": 520,
+        "h": 106,
+        "label": "继续游戏",
+        "kind": "primary"
+      },
+      {
+        "x": 72,
+        "y": 938,
+        "w": 220,
+        "h": 80,
+        "label": "选择关卡",
+        "kind": "secondary"
+      },
+      {
+        "x": 308,
+        "y": 938,
+        "w": 220,
+        "h": 80,
+        "label": "炮塔图鉴",
+        "kind": "secondary"
+      },
+      {
+        "x": 544,
+        "y": 938,
+        "w": 220,
+        "h": 80,
+        "label": "怪物图鉴",
+        "kind": "secondary"
+      },
+      {
+        "x": 1650,
+        "y": 960,
+        "w": 210,
+        "h": 72,
+        "label": "退出游戏",
+        "kind": "ghost"
+      }
+    ]
+  },
+  {
+    "id": "05_select_all",
+    "title": "关卡导航·全部有效关卡",
+    "family": "select",
+    "state": "all",
+    "condition": "全量关卡导航，读取玩家进度",
+    "live": "已有证据",
+    "width": 1920,
+    "height": 1080,
+    "folder": "screens",
+    "targets": [
+      {
+        "x": 64,
+        "y": 40,
+        "w": 148,
+        "h": 72,
+        "label": "返回",
+        "kind": "ghost"
+      },
+      {
+        "x": 1147,
+        "y": 856,
+        "w": 709,
+        "h": 94,
+        "label": "查看战前简报",
+        "kind": "primary"
+      }
+    ]
+  },
+  {
+    "id": "06_item_normal",
+    "title": "关卡条目·普通",
+    "family": "item",
+    "state": "normal",
+    "condition": "同一条目的普通条件示意，非玩家当前进度",
+    "live": "已有证据",
+    "width": 1920,
+    "height": 1080,
+    "folder": "screens",
+    "targets": [
+      {
+        "x": 64,
+        "y": 40,
+        "w": 148,
+        "h": 72,
+        "label": "返回",
+        "kind": "ghost"
+      },
+      {
+        "x": 1100,
+        "y": 660,
+        "w": 480,
+        "h": 90,
+        "label": "查看战前简报",
+        "kind": "primary"
+      }
+    ]
+  },
+  {
+    "id": "06_item_selected",
+    "title": "关卡条目·选中",
+    "family": "item",
+    "state": "selected",
+    "condition": "同一条目的选中条件示意，非玩家当前进度",
+    "live": "已有证据",
+    "width": 1920,
+    "height": 1080,
+    "folder": "screens",
+    "targets": [
+      {
+        "x": 64,
+        "y": 40,
+        "w": 148,
+        "h": 72,
+        "label": "返回",
+        "kind": "ghost"
+      },
+      {
+        "x": 1100,
+        "y": 660,
+        "w": 480,
+        "h": 90,
+        "label": "查看战前简报",
+        "kind": "primary"
+      }
+    ]
+  },
+  {
+    "id": "06_item_complete",
+    "title": "关卡条目·已完成",
+    "family": "item",
+    "state": "complete",
+    "condition": "同一条目的已完成条件示意，非玩家当前进度",
+    "live": "已有证据",
+    "width": 1920,
+    "height": 1080,
+    "folder": "screens",
+    "targets": [
+      {
+        "x": 64,
+        "y": 40,
+        "w": 148,
+        "h": 72,
+        "label": "返回",
+        "kind": "ghost"
+      },
+      {
+        "x": 1100,
+        "y": 660,
+        "w": 480,
+        "h": 90,
+        "label": "查看战前简报",
+        "kind": "primary"
+      }
+    ]
+  },
+  {
+    "id": "06_item_locked",
+    "title": "关卡条目·未解锁",
+    "family": "item",
+    "state": "locked",
+    "condition": "同一条目的未解锁条件示意，非玩家当前进度",
+    "live": "已有证据",
+    "width": 1920,
+    "height": 1080,
+    "folder": "screens",
+    "targets": [
+      {
+        "x": 64,
+        "y": 40,
+        "w": 148,
+        "h": 72,
+        "label": "返回",
+        "kind": "ghost"
+      },
+      {
+        "x": 1100,
+        "y": 660,
+        "w": 480,
+        "h": 90,
+        "label": "查看解锁条件",
+        "kind": "secondary"
+      }
+    ]
+  },
+  {
+    "id": "06_item_continue",
+    "title": "关卡条目·可继续",
+    "family": "item",
+    "state": "continue",
+    "condition": "同一条目的可继续条件示意，非玩家当前进度",
+    "live": "已有证据",
+    "width": 1920,
+    "height": 1080,
+    "folder": "screens",
+    "targets": [
+      {
+        "x": 64,
+        "y": 40,
+        "w": 148,
+        "h": 72,
+        "label": "返回",
+        "kind": "ghost"
+      },
+      {
+        "x": 1100,
+        "y": 660,
+        "w": 480,
+        "h": 90,
+        "label": "继续挑战",
+        "kind": "primary"
+      }
+    ]
+  },
+  {
+    "id": "06_item_history",
+    "title": "关卡条目·历史星级",
+    "family": "item",
+    "state": "history",
+    "condition": "同一条目的历史星级条件示意，非玩家当前进度",
+    "live": "已有证据",
+    "width": 1920,
+    "height": 1080,
+    "folder": "screens",
+    "targets": [
+      {
+        "x": 64,
+        "y": 40,
+        "w": 148,
+        "h": 72,
+        "label": "返回",
+        "kind": "ghost"
+      },
+      {
+        "x": 1100,
+        "y": 660,
+        "w": 480,
+        "h": 90,
+        "label": "查看战前简报",
+        "kind": "primary"
+      }
+    ]
+  },
+  {
+    "id": "06_item_record",
+    "title": "关卡条目·新纪录",
+    "family": "item",
+    "state": "record",
+    "condition": "同一条目的新纪录条件示意，非玩家当前进度",
+    "live": "已有证据",
+    "width": 1920,
+    "height": 1080,
+    "folder": "screens",
+    "targets": [
+      {
+        "x": 64,
+        "y": 40,
+        "w": 148,
+        "h": 72,
+        "label": "返回",
+        "kind": "ghost"
+      },
+      {
+        "x": 1100,
+        "y": 660,
+        "w": 480,
+        "h": 90,
+        "label": "查看战前简报",
+        "kind": "primary"
+      }
+    ]
+  },
+  {
+    "id": "07_detail_challenge",
+    "title": "战前简报·挑战",
+    "family": "detail",
+    "state": "challenge",
+    "condition": "所选关卡状态为challenge",
+    "live": "已有文档 / 实装未核验",
+    "width": 1920,
+    "height": 1080,
+    "folder": "screens",
+    "targets": [
+      {
+        "x": 64,
+        "y": 40,
+        "w": 148,
+        "h": 72,
+        "label": "返回",
+        "kind": "ghost"
+      },
+      {
+        "x": 1260,
+        "y": 936,
+        "w": 596,
+        "h": 88,
+        "label": "开始挑战",
+        "kind": "primary"
+      },
+      {
+        "x": 64,
+        "y": 936,
+        "w": 340,
+        "h": 88,
+        "label": "玩法说明",
+        "kind": "secondary"
+      }
+    ]
+  },
+  {
+    "id": "07_detail_continue",
+    "title": "战前简报·继续",
+    "family": "detail",
+    "state": "continue",
+    "condition": "所选关卡状态为continue",
+    "live": "已有文档 / 实装未核验",
+    "width": 1920,
+    "height": 1080,
+    "folder": "screens",
+    "targets": [
+      {
+        "x": 64,
+        "y": 40,
+        "w": 148,
+        "h": 72,
+        "label": "返回",
+        "kind": "ghost"
+      },
+      {
+        "x": 1260,
+        "y": 936,
+        "w": 596,
+        "h": 88,
+        "label": "继续已保存的波次",
+        "kind": "primary"
+      },
+      {
+        "x": 64,
+        "y": 936,
+        "w": 430,
+        "h": 88,
+        "label": "重新开始本关",
+        "kind": "secondary"
+      }
+    ]
+  },
+  {
+    "id": "07_detail_restart",
+    "title": "战前简报·重新挑战",
+    "family": "detail",
+    "state": "restart",
+    "condition": "所选关卡状态为restart",
+    "live": "已有文档 / 实装未核验",
+    "width": 1920,
+    "height": 1080,
+    "folder": "screens",
+    "targets": [
+      {
+        "x": 64,
+        "y": 40,
+        "w": 148,
+        "h": 72,
+        "label": "返回",
+        "kind": "ghost"
+      },
+      {
+        "x": 1260,
+        "y": 936,
+        "w": 596,
+        "h": 88,
+        "label": "开始挑战",
+        "kind": "primary"
+      },
+      {
+        "x": 64,
+        "y": 936,
+        "w": 340,
+        "h": 88,
+        "label": "玩法说明",
+        "kind": "secondary"
+      }
+    ]
+  },
+  {
+    "id": "08_intro",
+    "title": "玩法说明",
+    "family": "intro",
+    "state": "overview",
+    "condition": "查看建造与路径规则",
+    "live": "已有截图 / 运行未核验",
+    "width": 1920,
+    "height": 1080,
+    "folder": "screens",
+    "targets": [
+      {
+        "x": 64,
+        "y": 40,
+        "w": 148,
+        "h": 72,
+        "label": "返回",
+        "kind": "ghost"
+      },
+      {
+        "x": 80,
+        "y": 936,
+        "w": 300,
+        "h": 76,
+        "label": "返回战前简报",
+        "kind": "secondary"
+      },
+      {
+        "x": 1430,
+        "y": 936,
+        "w": 410,
+        "h": 76,
+        "label": "开始备战",
+        "kind": "primary"
+      }
+    ]
+  },
+  {
+    "id": "09_hud_prepare",
+    "title": "战斗 HUD·备战",
+    "family": "hud",
+    "state": "prepare",
+    "condition": "设计分支：备战；数值由真实对局提供",
+    "live": "已有证据",
+    "width": 1920,
+    "height": 1080,
+    "folder": "screens",
+    "targets": [
+      {
+        "x": 1702,
+        "y": 48,
+        "w": 154,
+        "h": 72,
+        "label": "暂停",
+        "kind": "secondary"
+      },
+      {
+        "x": 1430,
+        "y": 922,
+        "w": 172,
+        "h": 84,
+        "label": "速度 ×1",
+        "kind": "secondary"
+      },
+      {
+        "x": 1622,
+        "y": 922,
+        "w": 234,
+        "h": 84,
+        "label": "开始波次",
+        "kind": "primary"
+      }
+    ]
+  },
+  {
+    "id": "09_hud_combat",
+    "title": "战斗 HUD·战斗",
+    "family": "hud",
+    "state": "combat",
+    "condition": "设计分支：战斗；数值由真实对局提供",
+    "live": "已有证据",
+    "width": 1920,
+    "height": 1080,
+    "folder": "screens",
+    "targets": [
+      {
+        "x": 1702,
+        "y": 48,
+        "w": 154,
+        "h": 72,
+        "label": "暂停",
+        "kind": "secondary"
+      },
+      {
+        "x": 1430,
+        "y": 922,
+        "w": 172,
+        "h": 84,
+        "label": "速度 ×1",
+        "kind": "secondary"
+      },
+      {
+        "x": 1622,
+        "y": 922,
+        "w": 234,
+        "h": 84,
+        "label": "迎战中",
+        "kind": "disabled"
+      }
+    ]
+  },
+  {
+    "id": "09_hud_between",
+    "title": "战斗 HUD·波间准备",
+    "family": "hud",
+    "state": "between",
+    "condition": "设计分支：波间准备；数值由真实对局提供",
+    "live": "已有证据",
+    "width": 1920,
+    "height": 1080,
+    "folder": "screens",
+    "targets": [
+      {
+        "x": 1702,
+        "y": 48,
+        "w": 154,
+        "h": 72,
+        "label": "暂停",
+        "kind": "secondary"
+      },
+      {
+        "x": 1430,
+        "y": 922,
+        "w": 172,
+        "h": 84,
+        "label": "速度 ×1",
+        "kind": "secondary"
+      },
+      {
+        "x": 1622,
+        "y": 922,
+        "w": 234,
+        "h": 84,
+        "label": "下一波",
+        "kind": "primary"
+      }
+    ]
+  },
+  {
+    "id": "09_hud_build",
+    "title": "战斗 HUD·选择炮塔",
+    "family": "hud",
+    "state": "build",
+    "condition": "设计分支：选择炮塔；数值由真实对局提供",
+    "live": "已有证据",
+    "width": 1920,
+    "height": 1080,
+    "folder": "screens",
+    "targets": [
+      {
+        "x": 1702,
+        "y": 48,
+        "w": 154,
+        "h": 72,
+        "label": "暂停",
+        "kind": "secondary"
+      },
+      {
+        "x": 1430,
+        "y": 922,
+        "w": 172,
+        "h": 84,
+        "label": "速度 ×1",
+        "kind": "secondary"
+      },
+      {
+        "x": 1622,
+        "y": 922,
+        "w": 234,
+        "h": 84,
+        "label": "下一波",
+        "kind": "primary"
+      },
+      {
+        "x": 1690,
+        "y": 798,
+        "w": 164,
+        "h": 60,
+        "label": "取消建造",
+        "kind": "secondary"
+      }
+    ]
+  },
+  {
+    "id": "09_hud_drag",
+    "title": "战斗 HUD·拖动至合法位置",
+    "family": "hud",
+    "state": "drag",
+    "condition": "设计分支：拖动至合法位置；数值由真实对局提供",
+    "live": "已有证据",
+    "width": 1920,
+    "height": 1080,
+    "folder": "screens",
+    "targets": [
+      {
+        "x": 1702,
+        "y": 48,
+        "w": 154,
+        "h": 72,
+        "label": "暂停",
+        "kind": "secondary"
+      },
+      {
+        "x": 1430,
+        "y": 922,
+        "w": 172,
+        "h": 84,
+        "label": "速度 ×1",
+        "kind": "secondary"
+      },
+      {
+        "x": 1622,
+        "y": 922,
+        "w": 234,
+        "h": 84,
+        "label": "下一波",
+        "kind": "primary"
+      },
+      {
+        "x": 1690,
+        "y": 798,
+        "w": 164,
+        "h": 60,
+        "label": "取消建造",
+        "kind": "secondary"
+      }
+    ]
+  },
+  {
+    "id": "09_hud_invalidpath",
+    "title": "战斗 HUD·封死路线",
+    "family": "hud",
+    "state": "invalidpath",
+    "condition": "设计分支：封死路线；数值由真实对局提供",
+    "live": "已有证据",
+    "width": 1920,
+    "height": 1080,
+    "folder": "screens",
+    "targets": [
+      {
+        "x": 1702,
+        "y": 48,
+        "w": 154,
+        "h": 72,
+        "label": "暂停",
+        "kind": "secondary"
+      },
+      {
+        "x": 1430,
+        "y": 922,
+        "w": 172,
+        "h": 84,
+        "label": "速度 ×1",
+        "kind": "secondary"
+      },
+      {
+        "x": 1622,
+        "y": 922,
+        "w": 234,
+        "h": 84,
+        "label": "下一波",
+        "kind": "disabled"
+      },
+      {
+        "x": 1690,
+        "y": 798,
+        "w": 164,
+        "h": 60,
+        "label": "取消建造",
+        "kind": "secondary"
+      }
+    ]
+  },
+  {
+    "id": "09_hud_occupied",
+    "title": "战斗 HUD·地块已占用",
+    "family": "hud",
+    "state": "occupied",
+    "condition": "设计分支：地块已占用；数值由真实对局提供",
+    "live": "已有证据",
+    "width": 1920,
+    "height": 1080,
+    "folder": "screens",
+    "targets": [
+      {
+        "x": 1702,
+        "y": 48,
+        "w": 154,
+        "h": 72,
+        "label": "暂停",
+        "kind": "secondary"
+      },
+      {
+        "x": 1430,
+        "y": 922,
+        "w": 172,
+        "h": 84,
+        "label": "速度 ×1",
+        "kind": "secondary"
+      },
+      {
+        "x": 1622,
+        "y": 922,
+        "w": 234,
+        "h": 84,
+        "label": "下一波",
+        "kind": "disabled"
+      },
+      {
+        "x": 1690,
+        "y": 798,
+        "w": 164,
+        "h": 60,
+        "label": "取消建造",
+        "kind": "secondary"
+      }
+    ]
+  },
+  {
+    "id": "09_hud_entry",
+    "title": "战斗 HUD·入口或基地不可建造",
+    "family": "hud",
+    "state": "entry",
+    "condition": "设计分支：入口或基地不可建造；数值由真实对局提供",
+    "live": "已有证据",
+    "width": 1920,
+    "height": 1080,
+    "folder": "screens",
+    "targets": [
+      {
+        "x": 1702,
+        "y": 48,
+        "w": 154,
+        "h": 72,
+        "label": "暂停",
+        "kind": "secondary"
+      },
+      {
+        "x": 1430,
+        "y": 922,
+        "w": 172,
+        "h": 84,
+        "label": "速度 ×1",
+        "kind": "secondary"
+      },
+      {
+        "x": 1622,
+        "y": 922,
+        "w": 234,
+        "h": 84,
+        "label": "下一波",
+        "kind": "disabled"
+      },
+      {
+        "x": 1690,
+        "y": 798,
+        "w": 164,
+        "h": 60,
+        "label": "取消建造",
+        "kind": "secondary"
+      }
+    ]
+  },
+  {
+    "id": "09_hud_poor",
+    "title": "战斗 HUD·建造金币不足",
+    "family": "hud",
+    "state": "poor",
+    "condition": "设计分支：建造金币不足；数值由真实对局提供",
+    "live": "已有证据",
+    "width": 1920,
+    "height": 1080,
+    "folder": "screens",
+    "targets": [
+      {
+        "x": 1702,
+        "y": 48,
+        "w": 154,
+        "h": 72,
+        "label": "暂停",
+        "kind": "secondary"
+      },
+      {
+        "x": 1430,
+        "y": 922,
+        "w": 172,
+        "h": 84,
+        "label": "速度 ×1",
+        "kind": "secondary"
+      },
+      {
+        "x": 1622,
+        "y": 922,
+        "w": 234,
+        "h": 84,
+        "label": "下一波",
+        "kind": "disabled"
+      },
+      {
+        "x": 1690,
+        "y": 798,
+        "w": 164,
+        "h": 60,
+        "label": "取消建造",
+        "kind": "secondary"
+      }
+    ]
+  },
+  {
+    "id": "09_hud_built",
+    "title": "战斗 HUD·建造成功",
+    "family": "hud",
+    "state": "built",
+    "condition": "设计分支：建造成功；数值由真实对局提供",
+    "live": "已有证据",
+    "width": 1920,
+    "height": 1080,
+    "folder": "screens",
+    "targets": [
+      {
+        "x": 1702,
+        "y": 48,
+        "w": 154,
+        "h": 72,
+        "label": "暂停",
+        "kind": "secondary"
+      },
+      {
+        "x": 1430,
+        "y": 922,
+        "w": 172,
+        "h": 84,
+        "label": "速度 ×1",
+        "kind": "secondary"
+      },
+      {
+        "x": 1622,
+        "y": 922,
+        "w": 234,
+        "h": 84,
+        "label": "开始波次",
+        "kind": "primary"
+      },
+      {
+        "x": 1690,
+        "y": 798,
+        "w": 164,
+        "h": 60,
+        "label": "取消建造",
+        "kind": "secondary"
+      }
+    ]
+  },
+  {
+    "id": "09_hud_cancel",
+    "title": "战斗 HUD·取消建造",
+    "family": "hud",
+    "state": "cancel",
+    "condition": "设计分支：取消建造；数值由真实对局提供",
+    "live": "已有证据",
+    "width": 1920,
+    "height": 1080,
+    "folder": "screens",
+    "targets": [
+      {
+        "x": 1702,
+        "y": 48,
+        "w": 154,
+        "h": 72,
+        "label": "暂停",
+        "kind": "secondary"
+      },
+      {
+        "x": 1430,
+        "y": 922,
+        "w": 172,
+        "h": 84,
+        "label": "速度 ×1",
+        "kind": "secondary"
+      },
+      {
+        "x": 1622,
+        "y": 922,
+        "w": 234,
+        "h": 84,
+        "label": "开始波次",
+        "kind": "primary"
+      }
+    ]
+  },
+  {
+    "id": "09_hud_selected",
+    "title": "战斗 HUD·选中炮塔·显示范围",
+    "family": "hud",
+    "state": "selected",
+    "condition": "设计分支：选中炮塔·显示范围；数值由真实对局提供",
+    "live": "已有证据",
+    "width": 1920,
+    "height": 1080,
+    "folder": "screens",
+    "targets": [
+      {
+        "x": 1702,
+        "y": 48,
+        "w": 154,
+        "h": 72,
+        "label": "暂停",
+        "kind": "secondary"
+      },
+      {
+        "x": 1422,
+        "y": 616,
+        "w": 402,
+        "h": 76,
+        "label": "升级 · — 金币",
+        "kind": "primary"
+      },
+      {
+        "x": 1422,
+        "y": 710,
+        "w": 188,
+        "h": 72,
+        "label": "出售…",
+        "kind": "secondary"
+      },
+      {
+        "x": 1626,
+        "y": 710,
+        "w": 198,
+        "h": 72,
+        "label": "隐藏范围",
+        "kind": "secondary"
+      },
+      {
+        "x": 1430,
+        "y": 922,
+        "w": 172,
+        "h": 84,
+        "label": "速度 ×1",
+        "kind": "secondary"
+      },
+      {
+        "x": 1622,
+        "y": 922,
+        "w": 234,
+        "h": 84,
+        "label": "下一波",
+        "kind": "primary"
+      }
+    ]
+  },
+  {
+    "id": "09_hud_hide_range",
+    "title": "战斗 HUD·选中炮塔·隐藏范围",
+    "family": "hud",
+    "state": "hide_range",
+    "condition": "设计分支：选中炮塔·隐藏范围；数值由真实对局提供",
+    "live": "已有证据",
+    "width": 1920,
+    "height": 1080,
+    "folder": "screens",
+    "targets": [
+      {
+        "x": 1702,
+        "y": 48,
+        "w": 154,
+        "h": 72,
+        "label": "暂停",
+        "kind": "secondary"
+      },
+      {
+        "x": 1422,
+        "y": 616,
+        "w": 402,
+        "h": 76,
+        "label": "升级 · — 金币",
+        "kind": "primary"
+      },
+      {
+        "x": 1422,
+        "y": 710,
+        "w": 188,
+        "h": 72,
+        "label": "出售…",
+        "kind": "secondary"
+      },
+      {
+        "x": 1626,
+        "y": 710,
+        "w": 198,
+        "h": 72,
+        "label": "显示范围",
+        "kind": "secondary"
+      },
+      {
+        "x": 1430,
+        "y": 922,
+        "w": 172,
+        "h": 84,
+        "label": "速度 ×1",
+        "kind": "secondary"
+      },
+      {
+        "x": 1622,
+        "y": 922,
+        "w": 234,
+        "h": 84,
+        "label": "下一波",
+        "kind": "primary"
+      }
+    ]
+  },
+  {
+    "id": "10_tower_normal_l1",
+    "title": "塔操作·normal·1级",
+    "family": "tower",
+    "state": "upgrade",
+    "condition": "所选normal为1级；满足升级条件",
+    "live": "已有证据",
+    "tower": "normal",
+    "level": 1,
+    "width": 1920,
+    "height": 1080,
+    "folder": "screens",
+    "targets": [
+      {
+        "x": 64,
+        "y": 40,
+        "w": 148,
+        "h": 72,
+        "label": "返回",
+        "kind": "ghost"
+      },
+      {
+        "x": 1072,
+        "y": 724,
+        "w": 734,
+        "h": 90,
+        "label": "升级 · 花费 — 金币",
+        "kind": "primary"
+      },
+      {
+        "x": 1030,
+        "y": 936,
+        "w": 330,
+        "h": 76,
+        "label": "出售此炮塔…",
+        "kind": "secondary"
+      },
+      {
+        "x": 1394,
+        "y": 936,
+        "w": 454,
+        "h": 76,
+        "label": "关闭，返回战场",
+        "kind": "secondary"
+      }
+    ]
+  },
+  {
+    "id": "10_tower_normal_l2",
+    "title": "塔操作·normal·2级",
+    "family": "tower",
+    "state": "upgrade",
+    "condition": "所选normal为2级；满足升级条件",
+    "live": "已有证据",
+    "tower": "normal",
+    "level": 2,
+    "width": 1920,
+    "height": 1080,
+    "folder": "screens",
+    "targets": [
+      {
+        "x": 64,
+        "y": 40,
+        "w": 148,
+        "h": 72,
+        "label": "返回",
+        "kind": "ghost"
+      },
+      {
+        "x": 1072,
+        "y": 724,
+        "w": 734,
+        "h": 90,
+        "label": "升级 · 花费 — 金币",
+        "kind": "primary"
+      },
+      {
+        "x": 1030,
+        "y": 936,
+        "w": 330,
+        "h": 76,
+        "label": "出售此炮塔…",
+        "kind": "secondary"
+      },
+      {
+        "x": 1394,
+        "y": 936,
+        "w": 454,
+        "h": 76,
+        "label": "关闭，返回战场",
+        "kind": "secondary"
+      }
+    ]
+  },
+  {
+    "id": "10_tower_normal_l3",
+    "title": "塔操作·normal·3级",
+    "family": "tower",
+    "state": "max",
+    "condition": "所选normal为3级；已满级",
+    "live": "已有证据",
+    "tower": "normal",
+    "level": 3,
+    "width": 1920,
+    "height": 1080,
+    "folder": "screens",
+    "targets": [
+      {
+        "x": 64,
+        "y": 40,
+        "w": 148,
+        "h": 72,
+        "label": "返回",
+        "kind": "ghost"
+      },
+      {
+        "x": 1072,
+        "y": 724,
+        "w": 734,
+        "h": 90,
+        "label": "已达到最高等级",
+        "kind": "disabled"
+      },
+      {
+        "x": 1030,
+        "y": 936,
+        "w": 330,
+        "h": 76,
+        "label": "出售此炮塔…",
+        "kind": "secondary"
+      },
+      {
+        "x": 1394,
+        "y": 936,
+        "w": 454,
+        "h": 76,
+        "label": "关闭，返回战场",
+        "kind": "secondary"
+      }
+    ]
+  },
+  {
+    "id": "10_tower_power_l1",
+    "title": "塔操作·power·1级",
+    "family": "tower",
+    "state": "upgrade",
+    "condition": "所选power为1级；满足升级条件",
+    "live": "已有证据",
+    "tower": "power",
+    "level": 1,
+    "width": 1920,
+    "height": 1080,
+    "folder": "screens",
+    "targets": [
+      {
+        "x": 64,
+        "y": 40,
+        "w": 148,
+        "h": 72,
+        "label": "返回",
+        "kind": "ghost"
+      },
+      {
+        "x": 1072,
+        "y": 724,
+        "w": 734,
+        "h": 90,
+        "label": "升级 · 花费 — 金币",
+        "kind": "primary"
+      },
+      {
+        "x": 1030,
+        "y": 936,
+        "w": 330,
+        "h": 76,
+        "label": "出售此炮塔…",
+        "kind": "secondary"
+      },
+      {
+        "x": 1394,
+        "y": 936,
+        "w": 454,
+        "h": 76,
+        "label": "关闭，返回战场",
+        "kind": "secondary"
+      }
+    ]
+  },
+  {
+    "id": "10_tower_power_l2",
+    "title": "塔操作·power·2级",
+    "family": "tower",
+    "state": "upgrade",
+    "condition": "所选power为2级；满足升级条件",
+    "live": "已有证据",
+    "tower": "power",
+    "level": 2,
+    "width": 1920,
+    "height": 1080,
+    "folder": "screens",
+    "targets": [
+      {
+        "x": 64,
+        "y": 40,
+        "w": 148,
+        "h": 72,
+        "label": "返回",
+        "kind": "ghost"
+      },
+      {
+        "x": 1072,
+        "y": 724,
+        "w": 734,
+        "h": 90,
+        "label": "升级 · 花费 — 金币",
+        "kind": "primary"
+      },
+      {
+        "x": 1030,
+        "y": 936,
+        "w": 330,
+        "h": 76,
+        "label": "出售此炮塔…",
+        "kind": "secondary"
+      },
+      {
+        "x": 1394,
+        "y": 936,
+        "w": 454,
+        "h": 76,
+        "label": "关闭，返回战场",
+        "kind": "secondary"
+      }
+    ]
+  },
+  {
+    "id": "10_tower_power_l3",
+    "title": "塔操作·power·3级",
+    "family": "tower",
+    "state": "max",
+    "condition": "所选power为3级；已满级",
+    "live": "已有证据",
+    "tower": "power",
+    "level": 3,
+    "width": 1920,
+    "height": 1080,
+    "folder": "screens",
+    "targets": [
+      {
+        "x": 64,
+        "y": 40,
+        "w": 148,
+        "h": 72,
+        "label": "返回",
+        "kind": "ghost"
+      },
+      {
+        "x": 1072,
+        "y": 724,
+        "w": 734,
+        "h": 90,
+        "label": "已达到最高等级",
+        "kind": "disabled"
+      },
+      {
+        "x": 1030,
+        "y": 936,
+        "w": 330,
+        "h": 76,
+        "label": "出售此炮塔…",
+        "kind": "secondary"
+      },
+      {
+        "x": 1394,
+        "y": 936,
+        "w": 454,
+        "h": 76,
+        "label": "关闭，返回战场",
+        "kind": "secondary"
+      }
+    ]
+  },
+  {
+    "id": "10_tower_retard_l1",
+    "title": "塔操作·retard·1级",
+    "family": "tower",
+    "state": "upgrade",
+    "condition": "所选retard为1级；满足升级条件",
+    "live": "已有证据",
+    "tower": "retard",
+    "level": 1,
+    "width": 1920,
+    "height": 1080,
+    "folder": "screens",
+    "targets": [
+      {
+        "x": 64,
+        "y": 40,
+        "w": 148,
+        "h": 72,
+        "label": "返回",
+        "kind": "ghost"
+      },
+      {
+        "x": 1072,
+        "y": 724,
+        "w": 734,
+        "h": 90,
+        "label": "升级 · 花费 — 金币",
+        "kind": "primary"
+      },
+      {
+        "x": 1030,
+        "y": 936,
+        "w": 330,
+        "h": 76,
+        "label": "出售此炮塔…",
+        "kind": "secondary"
+      },
+      {
+        "x": 1394,
+        "y": 936,
+        "w": 454,
+        "h": 76,
+        "label": "关闭，返回战场",
+        "kind": "secondary"
+      }
+    ]
+  },
+  {
+    "id": "10_tower_retard_l2",
+    "title": "塔操作·retard·2级",
+    "family": "tower",
+    "state": "upgrade",
+    "condition": "所选retard为2级；满足升级条件",
+    "live": "已有证据",
+    "tower": "retard",
+    "level": 2,
+    "width": 1920,
+    "height": 1080,
+    "folder": "screens",
+    "targets": [
+      {
+        "x": 64,
+        "y": 40,
+        "w": 148,
+        "h": 72,
+        "label": "返回",
+        "kind": "ghost"
+      },
+      {
+        "x": 1072,
+        "y": 724,
+        "w": 734,
+        "h": 90,
+        "label": "升级 · 花费 — 金币",
+        "kind": "primary"
+      },
+      {
+        "x": 1030,
+        "y": 936,
+        "w": 330,
+        "h": 76,
+        "label": "出售此炮塔…",
+        "kind": "secondary"
+      },
+      {
+        "x": 1394,
+        "y": 936,
+        "w": 454,
+        "h": 76,
+        "label": "关闭，返回战场",
+        "kind": "secondary"
+      }
+    ]
+  },
+  {
+    "id": "10_tower_retard_l3",
+    "title": "塔操作·retard·3级",
+    "family": "tower",
+    "state": "max",
+    "condition": "所选retard为3级；已满级",
+    "live": "已有证据",
+    "tower": "retard",
+    "level": 3,
+    "width": 1920,
+    "height": 1080,
+    "folder": "screens",
+    "targets": [
+      {
+        "x": 64,
+        "y": 40,
+        "w": 148,
+        "h": 72,
+        "label": "返回",
+        "kind": "ghost"
+      },
+      {
+        "x": 1072,
+        "y": 724,
+        "w": 734,
+        "h": 90,
+        "label": "已达到最高等级",
+        "kind": "disabled"
+      },
+      {
+        "x": 1030,
+        "y": 936,
+        "w": 330,
+        "h": 76,
+        "label": "出售此炮塔…",
+        "kind": "secondary"
+      },
+      {
+        "x": 1394,
+        "y": 936,
+        "w": 454,
+        "h": 76,
+        "label": "关闭，返回战场",
+        "kind": "secondary"
+      }
+    ]
+  },
+  {
+    "id": "10_tower_normal_poor",
+    "title": "塔操作·normal·资金不足",
+    "family": "tower",
+    "state": "poor",
+    "condition": "所选塔未满级，但金币不足以支付真实价格",
+    "live": "已有证据",
+    "tower": "normal",
+    "level": 2,
+    "width": 1920,
+    "height": 1080,
+    "folder": "screens",
+    "targets": [
+      {
+        "x": 64,
+        "y": 40,
+        "w": 148,
+        "h": 72,
+        "label": "返回",
+        "kind": "ghost"
+      },
+      {
+        "x": 1072,
+        "y": 724,
+        "w": 734,
+        "h": 90,
+        "label": "金币不足 · 还需 —",
+        "kind": "disabled"
+      },
+      {
+        "x": 1030,
+        "y": 936,
+        "w": 330,
+        "h": 76,
+        "label": "出售此炮塔…",
+        "kind": "secondary"
+      },
+      {
+        "x": 1394,
+        "y": 936,
+        "w": 454,
+        "h": 76,
+        "label": "关闭，返回战场",
+        "kind": "secondary"
+      }
+    ]
+  },
+  {
+    "id": "10_tower_power_poor",
+    "title": "塔操作·power·资金不足",
+    "family": "tower",
+    "state": "poor",
+    "condition": "所选塔未满级，但金币不足以支付真实价格",
+    "live": "已有证据",
+    "tower": "power",
+    "level": 2,
+    "width": 1920,
+    "height": 1080,
+    "folder": "screens",
+    "targets": [
+      {
+        "x": 64,
+        "y": 40,
+        "w": 148,
+        "h": 72,
+        "label": "返回",
+        "kind": "ghost"
+      },
+      {
+        "x": 1072,
+        "y": 724,
+        "w": 734,
+        "h": 90,
+        "label": "金币不足 · 还需 —",
+        "kind": "disabled"
+      },
+      {
+        "x": 1030,
+        "y": 936,
+        "w": 330,
+        "h": 76,
+        "label": "出售此炮塔…",
+        "kind": "secondary"
+      },
+      {
+        "x": 1394,
+        "y": 936,
+        "w": 454,
+        "h": 76,
+        "label": "关闭，返回战场",
+        "kind": "secondary"
+      }
+    ]
+  },
+  {
+    "id": "10_tower_retard_poor",
+    "title": "塔操作·retard·资金不足",
+    "family": "tower",
+    "state": "poor",
+    "condition": "所选塔未满级，但金币不足以支付真实价格",
+    "live": "已有证据",
+    "tower": "retard",
+    "level": 2,
+    "width": 1920,
+    "height": 1080,
+    "folder": "screens",
+    "targets": [
+      {
+        "x": 64,
+        "y": 40,
+        "w": 148,
+        "h": 72,
+        "label": "返回",
+        "kind": "ghost"
+      },
+      {
+        "x": 1072,
+        "y": 724,
+        "w": 734,
+        "h": 90,
+        "label": "金币不足 · 还需 —",
+        "kind": "disabled"
+      },
+      {
+        "x": 1030,
+        "y": 936,
+        "w": 330,
+        "h": 76,
+        "label": "出售此炮塔…",
+        "kind": "secondary"
+      },
+      {
+        "x": 1394,
+        "y": 936,
+        "w": 454,
+        "h": 76,
+        "label": "关闭，返回战场",
+        "kind": "secondary"
+      }
+    ]
+  },
+  {
+    "id": "11_pause",
+    "title": "暂停菜单",
+    "family": "pause",
+    "state": "paused",
+    "condition": "玩家已暂停；对局保留在背景",
+    "live": "已有证据",
+    "width": 1920,
+    "height": 1080,
+    "folder": "screens",
+    "targets": [
+      {
+        "x": 1266,
+        "y": 332,
+        "w": 522,
+        "h": 100,
+        "label": "继续游戏",
+        "kind": "primary"
+      },
+      {
+        "x": 1266,
+        "y": 456,
+        "w": 522,
+        "h": 88,
+        "label": "重新开始本关…",
+        "kind": "secondary"
+      },
+      {
+        "x": 1266,
+        "y": 566,
+        "w": 522,
+        "h": 88,
+        "label": "设置",
+        "kind": "secondary"
+      },
+      {
+        "x": 1266,
+        "y": 806,
+        "w": 522,
+        "h": 88,
+        "label": "返回关卡选择…",
+        "kind": "secondary"
+      }
+    ]
+  },
+  {
+    "id": "12_tip_success",
+    "title": "情境提示·操作成功",
+    "family": "tip",
+    "state": "success",
+    "condition": "对应操作返回操作成功，提示附着原因位置",
+    "live": "已有证据",
+    "width": 1920,
+    "height": 1080,
+    "folder": "screens",
+    "targets": [
+      {
+        "x": 1702,
+        "y": 48,
+        "w": 154,
+        "h": 72,
+        "label": "暂停",
+        "kind": "secondary"
+      },
+      {
+        "x": 1430,
+        "y": 922,
+        "w": 172,
+        "h": 84,
+        "label": "速度 ×1",
+        "kind": "secondary"
+      },
+      {
+        "x": 1622,
+        "y": 922,
+        "w": 234,
+        "h": 84,
+        "label": "迎战中",
+        "kind": "disabled"
+      }
+    ]
+  },
+  {
+    "id": "12_tip_warning",
+    "title": "情境提示·路径警告",
+    "family": "tip",
+    "state": "warning",
+    "condition": "对应操作返回路径警告，提示附着原因位置",
+    "live": "已有证据",
+    "width": 1920,
+    "height": 1080,
+    "folder": "screens",
+    "targets": [
+      {
+        "x": 1702,
+        "y": 48,
+        "w": 154,
+        "h": 72,
+        "label": "暂停",
+        "kind": "secondary"
+      },
+      {
+        "x": 1430,
+        "y": 922,
+        "w": 172,
+        "h": 84,
+        "label": "速度 ×1",
+        "kind": "secondary"
+      },
+      {
+        "x": 1622,
+        "y": 922,
+        "w": 234,
+        "h": 84,
+        "label": "迎战中",
+        "kind": "disabled"
+      }
+    ]
+  },
+  {
+    "id": "12_tip_failure",
+    "title": "情境提示·操作失败",
+    "family": "tip",
+    "state": "failure",
+    "condition": "对应操作返回操作失败，提示附着原因位置",
+    "live": "已有证据",
+    "width": 1920,
+    "height": 1080,
+    "folder": "screens",
+    "targets": [
+      {
+        "x": 1702,
+        "y": 48,
+        "w": 154,
+        "h": 72,
+        "label": "暂停",
+        "kind": "secondary"
+      },
+      {
+        "x": 1430,
+        "y": 922,
+        "w": 172,
+        "h": 84,
+        "label": "速度 ×1",
+        "kind": "secondary"
+      },
+      {
+        "x": 1622,
+        "y": 922,
+        "w": 234,
+        "h": 84,
+        "label": "迎战中",
+        "kind": "disabled"
+      }
+    ]
+  },
+  {
+    "id": "13_codex_normal",
+    "title": "塔图鉴·normal",
+    "family": "codex",
+    "state": "normal",
+    "condition": "查看对应塔型定位和等级外观",
+    "live": "规划界面 / 已有美术参考",
+    "tower": "normal",
+    "width": 1920,
+    "height": 1080,
+    "folder": "screens",
+    "targets": [
+      {
+        "x": 64,
+        "y": 40,
+        "w": 148,
+        "h": 72,
+        "label": "返回",
+        "kind": "ghost"
+      },
+      {
+        "x": 80,
+        "y": 204,
+        "w": 342,
+        "h": 76,
+        "label": "速射塔",
+        "kind": "primary"
+      },
+      {
+        "x": 450,
+        "y": 204,
+        "w": 342,
+        "h": 76,
+        "label": "火力塔",
+        "kind": "secondary"
+      },
+      {
+        "x": 820,
+        "y": 204,
+        "w": 342,
+        "h": 76,
+        "label": "减速塔",
+        "kind": "secondary"
+      },
+      {
+        "x": 80,
+        "y": 936,
+        "w": 274,
+        "h": 76,
+        "label": "返回",
+        "kind": "secondary"
+      },
+      {
+        "x": 1370,
+        "y": 936,
+        "w": 470,
+        "h": 76,
+        "label": "比较三种炮塔",
+        "kind": "primary"
+      }
+    ]
+  },
+  {
+    "id": "13_codex_power",
+    "title": "塔图鉴·power",
+    "family": "codex",
+    "state": "power",
+    "condition": "查看对应塔型定位和等级外观",
+    "live": "规划界面 / 已有美术参考",
+    "tower": "power",
+    "width": 1920,
+    "height": 1080,
+    "folder": "screens",
+    "targets": [
+      {
+        "x": 64,
+        "y": 40,
+        "w": 148,
+        "h": 72,
+        "label": "返回",
+        "kind": "ghost"
+      },
+      {
+        "x": 80,
+        "y": 204,
+        "w": 342,
+        "h": 76,
+        "label": "速射塔",
+        "kind": "secondary"
+      },
+      {
+        "x": 450,
+        "y": 204,
+        "w": 342,
+        "h": 76,
+        "label": "火力塔",
+        "kind": "primary"
+      },
+      {
+        "x": 820,
+        "y": 204,
+        "w": 342,
+        "h": 76,
+        "label": "减速塔",
+        "kind": "secondary"
+      },
+      {
+        "x": 80,
+        "y": 936,
+        "w": 274,
+        "h": 76,
+        "label": "返回",
+        "kind": "secondary"
+      },
+      {
+        "x": 1370,
+        "y": 936,
+        "w": 470,
+        "h": 76,
+        "label": "比较三种炮塔",
+        "kind": "primary"
+      }
+    ]
+  },
+  {
+    "id": "13_codex_retard",
+    "title": "塔图鉴·retard",
+    "family": "codex",
+    "state": "retard",
+    "condition": "查看对应塔型定位和等级外观",
+    "live": "规划界面 / 已有美术参考",
+    "tower": "retard",
+    "width": 1920,
+    "height": 1080,
+    "folder": "screens",
+    "targets": [
+      {
+        "x": 64,
+        "y": 40,
+        "w": 148,
+        "h": 72,
+        "label": "返回",
+        "kind": "ghost"
+      },
+      {
+        "x": 80,
+        "y": 204,
+        "w": 342,
+        "h": 76,
+        "label": "速射塔",
+        "kind": "secondary"
+      },
+      {
+        "x": 450,
+        "y": 204,
+        "w": 342,
+        "h": 76,
+        "label": "火力塔",
+        "kind": "secondary"
+      },
+      {
+        "x": 820,
+        "y": 204,
+        "w": 342,
+        "h": 76,
+        "label": "减速塔",
+        "kind": "primary"
+      },
+      {
+        "x": 80,
+        "y": 936,
+        "w": 274,
+        "h": 76,
+        "label": "返回",
+        "kind": "secondary"
+      },
+      {
+        "x": 1370,
+        "y": 936,
+        "w": 470,
+        "h": 76,
+        "label": "比较三种炮塔",
+        "kind": "primary"
+      }
+    ]
+  },
+  {
+    "id": "13_codex_compare",
+    "title": "三塔对比",
+    "family": "compare",
+    "state": "compare",
+    "condition": "比较已知定位；未知数值不参与排序",
+    "live": "规划界面",
+    "width": 1920,
+    "height": 1080,
+    "folder": "screens",
+    "targets": [
+      {
+        "x": 64,
+        "y": 40,
+        "w": 148,
+        "h": 72,
+        "label": "返回",
+        "kind": "ghost"
+      },
+      {
+        "x": 80,
+        "y": 936,
+        "w": 340,
+        "h": 76,
+        "label": "返回炮塔图鉴",
+        "kind": "secondary"
+      }
+    ]
+  },
+  {
+    "id": "14_monster_grid",
+    "title": "怪物浏览",
+    "family": "monster",
+    "state": "grid",
+    "condition": "仅使用项目已有怪物形象，不推断抗性与弱点",
+    "live": "规划界面",
+    "width": 1920,
+    "height": 1080,
+    "folder": "screens",
+    "targets": [
+      {
+        "x": 64,
+        "y": 40,
+        "w": 148,
+        "h": 72,
+        "label": "返回",
+        "kind": "ghost"
+      },
+      {
+        "x": 124,
+        "y": 760,
+        "w": 476,
+        "h": 70,
+        "label": "查看详情",
+        "kind": "secondary"
+      },
+      {
+        "x": 722,
+        "y": 760,
+        "w": 476,
+        "h": 70,
+        "label": "查看详情",
+        "kind": "secondary"
+      },
+      {
+        "x": 1320,
+        "y": 760,
+        "w": 476,
+        "h": 70,
+        "label": "查看详情",
+        "kind": "secondary"
+      }
+    ]
+  },
+  {
+    "id": "14_monster_detail",
+    "title": "怪物详情",
+    "family": "monster",
+    "state": "detail",
+    "condition": "仅使用项目已有怪物形象，不推断抗性与弱点",
+    "live": "规划界面",
+    "width": 1920,
+    "height": 1080,
+    "folder": "screens",
+    "targets": [
+      {
+        "x": 64,
+        "y": 40,
+        "w": 148,
+        "h": 72,
+        "label": "返回",
+        "kind": "ghost"
+      },
+      {
+        "x": 788,
+        "y": 870,
+        "w": 480,
+        "h": 84,
+        "label": "返回怪物浏览",
+        "kind": "primary"
+      }
+    ]
+  },
+  {
+    "id": "14_monster_empty",
+    "title": "暂无资料",
+    "family": "monster",
+    "state": "empty",
+    "condition": "仅使用项目已有怪物形象，不推断抗性与弱点",
+    "live": "规划界面",
+    "width": 1920,
+    "height": 1080,
+    "folder": "screens",
+    "targets": [
+      {
+        "x": 64,
+        "y": 40,
+        "w": 148,
+        "h": 72,
+        "label": "返回",
+        "kind": "ghost"
+      },
+      {
+        "x": 740,
+        "y": 686,
+        "w": 440,
+        "h": 84,
+        "label": "返回",
+        "kind": "primary"
+      }
+    ]
+  },
+  {
+    "id": "15_sell",
+    "title": "出售确认",
+    "family": "confirm",
+    "state": "sell",
+    "condition": "所选塔允许出售；返还金额尚未提供",
+    "live": "已有文档 / 实装未核验",
+    "width": 1920,
+    "height": 1080,
+    "folder": "screens",
+    "targets": [
+      {
+        "x": 538,
+        "y": 682,
+        "w": 398,
+        "h": 86,
+        "label": "保留炮塔",
+        "kind": "secondary"
+      },
+      {
+        "x": 960,
+        "y": 682,
+        "w": 422,
+        "h": 86,
+        "label": "出售此炮塔",
+        "kind": "danger"
+      }
+    ]
+  },
+  {
+    "id": "15_sell_pending",
+    "title": "出售处理中",
+    "family": "confirm",
+    "state": "sellpending",
+    "condition": "玩家确认出售，等待操作结果",
+    "live": "已有文档 / 实装未核验",
+    "width": 1920,
+    "height": 1080,
+    "folder": "screens",
+    "targets": [
+      {
+        "x": 538,
+        "y": 682,
+        "w": 844,
+        "h": 86,
+        "label": "请稍候",
+        "kind": "disabled"
+      }
+    ]
+  },
+  {
+    "id": "16_confirm_reset",
+    "title": "重置存档",
+    "family": "confirm",
+    "state": "reset",
+    "condition": "确认重置存档及后果",
+    "live": "已有文档 / 实装未核验",
+    "width": 1920,
+    "height": 1080,
+    "folder": "screens",
+    "targets": [
+      {
+        "x": 538,
+        "y": 682,
+        "w": 398,
+        "h": 86,
+        "label": "保留存档",
+        "kind": "secondary"
+      },
+      {
+        "x": 960,
+        "y": 682,
+        "w": 422,
+        "h": 86,
+        "label": "删除全部存档",
+        "kind": "danger"
+      }
+    ]
+  },
+  {
+    "id": "16_confirm_resetpending",
+    "title": "正在重置",
+    "family": "confirm",
+    "state": "resetpending",
+    "condition": "确认正在重置及后果",
+    "live": "已有文档 / 实装未核验",
+    "width": 1920,
+    "height": 1080,
+    "folder": "screens",
+    "targets": [
+      {
+        "x": 538,
+        "y": 682,
+        "w": 844,
+        "h": 86,
+        "label": "请稍候",
+        "kind": "disabled"
+      }
+    ]
+  },
+  {
+    "id": "16_confirm_resetfailed",
+    "title": "重置失败",
+    "family": "confirm",
+    "state": "resetfailed",
+    "condition": "确认重置失败及后果",
+    "live": "已有文档 / 实装未核验",
+    "width": 1920,
+    "height": 1080,
+    "folder": "screens",
+    "targets": [
+      {
+        "x": 538,
+        "y": 682,
+        "w": 398,
+        "h": 86,
+        "label": "返回设置",
+        "kind": "secondary"
+      },
+      {
+        "x": 960,
+        "y": 682,
+        "w": 422,
+        "h": 86,
+        "label": "重试重置",
+        "kind": "danger"
+      }
+    ]
+  },
+  {
+    "id": "16_confirm_leave",
+    "title": "返回选关",
+    "family": "confirm",
+    "state": "leave",
+    "condition": "确认返回选关及后果",
+    "live": "已有文档 / 实装未核验",
+    "width": 1920,
+    "height": 1080,
+    "folder": "screens",
+    "targets": [
+      {
+        "x": 538,
+        "y": 682,
+        "w": 398,
+        "h": 86,
+        "label": "继续战斗",
+        "kind": "secondary"
+      },
+      {
+        "x": 960,
+        "y": 682,
+        "w": 422,
+        "h": 86,
+        "label": "返回关卡选择",
+        "kind": "primary"
+      }
+    ]
+  },
+  {
+    "id": "16_confirm_restart",
+    "title": "重新开始本关",
+    "family": "confirm",
+    "state": "restart",
+    "condition": "确认重新开始本关及后果",
+    "live": "已有文档 / 实装未核验",
+    "width": 1920,
+    "height": 1080,
+    "folder": "screens",
+    "targets": [
+      {
+        "x": 538,
+        "y": 682,
+        "w": 398,
+        "h": 86,
+        "label": "继续战斗",
+        "kind": "secondary"
+      },
+      {
+        "x": 960,
+        "y": 682,
+        "w": 422,
+        "h": 86,
+        "label": "重新开始本关",
+        "kind": "primary"
+      }
+    ]
+  },
+  {
+    "id": "16_confirm_quit",
+    "title": "退出游戏",
+    "family": "confirm",
+    "state": "quit",
+    "condition": "确认退出游戏及后果",
+    "live": "已有文档 / 实装未核验",
+    "width": 1920,
+    "height": 1080,
+    "folder": "screens",
+    "targets": [
+      {
+        "x": 538,
+        "y": 682,
+        "w": 398,
+        "h": 86,
+        "label": "返回游戏",
+        "kind": "secondary"
+      },
+      {
+        "x": 960,
+        "y": 682,
+        "w": 422,
+        "h": 86,
+        "label": "退出游戏",
+        "kind": "primary"
+      }
+    ]
+  },
+  {
+    "id": "16_confirm_unsaved",
+    "title": "成绩未保存时离开",
+    "family": "confirm",
+    "state": "unsaved",
+    "condition": "确认成绩未保存时离开及后果",
+    "live": "已有文档 / 实装未核验",
+    "width": 1920,
+    "height": 1080,
+    "folder": "screens",
+    "targets": [
+      {
+        "x": 538,
+        "y": 682,
+        "w": 398,
+        "h": 86,
+        "label": "留在结算页",
+        "kind": "secondary"
+      },
+      {
+        "x": 960,
+        "y": 682,
+        "w": 422,
+        "h": 86,
+        "label": "重试保存",
+        "kind": "primary"
+      }
+    ]
+  },
+  {
+    "id": "17_settings_zh-Hans",
+    "title": "设置·zh-Hans",
+    "family": "settings",
+    "state": "zh-Hans",
+    "condition": "展示语言当前选择；无声音选项",
+    "live": "已有截图",
+    "lang": "zh-Hans",
+    "width": 1920,
+    "height": 1080,
+    "folder": "screens",
+    "targets": [
+      {
+        "x": 64,
+        "y": 40,
+        "w": 148,
+        "h": 72,
+        "label": "返回",
+        "kind": "ghost"
+      },
+      {
+        "x": 530,
+        "y": 664,
+        "w": 378,
+        "h": 82,
+        "label": "重置存档…",
+        "kind": "danger"
+      },
+      {
+        "x": 1044,
+        "y": 776,
+        "w": 346,
+        "h": 76,
+        "label": "关闭",
+        "kind": "secondary"
+      }
+    ]
+  },
+  {
+    "id": "17_settings_zh-Hant",
+    "title": "设置·zh-Hant",
+    "family": "settings",
+    "state": "zh-Hant",
+    "condition": "展示语言当前选择；无声音选项",
+    "live": "已有截图",
+    "lang": "zh-Hant",
+    "width": 1920,
+    "height": 1080,
+    "folder": "screens",
+    "targets": [
+      {
+        "x": 64,
+        "y": 40,
+        "w": 148,
+        "h": 72,
+        "label": "返回",
+        "kind": "ghost"
+      },
+      {
+        "x": 530,
+        "y": 664,
+        "w": 378,
+        "h": 82,
+        "label": "重置存档…",
+        "kind": "danger"
+      },
+      {
+        "x": 1044,
+        "y": 776,
+        "w": 346,
+        "h": 76,
+        "label": "关闭",
+        "kind": "secondary"
+      }
+    ]
+  },
+  {
+    "id": "17_settings_en",
+    "title": "设置·en",
+    "family": "settings",
+    "state": "en",
+    "condition": "展示语言当前选择；无声音选项",
+    "live": "已有截图",
+    "lang": "en",
+    "width": 1920,
+    "height": 1080,
+    "folder": "screens",
+    "targets": [
+      {
+        "x": 64,
+        "y": 40,
+        "w": 148,
+        "h": 72,
+        "label": "返回",
+        "kind": "ghost"
+      },
+      {
+        "x": 530,
+        "y": 664,
+        "w": 378,
+        "h": 82,
+        "label": "重置存档…",
+        "kind": "danger"
+      },
+      {
+        "x": 1044,
+        "y": 776,
+        "w": 346,
+        "h": 76,
+        "label": "关闭",
+        "kind": "secondary"
+      }
+    ]
+  },
+  {
+    "id": "18_result_win",
+    "title": "胜利结算",
+    "family": "result",
+    "state": "win",
+    "condition": "设计条件分支：胜利结算；不代表真实成绩",
+    "live": "已有证据",
+    "width": 1920,
+    "height": 1080,
+    "folder": "screens",
+    "targets": [
+      {
+        "x": 64,
+        "y": 40,
+        "w": 148,
+        "h": 72,
+        "label": "返回",
+        "kind": "ghost"
+      },
+      {
+        "x": 124,
+        "y": 932,
+        "w": 500,
+        "h": 90,
+        "label": "进入下一关",
+        "kind": "primary"
+      },
+      {
+        "x": 656,
+        "y": 932,
+        "w": 320,
+        "h": 90,
+        "label": "重玩本关",
+        "kind": "secondary"
+      },
+      {
+        "x": 1426,
+        "y": 932,
+        "w": 370,
+        "h": 90,
+        "label": "返回选关",
+        "kind": "secondary"
+      }
+    ]
+  },
+  {
+    "id": "18_result_record",
+    "title": "胜利·新纪录",
+    "family": "result",
+    "state": "record",
+    "condition": "设计条件分支：胜利·新纪录；不代表真实成绩",
+    "live": "已有证据",
+    "width": 1920,
+    "height": 1080,
+    "folder": "screens",
+    "targets": [
+      {
+        "x": 64,
+        "y": 40,
+        "w": 148,
+        "h": 72,
+        "label": "返回",
+        "kind": "ghost"
+      },
+      {
+        "x": 124,
+        "y": 932,
+        "w": 500,
+        "h": 90,
+        "label": "进入下一关",
+        "kind": "primary"
+      },
+      {
+        "x": 656,
+        "y": 932,
+        "w": 320,
+        "h": 90,
+        "label": "重玩本关",
+        "kind": "secondary"
+      },
+      {
+        "x": 1426,
+        "y": 932,
+        "w": 370,
+        "h": 90,
+        "label": "返回选关",
+        "kind": "secondary"
+      }
+    ]
+  },
+  {
+    "id": "18_result_low",
+    "title": "胜利·低星原因",
+    "family": "result",
+    "state": "low",
+    "condition": "设计条件分支：胜利·低星原因；不代表真实成绩",
+    "live": "已有证据",
+    "width": 1920,
+    "height": 1080,
+    "folder": "screens",
+    "targets": [
+      {
+        "x": 64,
+        "y": 40,
+        "w": 148,
+        "h": 72,
+        "label": "返回",
+        "kind": "ghost"
+      },
+      {
+        "x": 124,
+        "y": 932,
+        "w": 500,
+        "h": 90,
+        "label": "进入下一关",
+        "kind": "primary"
+      },
+      {
+        "x": 656,
+        "y": 932,
+        "w": 320,
+        "h": 90,
+        "label": "重玩本关",
+        "kind": "secondary"
+      },
+      {
+        "x": 1426,
+        "y": 932,
+        "w": 370,
+        "h": 90,
+        "label": "返回选关",
+        "kind": "secondary"
+      }
+    ]
+  },
+  {
+    "id": "18_result_lose",
+    "title": "失败结算",
+    "family": "result",
+    "state": "lose",
+    "condition": "设计条件分支：失败结算；不代表真实成绩",
+    "live": "已有证据",
+    "width": 1920,
+    "height": 1080,
+    "folder": "screens",
+    "targets": [
+      {
+        "x": 64,
+        "y": 40,
+        "w": 148,
+        "h": 72,
+        "label": "返回",
+        "kind": "ghost"
+      },
+      {
+        "x": 124,
+        "y": 932,
+        "w": 500,
+        "h": 90,
+        "label": "重试本关",
+        "kind": "primary"
+      },
+      {
+        "x": 1376,
+        "y": 932,
+        "w": 420,
+        "h": 90,
+        "label": "返回关卡选择",
+        "kind": "secondary"
+      }
+    ]
+  },
+  {
+    "id": "18_result_saving",
+    "title": "成绩保存中",
+    "family": "result",
+    "state": "saving",
+    "condition": "设计条件分支：成绩保存中；不代表真实成绩",
+    "live": "已有证据",
+    "width": 1920,
+    "height": 1080,
+    "folder": "screens",
+    "targets": [
+      {
+        "x": 124,
+        "y": 932,
+        "w": 1672,
+        "h": 90,
+        "label": "正在保存…",
+        "kind": "disabled"
+      }
+    ]
+  },
+  {
+    "id": "18_result_savefailed",
+    "title": "成绩保存失败",
+    "family": "result",
+    "state": "savefailed",
+    "condition": "设计条件分支：成绩保存失败；不代表真实成绩",
+    "live": "已有证据",
+    "width": 1920,
+    "height": 1080,
+    "folder": "screens",
+    "targets": [
+      {
+        "x": 64,
+        "y": 40,
+        "w": 148,
+        "h": 72,
+        "label": "返回",
+        "kind": "ghost"
+      },
+      {
+        "x": 124,
+        "y": 932,
+        "w": 480,
+        "h": 90,
+        "label": "重试保存",
+        "kind": "primary"
+      },
+      {
+        "x": 1396,
+        "y": 932,
+        "w": 400,
+        "h": 90,
+        "label": "查看保存说明…",
+        "kind": "secondary"
+      }
+    ]
+  },
+  {
+    "id": "18_result_retry",
+    "title": "重试保存",
+    "family": "result",
+    "state": "retry",
+    "condition": "设计条件分支：重试保存；不代表真实成绩",
+    "live": "已有证据",
+    "width": 1920,
+    "height": 1080,
+    "folder": "screens",
+    "targets": [
+      {
+        "x": 124,
+        "y": 932,
+        "w": 1672,
+        "h": 90,
+        "label": "正在保存…",
+        "kind": "disabled"
+      }
+    ]
+  },
+  {
+    "id": "18_result_saved",
+    "title": "成绩保存成功",
+    "family": "result",
+    "state": "saved",
+    "condition": "设计条件分支：成绩保存成功；不代表真实成绩",
+    "live": "已有证据",
+    "width": 1920,
+    "height": 1080,
+    "folder": "screens",
+    "targets": [
+      {
+        "x": 64,
+        "y": 40,
+        "w": 148,
+        "h": 72,
+        "label": "返回",
+        "kind": "ghost"
+      },
+      {
+        "x": 124,
+        "y": 932,
+        "w": 500,
+        "h": 90,
+        "label": "进入下一关",
+        "kind": "primary"
+      },
+      {
+        "x": 656,
+        "y": 932,
+        "w": 320,
+        "h": 90,
+        "label": "重玩本关",
+        "kind": "secondary"
+      },
+      {
+        "x": 1426,
+        "y": 932,
+        "w": 370,
+        "h": 90,
+        "label": "返回选关",
+        "kind": "secondary"
+      }
+    ]
+  },
+  {
+    "id": "18_result_final",
+    "title": "末关完成",
+    "family": "result",
+    "state": "final",
+    "condition": "设计条件分支：末关完成；不代表真实成绩",
+    "live": "已有证据",
+    "width": 1920,
+    "height": 1080,
+    "folder": "screens",
+    "targets": [
+      {
+        "x": 64,
+        "y": 40,
+        "w": 148,
+        "h": 72,
+        "label": "返回",
+        "kind": "ghost"
+      },
+      {
+        "x": 124,
+        "y": 932,
+        "w": 500,
+        "h": 90,
+        "label": "返回关卡选择",
+        "kind": "primary"
+      },
+      {
+        "x": 1376,
+        "y": 932,
+        "w": 420,
+        "h": 90,
+        "label": "重玩末关",
+        "kind": "secondary"
+      }
+    ]
+  },
+  {
+    "id": "19_common_empty",
+    "title": "暂无历史成绩",
+    "family": "common",
+    "state": "empty",
+    "condition": "通用组件状态：暂无历史成绩",
+    "live": "已有证据",
+    "width": 1920,
+    "height": 1080,
+    "folder": "screens",
+    "targets": [
+      {
+        "x": 64,
+        "y": 40,
+        "w": 148,
+        "h": 72,
+        "label": "返回",
+        "kind": "ghost"
+      },
+      {
+        "x": 700,
+        "y": 672,
+        "w": 520,
+        "h": 96,
+        "label": "开始挑战",
+        "kind": "primary"
+      },
+      {
+        "x": 64,
+        "y": 936,
+        "w": 250,
+        "h": 76,
+        "label": "返回",
+        "kind": "secondary"
+      }
+    ]
+  },
+  {
+    "id": "19_common_unavailable",
+    "title": "内容读取失败",
+    "family": "common",
+    "state": "unavailable",
+    "condition": "通用组件状态：内容读取失败",
+    "live": "已有证据",
+    "width": 1920,
+    "height": 1080,
+    "folder": "screens",
+    "targets": [
+      {
+        "x": 64,
+        "y": 40,
+        "w": 148,
+        "h": 72,
+        "label": "返回",
+        "kind": "ghost"
+      },
+      {
+        "x": 700,
+        "y": 672,
+        "w": 520,
+        "h": 96,
+        "label": "重试读取",
+        "kind": "primary"
+      },
+      {
+        "x": 64,
+        "y": 936,
+        "w": 250,
+        "h": 76,
+        "label": "返回",
+        "kind": "secondary"
+      }
+    ]
+  },
+  {
+    "id": "19_common_confirming",
+    "title": "等待操作结果",
+    "family": "common",
+    "state": "confirming",
+    "condition": "通用组件状态：等待操作结果",
+    "live": "已有证据",
+    "width": 1920,
+    "height": 1080,
+    "folder": "screens",
+    "targets": [
+      {
+        "x": 64,
+        "y": 40,
+        "w": 148,
+        "h": 72,
+        "label": "返回",
+        "kind": "ghost"
+      },
+      {
+        "x": 700,
+        "y": 672,
+        "w": 520,
+        "h": 96,
+        "label": "处理中…",
+        "kind": "disabled"
+      },
+      {
+        "x": 64,
+        "y": 936,
+        "w": 250,
+        "h": 76,
+        "label": "返回",
+        "kind": "secondary"
+      }
+    ]
+  }
+]
