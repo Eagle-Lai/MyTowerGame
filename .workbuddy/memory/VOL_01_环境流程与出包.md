@@ -44,3 +44,10 @@
 - APK：菜单 6/7，或
   `Unity.exe -batchmode -executeMethod FTProject.EditorTools.BuildApk.BuildNow -buildTarget Android -logFile Logs/batch_apk.log`（完建须手动杀进程）；状态 `Library/FTBuildApkStatus.txt`。
 - 坑：Gradle 失败会弹模态框卡死／`TargetSdkVersion:0` 会选出坏包／路径大小写敏感。
+
+## APP 图标配置（2026-10-29 完成，可复用规则）
+- `Assets/Art/Logo` 是唯一图标源，命名 `app_icon_<W>x<H>.png`（方图）、`app_icon_adaptive_fg/bg_<W>x<H>.png`（Android 自适应双层）、`app_icon_tvos_<W>x<H>.png`（tvOS 宽图）、`app_icon_1024x1024_flat.png`（无 alpha 压平版，专供 iOS App Store 槽）。45 张 PNG 全有 .meta，PNG 一律 UTF-8/标准 Texture 导入（spriteMode 1，maxTextureSize 2048，>2048 的用 4096/8192）。
+- **Unity 2022.3 图标槽位全集**：Standalone 8 槽（1024/512/256/128/64/48/32/16，序列化在旧版 `m_BuildTargetIcons`）；Android Legacy 6 + Round 6 + Adaptive 6×双层（432/324/216/162/108/81，`m_BuildTargetPlatformIcons`）；iPhone 19 槽（Kind 0 应用 180/120/167/152/76、Kind 3 Spotlight 120/80/80/40、Kind 1 设置 87/58/29/58/29、Kind 2 通知 60/40/40/20、Kind 4 App Store 1024）；tvOS 7 槽（1280x768/800x480/400x240 + TopShelf 4640x1440/2320x720/3840x1440/1920x720）；**WebGL 无图标槽**。
+- **Adaptive 图标规范**：双层 [Background, Foreground]；前景内容须缩到画布 62% 居中（系统遮罩只显示中心 ~66/108），本工程前景=图标 62%、背景=纯黑 #000000（母图实测底色）。改图标美术时三张都要重生成。
+- **iOS App Store 1024 必须 RGB 无 alpha**（透明会被 App Store Connect 拒收）——用 `app_icon_1024x1024_flat.png`，别指回带透明四角的母图。
+- 本机 Unity 未装 iOS/tvOS PlaybackEngines 模块：Player Settings 不显示这两页、API 无 Kind，但序列化数据里的图标关联仍有效，装模块即用。

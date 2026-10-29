@@ -21,3 +21,10 @@
 
 ## 已知待办 / 环境事实
 - 2026-10-19 [公司E]：已 pull 到 `f3a747a`（UI 多分辨率适配 + HUD 暂停/菜单两按钮职责重划）。拉取含热更码与 Luban xlsx 变更，**尚未**重导配置 / 重编 dll / 重打 AB。
+
+## MCP 改 PlayerSettings 图标（2026-10-29 实测技巧，可复用）
+- **PlayerSettings 是 `UnityEngine.Object` 派生类**（UnityCsReference `Editor/Mono/PlatformSupport/PlayerSettingsPlatformIcons.bindings.cs`）：`Resources.FindObjectsOfTypeAll(typeof(UnityEditor.PlayerSettings))` 拿到原生单例后可直接 `new SerializedObject(...)` 改序列化数据（本项目 instanceID 命中 1 个）。iOS/tvOS 等无 Kind API 的平台就靠这条路。
+- `m_BuildTargetPlatformIcons` 的 `m_BuildTarget` 是**字符串**（"Android"/"tvOS"/"iPhone"），读 `intValue` 会抛 "type is not a supported int value" 并刷控制台 error；每槽 `m_Icons` 元素含 m_Textures/m_Width/m_Height/m_Kind/m_SubKind，赋值 = `m_Textures.arraySize=1` + `objectReferenceValue=Texture2D`。
+- API 路线：Standalone 用旧版 `PlayerSettings.SetIconsForTargetGroup(BuildTargetGroup.Standalone, Texture2D[])`（数组按 GetIconSizesForTargetGroup 顺序 1024..16）；Android 用 `GetSupportedIconKindsForPlatform(Android)` 得 Legacy/Round/Adaptive 三个 Kind，`GetPlatformIcons` 取槽、`slot.SetTextures(texs)`、`SetPlatformIcons` 写回；**Adaptive 槽 SetTextures 顺序 = [Background, Foreground]**（来自 `PlatformIconKind.customLayerLabels` 反射）。`BuildTargetGroup.iPhone` 已废弃，要用 `iOS`。
+- execute_code 是 CodeDom（C#6）：无 out var/本地函数/模式匹配；复杂片段写临时 .cs 文件再读入执行，避免 shell 转义地狱。
+- 改完必须 `EditorApplication.ExecuteMenuItem("File/Save Project")`（2022.3 存在，返回 true）才落盘；磁盘核验直接 grep ProjectSettings.asset 的 guid 引用数（本工程图标节应为 8+50=58 处）。
