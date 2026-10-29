@@ -13,12 +13,18 @@ namespace FTProject
         {
             public RectTransform content;
             public RectTransform background;
+            public bool shared;
         }
 
         [SerializeField] private List<Surface> surfaces = new List<Surface>();
         public void Clear() { surfaces.Clear(); }
-        public void Add(RectTransform content, RectTransform background)
-        { surfaces.Add(new Surface { content = content, background = background }); }
+        public void Add(RectTransform content, RectTransform background, bool shared = false)
+        { surfaces.Add(new Surface { content = content, background = background, shared = shared }); }
+        public RectTransform BackingFor(RectTransform content)
+        {
+            foreach (var pair in surfaces) if (pair.content == content) return pair.background;
+            return null;
+        }
         private void OnEnable() { Refresh(); }
         private void LateUpdate() { Refresh(); }
 
@@ -29,6 +35,8 @@ namespace FTProject
                 var source = pair.content;
                 var plate = pair.background;
                 if (source == null || plate == null) continue;
+                // Shared plates retain their authored extent when individual rows are hidden.
+                if (pair.shared) continue;
                 bool visible = source.gameObject.activeSelf;
                 if (plate.gameObject.activeSelf != visible) plate.gameObject.SetActive(visible);
                 if (plate.anchorMin != source.anchorMin) plate.anchorMin = source.anchorMin;

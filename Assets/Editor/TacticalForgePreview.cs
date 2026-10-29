@@ -100,6 +100,12 @@ namespace FTProject.EditorTools
                 textAt("Panel/AudioMuteToggle/AudioMuteLabel",tr("Mute"));
                 root.transform.Find("Panel/LanguageDropdown/Label").GetComponent<TMP_Text>().text=language=="en"?"English":language=="zh-Hans"?"简体中文":"繁體中文";
             }
+            if(name=="SplashView")
+            {
+                textAt("Panel/LoadingDots",tr("Starting..."));
+                textAt("Panel/Version","v"+Application.version);
+            }
+            if(name=="PauseView")textAt("Panel/Title",tr(state.Contains("paused")?"Game Paused":"Menu"));
             if(name=="MainMenuView")
             {
                 root.transform.Find("Panel/ContinueBtn").gameObject.SetActive(false);
@@ -165,17 +171,19 @@ namespace FTProject.EditorTools
             if(name=="LevelClearView")
             {
                 bool pending=state=="synthetic-savefailed" || state.Contains("savefailed");
-                textAt("Panel/Title",tr("Level Clear!"));textAt("Panel/LevelName",string.Format(tr("Level {0}"),level.Id));
-                textAt("Panel/Stars",SelectView.StarRichText(3));
-                textAt("Panel/StarDetail",string.Format(tr("This {0}    Best {1}"),"3/5","2/5"));
-                root.transform.Find("Panel/RecordTip").gameObject.SetActive(true);
+                bool failed=state.Contains("failure");
+                textAt("Panel/Title",tr(failed?"Defense Failed":"Level Clear!"));textAt("Panel/LevelName",string.Format(tr("Level {0}"),level.Id));
+                textAt("Panel/Stars",SelectView.StarRichText(failed?0:3));
+                textAt("Panel/StarDetail",failed?string.Format(tr("<color=#9FB3C8>Best</color> {0}"),"2/5"):string.Format(tr("This {0}    Best {1}"),"3/5","2/5"));
+                root.transform.Find("Panel/RecordTip").gameObject.SetActive(pending||!failed);
                 textAt("Panel/RecordTip",pending?tr("Record could not be saved; retry save"):tr("★ New Record! Best stars improved"));
                 textAt("Panel/Stats",string.Format(tr("HP {0}/{1}    Kills {2}    Leaks {3}"),8,10,120,2));
                 textAt("Panel/RatingTimes",string.Format(tr("Combat {0} / Par {1} · Level {2}"),"02:15.000","02:00.000","03:10.000"));
                 textAt("Panel/RatingContext",tr("Very Easy")+" · "+string.Format(tr("Balance preset: {0}"),tr("Very Easy"))+"\n"+string.Format(tr("Boss leaks {0} · Critical leaks {1}"),1,2));
-                textAt("Panel/RatingReasons",tr("Defense failed")+" · "+tr("Invalid combat timer")+" · "+tr("Incomplete waves")+" · "+tr("Spawn count mismatch")+" · "+tr("Enemy accounting mismatch"));
-                root.transform.Find("Panel/NextBtn").gameObject.SetActive(!pending);
-                textAt("Panel/RetryBtn/Label",tr(pending?"Retry Save":"Replay"));
+                textAt("Panel/RatingReasons",state.Contains("stress")?tr("Defense failed")+" · "+tr("Invalid combat timer")+" · "+tr("Incomplete waves")+" · "+tr("Spawn count mismatch")+" · "+tr("Enemy accounting mismatch"):failed?tr("Defense failed"):"");
+                root.transform.Find("Panel/NextBtn").gameObject.SetActive(!pending&&!failed);
+                textAt("Panel/RetryBtn/Label",tr(pending?"Retry Save":failed?"Try Again":"Replay"));
+                textAt("Panel/NextBtn/Label",tr("Next Level"));
             }
             if(name=="HudView")
             {
@@ -249,12 +257,13 @@ namespace FTProject.EditorTools
                 var towers=allTowers.Where(x=>x.Level==1);
                 var template=AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/UI/TowerCodexItem.prefab");
                 int index=0;
+                int selected=state.Contains("blast")?1:state.Contains("slow")?2:0;
                 foreach(var row in towers)
                 {
                     var tab=root.transform.Find("Panel/Tabs/Type"+index);tab.gameObject.SetActive(!comparison);tab.GetComponentInChildren<TMP_Text>(true).text=tr(row.Name);
-                    var card=UnityEngine.Object.Instantiate(template,root.transform.Find("Panel/Cards/Viewport/Content"),false);card.SetActive(comparison||index==0);card.GetComponent<TowerCodexItem>().enabled=false;index++;
+                    var card=UnityEngine.Object.Instantiate(template,root.transform.Find("Panel/Cards/Viewport/Content"),false);card.SetActive(comparison||index==selected);card.GetComponent<TowerCodexItem>().enabled=false;index++;
                     var t=new TowerConfig(row);card.transform.Find("Body/TypeName").GetComponent<TMP_Text>().text=tr(t.Name);
-                    card.transform.Find("Body/Icon").GetComponent<Image>().sprite=AssetDatabase.LoadAssetAtPath<Sprite>("Assets/_UIAssets/UI/UI_TowerIcon_"+(t.Type==2?"Power":t.Type==3?"Retard":"Normal")+".png");
+                    card.GetComponent<TowerCodexItem>().ApplyPortrait(t.Type);
                     card.transform.Find("Body/Role").GetComponent<TMP_Text>().text=tr(t.Type==2?"Area blast · swarm clearer":t.Type==3?"Slows enemies · control":"Single-target rapid fire");
                     card.transform.Find("Body/DpsRow").GetComponent<TMP_Text>().text=t.IsSlowAura?string.Format(tr("Slow {0:P0} · DPS 0"),t.EffectValue):string.Format(tr("Damage   {0}"),t.Power);
                     card.transform.Find("Body/RangeRow").GetComponent<TMP_Text>().text=string.Format(tr("Range    {0:F1}"),t.RadiusGrid);
@@ -347,6 +356,23 @@ namespace FTProject.EditorTools
                 Transform sibling=text.transform.parent!=null?text.transform.parent.Find(text.name+"Backing"):null;
                 Image backing=sibling!=null?sibling.GetComponent<Image>():null;
                 if(backing!=null && backing.transform.GetSiblingIndex()>text.transform.GetSiblingIndex())covered.Add(path);
+                for(Transform ancestor=text.transform;backing==null && ancestor!=null;ancestor=ancestor.parent)
+                {
+                    var surfaces=ancestor.GetComponent<UIContentSurfaces>();
+                    var shared=surfaces!=null?surfaces.BackingFor(text.rectTransform):null;
+                    if(shared!=null)backing=shared.GetComponent<Image>();
+                }
+                // The full-page result and codex detail plates are authored siblings.
+                if(backing==null && root.name=="LevelClearView")backing=root.transform.Find("Panel/ResultSurface").GetComponent<Image>();
+                if(backing==null && root.name=="TowerCodexView")
+                {
+                    var body=text.transform.parent;
+                    if(body!=null && body.name=="Body")
+                    {
+                        var detail=body.Find("DetailsBacking");
+                        backing=body.Find(detail!=null && detail.gameObject.activeSelf?"DetailsBacking":"CardBg").GetComponent<Image>();
+                    }
+                }
                 for(Transform ancestor=text.transform.parent;backing==null && ancestor!=null && ancestor!=root.transform;ancestor=ancestor.parent)
                 {var image=ancestor.GetComponent<Image>();if(image!=null && image.enabled && image.color.a>.01f)backing=image;}
                 if(backing==null)continue;

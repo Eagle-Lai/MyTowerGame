@@ -47,6 +47,15 @@ namespace FTProject.EditorTools
             AssetDatabase.SaveAssets();
             Debug.Log("[UIIssueFix] Updated 11 affected views and the enemy portrait item; retained audio controls and prefab GUIDs.");
         }
+        [MenuItem("Tools/塔防/Tactical Forge/同步问题文档修正（2026-10-28）", false, 92)]
+        public static void ApplyOctober28DocumentFixes()
+        {
+            if(EditorApplication.isPlayingOrWillChangePlaymode)throw new InvalidOperationException("Edit Mode required.");
+            GenerateArt();
+            foreach(string name in new[]{"TowerCodexItem","SplashView","TowerCodexView","GameIntroView","SettingView","PauseView","LevelClearView"})UpdateExisting(PathOf(name));
+            AssetDatabase.SaveAssets();
+            Debug.Log("[UIIssueFix20261028] Updated six views and the shared tower card, preserving prefab GUIDs and audio controls.");
+        }
         public static bool UpdateExisting(string path)
         {
             if (!Applies(System.IO.Path.GetFileNameWithoutExtension(path))) return false;
@@ -202,6 +211,7 @@ namespace FTProject.EditorTools
             {
                 var logo=ImageAt(root.transform,"Panel/Logo");logo.sprite=AssetDatabase.LoadAssetAtPath<Sprite>(LogoPath);logo.color=Color.white;logo.preserveAspect=true;logo.raycastTarget=false;
                 if(boot){Place(root,"Panel/Logo",0,380,176,176);Place(root,"Panel/HotTitle",0,230,900,80);}
+                else Place(root,"Panel/Logo",0,130,400,400);
             }
             if(full || name=="HudView" || name=="TowerInfoView" || name=="TowerCodexView")
             {
@@ -220,6 +230,21 @@ namespace FTProject.EditorTools
             if(name=="PauseView")
             {
                 var b=root.transform.Find("Panel/ResumeBtn");if(b!=null)Skin(b.GetComponent<Image>(),"button-primary",Cyan);
+            }
+            if(name=="PauseView" || name=="LevelClearView")
+            {
+                var bg=ImageAt(root.transform,"Bg");
+                bg.sprite=AssetDatabase.LoadAssetAtPath<Sprite>(Art+"/Backgrounds/command-backdrop.png");
+                bg.type=Image.Type.Simple;bg.color=Color.white;bg.raycastTarget=true;Stretch(bg.rectTransform);
+                if(name=="PauseView")
+                {var panel=ImageAt(root.transform,"Panel");Skin(panel,"panel",new Color(.05f,.09f,.14f,.96f));Rim(panel,Hex("42617D"));}
+                else
+                {
+                    var panel=ImageAt(root.transform,"Panel");panel.color=Color.clear;panel.raycastTarget=false;
+                    var surface=ImageAt(root.transform,"Panel/ResultSurface");Skin(surface,"panel",new Color(.035f,.065f,.10f,.96f));
+                    surface.raycastTarget=false;surface.transform.SetAsFirstSibling();Rim(surface,Hex("30495F"));
+                    root.GetComponent<TacticalForgeLayout>().Refresh();
+                }
             }
             foreach(string path in new[]{"Panel/PlayBtn","Panel/NextBtn","Panel/UpgradeBtn"})
             {var t=root.transform.Find(path);if(t!=null){Skin(t.GetComponent<Image>(),"button-primary",Cyan);var label=t.GetComponentInChildren<TMP_Text>(true);if(label!=null)label.color=Ink;}}
@@ -258,18 +283,21 @@ namespace FTProject.EditorTools
                 case "GameIntroView":
                     Place(root,"Panel",0,0,1060,820);
                     Place(root,"Panel/Title",0,326,948,84);
-                    for(int i=1;i<=4;i++){Place(root,"Panel/Info"+i,0,200-(i-1)*106,948,94);var t=root.transform.Find("Panel/Info"+i).GetComponent<TMP_Text>();t.fontSizeMax=30;t.fontSizeMin=22;}
+                    for(int i=1;i<=4;i++){Place(root,"Panel/Info"+i,0,200-(i-1)*112,884,104);var t=root.transform.Find("Panel/Info"+i).GetComponent<TMP_Text>();t.fontSizeMax=30;t.fontSizeMin=22;t.margin=new Vector4(8,8,8,8);}
                     Place(root,"Panel/BackBtn",-211,-322,526,88);Place(root,"Panel/CloseBtn",283,-322,382,88);
-                    paths=new[]{"Panel/Title","Panel/Info1","Panel/Info2","Panel/Info3","Panel/Info4"};break;
+                    SharedContentPlate(root,surfaces,"Panel/ContentBacking",0,32,948,472,new[]{"Panel/Info1","Panel/Info2","Panel/Info3","Panel/Info4"});
+                    paths=new[]{"Panel/Title"};break;
                 case "PauseView":
                     Place(root,"Panel",0,0,680,720);Place(root,"Panel/Title",0,278,568,84);
                     for(int i=0;i<4;i++)Place(root,"Panel/"+new[]{"ResumeBtn","RestartBtn","SettingsBtn","QuitBtn"}[i],0,140-i*112,568,88);
                     paths=new[]{"Panel/Title"};break;
                 case "SettingView":
-                    paths=new[]{"Panel/Title","Panel/LanguageText","Panel/AudioMasterLabel","Panel/AudioMasterValue","Panel/AudioMusicLabel","Panel/AudioMusicValue","Panel/AudioSfxLabel","Panel/AudioSfxValue","Panel/AudioMuteToggle/AudioMuteLabel"};
+                    SharedContentPlate(root,surfaces,"Panel/ContentBacking",0,-4,832,600,new[]{"Panel/LanguageText","Panel/AudioMasterLabel","Panel/AudioMasterValue","Panel/AudioMusicLabel","Panel/AudioMusicValue","Panel/AudioSfxLabel","Panel/AudioSfxValue","Panel/AudioMuteToggle/AudioMuteLabel"});
+                    paths=new[]{"Panel/Title"};
                     foreach(string audio in new[]{"Master","Music","Sfx"})
                     {
-                        var slider=root.transform.Find("Panel/Audio"+audio+"Slider");var image=slider.GetComponent<Image>();Skin(image,"panel",Surface);Rim(image,Hex("42617D"));
+                        var slider=root.transform.Find("Panel/Audio"+audio+"Slider");var image=slider.GetComponent<Image>();image.sprite=null;image.color=Color.clear;
+                        var oldRim=slider.GetComponent<Outline>();if(oldRim!=null)UnityEngine.Object.DestroyImmediate(oldRim);
                         var track=(RectTransform)slider.Find("Track");track.offsetMin=new Vector2(16,0);track.offsetMax=new Vector2(-16,0);
                         var fillArea=(RectTransform)slider.Find("FillArea");fillArea.offsetMin=new Vector2(16,0);fillArea.offsetMax=new Vector2(-16,0);
                     }
@@ -305,6 +333,18 @@ namespace FTProject.EditorTools
             {var tr=root.transform.Find(title);if(tr!=null)tr.GetComponent<TMP_Text>().margin=new Vector4(20,8,20,8);}
             if(name=="ConfirmView")root.GetComponent<ConfirmView>().ArrangeContent(ConfirmType.Warning);
             surfaces.Refresh();
+        }
+        private static void SharedContentPlate(GameObject root,UIContentSurfaces surfaces,string path,float x,float y,float w,float h,string[] rows)
+        {
+            var plate=ImageAt(root.transform,path);Skin(plate,"panel",Surface);Rim(plate,Hex("30495F"));
+            plate.raycastTarget=false;Place(root,path,x,y,w,h);plate.transform.SetAsFirstSibling();
+            foreach(string row in rows)
+            {
+                var old=root.transform.Find(row+"Backing");if(old!=null)UnityEngine.Object.DestroyImmediate(old.gameObject);
+                var target=root.transform.Find(row) as RectTransform;if(target==null)continue;
+                surfaces.Add(target,plate.rectTransform,true);
+                var text=target.GetComponent<TMP_Text>();if(text!=null){text.enableAutoSizing=true;text.overflowMode=TextOverflowModes.Ellipsis;}
+            }
         }
         private static void Rim(Image image,Color color)
         {var outline=Ensure<Outline>(image.gameObject);outline.effectColor=color;outline.effectDistance=new Vector2(1,-1);outline.useGraphicAlpha=true;}
@@ -388,6 +428,8 @@ namespace FTProject.EditorTools
         }
         private static void StyleCodexItem(GameObject root)
         {
+            root.GetComponent<TowerCodexItem>().ConfigurePortraits(new[]{"normal","power","retard"}.Select(n=>AssetDatabase.LoadAssetAtPath<Sprite>(Art+"/TowerPortraits/tower-"+n+".png")).ToArray());
+            var details=ImageAt(root.transform,"Body/DetailsBacking");Skin(details,"panel",Surface);details.raycastTarget=false;details.transform.SetAsFirstSibling();Rim(details,Hex("30495F"));
             Stretch(Node(root.transform,"Body/CardBg"));
             var bar=Node(root.transform,"Body/TopBar");bar.anchorMin=new Vector2(0,1);bar.anchorMax=new Vector2(1,1);bar.sizeDelta=new Vector2(0,4);
             foreach(string n in new[]{"TypeName","Role","DpsRow","RangeRow","SpeedRow","PriceRow","DescText"})
@@ -397,7 +439,8 @@ namespace FTProject.EditorTools
                 r.anchoredPosition=new Vector2(0,-new[]{275,340,405,445,485,525,565}[i]);r.sizeDelta=new Vector2(-48,i==0?60:i==1?56:i==6?65:36);
             }
             var icon=Node(root.transform,"Body/Icon");icon.anchorMin=icon.anchorMax=new Vector2(.5f,1);icon.pivot=new Vector2(.5f,1);icon.anchoredPosition=new Vector2(0,-25);icon.sizeDelta=new Vector2(220,220);
-            foreach(var t in root.GetComponentsInChildren<TMP_Text>(true))t.enableWordWrapping=true;
+            foreach(var t in root.GetComponentsInChildren<TMP_Text>(true))
+            {t.enableWordWrapping=true;t.margin=new Vector4(8,4,8,4);}
         }
         private static void BuildMonsterItem()
         {
@@ -456,12 +499,13 @@ namespace FTProject.EditorTools
                 string before=EditorJsonUtility.ToJson(importer);
                 importer.textureType=TextureImporterType.Sprite;importer.spriteImportMode=SpriteImportMode.Single;
                 importer.alphaIsTransparency=true;importer.mipmapEnabled=false;importer.textureCompression=TextureImporterCompression.Uncompressed;
-                importer.maxTextureSize=path.Contains("/Portraits/")?512:2048;
-                bool photographic=path.Contains("/Portraits/") || path.EndsWith("/keyart.png");
+                importer.maxTextureSize=path.Contains("/TowerPortraits/")?1024:path.Contains("/Portraits/")?512:2048;
+                bool photographic=path.Contains("/Portraits/") || path.Contains("/TowerPortraits/") || path.EndsWith("/keyart.png") || path.EndsWith("/command-backdrop.png");
                 var android=importer.GetPlatformTextureSettings("Android");android.name="Android";android.overridden=true;
-                android.maxTextureSize=importer.maxTextureSize;android.format=photographic?TextureImporterFormat.ETC2_RGBA8:TextureImporterFormat.RGBA32;
+                bool actionArt=System.IO.Path.GetFileName(path).StartsWith("action-",StringComparison.Ordinal);
+                android.maxTextureSize=actionArt?256:importer.maxTextureSize;android.format=photographic?TextureImporterFormat.ETC2_RGBA8:TextureImporterFormat.RGBA32;
                 android.compressionQuality=50;importer.SetPlatformTextureSettings(android);
-                if(path.Contains("/Panels/")||path.Contains("/Buttons/"))importer.spriteBorder=new Vector4(20,20,20,20);
+                if(path.Contains("/Panels/")||path.Contains("/Buttons/"))importer.spriteBorder=actionArt?Vector4.zero:new Vector4(20,20,20,20);
                 if(before!=EditorJsonUtility.ToJson(importer))importer.SaveAndReimport();
             }
         }

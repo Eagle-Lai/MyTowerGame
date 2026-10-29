@@ -34,10 +34,15 @@ namespace FTProject.EditorTools
                 var fillArea = Node(rect, "FillArea"); Stretch(fillArea, new Vector2(0, .38f), new Vector2(1, .62f));
                 var oldFill = rect.Find("Fill"); if (oldFill != null) oldFill.SetParent(fillArea, false);
                 var fill = Image(fillArea, "Fill", new Color(.21f, .88f, 1)); Stretch(fill.rectTransform, Vector2.zero, Vector2.one);
-                var handleArea = Node(rect, "HandleArea"); Stretch(handleArea, Vector2.zero, Vector2.one);
+                // Slider drives the handle's anchors to stretch vertically; a zero-height rail keeps its visual height fixed.
+                var handleArea = Node(rect, "HandleArea"); Stretch(handleArea, new Vector2(0, .5f), new Vector2(1, .5f));
                 handleArea.offsetMin = new Vector2(16, 0); handleArea.offsetMax = new Vector2(-16, 0);
                 var oldHandle = rect.Find("Handle"); if (oldHandle != null) oldHandle.SetParent(handleArea, false);
-                var handle = Image(handleArea, "Handle", new Color(.91f, .95f, 1)); handle.rectTransform.sizeDelta = new Vector2(28, 38);
+                var handle = Image(handleArea, "Handle", new Color(.91f, .95f, 1));
+                handle.rectTransform.anchorMin = handle.rectTransform.anchorMax = new Vector2(0, .5f);
+                handle.rectTransform.pivot = new Vector2(.5f, .5f);
+                handle.rectTransform.anchoredPosition = Vector2.zero;
+                handle.rectTransform.sizeDelta = new Vector2(28, 38);
                 slider.minValue = 0; slider.maxValue = 1; slider.wholeNumbers = false;
                 slider.fillRect = fill.rectTransform; slider.handleRect = handle.rectTransform; slider.targetGraphic = handle;
                 slider.direction = Slider.Direction.LeftToRight; slider.SetValueWithoutNotify(i == 1 ? .65f : .8f);

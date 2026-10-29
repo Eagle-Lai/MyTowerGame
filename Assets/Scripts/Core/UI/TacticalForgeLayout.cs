@@ -126,11 +126,14 @@ namespace FTProject
                     Put("Panel/CloseBtn",tw-172,30,136,72);
                     break;
                 case "LevelClearView":
-                    Header(w,"Title");
-                    Put("Panel/LevelName",245,118,w-400,50);
-                    float contentW = Mathf.Min(w-200,1400); float cx=(w-contentW)/2;
+                    float contentW = Mathf.Min(w-144,1440); float cx=(w-contentW)/2;
+                    Put("Panel/ResultSurface",cx,56,contentW,h-112);
+                    Put("Panel/Title",cx+48,82,contentW-96,84);
+                    transform.Find("Panel/Title").GetComponent<TMP_Text>().alignment=TextAlignmentOptions.Center;
+                    Put("Panel/ForgeHeaderLine",cx+48,182,contentW-96,2);
+                    Put("Panel/LevelName",cx+48,198,contentW-96,50);
                     // Reserve the footer first; scale row allocation, never let content enter it.
-                    float footerY = h - 145, resultY = 190;
+                    float footerY = h - 180, resultY = 262;
                     float rowScale = Mathf.Min(1, Mathf.Max(.01f, (footerY - 24 - resultY) / 578f));
                     float rowGap = 12 * rowScale;
                     Put("Panel/Stars",cx,resultY,contentW,90*rowScale); resultY += 90*rowScale+rowGap;
@@ -140,9 +143,10 @@ namespace FTProject
                     Put("Panel/RatingTimes",cx,resultY,contentW,52*rowScale); resultY += 52*rowScale+rowGap;
                     Put("Panel/RatingContext",cx,resultY,contentW,78*rowScale); resultY += 78*rowScale+rowGap;
                     Put("Panel/RatingReasons",cx,resultY,contentW,Mathf.Max(1,footerY-24-resultY));
-                    Put("Panel/NextBtn",w*.55f,h-145,w*.4f,92);
-                    Put("Panel/RetryBtn",64,h-145,w*.22f,92);
-                    Put("Panel/SelectBtn",w*.25f+80,h-145,w*.25f-100,92);
+                    float buttonW=(contentW-144)/3;
+                    Put("Panel/RetryBtn",cx+48,footerY,buttonW,88);
+                    Put("Panel/SelectBtn",cx+72+buttonW,footerY,buttonW,88);
+                    Put("Panel/NextBtn",cx+96+buttonW*2,footerY,buttonW,88);
                     break;
                 case "MonsterCodexView":
                     Header(w,"Title");
@@ -165,7 +169,7 @@ namespace FTProject
                     {
                         var cardsGrid=cards.GetComponent<GridLayoutGroup>();
                         int cc=narrow?2:3;float cardW=(w-136-24*(cc-1))/cc;
-                        cardsGrid.constraintCount=cc;cardsGrid.cellSize=new Vector2(cardW,640);
+                        cardsGrid.constraintCount=cc;cardsGrid.cellSize=new Vector2(cardW,680);
                         cardsGrid.enabled=_towerComparison;cards.GetComponent<ContentSizeFitter>().enabled=_towerComparison;
                         cards.parent.parent.GetComponent<ScrollRect>().vertical=_towerComparison;
                         var cr=(RectTransform)cards;
@@ -208,18 +212,23 @@ namespace FTProject
             float w=root.rect.width,h=root.rect.height;if(w<=0 || h<=0)return;
             if(comparison)
             {
+                var details=card.Find("Body/DetailsBacking");if(details!=null)details.gameObject.SetActive(false);
                 CardPart(card,"CardBg",0,0,w,h);CardPart(card,"TopBar",0,0,w,4);
                 CardPart(card,"TypeName",24,24,w-48,64);CardPart(card,"Role",24,96,w-48,60);CardPart(card,"DescText",24,175,w-48,h-190);
             }
             else
             {
-                float x=w*.45f, rw=w-x-24;
-                CardPart(card,"CardBg",0,0,w*.40f,h);CardPart(card,"TopBar",0,0,w*.40f,4);
-                CardPart(card,"Icon",w*.035f,40,w*.33f,h-80);
+                // Cards start at a symmetric 64px page inset, so their midpoint is the page split.
+                float split=w*.5f, x=split+40, rw=w-x-32;
+                var details=card.Find("Body/DetailsBacking");if(details!=null)details.gameObject.SetActive(true);
+                CardPart(card,"DetailsBacking",split+16,0,w-split-16,h);
+                CardPart(card,"CardBg",0,0,split-32,h);CardPart(card,"TopBar",0,0,split-32,4);
+                float portraitSize=Mathf.Min(split-80,h-48);
+                CardPart(card,"Icon",(split-32-portraitSize)*.5f,(h-portraitSize)*.5f,portraitSize,portraitSize);
                 bool compact = h < 500;
                 float descY = compact ? 148 : 188;
                 float statsY = Mathf.Max(descY + 96, h - 192);
-                CardPart(card,"TypeName",x,0,rw,compact?56:80);CardPart(card,"Role",x,compact?68:92,rw,compact?48:60);
+                CardPart(card,"TypeName",x,16,rw,compact?56:80);CardPart(card,"Role",x,compact?76:104,rw,compact?48:60);
                 CardPart(card,"DescText",x,descY,rw,statsY-descY-16);CardPart(card,"Divider",x,compact?126:165,rw,2);
                 string[] rows={"DpsRow","RangeRow","SpeedRow","PriceRow"};
                 for(int i=0;i<rows.Length;i++)CardPart(card,rows[i],x,statsY+i*44,rw,40);

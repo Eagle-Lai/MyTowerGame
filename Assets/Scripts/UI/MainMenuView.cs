@@ -160,11 +160,7 @@ namespace FTProject
             TMP_Text label = FindText("Panel/ContinueBtn/Label");
             if (label != null && canContinue)
             {
-                LevelConfig level = Configs.GetLevel(levelId);
-                string levelName = level != null ? Localization.LevelName(levelId, level.Name) : levelId.ToString();
-                label.text = string.Format("{0}  ·  {1}",
-                    Localization.Get("Continue") ?? "继续游戏",
-                    levelName);
+                label.text = Localization.Get("Continue") ?? "继续游戏";
                 LanguageManager.ApplyFont(label);
             }
         }
@@ -180,14 +176,8 @@ namespace FTProject
 
         private void OnClickContinue()
         {
-            int levelId;
-            int nextWave;
-            if (!GameFlowManager.TryGetResumableCheckpoint(out levelId, out nextWave))
-            {
-                RefreshContinueState();
-                return;
-            }
-            EventDispatcher.TriggerEvent<int>(EventName.SelectLevelRequestEvent, levelId);
+            // 有存档也先进入选关，由玩家决定续玩该关还是选择其他关卡。
+            OnClickStart();
         }
 
         private void OnClickCodex()

@@ -1131,6 +1131,8 @@ namespace FTProject
                 return;
             }
             TeardownLevel();
+            // 进关时一并关闭主菜单，避免背景遮住棋盘。
+            UIManager.Instance.Close(MainMenuView.LogicalName);
             UIManager.Instance.Close(SelectView.LogicalName);
             // Selection resumes the compatible checkpoint for the same level.
             BeginLevelWithMask(levelId);

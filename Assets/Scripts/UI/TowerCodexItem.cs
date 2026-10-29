@@ -16,6 +16,20 @@ namespace FTProject
     /// </summary>
     public class TowerCodexItem : MonoBehaviour
     {
+        [SerializeField] private Sprite[] portraits = new Sprite[3];
+
+        public void ConfigurePortraits(Sprite[] sprites) { portraits = sprites; }
+
+        /// <summary>The codex owns large portraits; battle HUD icons stay lightweight.</summary>
+        public bool ApplyPortrait(int type)
+        {
+            int index = type - 1;
+            if (portraits == null || index < 0 || index >= portraits.Length || portraits[index] == null) return false;
+            if (_icon == null) _icon = FindImage("Body/Icon");
+            if (_icon == null) return false;
+            _icon.sprite = portraits[index]; _icon.color = Color.white; _icon.preserveAspect = true;
+            return true;
+        }
         private static readonly Color Cyan = new Color(0.208f, 0.878f, 1f, 1f);
         private static readonly Color Gold = new Color(1f, 0.788f, 0.302f, 1f);
         private static readonly Color TextPrimary = new Color(0.910f, 0.941f, 0.980f, 1f);
@@ -98,7 +112,7 @@ namespace FTProject
                 _desc.text = TowerPresentation.Description(cfg);
             }
 
-            if (_icon != null)
+            if (_icon != null && !ApplyPortrait(cfg.Type))
             {
                 Sprite sprite = ResLoader.Instance.IsReady
                     ? ResLoader.Instance.Load<Sprite>("UI_TowerIcon_" + IconSuffix(cfg.Type))
