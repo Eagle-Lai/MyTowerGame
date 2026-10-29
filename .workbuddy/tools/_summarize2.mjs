@@ -1,0 +1,2 @@
+import {loadTables,runLevel,DEFAULTS} from './balance_sim.mjs';
+for(const d of ['D01','D02','D03','D04','D05','D06','D07','D08']){const t=loadTables(`../../Library/BalanceStage/all_profiles_v2/${d}/ConfigJson`);let pass=0,fail=0,first=[];for(let l=1;l<=30;l++){let x=runLevel(l,t,{...DEFAULTS,dt:0.05}); if(x.verdict==='pass')pass++; else {fail++;first.push({l,verdict:x.verdict,lost:x.lost,rounds:x.roundsCleared,leaks:x.leaks,hp:x.hpMin,final:x.finalRound?.lastKill,reason:x.lost?.reason})}} console.log(JSON.stringify({d,pass,fail,first:first.slice(0,10)}));}
