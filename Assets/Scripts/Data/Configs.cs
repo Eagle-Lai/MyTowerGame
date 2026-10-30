@@ -663,6 +663,12 @@ namespace FTProject
         ///
         /// 【返回新列表】调用方可以随意排序/过滤，不会影响配置表本身。
         /// </summary>
+        /// <summary>
+        /// 取"基础塔"列表（每类塔的 1 级），供图鉴/HUD 展示。
+        ///
+        /// 【2026-10-30 必须同时按关卡过滤】塔表已按关拆分，合并表里有 30 关 × 3 类 = 90 行
+        /// 满足 `Level == 1`；只按等级过滤会让图鉴出现 90 张卡（且前 30 张全是普通塔）。
+        /// </summary>
         public static List<TowerConfig> GetBaseTowers()
         {
             List<TowerConfig> list = new List<TowerConfig>(8);
@@ -673,7 +679,7 @@ namespace FTProject
             for (int i = 0; i < TowerTable.DataList.Count; i++)
             {
                 TowerInfo t = TowerTable.DataList[i];
-                if (t != null && t.Level == 1)
+                if (t != null && t.Level == 1 && t.LevelId == ActiveLevelId)
                 {
                     list.Add(new TowerConfig(t));
                 }
