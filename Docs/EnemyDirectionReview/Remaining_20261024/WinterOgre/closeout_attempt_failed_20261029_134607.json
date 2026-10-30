@@ -1,0 +1,18 @@
+{
+  "recorded_at": "2026-10-29T13:54:02.219230+08:00",
+  "attempted_at": "2026-10-29T13:46:07.779601+08:00",
+  "failed_script": "release_blocked.py",
+  "failed_script_sha256": "2F58ED518A121BF1A97F4979D5DEA013EA238193DDE80B123B34EA7DA5A9DE15",
+  "observation": "The original release stopped at its first assert not changes, after creating blocked_closeout_stamp.json. Later Unity/progress/chain closeout operations did not execute.",
+  "evidence_type": "Retrospective record from the preserved script, stamp and subsequent drift investigation; not a captured original stdout transcript.",
+  "observed_changes": [
+    {
+      "path": "Assets/StreamingAssets/build_info",
+      "before": "B0F0E60D467FF1667D356F9F300769E32AC0DB6A99769DB65CD1580D5EF55A73",
+      "after": "97518424ECA99D1F6E29D6946E56A9D899EFD32F740CD3B09C9D096415D466B3"
+    }
+  ],
+  "followup": "closeout_drift_probe_20261029.json",
+  "retained_stamp": true,
+  "original_script_and_baseline_preserved": true
+}

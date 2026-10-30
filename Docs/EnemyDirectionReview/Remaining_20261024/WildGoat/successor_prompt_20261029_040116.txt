@@ -1,0 +1,41 @@
+在 E:/MyTowerGame 继续敌人四方向串行续作。本聊天唯一角色 WildGoat(index 107)，是用户已授权循环中的唯一全新 local 后继。
+
+唯一 dispatch token：whitewolf-to-wildgoat-20261029_040116-747154f6-09f2-4b00-940c-121c7a063e19
+父线程：01a183d9-2ad7-73d2-b736-3057ef92f215
+
+开工完整读取当前磁盘：
+1. E:/MyTowerGame/AGENTS.md、ProjectSettings/ProjectVersion.txt。
+2. E:/MyTowerGame/Docs/EnemyDirectionReview/README.md、PREFAB_CHANGES_SUMMARY_20261026.md。
+3. E:/MyTowerGame/Docs/EnemyDirectionReview/Remaining_20261024/REMAINING_ENEMIES_EXECUTABLE_PROMPT_20261026.md。
+4. 同目录CONTINUATION_PROTOCOL_20261026.md、IMAGE_RELAY_RECOVERY_20261026.md、NEXT_ENEMY_TASK.md、conversation_chain.json、实时progress.json。
+5. 同目录standing_network_recovery_authorization_20261028.json、TreasureChest/standing_recovery_application_20261028.json，核对原授权证据，不改写旧uncertain/收费结果，不无限重试。
+6. E:/MyTowerGame/Docs/EnemyDirectionReview/Remaining_20261024/conversation_handoffs/20261029_040116_WhiteWolf_completed.md。
+7. E:/MyTowerGame/Docs/EnemyDirectionReview/Remaining_20261024/WildGoat/successor_assessment_20261029_040116.json。
+8. WildGoat/reference/source_structure.json及完整源参考；相关流水线脚本、共享实现的直接依赖/调用/生命周期。
+
+只有chain.state=active、owner_thread_id为本新聊天、current_character=WildGoat、dispatch_token与上方一致，才能操作Unity、生产或付费生成。父先handoff_ready，此时只读等待登记，不超时抢锁。父创建成功登记后停止全部工作区写入。开工检查新出现的请求/安装/运行文件，恢复已有阶段，避免重复prepare、生成或安装。不得在handoff_ready期间创建其他任务或修改链。
+
+当前95/108。WhiteWolf106已record，最终art_r04，completed_pending_user_art_review、user_approved=false。WildGoat107当前not_started，仅reference8文件，无anatomy/generation/raw/staged/install/runtime；本目录assessment/prompt/dispatch/creation是调度文档。剩余13项含PossessedWarg旧blocked及结果不明Down付费请求，另12项not_started。PossessedWarg保留，不自动重发、不伪称完成。
+
+WildGoat源路径：
+- Assets/Prefabs/Enemy/Enemy_WildGoat.prefab
+- Assets/_UIAssets/Monsters/Cattle/WildGoat/WildGoat.prefab
+- Assets/_UIAssets/Monsters/Cattle/WildGoat/WildGoat.png
+- Controller: Assets/_UIAssets/Monsters/_Common/Animations/Goat/Controller.controller
+reference六保护已匹配，开工仍现场核对。读完整atlas、prefab层级/绑定、controller依赖、原float/PPtr/事件/时长/loop及战斗、回收、同实例复用。原图为灰褐赭斑山羊、双弯角、垂耳、奶油鬃毛和胡须、蹄及短尾。下一聊天自行审完整原身份、轮廓、表情及四足尾根，制定正背解剖，不套WhiteWolf或其他角色造型。改动前以当前磁盘含用户改动建立本角色Assets/Packages/ProjectSettings/Luban全路径SHA增量基线及六保护，不以Git HEAD为基线，不重置历史指纹。
+
+逐阶段执行原prompt：审原图/解剖→按需逐方向AIHub并实看raw→透明分件/切片/pivot/PPU/layout和离线proof审阅→六保护与Unity空闲复核→仅WildGoat安装Builder/Verify→两轮真实Unity Play各84项→分批实际看PNG/时序板/GIF并准确记抽样→最终生产与运行版本哈希绑定→UTF8 note/record→GIF归档SHA→路径并集增量及原组件语义审计。程序PASS不能代替美术检查；视觉失败须修复重测、保留旧revision。成功raw优先复用；结果不明先查进程/落盘/返回，不盲重发。不要无条件整段连跑，不删除安装清单绕过防重。
+
+使用imagegen技能和既有AIHub入口https://aihub.dog/v1，gpt-image-2、medium、1536x1024、n=1，复用generate_character.ps1/generate.mjs；密钥运行时读取，仅发aihub.dog，不随跨域重定向，结束清理，不输出密钥或base64。遵循现有有界网络恢复授权、新intent/revision及防重护栏。Usage本地估算不当已确认账单，真实格式/尺寸以返回为准。不要重复生成已有、仍在执行或结果不明的请求。
+
+保护原atlas、源prefab、GUID/root、HP/碰撞/锚点/移动战斗参数及原侧面动画曲线/PPtr/事件/时长/loop。Up必须纯后脑、正确后足方向；肩髋/颈/尾相连，不凭空增加原资源没有的部件。保留攻击、受击/致死白闪、全身死亡缩小淡出、自动回收、同实例复用、暂停和1×2×3×；四向及状态均无角色地面阴影。使用现有方向系统，不增逐帧材料/层级查找或另一套方向系统。不改其他角色或共享C#；不改配置表、Assets/ConfigJson、Assets/Gen、声音。禁止Git pull/reset/clean/commit、构建部署、fork、子代理、并行角色、计时器、模型/推理覆盖、长期memory更新。
+
+正确Unity端点http://127.0.0.1:8088/mcp，版本2022.3.62f3c1。复用Remaining_20261024/mcp_call.py的Client.identity：动态读custom-tools/instances，明确set现场MyTowerGame完整ID，再project/info核E:/MyTowerGame及版本。8082是其他工程，8080是CatchFish；根AGENTS中的FreedomTower/D盘/8082为历史错配，本任务覆盖。重连/域重载后重新核对，不硬编码旧实例ID。MCP离线按工程规则自主恢复；失败报告实际环节及具体开启步骤，不能跳过或假称验证完成。默认使用Unity MCP；电脑/桌面控制须先弹对话确认，本prompt不授权桌面。只停本任务授权Play，不强停外来任务。
+
+本任务已授权两轮真实Play测试，无需重复询问。运行时排查先读本工程错误现场、再看状态。最终Unity须单一clean Boot、非Play，tests/review/balance/recording/manual/compile/reload/update全部idle，failed=false、error0、ready=true，不清日志。若以后获得明确C#改动授权，必须正确工程refresh/compile/state/error闭环，编译期间不继续改代码。空闲缓存stale须取新事实，不能用端口监听或旧resource冒充成功。
+
+前任WhiteWolf最终证据：WhiteWolf/final_validation_20261029.json及version_binding_final_20261029.json、scope_incremental_final_20261029.json、visual_review_final_20261029/review.json、gif_archive_verification_20261029.json。最终art_r04、14透明切片，象牙白/灰褐长毛狼、大片赭斑、尖耳/金眼/象牙牙、四足与长弯蓬尾，无装备；Up无脸且三表情图相同，Down三表情。r02修四足尾根连接、r03埋肩髋根帽、art_r04修361个细小alpha洞像素及164个溢色像素，成功raw未改。初始Up/Down curl55结果与收费仍不明；已有revision_01恢复成功，旧请求不重发不改写。本次封存无生成请求。完整22路径在production_before_play_20261029.json，installed_manifest SHA 075220177C70D53C0CA82FF09FB5F99E67F5F678D1BED442F2C5EC912BA4AFFC。runtime_r01为299帧、runtime_updeath_r01为296帧，各84/0，共168/0、595真实PNG。实看离线rig/分件、两轮四向/strip、10板256采样位/228不同PNG、9原PNG、12GIF各5编码帧及4未裁切编码整帧；确认耳尖完整、血条有间距；未实时播放或逐GIF全帧审核。AllGIF1534，WhiteWolf12当前版、源/归档SHA一致。5445→5465路径并集22变化20新增、unexpected0、本角色语义/其余5保护/共享C#无漂移，Reporter时间戳单列。历史global291 unexpected/6其他角色语义失败未重审，不称全局PASS。不要重跑前任stage/pack/Build/install或finalize audit/seal，勿删installed_manifest或改前任生产。
+
+图片原件和完整帧留盘，每次1～2张清晰预览及必要细节，按IMAGE_RELAY_RECOVERY限制历史图片载荷；不把全部角色/GIF/历史原帧一次内嵌。无法播放则按帧序实看并准确记录限制，未看不能写通过；中文文件UTF8。最终状态只能completed_pending_user_art_review、user_approved=false，不替用户批准。
+
+完成WildGoat全流程或记录真实阻断并释放Unity后，重新评估实时items：优先恢复已开始可恢复项，否则最低index非blocked；不盲用progress.current。完整落盘交接，更新README实时块、原执行prompt实时块、NEXT/progress；保留历史和阻断。用户已授权“一个完成→总结/更新prompt→唯一fresh local后继”循环，不逐角色再问。chain先handoff_ready，现场list_projects确认E:/MyTowerGame，再create_thread唯一全新local、不传model/thinking、不fork；新聊天等active。create明确成功保存真实响应，登记新owner/token active作为父最后一次工作区写入，此后只读；一次有界wait_threads并报告真实created-thread。创建结果不明先查列表，不重复创建；失败保留完整可执行交接并如实报告。循环至108全部有效完成或仅余真实阻断，不绕过阻断付费试探。

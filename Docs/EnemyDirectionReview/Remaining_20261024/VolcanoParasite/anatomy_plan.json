@@ -1,0 +1,43 @@
+{
+  "name": "VolcanoParasite",
+  "kind": "crawler",
+  "controller_family": "Parasite",
+  "identity": "Eyeless golden-ochre legless segmented parasite with an enormous ivory-toothed mouth, golden pale lower jaw and curved dark-brown volcanic horn spikes along its dorsal segments. No eyes, limbs, wings or separate tail.",
+  "parts": [
+    "HeadNormal",
+    "HeadAngry",
+    "HeadDead",
+    "Body",
+    "Segment",
+    "Tip"
+  ],
+  "columns": 4,
+  "rows": 2,
+  "source": "Assets/_UIAssets/Monsters/Parasites/VolcanoParasite/VolcanoParasite.prefab",
+  "atlas": "Assets/_UIAssets/Monsters/Parasites/VolcanoParasite/VolcanoParasite.png",
+  "art_dir": "Assets/_UIAssets/Monsters/Parasites/VolcanoParasite/Directions",
+  "controller": "Assets/_UIAssets/Monsters/_Common/Animations/Parasite/Controller.controller",
+  "source_observations": {
+    "viewed_images": [
+      "reference/VolcanoParasite.png",
+      "reference/source_prefab_offline.png"
+    ],
+    "source_nodes": [
+      "Body2",
+      "Body1",
+      "Body",
+      "Jaw",
+      "Head",
+      "Shadow",
+      "AnchorBody",
+      "AnchorStatus",
+      "AnchorWeapon"
+    ],
+    "head": "No eyes in original. Head carries upper teeth and three dark curved horns; separate lower jaw carries lower teeth. New axial Head cutouts include matching mouth/jaw, no invented eyes.",
+    "body": "Three progressively smaller golden spotted sections with pale underside and curved dark horns. Body/Segment/Tip remain distinct overlapped crawler sections; no extra tail or feet.",
+    "back": "Up must show closed rear cranium and horn backs, no eyes, nostrils or teeth.",
+    "lifecycle": "BaseEnemy.Init resets/rebinds direction profile and expression, OnRecycle restores flash/alpha/spawn scale and speed. Receiver SetHead preserves actual original side sprite references. Dedicated cloned curves must keep original float/PPtr curves, event times, duration and loops.",
+    "motion": "Existing crawler motion squashes/swells Body/Segment, small offset crawl wave, head lead on attack, attached fall plus BaseEnemy fade. No limb cadence.",
+    "unity_occupancy": "Main is currently playing, review/balance/manual are false. No stop or production install until editor is handed over."
+  }
+}

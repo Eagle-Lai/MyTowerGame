@@ -1,0 +1,30 @@
+{
+  "name": "WinterBoar",
+  "kind": "quadruped",
+  "controller_family": "Boar",
+  "identity": "Very round WHITE and light warm-gray shaggy boar, scattered mustard-ochre flank spots, large swept DARK BROWN bristle mane, fierce white eyes with thick dark brows, broad golden-ochre pig snout and TWO very long outward-upturned IVORY tusks. Four very short rounded pale hoof-like feet. No separate tail exists in the actual original prefab or atlas: DO NOT ADD A TAIL.",
+  "parts": [
+    "HeadNormal",
+    "HeadAngry",
+    "HeadDead",
+    "Body",
+    "LegFront",
+    "LegBack"
+  ],
+  "columns": 3,
+  "rows": 2,
+  "source": "Assets/_UIAssets/Monsters/Pigs/WinterBoar/WinterBoar.prefab",
+  "atlas": "Assets/_UIAssets/Monsters/Pigs/WinterBoar/WinterBoar.png",
+  "art_dir": "Assets/_UIAssets/Monsters/Pigs/WinterBoar/Directions",
+  "controller": "Assets/_UIAssets/Monsters/_Common/Animations/Boar/Controller.controller",
+  "source_review": {
+    "atlas": "Complete original atlas and complete original prefab render actually viewed in this chat",
+    "bound_renderers": 6,
+    "legs": 4,
+    "independent_tail": false,
+    "source_body_features": "mane and one visible side ear are integrated in original Body; new views allocate both ears only to head, mane only to body",
+    "native_contract": "Ready/Attack/Death/Walk 0.5s at 60fps; Ready and Walk loop; Attack SetHead1@0, Event Attack@0.333333343, SetHead0@0.5; Death SetHead2@0",
+    "lifecycle": "BaseEnemy.Init/Rebind/ResetForSpawn, movement-facing with hysteresis, shared flash property blocks, TickDeathFade and OnRecycle reviewed; no shared C# modifications"
+  },
+  "reviewed_at": "2026-10-29T12:21:15.051135+08:00"
+}

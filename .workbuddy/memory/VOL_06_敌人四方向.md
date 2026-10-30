@@ -32,3 +32,12 @@
 - ★★★位置/旋转曲线是 Vector3/Euler **整体烘焙**：只给 `m_LocalPosition.y` 打关键帧 → x/z 被写 0，左右腿和左右臂会塌到中线（表现为"只有一条腿""手臂从身体里钻出来"）。rig 每个节点必须把 x（±布局值）与 z=0 都 key 上；同理 Euler 的 x/y 要显式为 0。
 - ★尺寸标定：分件是单件裁切的，长宽比与侧视不同，**按高度缩放会失真**（头会宽到躯干 2 倍）。改用目标框 (宽,高) 取 min 缩放，并以地面 y=0 为锚排布；验收方法是同屏渲染侧/上/下对比：三者高度接近且脚底同一条线。
 - ★背面视图头排序不要低于躯干（12<15 会被躯干顶边切成平线），与正面统一用 25；改这里同时要改烘焙曲线的排序值，否则运行时两套值打架。
+
+## 全量续作（2026-10-24 ~ 10-30，108 个角色）
+- 除 AdvancedHen / Monkey 外的角色统一走「显式登记 + 脚本生成」两件套：
+  - `Assets/Editor/EnemyDirectionRemainingCatalog.cs`：108 条 `EnemyDirectionSpec`（ArtDir / PrefabPath / ControllerSource / OriginalAtlasPath / UseSeparateViewRigs）。★**登记不等于安装**，构建/安装仍要显式点菜单，避免批量误改生产资源。
+  - `Assets/Editor/EnemyDirectionRemainingMotion.cs`：按 `layout.anatomy` + `motionKind`（hexapod / scorpion / flying / floating / crawler / chest / giant / hop / bird）生成分方向 Motion 曲线；已批准角色的既有 rig 直接跳过，不重算。
+- 状态：内部队列 **108/108 完成**，全部为 `completed_pending_user_art_review`（user_approved=false），首批 10 个（Bat…BoarMounted，见 `Batch01_10/user_approval_20261023.json`）仍是唯一用户已批准的一批。实时事实以 `Docs/EnemyDirectionReview/Remaining_20261024/progress.json` 与 `conversation_chain.json` 为准，README 页首实时块只是快照。
+- 每角色产出（结论级）：`installed_manifest.json`（装了哪些文件 + 哈希）、`final_validation_*.json`（两轮真实 Play 各 84 PASS）、`review.json`（实际看过的时序板/采样位）、`anatomy_plan.json` + `layout_adjustments.json`。过程媒体（generation / runtime_* / staged_art / frames / AllGIF）**不入库**，见 `MEMORY.md` 证据入库体量口径。
+- 体积事实：单个 `Directions/` 约 7MB（图集 0.9MB + 4 条逐帧 anim 7MB），全量 anim 722MB。这就是 `.anim` 在 git 里最贵的原因，压缩无意义（稠密关键帧是表现精度本身）。
+

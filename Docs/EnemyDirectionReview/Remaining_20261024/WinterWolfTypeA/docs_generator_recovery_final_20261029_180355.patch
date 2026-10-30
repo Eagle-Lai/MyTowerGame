@@ -1,0 +1,34 @@
+--- Docs/EnemyDirectionReview/Remaining_20261024/WinterWolfTypeA/generate_before_current_recovery_20261029.mjs
++++ Docs/EnemyDirectionReview/Remaining_20261024/generate.mjs
+@@ -22,9 +22,18 @@
+ if(systemLocalProxy){
+  const winterOgreProxy=name==='WinterOgre'&&(direction==='Up'&&revision==='revision_04'||direction==='Down'&&!revision);
+  const winterWargProxy=name==='WinterWarg'&&direction==='Up'&&['revision_01','revision_02'].includes(revision)&&authorizedNetworkRecovery;
+- if(!curlTransport||!winterOgreProxy&&!winterWargProxy)throw new Error('Local proxy scope requires a reviewed character transport application');
++ const winterWolfTypeAProxy=name==='WinterWolfTypeA'&&direction==='Down'&&revision==='revision_02'&&authorizedNetworkRecovery;
++ if(!curlTransport||!winterOgreProxy&&!winterWargProxy&&!winterWolfTypeAProxy)throw new Error('Local proxy scope requires a reviewed character transport application');
+  const chain=JSON.parse(fs.readFileSync(path.join(root,'conversation_chain.json'),'utf8'));
+  if(chain.state!=='active'||chain.current_character!==name||chain.owner_thread_id!==process.env.CODEX_THREAD_ID)throw new Error('Proxy transport requires the active serial owner');
++ if(winterWolfTypeAProxy){
++  const controlFile=path.join(root,name,'unauthenticated_transport_control_20261029.json');
++  const application=JSON.parse(fs.readFileSync(path.join(root,name,'proxy_transport_application_20261029.json'),'utf8'));
++  const control=JSON.parse(fs.readFileSync(controlFile,'utf8'));
++  const proxy=control.controls.find(c=>c.route==='existing_local_proxy');
++  const metrics=JSON.parse(proxy?.stdout.match(/CONTROL_METRICS=(\{.*\})/)?.[1]||'null');
++  if(application.owner_thread_id!==chain.owner_thread_id||application.dispatch_token!==chain.dispatch_token||application.control_sha256!==createHash('sha256').update(fs.readFileSync(controlFile)).digest('hex')||control.credential_present!==false||control.new_paid_diagnostic_requests!==0||proxy?.exit_code!==0||metrics?.http_status!==401||metrics.uploaded<400000||metrics.tls_verify!==0)throw new Error('Current proxy application needs matching complete-upload unauthenticated401 evidence');
++ }
+ }
+ if([recoverFailed,authorizedUncertainRetry,authorizedNetworkRecovery,authorizedResume,!!artSourceRevision].filter(Boolean).length>1)throw new Error('Choose exactly one recovery or art-correction mode');
+ const preflight=args.includes('--preflight');
+@@ -130,8 +139,9 @@
+   const winterOgreCurl55=name==='WinterOgre'&&direction==='Up'&&['revision_01','revision_02'].includes(revision)&&uncertain.message.startsWith('curl transport failed 55 curl: (55) Send failure: Connection was aborted')&&consoleText.includes('curl: (55) Send failure: Connection was aborted');
+   const winterWargCurl55=name==='WinterWarg'&&direction==='Up'&&['revision_01','revision_02'].includes(revision)&&uncertain.message.startsWith('curl transport failed 55 curl: (55) Send failure: Connection was aborted')&&consoleText.includes('curl: (55) Send failure: Connection was aborted');
+   const winterWargCurl52=name==='WinterWarg'&&direction==='Up'&&revision==='revision_02'&&intent.prior_revision==='revision_01'&&uncertain.message.startsWith('curl transport failed 52 curl: (52) Empty reply from server')&&consoleText.includes('curl: (52) Empty reply from server');
+-  if(!tigerCurl55&&!treasureChestCurl56&&!treasureChestCurl55&&!whiteWolfCurl&&!winterOgreCurl55&&!winterWargCurl55&&!winterWargCurl52)throw new Error('Standing recovery is limited to a documented transient network failure');
+-  const applicationFile=path.join(root,name,winterWargCurl52?'standing_recovery_application_20261029_Up_r02.json':whiteWolfCurl||winterOgreCurl55||winterWargCurl55?'standing_recovery_application_20261029_'+direction+'.json':'standing_recovery_application_20261028.json');
++  const winterWolfTypeACurl55=name==='WinterWolfTypeA'&&direction==='Down'&&['revision_01','revision_02'].includes(revision)&&uncertain.message.startsWith('curl transport failed 55 curl: (55) Send failure: Connection was aborted')&&consoleText.includes('curl: (55) Send failure: Connection was aborted');
++  if(!tigerCurl55&&!treasureChestCurl56&&!treasureChestCurl55&&!whiteWolfCurl&&!winterOgreCurl55&&!winterWargCurl55&&!winterWargCurl52&&!winterWolfTypeACurl55)throw new Error('Standing recovery is limited to a documented transient network failure');
++  const applicationFile=path.join(root,name,winterWargCurl52?'standing_recovery_application_20261029_Up_r02.json':whiteWolfCurl||winterOgreCurl55||winterWargCurl55||winterWolfTypeACurl55?'standing_recovery_application_20261029_'+direction+'.json':'standing_recovery_application_20261028.json');
+   const application=JSON.parse(fs.readFileSync(applicationFile,'utf8'));
+   if(intent.application_sha256!==sha(applicationFile)||application.user_statement!==authorization.user_statement||application.source_thread_id!=='01a18093-7687-7313-aaba-7419090cc829'||application.source_user_message_id!=='01a180aa-7768-7222-bc85-7aa51e801cdd'||application.owner_thread_id!==chain.owner_thread_id||application.dispatch_token!==chain.dispatch_token||application.character!==name||application.direction!==direction||application.accept_possible_duplicate_charge!==true||application.max_additional_network_retries_per_direction!==2||application.authorization_sha256!==sha(authorizationFile))throw new Error('Missing bounded application of verified standing user authorization');
+   for(const e of application.preserved_evidence)if(sha(path.join(root,name,e.path))!==e.sha256)throw new Error('Original uncertain Curl evidence drift');

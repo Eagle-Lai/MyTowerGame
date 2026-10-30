@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "character": "ShardLizard",
+  "observed_at_utc": "2026-10-26T23:53:01Z",
+  "source": "Existing signed-in AIHub usage page in Chrome; read-only inspection",
+  "evidence": {
+    "available_balance_positive": true,
+    "usage_window_as_displayed": "last 24 hours",
+    "model": "gpt-image-2",
+    "billed_requests": 52,
+    "billed_amount_usd": 3.64,
+    "image_edits": 51,
+    "image_generations": 1,
+    "latest_visible_billed_edit": {
+      "displayed_time": "2026/10/26 21:24:24",
+      "amount_usd": 0.07,
+      "duration_seconds": 39.52
+    },
+    "displayed_time_zone": "not shown"
+  },
+  "prior_block": {
+    "request_record": "Docs/EnemyDirectionReview/Remaining_20261024/ScarabMounted/generation/Up/result.json",
+    "http_status": 402,
+    "error_code": "insufficient_balance",
+    "finished_at_utc": "2026-10-26T14:37:47.456Z"
+  },
+  "assessment": "The positive available balance and recent billed gpt-image-2 image-edit usage supported one already authorized production attempt. The usage page did not show its time zone, so this record does not assert that the latest visible edit occurred after the prior 402. The necessary ShardLizard Up request subsequently returned HTTP 503 No available compatible accounts, so compatible-account restoration is not established.",
+  "follow_up_result": {
+    "request": "Docs/EnemyDirectionReview/Remaining_20261024/ShardLizard/generation/Up/request.json",
+    "result": "Docs/EnemyDirectionReview/Remaining_20261024/ShardLizard/generation/Up/result.json",
+    "http_status": 503,
+    "error": "No available compatible accounts",
+    "raw_created": false
+  },
+  "provider_status_recheck": {
+    "observed_at_utc": "2026-10-27T01:30:36Z",
+    "source": "Existing signed-in AIHub dashboard, usage page and provider hall; read-only inspection",
+    "available_balance_usd": 58.64,
+    "usage_window": "last 24 hours",
+    "gpt_image_2_billed_request_count": 52,
+    "image_group_filter_results": 0,
+    "image_monitor_data": "none",
+    "assessment": "Positive balance remains, but the image-group filter has no results and the provider hall reports no image monitoring data. No evidence of compatible gpt-image-2 account availability was found. No API request or paid probe was sent."
+  },
+  "next_action": "Do not send Down, retry Up, or make any other paid request until reliable evidence shows compatible image-account availability has been restored."
+}

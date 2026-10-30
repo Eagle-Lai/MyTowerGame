@@ -1,0 +1,56 @@
+{
+  "character": "ShardLizard",
+  "index": 94,
+  "status": "blocked",
+  "blocked_at": "2026-10-27T07:55:23.571+08:00",
+  "owner_thread_id": "01a178a8-fc5a-77b0-9881-0a0b40872da8",
+  "dispatch_token": "scarabmounted-to-shardlizard-e066b2f9cbb54a5ca5b215b2e08ea8d2",
+  "stage": "first Up production request returned HTTP 503; no raw image",
+  "recovery_evidence": "service_recovery_evidence_20261027.json",
+  "previous_block_record": "blocked_generation_20261026.json",
+  "image_requests_this_thread": 1,
+  "charge_status": "not established by the HTTP 503 response",
+  "request_results": {
+    "Up": {
+      "status": "explicit_http_failure",
+      "request": "generation/Up/request.json",
+      "result": "generation/Up/result.json",
+      "raw_created": false,
+      "http_status": 503,
+      "error": {
+        "message": "No available compatible accounts",
+        "type": "api_error"
+      },
+      "started_at_utc": "2026-10-26T23:55:20.481Z",
+      "finished_at_utc": "2026-10-26T23:55:23.571Z",
+      "retry": "not retried"
+    },
+    "Down": {
+      "status": "not_requested",
+      "prompt": "generation/Down/prompt.txt"
+    }
+  },
+  "completed_before_block": [
+    "Original atlas, complete source prefab and battle prefab were visually reviewed.",
+    "anatomy_plan.json, reference_review.json and both direction prompts are saved.",
+    "Chain was resumed under the same owner and token after a read-only dashboard check; no paid probe was sent."
+  ],
+  "not_performed": [
+    "No raw image visual review",
+    "No staging, installation or Verify",
+    "No Unity Play or runtime recording",
+    "No progress record or GIF archive update"
+  ],
+  "block_reason": "The necessary first ShardLizard Up production request returned HTTP 503: No available compatible accounts. Preserve the request and result. Do not retry this request, send Down, or make another paid request until compatible image-account availability is reliably restored.",
+  "latest_service_recheck": {
+    "record": "service_recovery_evidence_20261027.json",
+    "observed_at_utc": "2026-10-27T01:30:36Z",
+    "available_balance_usd": 58.64,
+    "gpt_image_2_billed_requests_last_24h": 52,
+    "image_group_filter_results": 0,
+    "image_monitor_data": "none",
+    "restoration_evidence_found": false,
+    "paid_probe_sent": false
+  },
+  "next_step": "Wait for reliable compatible-account recovery evidence; then resume this same owner task and use a new unique attempt path only if the prior request is definitively complete and explicit project policy permits a new attempt."
+}

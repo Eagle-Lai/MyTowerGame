@@ -1,0 +1,35 @@
+--- Assets/Editor/EnemyDirectionRemainingMotion.cs before
++++ Assets/Editor/EnemyDirectionRemainingMotion.cs after
+@@ -15,18 +15,20 @@
+             bool walk=action=="Walk",attack=action=="Attack",death=action=="Death";
+             bool insect=layout.motionKind=="hexapod"||layout.motionKind=="scorpion";
+             bool fly=layout.motionKind=="flying"||layout.motionKind=="floating";
+-            bool crawl=layout.motionKind=="crawler",chest=layout.motionKind=="chest",giant=layout.motionKind=="giant";
++            bool crawl=layout.motionKind=="crawler",chest=layout.motionKind=="chest",giant=layout.motionKind=="giant",hop=layout.motionKind=="hop";
+             float legAngle=insect?8:giant?9:layout.motionKind=="bird"?12:10;
+             float lift=insect?.10f:giant?.14f:.18f;
++            float bodyBob=hop?.028f:fly?.018f:insect?.002f:.005f,bodyRoll=1.2f,tailSwing=layout.motionKind=="scorpion"?4:8;
++            if(layout.motion!=null){legAngle=layout.motion.legAngle;lift=layout.motion.legLift;bodyBob=layout.motion.bodyBob;bodyRoll=layout.motion.bodyRoll;tailSwing=layout.motion.tailSwing;}
+             foreach(var view in layout.views)
+             {
+                 float forward=view.direction=="Up"?1:-1;
+                 string motion="DirectionVisual/"+view.direction+"/Motion";
+                 float center=layout.referenceBottom+h*.5f;
+                 Set(clip,motion,"m_LocalPosition.x",duration,t=>0,true);
+-                Set(clip,motion,"m_LocalPosition.y",duration,t=>center+(walk?h*(fly?.018f:insect?.002f:.005f)*(1-Mathf.Cos(4*Mathf.PI*t))*.5f:attack?forward*h*.025f*Pulse(t):0),walk);
++                Set(clip,motion,"m_LocalPosition.y",duration,t=>center+(walk?h*bodyBob*(1-Mathf.Cos((hop?2:4)*Mathf.PI*t))*.5f:attack?forward*h*.025f*Pulse(t):0),walk);
+                 Set(clip,motion,"m_LocalPosition.z",duration,t=>0,true);
+-                Set(clip,motion,"localEulerAnglesRaw.z",duration,t=>death?(chest?12:insect?18:giant?76:65)*Fall(t):walk&&!fly&&!insect?1.2f*Sin(t):0,walk);
++                Set(clip,motion,"localEulerAnglesRaw.z",duration,t=>death?(chest?12:insect?18:giant?76:65)*Fall(t):walk&&!fly&&!insect&&!hop?bodyRoll*Sin(t):0,walk);
+                 foreach(var p in view.parts)
+                 {
+                     string path=motion+"/"+p.name;
+@@ -42,7 +44,7 @@
+                         if(walk)
+                         {
+                             if(leg)a+=side*legAngle*Sin(t+phase);
+-                            if(tail)a+=(layout.motionKind=="scorpion"?4:8)*Sin(t-.18f);
++                            if(tail)a+=tailSwing*Sin(t-.18f);
+                             if(wing)a+=side*(fly?9:2)*Sin(t);
+                             if(arm)a+=side*(giant?7:3)*Sin(t+phase);
+                             if(claw||p.role=="feeler")a+=side*3*Sin(t+phase);

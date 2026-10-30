@@ -1,0 +1,18 @@
+{
+  "recorded_at": "2026-10-29T14:27:32.511671+08:00",
+  "character": "WinterOgre",
+  "direct": {
+    "evidence": "unauthenticated_upload_diagnosis_20261029_142135.json",
+    "sha256": "D889ED1731677A72C874402645B505DDE0F93A768A0FF289F1FE5FC3DE61E05D",
+    "result": "Curl55; 71446 bytes uploaded, no HTTP outcome, 18.98s"
+  },
+  "control": {
+    "evidence": "unauthenticated_upload_diagnosis_20261029_142408.json",
+    "sha256": "D309F0A16E9C56EB5818E022A1191D2280C92887EE247144B462256396011510",
+    "result": "Existing local system proxy; all 660604 bytes uploaded, HTTP401, TLS verify0, 0.38s"
+  },
+  "finding": "Direct multipart upload fails while small direct requests work. Explicit use of the already configured local system proxy completed the same unauthenticated upload. This resolves the reproduced upload transport defect, not a claim of upstream image-generation success.",
+  "change": "Docs CLI opt-in -UseSystemLocalProxy -> Curl --proxy http://127.0.0.1:7897 --noproxy empty; unchanged HTTPS AIHub endpoint, certificate validation on, no redirects/retries. No global proxy, registry, DNS, environment or Unity C# changes.",
+  "credential_policy": "Bearer header supplied only via curl stdin, removed from child environment, never output or saved; HTTPS CONNECT still authenticates aihub.dog.",
+  "authorization_basis": "The existing direct standing grant to silently continue this same network issue and latest explicit task continuation persist. The prior current-turn request is consumed; the additional one below is a separately documented agent decision after a concrete new transport repair, not a reset or a user-specified monetary budget."
+}

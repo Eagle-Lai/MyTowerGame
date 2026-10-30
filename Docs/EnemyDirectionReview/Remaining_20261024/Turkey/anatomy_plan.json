@@ -1,0 +1,44 @@
+{
+  "name": "Turkey",
+  "kind": "bird",
+  "controller_family": "Turkey",
+  "identity": "Golden tan spotted turkey with a long cream neck, attached gold wattle, rounded tan body, two folded feather wings, two clawed feet, and a broad cream-and-ochre fan tail.",
+  "parts": [
+    "HeadNormal",
+    "HeadAngry",
+    "HeadDead",
+    "Body",
+    "Wing",
+    "Leg",
+    "Tail"
+  ],
+  "columns": 4,
+  "rows": 2,
+  "source": "Assets/_UIAssets/Monsters/Birds/Turkey/Turkey.prefab",
+  "atlas": "Assets/_UIAssets/Monsters/Birds/Turkey/Turkey.png",
+  "art_dir": "Assets/_UIAssets/Monsters/Birds/Turkey/Directions",
+  "controller": "Assets/_UIAssets/Monsters/_Common/Animations/Turkey/Controller.controller",
+  "source_observations": {
+    "viewed": [
+      "reference/Turkey.png",
+      "reference/source_prefab_offline.png",
+      "reference/Turkey.prefab",
+      "reference/Enemy_Turkey.prefab",
+      "reference/source_structure.json",
+      "Assets/_UIAssets/Monsters/_Common/Animations/Turkey/Controller.controller"
+    ],
+    "silhouette": "The original has a rounded golden-tan spotted body, long cream neck and gold wattle, folded wings, two clawed legs, and a broad cream-and-ochre fan tail.",
+    "head": "HeadNormal, HeadAngry and HeadDead are separate source expressions. Up uses one consistent featureless rear head/neck silhouette; Down uses the corresponding source expressions.",
+    "body": "Keep the spotted torso and rump as one central cutout. Do not paint the separately-authored tail fan or wings onto the body.",
+    "limbs": "The source prefab has separate Wing, LegL and LegR renderers. Each sheet cell is one complete source-side limb cutout; the installed rig must preserve the original paired limb count.",
+    "tail": "Tail is its own broad fan-feather renderer, not a narrow tuft. Preserve its centerline attachment and validate pivot/overlap against the source prefab before installation.",
+    "prefab_contract": "Preserve the original root scale, SortingGroup, Animator, Collider, BaseEnemy, HpBar, Shadow and animation-event receiver. No shared C# changes are planned.",
+    "animation_contract": "Retain the Turkey controller parameters and Idle/Ready/Walk/Run/Attack/Death behavior, including Attack SetHead expression events and Death HeadDead event."
+  },
+  "orientation_contract": {
+    "Up": "Axial rear view travelling screen-up. No eyes, beak or front facial features; head includes the full neck and keeps the wattle in its source location, naturally hidden from directly behind.",
+    "Down": "Axial front view travelling screen-down. Beak below the eyes; cream neck and gold wattle remain attached to the head/neck cutout.",
+    "pairing": "The sheet uses one folded wing cell and one leg cell; final assembly must retain two wings and two legs.",
+    "tail": "Use a broad symmetrical cream-and-ochre fan attached at the rump centerline; never replace it with a narrow rooster tail or duplicate it on the body."
+  }
+}

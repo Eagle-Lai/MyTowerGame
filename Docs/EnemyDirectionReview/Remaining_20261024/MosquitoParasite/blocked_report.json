@@ -1,0 +1,44 @@
+{
+  "name": "MosquitoParasite",
+  "index": 63,
+  "status": "blocked",
+  "category": "visual_failure_after_reuse",
+  "blocked_at": "2026-10-25T16:32:01.400110+08:00",
+  "completed_stage": "installed; two real Play rounds passed; visual check failed",
+  "visual_note": "橄榄褐色无足分节体、赭黄色斑点和象牙色巨齿在正背面保持原设；Up revision_01 去除了错误的侧面管口，头部到渐细尾端连续连接，背面没有眼睛、牙齿、翅膀或额外附肢。初始四方向画面无地面阴影，上下方向可见轻微分节伸缩；Up 死亡出现白闪、侧倒和淡出，Down 复用恢复正常外观。但 runtime_r01 的 walk_turn.gif 显示死亡回收并复用后切换到 Left/Right 时原侧面身体倒置，头部和牙口处于身体下方；与初始 LeftWalk/RightWalk 的正常朝向不同。程序两轮各84 PASS、0 FAIL不能替代本次视觉失败。诊断显示原 Death 的 Body/localEulerAnglesRaw.z 从0到-180度，而 Ready/Walk没有Body旋转曲线；当前证据支持死亡姿态残留，但尚未完成修复验证。为遵守不改原侧面float曲线、不改共享动画及对象池契约的约束，本轮保持安装现场和失败证据，标记blocked，不执行record，不认定美术通过。",
+  "image_views": 6,
+  "runtime_program_checks": [
+    {
+      "revision": "runtime_r01",
+      "pass": 84,
+      "fail": 0,
+      "frames": 341,
+      "records_sha256": "37C4F3CE738DE1DD7379817DDFF19F1D1503A8AF47DEC5680BF31B60721D2AD9"
+    },
+    {
+      "revision": "runtime_updeath_r01",
+      "pass": 84,
+      "fail": 0,
+      "frames": 342,
+      "records_sha256": "26A11FCCA20BA626C9567222C1ABE4382ECFC545EB71EE7EBA9CE2387B2658FE"
+    }
+  ],
+  "actual_frames": 683,
+  "evidence": [
+    "runtime_r01/walk_turn.gif",
+    "runtime_r01/actual_frames.jsonl",
+    "runtime_updeath_r01/actual_frames.jsonl",
+    "runtime_keygif_review_strip.png",
+    "side_rotation_diagnostic.json",
+    "final_editor_check.json"
+  ],
+  "production_action": "Keep single-character installation and all original/revision evidence; no shared C# or animation modifications; no record performed.",
+  "scope_audit": {
+    "report": "scope_MosquitoParasite_20261025_162734.json",
+    "target_semantics_pass": true,
+    "historical_unexpected_count": 291,
+    "historical_unexpected_delta": 0
+  },
+  "repair_constraints": "Original horizontal float curves and shared animation/pool contract must remain intact. A safe character-only repair has not been established.",
+  "suggested_next_step": "Inspect the saved Body rotation diagnostic and implement a documented character-only repair revision. Then run start_runtime.py MosquitoParasite runtime_r02 and start_runtime.py MosquitoParasite runtime_updeath_r02 up, inspect newly generated evidence and adapt finalization to those revisions before record. Never overwrite runtime_r01 or runtime_updeath_r01."
+}

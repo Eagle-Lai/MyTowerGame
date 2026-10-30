@@ -95,6 +95,22 @@ namespace FTProject
                     return;
                 }
             }
+
+            // Single-orb monsters name their original head renderer Body. Resolve it once
+            // from the original expression sprites; keep all explicitly bound heads intact.
+            if (HeadSprites == null) return;
+            for (int i = 0; i < rs.Length; i++)
+            {
+                if (rs[i] == null || rs[i].sprite == null) continue;
+                for (int j = 0; j < HeadSprites.Length; j++)
+                {
+                    if (HeadSprites[j] != null && rs[i].sprite == HeadSprites[j])
+                    {
+                        HeadRenderer = rs[i];
+                        return;
+                    }
+                }
+            }
         }
     }
 }

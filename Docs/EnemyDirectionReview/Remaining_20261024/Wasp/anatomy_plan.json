@@ -1,0 +1,33 @@
+{
+  "name": "Wasp",
+  "kind": "flying",
+  "controller_family": "Wasp",
+  "identity": "Original golden ochre hovering wasp, very large rounded head, two long dark segmented antennae, round gold-brown eye plates, a small tapered black-brown and gold striped abdomen with its original tiny dangling gold claws, two cream veined wings represented by raised/lowered postures.",
+  "parts": [
+    "HeadNormal",
+    "HeadAngry",
+    "HeadDead",
+    "Body",
+    "WingRaised",
+    "WingLowered"
+  ],
+  "columns": 4,
+  "rows": 2,
+  "source": "Assets/_UIAssets/Monsters/Insects/Wasp/Wasp.prefab",
+  "atlas": "Assets/_UIAssets/Monsters/Insects/Wasp/Wasp.png",
+  "art_dir": "Assets/_UIAssets/Monsters/Insects/Wasp/Directions",
+  "controller": "Assets/_UIAssets/Monsters/_Common/Animations/Wasp/Controller.controller",
+  "anatomy_observations": {
+    "wing_count": 2,
+    "source_wing_nodes": "WingUpL/R and WingDownL/R are two alternating poses of the SAME left/right wings, not four wings.",
+    "claws": "Small gold claws integrated in the source abdomen; keep integrated in the new Body slice. No six-leg walking rig.",
+    "heads": "Original receiver has Angry=0 and Dead=1. Preserve original events; new directional views provide Normal/Angry/Dead. Up head states all share one faceless rear shell.",
+    "flight": "Suspended original altitude; no ground shadow. Ready/Walk alternate source wing visibility at 12 Hz, Attack includes original Event(Attack) at 0.333333343 s; all native clips 0.5 s.",
+    "connections": "Wing roots share one attachment and common sprite canvas in both postures; head and abdomen overlap at opaque collar, wings render behind torso."
+  },
+  "source_review": [
+    "reference/Wasp.png",
+    "reference/source_prefab_offline.png",
+    "source_contract_20261029.json"
+  ]
+}

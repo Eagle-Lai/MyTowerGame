@@ -1,0 +1,59 @@
+"""Add observed death/pool-reuse Head position reset only to Sheep copied Walk."""
+from pathlib import Path
+from datetime import datetime, timezone, timedelta
+import hashlib, json, os, shutil, sys
+D=Path(__file__).resolve().parent; HERE=D.parent; ROOT=HERE.parents[2]
+sys.path.insert(0,str(HERE))
+from mcp_call import Client
+def read(p): return json.loads(p.read_text(encoding='utf-8'))
+def write(p,v): p.write_text(json.dumps(v,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+def sha(p): return hashlib.sha256(p.read_bytes()).hexdigest().upper()
+def now(): return datetime.now(timezone(timedelta(hours=8))).isoformat()
+def unwrap(v): return v.get('structuredContent') or json.loads(v['content'][0]['text'])
+chain=read(HERE/'conversation_chain.json')
+assert chain['state']=='active' and chain['owner_thread_id']==os.environ['CODEX_THREAD_ID']
+assert chain['current_character']=='Sheep' and chain['dispatch_token']=='scarabmounted-to-sheep-fd7d7a5afb264ca7a1691363ab276f5f'
+out=D/'head_reuse_repair_r01'; assert not out.exists(), 'Inspect prior repair before retrying'
+manifest=read(D/'installed_manifest.json')
+assert all(sha(ROOT/x['path'])==x['after'].upper() for x in manifest['changes'])
+baseline=read(D/'incremental_before_20261028.json')
+protected=baseline['protected_six']
+assert all(sha(ROOT/p)==s.upper() for p,s in protected.items() if p!='Assets/Prefabs/Enemy/Enemy_Sheep.prefab')
+c=Client(); project=c.identity()
+errors=unwrap(c.tool('read_console',dict(action='get',types=['error'],count='50',format='json')))
+state=c.resource('mcpforunity://editor/state')
+probe=unwrap(c.tool('execute_code',dict(action='execute',code='return new {playing=UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode,compiling=UnityEditor.EditorApplication.isCompiling,failed=UnityEditor.EditorUtility.scriptCompilationFailed,updating=UnityEditor.EditorApplication.isUpdating,balance=FTProject.EditorTools.BalancePlayModeVerifier.Running,recording=FTProject.EditorTools.BalanceVideoRecorder.Running,review=FTProject.EditorTools.EnemyDirectionBatchReview.Running,manual=FTProject.GameClock.IsManualSimulation,dirty=System.Linq.Enumerable.Any(System.Linq.Enumerable.Range(0,UnityEngine.SceneManagement.SceneManager.sceneCount),i=>UnityEngine.SceneManagement.SceneManager.GetSceneAt(i).isDirty),scene=UnityEngine.SceneManagement.SceneManager.GetActiveScene().path};')))
+assert probe['success'] and not any(v for k,v in probe['data']['result'].items() if k!='scene')
+assert probe['data']['result']['scene']=='Assets/Scenes/Boot.unity' and errors['data']==[]
+clip='Assets/_UIAssets/Monsters/Cattle/Sheep/Directions/Animations/Walk_Directions.anim'
+pose=read(D/'reuse_live_inspection_runtime_head_probe_r03_20261028.json');assert pose['initial_horizontal_head_y']==[.7] and pose['after_reuse_horizontal_head_y']==[.4]
+out.mkdir()
+for f in ['runtime_summary.json','runtime_visual_strip.png']:shutil.copy2(D/f,out/f)
+write(out/'rejected_previous.json',dict(reason='Old real Play had 168/0 but extra live r03 pose inspection confirmed Head local y sticks at0.4 after death instead of original0.7. Preserve all old frames; final two rounds must use repaired Walk.',previous_runtime=['runtime_r01','runtime_updeath_r01'],pose_evidence='reuse_live_inspection_runtime_head_probe_r03_20261028.json'))
+for p in ['installed_manifest.json','installed_verify.txt']: shutil.copy2(D/p,out/p)
+shutil.copy2(ROOT/clip,out/'Walk_Directions_before.anim')
+code='''var path="CLIP";var clip=UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEngine.AnimationClip>(path);if(!clip)throw new System.Exception("Missing copied Walk");
+System.Func<string> signature=()=>UnityEngine.JsonUtility.ToJson(clip)+"|"+string.Join(";",System.Linq.Enumerable.Select(UnityEditor.AnimationUtility.GetCurveBindings(clip),b=>b.path+"|"+b.propertyName));
+var original=UnityEditor.AnimationUtility.GetCurveBindings(clip);foreach(var b in original)if(b.path=="Body/Head"&&b.propertyName.StartsWith("m_LocalPosition"))throw new System.Exception("Existing Head position; inspect before changing");
+var curves=System.Linq.Enumerable.ToArray(System.Linq.Enumerable.Select(original,b=>new{binding=b,curve=UnityEditor.AnimationUtility.GetEditorCurve(clip,b)}));
+var pp=UnityEditor.AnimationUtility.GetObjectReferenceCurveBindings(clip);var ppBefore=System.Linq.Enumerable.ToArray(System.Linq.Enumerable.Select(pp,b=>UnityEditor.AnimationUtility.GetObjectReferenceCurve(clip,b)));
+string events=string.Join(";",System.Linq.Enumerable.Select(UnityEditor.AnimationUtility.GetAnimationEvents(clip),e=>UnityEngine.JsonUtility.ToJson(e)));
+float length=clip.length;bool loop=clip.isLooping;
+foreach(string axis in new[]{"x","y","z"})UnityEditor.AnimationUtility.SetEditorCurve(clip,UnityEditor.EditorCurveBinding.FloatCurve("Body/Head",typeof(UnityEngine.Transform),"m_LocalPosition."+axis),UnityEngine.AnimationCurve.Constant(0f,length,axis=="x"?-1f:axis=="y"?.7f:0f));
+foreach(var x in curves){var after=UnityEditor.AnimationUtility.GetEditorCurve(clip,x.binding);if(UnityEngine.JsonUtility.ToJson(after)!=UnityEngine.JsonUtility.ToJson(x.curve))throw new System.Exception("Original float curve changed");}
+for(int i=0;i<pp.Length;i++){var after=UnityEditor.AnimationUtility.GetObjectReferenceCurve(clip,pp[i]);if(after.Length!=ppBefore[i].Length)throw new System.Exception("PPtr count changed");for(int j=0;j<after.Length;j++)if(after[j].time!=ppBefore[i][j].time||after[j].value!=ppBefore[i][j].value)throw new System.Exception("PPtr changed");}
+if(length!=clip.length||loop!=clip.isLooping||events!=string.Join(";",System.Linq.Enumerable.Select(UnityEditor.AnimationUtility.GetAnimationEvents(clip),e=>UnityEngine.JsonUtility.ToJson(e))))throw new System.Exception("Timing/events changed");
+UnityEditor.EditorUtility.SetDirty(clip);UnityEditor.AssetDatabase.SaveAssets();FTProject.EditorTools.EnemyDirectionSpec spec;FTProject.EditorTools.EnemyDirectionPrefabBuilder.TryGetSpec("Sheep",out spec);string report;bool pass=FTProject.EditorTools.EnemyDirectionalRigBuilder.Verify(spec,out report);return new{pass=pass,report=report,length=clip.length,loop=clip.isLooping,originalFloatBindings=original.Length,afterFloatBindings=UnityEditor.AnimationUtility.GetCurveBindings(clip).Length,pptrBindings=pp.Length,originalCurvesEventsTimingPreserved=true};'''.replace('CLIP',clip)
+result=unwrap(c.tool('execute_code',dict(action='execute',code=code)))
+write(out/'repair_mcp.json',dict(observed_at=now(),project=project,state_before=state,probe_before=probe,errors=errors,result=result,protocol_history=c.history))
+assert result['success'] and result['data']['result']['pass'],result
+after=sha(ROOT/clip)
+changed=[x for x in manifest['changes'] if sha(ROOT/x['path'])!=x['after'].upper()]
+assert len(changed)==1 and changed[0]['path']==clip,changed
+manifest.setdefault('repair_history',[]).append(dict(observed_at=now(),revision=out.name,path=clip,before=changed[0]['after'],after=after,reason='Reset otherwise unbound Body/Head local position during Walk/Run after death pool reuse; actual live probe found y0.4 instead of original y0.7',source_curves_events_timing_retained=True,original_manifest=out.name+'/installed_manifest.json',reapply_if_full_rig_build='Full Build regenerates copied clips; preserve this additive reset'))
+changed[0]['after']=after;manifest['verification']=result;write(D/'installed_manifest.json',manifest)
+(D/'installed_verify.txt').write_text(result['data']['result']['report'],encoding='utf-8')
+write(out/'repair.json',dict(observed_at=now(),path=clip,before=sha(out/'Walk_Directions_before.anim'),after=after,added_bindings=['Body/Head/m_LocalPosition.'+a for a in 'xyz'],constant_value=[-1,.7,0],actual_live_probe='reuse_live_inspection_runtime_head_probe_r03_20261028.json',new_runtime_revisions=['runtime_r02','runtime_updeath_r02'],no_shared_code_or_source_changes=True,verify=True,preservation_checks=result['data']['result']))
+write(D/'preplay_version_binding_r02_20261028.json',dict(observed_at=now(),installed_manifest_sha256=sha(D/'installed_manifest.json'),installed_files={x['path']:sha(ROOT/x['path']) for x in manifest['changes']},repair_sha256=sha(out/'repair.json'),selection=read(D/'art_selection.json')))
+chain.update(current_stage='Sheep_head_position_reset_pending_r02_two_Play_rounds',last_stage_evidence=(out/'repair.json').relative_to(ROOT).as_posix(),updated_at=now());write(HERE/'conversation_chain.json',chain)
+print(json.dumps(dict(repaired=clip,verify=True,original_bindings=result['data']['result']['originalFloatBindings'],after_bindings=result['data']['result']['afterFloatBindings']),ensure_ascii=False))

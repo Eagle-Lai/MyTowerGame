@@ -1,0 +1,7 @@
+from pathlib import Path
+import json
+root=Path(__file__).resolve().parent
+folder=root/'generation/Up/revision_01';folder.mkdir(exist_ok=True)
+if (folder/'request.json').exists():raise ValueError('Existing paid request')
+(folder/'prompt.txt').write_text('Image 3 is the edit target. Fix ONLY the TOP ROW of this sprite sheet. First THREE top cells: each must be ONE PLAIN ROUND GOLD SPHERE, with existing warm gold shading and sparse darker gold circular spots. Remove the TWO pointed ear-like pieces behind EACH sphere entirely, replacing them with flat magenta background. The orb outline must be a clean continuous CIRCLE without any protrusions. NO ears, wings, horns, face, eyes, nose, mouth or teeth in top cells. Fourth top cell: REMOVE the invented armored creature, legs and gem entirely; replace it with ONE SMALL PLAIN GOLD SOLID CIRCULAR CONNECTOR PATCH, centered, approximately 80 pixels diameter, no anatomy. Keep BOTTOM ROW wing parts EXACTLY unchanged. These are the only wings and will be attached separately in Unity. Preserve the bright golden original EvilEye identity from images 1 and 2, thick dark outline and exact flat #FF00FF background. Four columns and two rows, no labels or extra parts.',encoding='utf-8')
+(root/'art_review_rejected.json').write_text(json.dumps({'direction':'Up','file':'generation/Up/raw.png','reason':'Invented ear-like appendages behind shell and creature in connector cell. Not used in production.','status':'rejected_history'},indent=2),encoding='utf-8')

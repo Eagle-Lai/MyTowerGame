@@ -1,0 +1,46 @@
+--- E:\MyTowerGame\Docs\EnemyDirectionReview\Remaining_20261024\WinterWolfTypeA\generate_user_edge_fix_before_current_resume_20261029.mjs
++++ E:\MyTowerGame\Docs\EnemyDirectionReview\Remaining_20261024\generate.mjs
+@@ -51,18 +51,32 @@
+ const sha=file=>createHash('sha256').update(fs.readFileSync(file)).digest('hex');
+ let recovery,artRevision,verifiedDirectTransport=false;
+ if(authorizedResume){
++ const winterWolfTypeAEdgeResume=name==='WinterWolfTypeA'&&direction==='Down'&&revision==='revision_03';
+  const winterOgreResume=name==='WinterOgre'&&direction==='Up'&&['revision_03','revision_04','revision_05'].includes(revision);
+  const winterOgreProxyResume=winterOgreResume&&revision==='revision_04';
+  const winterOgreVerifiedServiceResume=winterOgreResume&&revision==='revision_05';
+  const scarabMountedResume=name==='ScarabMounted'&&direction==='Down'&&revision==='revision_03';
+- if(!winterOgreResume&&!scarabMountedResume)throw new Error('Resume is restricted to a documented single current-turn request');
+- const authorizationFile=path.join(root,name,winterOgreVerifiedServiceResume?'authorized_verified_service_resume_20261029.json':winterOgreProxyResume?'authorized_proxy_resume_20261029.json':winterOgreResume?'authorized_resume_20261029.json':'authorized_resume_20261028.json');
++ if(!winterOgreResume&&!scarabMountedResume&&!winterWolfTypeAEdgeResume)throw new Error('Resume is restricted to a documented single current-turn request');
++ const authorizationFile=path.join(root,name,winterWolfTypeAEdgeResume?'authorized_edge_resume_20261029.json':winterOgreVerifiedServiceResume?'authorized_verified_service_resume_20261029.json':winterOgreProxyResume?'authorized_proxy_resume_20261029.json':winterOgreResume?'authorized_resume_20261029.json':'authorized_resume_20261028.json');
+  const authorization=JSON.parse(fs.readFileSync(authorizationFile,'utf8'));
+  const intentFile=path.join(dir,'recovery_intent.json');
+  const intent=JSON.parse(fs.readFileSync(intentFile,'utf8'));
+  const chain=JSON.parse(fs.readFileSync(path.join(root,'conversation_chain.json'),'utf8'));
+  if(chain.state!=='active'||chain.current_character!==name||chain.owner_thread_id!==process.env.CODEX_THREAD_ID||authorization.owner_thread_id!==chain.owner_thread_id||authorization.dispatch_token!==chain.dispatch_token)throw new Error('Resume requires active owner');
+  if(authorization.user_statement!=='继续任务'||authorization.max_requests!==1||authorization.character!==name||authorization.direction!==direction||authorization.revision!==revision||authorization.transport!=='curl_https_no_retry'||authorization.accept_possible_duplicate_charge!==true)throw new Error('Missing exact bounded current-turn resume record');
++ if(winterWolfTypeAEdgeResume){
++  const proofFile=path.join(root,authorization.edge_assessment_file);
++  const toolingFile=path.join(root,authorization.edge_tooling_file);
++  const priorDirs=[path.join(root,name,'generation',direction),...['revision_01','revision_02'].map(r=>path.join(root,name,'generation',direction,r))];
++  const priorRequests=priorDirs.map(p=>JSON.parse(fs.readFileSync(path.join(p,'request.json'),'utf8')));
++  if(systemLocalProxy||authorization.force_direct!==true||authorization.edge_ip!=='191.101.132.254'||authorization.automatic_retries_used!==2||authorization.automatic_retry_limit!==2||authorization.resets_automatic_counter!==false||authorization.prior_unknown_requests!==3||sha(proofFile)!==authorization.edge_assessment_sha256||sha(toolingFile)!==authorization.edge_tooling_sha256||sha(fileURLToPath(import.meta.url))!==authorization.generator_sha256||priorRequests.filter(r=>r.recovery?.mode==='standing_user_authorized_network_recovery').length!==2||priorDirs.some(p=>!fs.existsSync(path.join(p,'uncertain_result.json'))))throw new Error('Edge resume needs preserved counters and the reviewed user-supplied transport fix');
++  if(!preflight){
++   const unity=JSON.parse(fs.readFileSync(path.join(root,name,'edge_resume_unity_preflight_20261029.json'),'utf8'));
++   const age=Date.now()-Date.parse(unity.observed_at);
++   if(unity.owner_thread_id!==chain.owner_thread_id||unity.dispatch_token!==chain.dispatch_token||unity.project?.projectRoot!=='E:/MyTowerGame'||unity.project?.unityVersion!=='2022.3.62f3c1'||unity.ready!==true||unity.idle!==true||!Number.isFinite(age)||age<0||age>900000)throw new Error('Fresh matching Unity identity and idle preflight required');
++  }
++  verifiedDirectTransport=true;
++ }
+  if(winterOgreResume){
+   if(authorization.automatic_retries_used!==2||authorization.automatic_retry_limit!==2||authorization.resets_automatic_counter!==false)throw new Error('Original WinterOgre retry counters must remain consumed');
+   if(winterOgreVerifiedServiceResume){
+@@ -98,7 +112,7 @@
+  for(const e of authorization.preserved_evidence){if(sha(path.join(root,name,e.path))!==e.sha256)throw new Error('Resume preserved evidence drift');}
+  const parent=path.join(root,name,'generation',direction);
+  if([parent,...fs.readdirSync(parent,{withFileTypes:true}).filter(e=>e.isDirectory()).map(e=>path.join(parent,e.name))].some(p=>fs.existsSync(path.join(p,'raw.png'))))throw new Error('Successful directional image must be reused');
+- recovery={mode:winterOgreVerifiedServiceResume?'bounded_resume_after_verified_authenticated_service_recovery':'current_turn_bounded_resume_after_transport_diagnosis',authorization:authorizationFile,authorization_sha256:sha(authorizationFile),intent:intentFile,intent_sha256:sha(intentFile),max_requests:1,transport:'curl_https_no_retry',prior_outcomes:'uncertain_preserved'};
++ recovery={mode:winterWolfTypeAEdgeResume?'bounded_resume_after_user_edge_resolve_fix':winterOgreVerifiedServiceResume?'bounded_resume_after_verified_authenticated_service_recovery':'current_turn_bounded_resume_after_transport_diagnosis',authorization:authorizationFile,authorization_sha256:sha(authorizationFile),intent:intentFile,intent_sha256:sha(intentFile),max_requests:1,transport:'curl_https_no_retry',prior_outcomes:'uncertain_preserved'};
+ }else if(artSourceRevision){
+  if(!revision||revision===artSourceRevision)throw new Error('Art correction requires a fresh output revision');
+  const chain=JSON.parse(fs.readFileSync(path.join(root,'conversation_chain.json'),'utf8'));

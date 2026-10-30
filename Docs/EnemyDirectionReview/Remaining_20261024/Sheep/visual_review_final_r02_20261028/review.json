@@ -1,0 +1,50 @@
+{
+  "observed_at": "2026-10-28T14:00:10.873474+08:00",
+  "status": "completed_pending_user_art_review",
+  "user_approved": false,
+  "note": "Up/Down初次生成各一次HTTP200，未重试；Up选local_raster_revision_02，局部闭合空心颈环并用同图完整后蹄替换前向蹄片，Down用原始生成。原图、本地首版与两次被否决布局均保留。最终布局revision03让四短蹄根藏入奶油云状羊毛，保留赭斑、淡金脸、下垂耳，无角无新增尾；Tail仅透明兼容切片且rig节点移除。原侧身八个Sprite PPtr与非美术语义保留。真实Play额外读数发现共享Goat Death把侧头y从0.7降到0.4、复用未复位；只在Sheep自有Walk副本新增Head局部位置三轴常量[-1,0.7,0]，125条原float绑定、PPtr/事件/时长/loop保留，未改共享源动画或C#。修复后现场同实例复用读数y=0.7，旧r01和探针证据保留，其中head_probe_r02无有效姿态样本不作修复证据。最终runtime_r02/runtime_updeath_r02各84 PASS/0 FAIL，共676张真实Unity帧。实际查看四方向、strip、10张时序/步态/愤怒细节板（256采样位/227张不同实际帧），另看Down死亡与复用后Left原尺寸PNG。Up后脑无眼口，Down正常圆眼、攻击斜眼与死亡空白眼/吐舌可辨；四蹄错相并有轻微摇摆，抽样未见断开的腿根、颈环空洞、底色污染或阴影。受击白闪结束，双向死亡倾斜淡出，自动回收/复用恢复正常；暂停姿态和动画时间保持，恢复及2x/3x推进。正背轴向俯视与原侧图的体型比例、羊毛遮住远侧腿的程度留给用户最终美术判断。审阅为真实PNG时序抽样，未实时播放GIF全片、未逐张审完676帧；仅内部技术与视觉完成，user_approved=false。",
+  "viewed_sheets": [
+    "runtime_r02_angry_detail.png",
+    "runtime_r02_sequence_0.png",
+    "runtime_r02_sequence_1.png",
+    "runtime_r02_sequence_2.png",
+    "runtime_r02_walk_cycle.png",
+    "runtime_updeath_r02_angry_detail.png",
+    "runtime_updeath_r02_sequence_0.png",
+    "runtime_updeath_r02_sequence_1.png",
+    "runtime_updeath_r02_sequence_2.png",
+    "runtime_updeath_r02_walk_cycle.png"
+  ],
+  "sample_slots": 256,
+  "distinct_actual_frame_samples": 227,
+  "source_manifest": "sources.json",
+  "additional_viewed": [
+    "runtime_r02/four_directions.png",
+    "runtime_visual_strip.png",
+    "runtime_r02/frames/DeathAutoRecycle_00155.png",
+    "runtime_r02/frames/ContinuousTurns_00320.png"
+  ],
+  "additional_viewed_sha256": {
+    "runtime_r02/four_directions.png": "81438594A4FD501F1B37FC752ACF84815073E8F3E2863D42C82BC5F34022D82A",
+    "runtime_visual_strip.png": "750459989813A7CA414CD2E6E621DF968176FD9564106C84F945248004D512F0",
+    "runtime_r02/frames/DeathAutoRecycle_00155.png": "C13376737B9F0714970A18A1077BC60E5759E2DC91E64EA22270D5A06A6DEA59",
+    "runtime_r02/frames/ContinuousTurns_00320.png": "366517D3ACCCDFD11C4AB3E4B67F70EB47EB265E738E897DDDC254575D54F8E0"
+  },
+  "method": "Actual chronological PNG samples, gait cycles, angry details and two full frames; no live GIF playback or exhaustive all-frame visual inspection",
+  "rejected_previous": "head_reuse_repair_r01/rejected_previous.json",
+  "final_install_manifest": "installed_manifest.json",
+  "sources_sha256": "439393860CDFB4EB3399424CD002C49DE136F7ED56E2596FCD39AD5EAF654A2D",
+  "viewed_sheet_sha256": {
+    "runtime_r02_angry_detail.png": "F27B3E12AA5F0ACC0204C0E5DFB4039F04443373580B80458D63A963517CBCE2",
+    "runtime_r02_sequence_0.png": "B7D1E72EBCD3F615470C03987AEAC3EE5955D9FFDFD7ABE76E9551BFCAF97958",
+    "runtime_r02_sequence_1.png": "ACAE480DD14C326282B29345F791EC5E056D6D39E855EDE491B15314BC53217A",
+    "runtime_r02_sequence_2.png": "D8DE77DFFC4A7F983E85429295247902C1D71813DCB645D8165E2129A9FA61A1",
+    "runtime_r02_walk_cycle.png": "19F965E46E26366567775AE9CFB69B5254A1187383DC82997FCBD119C0109108",
+    "runtime_updeath_r02_angry_detail.png": "DD00ACE11F5EBB0034074E06290ADF17FFEA3AFF249A946D9B86A549EE8D41E0",
+    "runtime_updeath_r02_sequence_0.png": "3E74FD60963A832D80D36A57707EC08DD695F063ACFB7C6EA668331592FD8B3E",
+    "runtime_updeath_r02_sequence_1.png": "FCD9487A71BB30A7773E0F499627B6452090CAD4F9359DE0E8ED16D09501B6E7",
+    "runtime_updeath_r02_sequence_2.png": "63580CC5F798F79B3EF89F7038AFCE2A7B9F38DEA3168A2F63AC2EB058240EE2",
+    "runtime_updeath_r02_walk_cycle.png": "A8EABE575639C7E696BC2F7F73DC5ADDF7F581628F1C285AC17D51008EF6CFFF"
+  },
+  "final_version_binding": "version_binding_final_20261028.json"
+}

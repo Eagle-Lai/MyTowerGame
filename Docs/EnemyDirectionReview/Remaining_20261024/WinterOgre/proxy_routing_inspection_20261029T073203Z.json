@@ -1,0 +1,254 @@
+{
+  "observed_at": "2026-10-29T07:32:03.052Z",
+  "paid_requests": 0,
+  "local_configuration_changed": false,
+  "config_file": "C:/Users/Administrator/AppData/Roaming/io.github.clash-verge-rev.clash-verge-rev/clash-verge.yaml",
+  "config_sha256": "dcd08a980e97e1e1af9df4001adf7a6ff56a451a62be5227a97063a5840c4ede",
+  "aihub_rules": [
+    "- DOMAIN-SUFFIX,aihub.dog,DIRECT"
+  ],
+  "responses": [
+    {
+      "route": "/version",
+      "http_status": 200,
+      "data": {
+        "meta": true,
+        "version": "v1.19.32"
+      }
+    },
+    {
+      "route": "/configs",
+      "http_status": 200,
+      "data": {
+        "mode": "rule",
+        "mixed-port": 7897,
+        "port": 0,
+        "socks-port": 0,
+        "allow-lan": false,
+        "log-level": "info"
+      }
+    },
+    {
+      "route": "/proxies",
+      "http_status": 200,
+      "groups": [
+        {
+          "name": "GLOBAL",
+          "type": "Selector",
+          "now": "DIRECT",
+          "members": 69,
+          "selected_type": "Direct"
+        },
+        {
+          "name": "Ⓜ️ 微软服务",
+          "type": "Selector",
+          "now": "DIRECT",
+          "members": 3,
+          "selected_type": "Direct"
+        },
+        {
+          "name": "故障转移",
+          "type": "Fallback",
+          "now": "香港动态家宽-02 hy2🇭🇰",
+          "members": 38,
+          "selected_type": "Hysteria2"
+        },
+        {
+          "name": "自动选择",
+          "type": "URLTest",
+          "now": "优秀|cf加速|香港动态家宽-02🇭🇰",
+          "members": 38,
+          "selected_type": "Vless"
+        },
+        {
+          "name": "苏菲家宽",
+          "type": "Selector",
+          "now": "🇸🇬 新加坡节点",
+          "members": 48,
+          "selected_type": "Selector"
+        },
+        {
+          "name": "🇭🇰 香港自动",
+          "type": "URLTest",
+          "now": "优秀|cf加速|香港动态家宽-02🇭🇰",
+          "members": 6,
+          "selected_type": "Vless"
+        },
+        {
+          "name": "🇭🇰 香港节点",
+          "type": "Selector",
+          "now": "🇭🇰 香港自动",
+          "members": 7,
+          "selected_type": "URLTest"
+        },
+        {
+          "name": "🇯🇵 日本自动",
+          "type": "URLTest",
+          "now": "日本KDDI动态家宽🇯🇵hy2",
+          "members": 5,
+          "selected_type": "Hysteria2"
+        },
+        {
+          "name": "🇯🇵 日本节点",
+          "type": "Selector",
+          "now": "日本KDDI动态家宽🇯🇵hy2",
+          "members": 6,
+          "selected_type": "Hysteria2"
+        },
+        {
+          "name": "🇰🇷 韩国自动",
+          "type": "URLTest",
+          "now": "cf加速|韩国KT家宽",
+          "members": 4,
+          "selected_type": "Vless"
+        },
+        {
+          "name": "🇰🇷 韩国节点",
+          "type": "Selector",
+          "now": "自动选择",
+          "members": 5,
+          "selected_type": "URLTest"
+        },
+        {
+          "name": "🇸🇬 新加坡自动",
+          "type": "URLTest",
+          "now": "cf加速|中转新加坡01🇸🇬",
+          "members": 6,
+          "selected_type": "Vless"
+        },
+        {
+          "name": "🇸🇬 新加坡节点",
+          "type": "Selector",
+          "now": "🇸🇬 新加坡自动",
+          "members": 7,
+          "selected_type": "URLTest"
+        },
+        {
+          "name": "🇹🇼 台湾自动",
+          "type": "URLTest",
+          "now": "[03]台湾hinet家宽🇨🇳hy2",
+          "members": 7,
+          "selected_type": "Hysteria2"
+        },
+        {
+          "name": "🇹🇼 台湾节点",
+          "type": "Selector",
+          "now": "🇹🇼 台湾自动",
+          "members": 8,
+          "selected_type": "URLTest"
+        },
+        {
+          "name": "🇺🇸 美国自动",
+          "type": "URLTest",
+          "now": "cf加速|美国圣何塞",
+          "members": 7,
+          "selected_type": "Vless"
+        },
+        {
+          "name": "🇺🇸 美国节点",
+          "type": "Selector",
+          "now": "🇺🇸 美国自动",
+          "members": 8,
+          "selected_type": "URLTest"
+        },
+        {
+          "name": "🌍 其他地区",
+          "type": "Selector",
+          "now": "自动选择",
+          "members": 7,
+          "selected_type": "URLTest"
+        },
+        {
+          "name": "🍎 苹果服务",
+          "type": "Selector",
+          "now": "DIRECT",
+          "members": 3,
+          "selected_type": "Direct"
+        },
+        {
+          "name": "🎞️ 国际流媒体",
+          "type": "Selector",
+          "now": "🎬 解锁节点",
+          "members": 22,
+          "selected_type": "URLTest"
+        },
+        {
+          "name": "🎥 奈飞视频",
+          "type": "Selector",
+          "now": "🎬 解锁节点",
+          "members": 22,
+          "selected_type": "URLTest"
+        },
+        {
+          "name": "🎬 解锁节点",
+          "type": "URLTest",
+          "now": "日本KDDI动态家宽🇯🇵hy2",
+          "members": 13,
+          "selected_type": "Hysteria2"
+        },
+        {
+          "name": "🎵 TikTok",
+          "type": "Selector",
+          "now": "🇯🇵 日本节点",
+          "members": 8,
+          "selected_type": "Selector"
+        },
+        {
+          "name": "🐟 漏网之鱼",
+          "type": "Selector",
+          "now": "苏菲家宽",
+          "members": 3,
+          "selected_type": "Selector"
+        },
+        {
+          "name": "📢 谷歌服务",
+          "type": "Selector",
+          "now": "🇯🇵 日本节点",
+          "members": 5,
+          "selected_type": "Selector"
+        },
+        {
+          "name": "📲 电报消息",
+          "type": "Selector",
+          "now": "苏菲家宽",
+          "members": 9,
+          "selected_type": "Selector"
+        },
+        {
+          "name": "📹 油管视频",
+          "type": "Selector",
+          "now": "🇯🇵 日本节点",
+          "members": 9,
+          "selected_type": "Selector"
+        },
+        {
+          "name": "🛑 广告拦截",
+          "type": "Selector",
+          "now": "REJECT",
+          "members": 3,
+          "selected_type": "Reject"
+        },
+        {
+          "name": "🤖 AI服务",
+          "type": "Selector",
+          "now": "🇯🇵 日本节点",
+          "members": 9,
+          "selected_type": "Selector"
+        },
+        {
+          "name": "🧠 AI自动",
+          "type": "URLTest",
+          "now": "日本KDDI动态家宽🇯🇵hy2",
+          "members": 1,
+          "selected_type": "Hysteria2"
+        }
+      ]
+    },
+    {
+      "route": "/listeners",
+      "http_status": 404,
+      "data": "404 page not found\n"
+    }
+  ],
+  "finding": "The configured aihub.dog rule says DIRECT. Sending CONNECT through 7897 alone does not prove a different external network route; previous full unauthenticated upload remains only a buffering/connectivity control."
+}

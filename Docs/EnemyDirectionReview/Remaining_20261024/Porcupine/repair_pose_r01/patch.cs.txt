@@ -1,0 +1,20 @@
+
+if(UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode || UnityEditor.EditorApplication.isCompiling || UnityEditor.EditorApplication.isUpdating) throw new System.InvalidOperationException("Editor busy");
+var edits=new System.Collections.Generic.List<object>();
+foreach(string name in new[]{"Ready","Walk"}) {
+ string path="Assets/_UIAssets/Monsters/Rats/Porcupine/Directions/Animations/"+name+"_Directions.anim";
+ var clip=UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEngine.AnimationClip>(path);
+ if(!clip)throw new System.InvalidOperationException(path);
+ foreach(string axis in new[]{"x","y","z"}) {
+  var binding=UnityEditor.EditorCurveBinding.FloatCurve("Body",typeof(UnityEngine.Transform),"localEulerAnglesRaw."+axis);
+  if(UnityEditor.AnimationUtility.GetEditorCurve(clip,binding)!=null)throw new System.InvalidOperationException("Refuse existing curve overwrite");
+  UnityEditor.AnimationUtility.SetEditorCurve(clip,binding,UnityEngine.AnimationCurve.Constant(0f,clip.length,0f));
+  edits.Add(new {path=path,property=binding.propertyName,value=0f});
+ }
+ UnityEditor.EditorUtility.SetDirty(clip);
+}
+UnityEditor.AssetDatabase.SaveAssets();
+FTProject.EditorTools.EnemyDirectionSpec spec;
+FTProject.EditorTools.EnemyDirectionPrefabBuilder.TryGetSpec("Porcupine",out spec);
+string report;bool pass=FTProject.EditorTools.EnemyDirectionalRigBuilder.Verify(spec,out report);
+return Newtonsoft.Json.JsonConvert.SerializeObject(new {pass=pass,report=report,edits=edits});

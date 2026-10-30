@@ -1,0 +1,8 @@
+# DreadEye shared implementation fixes
+
+- `Assets/Editor/EnemyDirectionRemainingMotion.cs`: sprite PPtr samples end one sample before the original duration. This prevents Unity from appending a frame to clips with alternating wing sprites. Existing installed characters were not rebuilt. `repair_01/verify.txt` confirms all four original clip durations, loops, horizontal curves and events remain intact.
+- `Assets/Scripts/Enemy/MonsterAnimEventReceiver.cs`: when an original head reference is missing and no head-named renderer is found, resolve once using its original expression sprites. DreadEye originally leaves HeadRenderer unassigned and names its spherical renderer Body. Explicit bindings remain intact.
+- `scope_delta.json` intentionally reports this runtime file as changed outside the older allowlist. The baseline and allowlist have not been altered to suppress it. The pre-change source snapshots are preserved in this directory.
+- Compiler result false (no compilation failure), two current console checks after runtime with zero errors, actual two-pass runtime 168 PASS / 0 FAIL. Head-expression clone regressions passed for DreadEye, explicitly-bound BugQueen, and untouched non-directional Dreadnought; no production prefabs were saved by the probe.
+- Editor-state telemetry still reports stale_status. Fresh execute_code reports not playing, not compiling, not updating, scene clean; state readiness is not asserted as true.
+- The earlier failed runtime_r01 and its exceptions are preserved. Current final runtime revisions are runtime_r02 and runtime_updeath_r02. User art approval remains pending.

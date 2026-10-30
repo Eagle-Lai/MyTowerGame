@@ -1,0 +1,65 @@
+{
+  "observed_at": "2026-10-29T15:46:57.417819+08:00",
+  "owner_thread_id": "01a18619-6aa0-7a31-ac62-10a82077950b",
+  "dispatch_token": "winterboar-to-winterogre-20261029_131318-14b528b1-8990-455f-8069-d7ea49019046",
+  "new_paid_diagnostic_requests": 0,
+  "external_test": {
+    "producer": "WorkBuddy; its existing test is evidence, not authorization",
+    "source_session_file": "C:\\Users\\Administrator\\.workbuddy\\projects\\c-Users-Administrator-WorkBuddy-2026-10-29-14-59-19\\801b6bab-d50e-4ee8-b0fb-a2431f59ae01.jsonl",
+    "command_line_number": 145,
+    "command_record_sha256": "a35828b458dafa8a7eb94dbeb843a695abde3557b747b8016a147352b0e1a26b",
+    "result_line_number": 146,
+    "result_record_sha256": "02aa8786b071d3327dc374be41a259312c59a2ec2a8a4cc1702386c075442ca4",
+    "tested_at": "2026-10-29T07:21:23.983000+00:00",
+    "endpoint": "https://aihub.dog/v1/images/edits",
+    "model": "gpt-image-2",
+    "quality": "medium",
+    "size": "1536x1024",
+    "n": 1,
+    "transport": "curl_https_explicit_direct_no_proxy",
+    "http_status": 200,
+    "uploaded_bytes": 655487,
+    "downloaded_bytes": 1162302,
+    "seconds": 27.700758,
+    "exit_code": 0,
+    "input_sha256": [
+      "937663a80f9a3b09661514d71c09ca91615a24d8a925746b7734609e32f7c171",
+      "b3537e2f3c0ac7e1e8285bd3dd3db8eda4aa1bb9babe601bf03429de4269a41e"
+    ],
+    "input_bytes": [
+      248591,
+      405884
+    ],
+    "credential_identity": "Reported same key by WorkBuddy; no credential copied or printed here",
+    "prompt": "Neutral red circle transport test; not WinterOgre art",
+    "result_image_file": "service_control_T2_20261029.png",
+    "result_image_sha256": "98a26ef02e0a0d7fc4e75945a283095f8d6c5caaf166364fee7d63fa9e674c55",
+    "result_image_bytes": 871283,
+    "result_image_dimensions": [
+      1536,
+      1024
+    ],
+    "visual_review": "Viewed the actual PNG: a red circle on a white background, consistent with neutral control."
+  },
+  "new_service_fact": "An authenticated same-endpoint, same-model, same-quality, same-size, same-reference upload returned HTTP200 and a valid PNG. This is stronger than GET200 or an unauthenticated401.",
+  "route_correction": {
+    "evidence": "proxy_routing_inspection_20261029T073203Z.json",
+    "configured_rule": "- DOMAIN-SUFFIX,aihub.dog,DIRECT",
+    "finding": "7897 matched DIRECT; revision04 did not prove a distinct external proxy route. Earlier proxy-fix wording was overconfident.",
+    "root_cause_limit": "Curl55/52 localize transport symptoms, not the responsible ISP, intermediary, or image upstream. WorkBuddy causal claims are not independently established."
+  },
+  "existing_results": {
+    "evidence": "existing_result_inspection_20261029T072845Z.json",
+    "batch_count": 0,
+    "limitation": "Synchronous edits were not batches; empty batch metadata proves neither failure nor zero charge.",
+    "usage_requests_today": 22,
+    "usage_cost_today": 1.36,
+    "usage_limitation": "Aggregate22/$1.36 supersedes earlier15/$1.05 observation but cannot identify any of the five requests."
+  },
+  "old_uncertain_requests": 5,
+  "old_charges": "unknown_not_reclassified",
+  "production_files_checked": 5545,
+  "production_drift_since_last_closeout": [],
+  "unity_check": "Required after active resume, before paid request; not yet performed in this assessment",
+  "limitations": "A successful control at one point does not guarantee the next upstream result or establish why the line recovered."
+}

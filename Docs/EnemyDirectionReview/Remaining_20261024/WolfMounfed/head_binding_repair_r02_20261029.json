@@ -1,0 +1,592 @@
+{
+  "observed_at": "2026-10-29T22:46:42.665259+08:00",
+  "project": {
+    "projectRoot": "E:/MyTowerGame",
+    "projectName": "MyTowerGame",
+    "unityVersion": "2022.3.62f3c1",
+    "platform": "Android",
+    "assetsPath": "E:/MyTowerGame/Assets"
+  },
+  "reason": "Original battle prefab serializes HeadSprites: [] despite own atlas containing normal/angry/dead sprites. Real Play r01 StaticChecks indexed empty original receiver array; that also prevented native side expression events. Repair only this prefab to reference its three original atlas sprites. No CSharp/source prefab/atlas/meta or animation modification.",
+  "failed_revision": "runtime_r01",
+  "failure_scene_sha256": "BF58CA90E725DFFCA167D198AB90A4AE1EBF66671489A63BCC68850EE58AA832",
+  "result": {
+    "repaired": true,
+    "beforeCount": 0,
+    "afterCount": 3,
+    "headPath": "Body/Head",
+    "bindings": [
+      {
+        "name": "HeadNormal",
+        "guid": "ed213743056d19147a0af20eaa1d672b",
+        "fileID": -1828946549344447192,
+        "path": "Assets/_UIAssets/Monsters/Mounts/WolfMount/WolfMounted.png"
+      },
+      {
+        "name": "HeadAngry",
+        "guid": "ed213743056d19147a0af20eaa1d672b",
+        "fileID": -7252215782646672311,
+        "path": "Assets/_UIAssets/Monsters/Mounts/WolfMount/WolfMounted.png"
+      },
+      {
+        "name": "HeadDead",
+        "guid": "ed213743056d19147a0af20eaa1d672b",
+        "fileID": -1381065623766834176,
+        "path": "Assets/_UIAssets/Monsters/Mounts/WolfMount/WolfMounted.png"
+      }
+    ]
+  },
+  "before_prefab_sha256": "50802A11335AD6679DC1C6BA644FE9CCD2253958D1F975C77B64B241A4BBB623",
+  "after_prefab_sha256": "F3DDE4F5EEDB047189891C153A9F64D79DAE0329C5D82323B81535078B131E61",
+  "original_installed_manifest_sha256": "5D15205E8D6027AF9AF88A6CEC11E1462AA8F708FB0416FB59FB2AF39461A44F",
+  "repair_verify_sha256": "C3ED43086E0C5AAFF8A9ED37033CEECFC4EA3913F07FF4F1067E8BBC5F8B7B47",
+  "changes": [
+    {
+      "path": "Assets/Prefabs/Enemy/Enemy_WolfMounfed.prefab",
+      "before": "50802A11335AD6679DC1C6BA644FE9CCD2253958D1F975C77B64B241A4BBB623",
+      "after": "F3DDE4F5EEDB047189891C153A9F64D79DAE0329C5D82323B81535078B131E61"
+    }
+  ],
+  "historical_errors": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"success\":true,\"message\":\"Retrieved 2 log entries.\",\"data\":[{\"type\":\"Exception\",\"message\":\"IndexOutOfRangeException: Index was outside the bounds of the array.\",\"file\":\"Assets/Editor/EnemyDirectionBatchReview.cs\",\"line\":753,\"stackTrace\":\"FTProject.EditorTools.EnemyDirectionBatchReview.StaticChecks () (at Assets/Editor/EnemyDirectionBatchReview.cs:362)\\nFTProject.EditorTools.EnemyDirectionBatchReview.Begin () (at Assets/Editor/EnemyDirectionBatchReview.cs:305)\\nFTProject.EditorTools.EnemyDirectionBatchReview.OnMode (UnityEditor.PlayModeStateChange state) (at Assets/Editor/EnemyDirectionBatchReview.cs:191)\\nUnityEngine.Debug:LogException(Exception)\\nFTProject.EditorTools.EnemyDirectionBatchReview:Fail(Exception) (at Assets/Editor/EnemyDirectionBatchReview.cs:753)\\nFTProject.EditorTools.EnemyDirectionBatchReview:OnMode(PlayModeStateChange) (at Assets/Editor/EnemyDirectionBatchReview.cs:191)\\nUnityEditor.EditorApplication:Internal_PlayModeStateChanged(PlayModeStateChange)\\n\"},{\"type\":\"Exception\",\"message\":\"TimeoutException: Stage exceeded real-frame timeout: UpWalk\",\"file\":\"Assets/Editor/EnemyDirectionBatchReview.cs\",\"line\":753,\"stackTrace\":\"FTProject.EditorTools.EnemyDirectionBatchReview.Update () (at Assets/Editor/EnemyDirectionBatchReview.cs:531)\\nUnityEngine.Debug:LogException(Exception)\\nFTProject.EditorTools.EnemyDirectionBatchReview:Fail(Exception) (at Assets/Editor/EnemyDirectionBatchReview.cs:753)\\nFTProject.EditorTools.EnemyDirectionBatchReview:Update() (at Assets/Editor/EnemyDirectionBatchReview.cs:625)\\nUnityEditor.EditorApplication:Internal_CallUpdateFunctions()\\n\"}]}"
+      }
+    ],
+    "structuredContent": {
+      "success": true,
+      "message": "Retrieved 2 log entries.",
+      "data": [
+        {
+          "type": "Exception",
+          "message": "IndexOutOfRangeException: Index was outside the bounds of the array.",
+          "file": "Assets/Editor/EnemyDirectionBatchReview.cs",
+          "line": 753,
+          "stackTrace": "FTProject.EditorTools.EnemyDirectionBatchReview.StaticChecks () (at Assets/Editor/EnemyDirectionBatchReview.cs:362)\nFTProject.EditorTools.EnemyDirectionBatchReview.Begin () (at Assets/Editor/EnemyDirectionBatchReview.cs:305)\nFTProject.EditorTools.EnemyDirectionBatchReview.OnMode (UnityEditor.PlayModeStateChange state) (at Assets/Editor/EnemyDirectionBatchReview.cs:191)\nUnityEngine.Debug:LogException(Exception)\nFTProject.EditorTools.EnemyDirectionBatchReview:Fail(Exception) (at Assets/Editor/EnemyDirectionBatchReview.cs:753)\nFTProject.EditorTools.EnemyDirectionBatchReview:OnMode(PlayModeStateChange) (at Assets/Editor/EnemyDirectionBatchReview.cs:191)\nUnityEditor.EditorApplication:Internal_PlayModeStateChanged(PlayModeStateChange)\n"
+        },
+        {
+          "type": "Exception",
+          "message": "TimeoutException: Stage exceeded real-frame timeout: UpWalk",
+          "file": "Assets/Editor/EnemyDirectionBatchReview.cs",
+          "line": 753,
+          "stackTrace": "FTProject.EditorTools.EnemyDirectionBatchReview.Update () (at Assets/Editor/EnemyDirectionBatchReview.cs:531)\nUnityEngine.Debug:LogException(Exception)\nFTProject.EditorTools.EnemyDirectionBatchReview:Fail(Exception) (at Assets/Editor/EnemyDirectionBatchReview.cs:753)\nFTProject.EditorTools.EnemyDirectionBatchReview:Update() (at Assets/Editor/EnemyDirectionBatchReview.cs:625)\nUnityEditor.EditorApplication:Internal_CallUpdateFunctions()\n"
+        }
+      ]
+    },
+    "isError": false
+  },
+  "state": {
+    "success": true,
+    "message": "Retrieved editor state.",
+    "error": null,
+    "data": {
+      "schema_version": "unity-mcp/editor_state@2",
+      "observed_at_unix_ms": 1793285197826,
+      "sequence": 7,
+      "unity": {
+        "instance_id": "MyTowerGame@9e28c50b510eeb91",
+        "unity_version": "2022.3.62f3c1",
+        "project_id": null,
+        "platform": "WindowsEditor",
+        "is_batch_mode": false
+      },
+      "editor": {
+        "is_focused": false,
+        "play_mode": {
+          "is_playing": false,
+          "is_paused": false,
+          "is_changing": false
+        },
+        "active_scene": {
+          "path": "Assets/Scenes/Boot.unity",
+          "guid": "f868a4d2158d5c6498694acdc8836145",
+          "name": "Boot"
+        }
+      },
+      "activity": {
+        "phase": "idle",
+        "since_unix_ms": 1793284942107,
+        "reasons": [
+          "tick"
+        ]
+      },
+      "compilation": {
+        "is_compiling": false,
+        "is_domain_reload_pending": false,
+        "last_compile_started_unix_ms": null,
+        "last_compile_finished_unix_ms": null,
+        "last_domain_reload_before_unix_ms": null,
+        "last_domain_reload_after_unix_ms": 1793284940154
+      },
+      "assets": {
+        "is_updating": false,
+        "external_changes_dirty": true,
+        "external_changes_last_seen_unix_ms": 1793284975928,
+        "external_changes_dirty_since_unix_ms": 1793284975928,
+        "external_changes_last_cleared_unix_ms": 1793284821527,
+        "refresh": {
+          "is_refresh_in_progress": false,
+          "last_refresh_requested_unix_ms": null,
+          "last_refresh_finished_unix_ms": null
+        }
+      },
+      "tests": {
+        "is_running": false,
+        "mode": null,
+        "current_job_id": null,
+        "started_unix_ms": null,
+        "started_by": "unknown",
+        "last_run": null
+      },
+      "transport": {
+        "unity_bridge_connected": null,
+        "last_message_unix_ms": null
+      },
+      "settings": {
+        "batch_execute_max_commands": 25
+      },
+      "advice": {
+        "ready_for_tools": true,
+        "blocking_reasons": [],
+        "recommended_retry_after_ms": 0,
+        "recommended_next_action": "none"
+      },
+      "staleness": {
+        "age_ms": 354,
+        "is_stale": false
+      }
+    },
+    "hint": null
+  },
+  "probe": {
+    "playing": false,
+    "compiling": false,
+    "failed": false,
+    "updating": false,
+    "scenes": [
+      {
+        "path": "Assets/Scenes/Boot.unity",
+        "dirty": false
+      }
+    ],
+    "balance": false,
+    "recording": false,
+    "review": false,
+    "manual": false
+  },
+  "verify": {
+    "pass": true,
+    "report": "PASS Complete installed profile\nPASS Battle prefab imported\nPASS Prefab dependency Assets/_UIAssets/Monsters/Mounts/WolfMount/Directions/WolfMounfed_Directions.asset\nPASS Prefab dependency Assets/_UIAssets/Monsters/Mounts/WolfMount/Directions/WolfMounfed_Directions.png\nPASS Prefab dependency Assets/_UIAssets/Monsters/Mounts/WolfMount/Directions/Animations/WolfMounfed_Directions.controller\nPASS Prefab dependency Assets/_UIAssets/Monsters/Birds/AdvancedHen/Directions/AdvancedHenFlash.mat\nPASS Original horizontal curves retained Ready\nPASS Original events retained Ready\nPASS Original clip duration/loop retained Ready\nPASS Original horizontal curves retained Attack\nPASS Original events retained Attack\nPASS Original clip duration/loop retained Attack\nPASS Original horizontal curves retained Walk\nPASS Original events retained Walk\nPASS Original clip duration/loop retained Walk\nPASS Original horizontal curves retained Death\nPASS Original events retained Death\nPASS Original clip duration/loop retained Death\nPASS Rebuild hook applies on clone 0\nPASS Repeat clone has one direction group/no Shadow 0\nPASS Repeat clone preserves root/HP/event receiver 0\nPASS Rebuild hook applies on clone 1\nPASS Repeat clone has one direction group/no Shadow 1\nPASS Repeat clone preserves root/HP/event receiver 1\nPASS No missing script Enemy_WolfMounfed\nPASS No missing script Body\nPASS No missing script Head\nPASS No missing script LegFrontL\nPASS No missing script LegFrontR\nPASS No missing script LegBackL\nPASS No missing script LegBackR\nPASS No missing script Tail\nPASS No missing script AnchorBody\nPASS No missing script AnchorWeapon\nPASS No missing script AnchorStatus\nPASS No missing script HpBar\nPASS No missing script Bg\nPASS No missing script Fill\nPASS No missing script DirectionVisual\nPASS No missing script Up\nPASS No missing script Motion\nPASS No missing script Body\nPASS No missing script Sprite\nPASS No missing script Head\nPASS No missing script Sprite\nPASS No missing script ForeL\nPASS No missing script Sprite\nPASS No missing script HindL\nPASS No missing script Sprite\nPASS No missing script ForeR\nPASS No missing script Sprite\nPASS No missing script HindR\nPASS No missing script Sprite\nPASS No missing script Tail\nPASS No missing script Sprite\nPASS No missing script Down\nPASS No missing script Motion\nPASS No missing script Body\nPASS No missing script Sprite\nPASS No missing script Head\nPASS No missing script Sprite\nPASS No missing script ForeL\nPASS No missing script Sprite\nPASS No missing script HindL\nPASS No missing script Sprite\nPASS No missing script ForeR\nPASS No missing script Sprite\nPASS No missing script HindR\nPASS No missing script Sprite\nPASS No missing script Tail\nPASS No missing script Sprite\nPASS YooAsset prefab and artwork collectors present"
+  },
+  "protocol_history": [
+    {
+      "method": "initialize",
+      "params": {
+        "protocolVersion": "2025-03-26",
+        "capabilities": {},
+        "clientInfo": {
+          "name": "MyTowerGame-direction-review",
+          "version": "1.0"
+        }
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": "b17bbab0-11d6-4115-ab5f-ed68eaed5613",
+        "result": {
+          "protocolVersion": "2025-03-26",
+          "capabilities": {
+            "experimental": {},
+            "logging": {},
+            "prompts": {
+              "listChanged": true
+            },
+            "resources": {
+              "subscribe": false,
+              "listChanged": true
+            },
+            "tools": {
+              "listChanged": true
+            },
+            "extensions": {
+              "io.modelcontextprotocol/ui": {}
+            }
+          },
+          "serverInfo": {
+            "name": "mcp-for-unity-server",
+            "version": "3.4.8"
+          },
+          "instructions": "\nThis server provides tools to interact with the Unity Game Engine Editor.\n\nI have a dynamic tool system. Always check the mcpforunity://custom-tools resource first to see what special capabilities are available for the current project.\n\nTargeting Unity instances:\n- Use the resource mcpforunity://instances to list active Unity sessions (Name@hash).\n- When multiple instances are connected, call set_active_instance with the exact Name@hash before using tools/resources to pin routing for the whole session. The server will error if multiple are connected and no active instance is set.\n- Alternatively, pass unity_instance as a parameter on any individual tool call to route just that call (e.g. unity_instance=\"MyGame@abc123\", unity_instance=\"abc\" for a hash prefix, or unity_instance=\"6401\" for a port number in stdio mode). This does not change the session default.\n\nImportant Workflows:\n\nResources vs Tools:\n- Use RESOURCES to read editor state (mcpforunity://editor/state, mcpforunity://project/info, mcpforunity://project/tags, mcpforunity://tests, etc)\n- Use TOOLS to perform actions and mutations (manage_editor for play mode control, tag/layer management, etc)\n- Always check related resources before modifying the engine state with tools\n\nReading resources (read this before using ANY resource named below):\n- Resources are addressed by URI, never by name. A resource's name and URI are NOT interchangeable: names use underscores (e.g. editor_state) while URIs use slashes (e.g. mcpforunity://editor/state). Do NOT build a URI by swapping separators in the name — you will 404.\n- These instructions always spell resources as full mcpforunity:// URIs — read one exactly as written. If you only have a name (from resources/list or another tool's output), look its URI up in resources/list rather than guessing it.\n- Resource payloads are wrapped: the content lives under a top-level `data` object, so field paths are `data.<section>.<field>` (e.g. `data.advice.ready_for_tools`), not bare top-level fields.\n- The mcpforunity:// URI names the resource, not the server. Some clients take a separate server key on a resource read — in Codex, tools are exposed as mcp__unityMCP__* but resources/read wants server: \"unityMCP\". If a read fails with an unknown-server error, list resources first and use the key exactly as returned.\n\nScript Management:\n- After creating or modifying scripts (by your own tools or the `manage_script` tool) use `read_console` to check for compilation errors before proceeding\n- Only after successful compilation can new components/types be used\n- You can poll mcpforunity://editor/state and read `data.compilation.is_compiling` to check if the domain reload is complete, or `data.advice.ready_for_tools` for overall readiness\n\nScene Setup:\n- Always include a Camera and main Light (Directional Light) in new scenes\n- Create prefabs with `manage_asset` for reusable GameObjects\n- Use `manage_scene` to load, save, and query scene information\n\nPath Conventions:\n- Unless specified otherwise, all paths are relative to the project's `Assets/` folder\n- Use forward slashes (/) in paths for cross-platform compatibility\n\nConsole Monitoring:\n- Check `read_console` regularly to catch errors, warnings, and compilation status\n- Filter by log type (Error, Warning, Log) to focus on specific issues\n\nMenu Items:\n- Use `execute_menu_item` when you have read the mcpforunity://menu-items resource\n- This lets you interact with Unity's menu system and third-party tools\n\nUnity API Verification (requires 'docs' tool group):\n- When the 'docs' tool group is active, use `unity_reflect` and `unity_docs` to verify Unity API details before answering questions or writing C# code. LLM training data frequently contains incorrect, outdated, or hallucinated Unity APIs.\n- BEFORE answering Unity API questions: search the project's assets (`manage_asset`) and reflect the API (`unity_reflect`) to verify. Do NOT rely on training data alone.\n- Common hallucination areas: shaders and materials (always search assets for actual shader names), package-specific APIs (Input System, Cinemachine, ProBuilder, NavMesh, URP/HDRP), and APIs that changed between Unity versions.\n- Workflow: `unity_reflect search` → `unity_reflect get_type` → `unity_reflect get_member` → `unity_docs get_doc` (if you need examples/caveats).\n- For shader/material questions: use `manage_asset(action=\"search\", filter_type=\"Shader\")` to find actual shaders in the project before recommending one.\n\nPayload sizing & paging (important):\n- Many Unity queries can return very large JSON. Prefer **paged + summary-first** calls.\n- `manage_scene(action=\"get_hierarchy\")`:\n  - Use `page_size` + `cursor` and follow `next_cursor` until null.\n  - `page_size` is **items per page**; recommended starting point: **50**.\n- `manage_gameobject(action=\"get_components\")`:\n  - Start with `include_properties=false` (metadata-only) and small `page_size` (e.g. **10-25**).\n  - Only request `include_properties=true` when needed; keep `page_size` small (e.g. **3-10**) to bound payloads.\n- `manage_asset(action=\"search\")`:\n  - Use paging (`page_size`, `page_number`) and keep `page_size` modest (e.g. **25-50**) to avoid token-heavy responses.\n  - Keep `generate_preview=false` unless you explicitly need thumbnails (previews may include large base64 payloads).\n"
+        }
+      }
+    },
+    {
+      "method": "resources/read",
+      "params": {
+        "uri": "mcpforunity://custom-tools"
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": "11de3a09-fc79-4bc6-a71f-210ba3c64663",
+        "result": {
+          "contents": [
+            {
+              "uri": "mcpforunity://custom-tools",
+              "mimeType": "text/plain",
+              "text": "{\"success\":true,\"message\":\"Custom tools retrieved successfully.\",\"error\":null,\"data\":{\"project_id\":\"9e28c50b510eeb91\",\"tool_count\":36,\"tools\":[{\"name\":\"manage_animation\",\"description\":\"Tool: manage_animation\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"generate_audio\",\"description\":\"Tool: generate_audio\",\"structured_output\":true,\"requires_polling\":true,\"poll_action\":\"status\",\"max_poll_seconds\":600,\"parameters\":[]},{\"name\":\"generate_image\",\"description\":\"Tool: generate_image\",\"structured_output\":true,\"requires_polling\":true,\"poll_action\":\"status\",\"max_poll_seconds\":300,\"parameters\":[]},{\"name\":\"generate_model\",\"description\":\"Tool: generate_model\",\"structured_output\":true,\"requires_polling\":true,\"poll_action\":\"status\",\"max_poll_seconds\":300,\"parameters\":[]},{\"name\":\"import_model\",\"description\":\"Tool: import_model\",\"structured_output\":true,\"requires_polling\":true,\"poll_action\":\"status\",\"max_poll_seconds\":300,\"parameters\":[]},{\"name\":\"import_model_file\",\"description\":\"Tool: import_model_file\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"batch_execute\",\"description\":\"Tool: batch_execute\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"blender_bridge\",\"description\":\"Bridge to a running Blender with the BlenderMCP addon: status, scene/object info, viewport screenshot, run Python in Blender, import a model (export → import → place → normalize), check the blender-mcp checkout for updates, and sync its addon into Blender.\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"manage_camera\",\"description\":\"Tool: manage_camera\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"execute_code\",\"description\":\"Tool: execute_code\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"execute_menu_item\",\"description\":\"Tool: execute_menu_item\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"find_gameobjects\",\"description\":\"Tool: find_gameobjects\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"manage_gameobject\",\"description\":\"Tool: manage_gameobject\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"get_test_job\",\"description\":\"Tool: get_test_job\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"manage_graphics\",\"description\":\"Tool: manage_graphics\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"manage_asset\",\"description\":\"Tool: manage_asset\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"manage_build\",\"description\":\"Tool: manage_build\",\"structured_output\":true,\"requires_polling\":true,\"poll_action\":\"status\",\"max_poll_seconds\":1800,\"parameters\":[]},{\"name\":\"manage_components\",\"description\":\"Tool: manage_components\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"manage_editor\",\"description\":\"Tool: manage_editor\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"manage_material\",\"description\":\"Tool: manage_material\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"manage_packages\",\"description\":\"Tool: manage_packages\",\"structured_output\":true,\"requires_polling\":true,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"manage_scene\",\"description\":\"Tool: manage_scene\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"manage_script\",\"description\":\"Tool: manage_script\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"manage_scriptable_object\",\"description\":\"Tool: manage_scriptable_object\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"manage_shader\",\"description\":\"Tool: manage_shader\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"manage_texture\",\"description\":\"Tool: manage_texture\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"manage_ui\",\"description\":\"Tool: manage_ui\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"manage_physics\",\"description\":\"Tool: manage_physics\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"manage_prefabs\",\"description\":\"Tool: manage_prefabs\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"manage_probuilder\",\"description\":\"Tool: manage_probuilder\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"manage_profiler\",\"description\":\"Tool: manage_profiler\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"read_console\",\"description\":\"Tool: read_console\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"refresh_unity\",\"description\":\"Tool: refresh_unity\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"run_tests\",\"description\":\"Tool: run_tests\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"unity_reflect\",\"description\":\"Tool: unity_reflect\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"manage_vfx\",\"description\":\"Tool: manage_vfx\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]}]},\"hint\":null}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "method": "resources/read",
+      "params": {
+        "uri": "mcpforunity://instances"
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": "c7d418f1-b273-44bc-bfc5-6d7042bddf4f",
+        "result": {
+          "contents": [
+            {
+              "uri": "mcpforunity://instances",
+              "mimeType": "text/plain",
+              "text": "{\"success\": true, \"transport\": \"http\", \"instance_count\": 1, \"instances\": [{\"id\": \"MyTowerGame@9e28c50b510eeb91\", \"name\": \"MyTowerGame\", \"hash\": \"9e28c50b510eeb91\", \"unity_version\": \"2022.3.62f3c1\", \"connected_at\": \"2026-10-29T14:46:36.122275+00:00\", \"session_id\": \"4b3c1723-5f70-4a27-bc78-6b83d09cbea3\"}]}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "method": "tools/call",
+      "params": {
+        "name": "set_active_instance",
+        "arguments": {
+          "instance": "MyTowerGame@9e28c50b510eeb91"
+        }
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": "42fff6d3-922d-461d-9404-1a21a077ff8b",
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"success\":true,\"message\":\"Active instance set to MyTowerGame@9e28c50b510eeb91\",\"data\":{\"instance\":\"MyTowerGame@9e28c50b510eeb91\",\"session_id\":\"de3f11701dfc43dcb8cb89236be85fe4\"}}"
+            }
+          ],
+          "structuredContent": {
+            "success": true,
+            "message": "Active instance set to MyTowerGame@9e28c50b510eeb91",
+            "data": {
+              "instance": "MyTowerGame@9e28c50b510eeb91",
+              "session_id": "de3f11701dfc43dcb8cb89236be85fe4"
+            }
+          },
+          "isError": false
+        }
+      }
+    },
+    {
+      "method": "resources/read",
+      "params": {
+        "uri": "mcpforunity://project/info"
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": "0d038db6-6010-4efc-9402-9d85bb901f2b",
+        "result": {
+          "contents": [
+            {
+              "uri": "mcpforunity://project/info",
+              "mimeType": "text/plain",
+              "text": "{\"success\":true,\"message\":\"Retrieved project info.\",\"error\":null,\"data\":{\"projectRoot\":\"E:/MyTowerGame\",\"projectName\":\"MyTowerGame\",\"unityVersion\":\"2022.3.62f3c1\",\"platform\":\"Android\",\"assetsPath\":\"E:/MyTowerGame/Assets\"},\"hint\":null}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "method": "tools/call",
+      "params": {
+        "name": "read_console",
+        "arguments": {
+          "action": "get",
+          "types": [
+            "error"
+          ],
+          "count": "50",
+          "format": "json",
+          "include_stacktrace": true
+        }
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": "5964e91d-249d-4043-9539-eb26b86aea00",
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"success\":true,\"message\":\"Retrieved 2 log entries.\",\"data\":[{\"type\":\"Exception\",\"message\":\"IndexOutOfRangeException: Index was outside the bounds of the array.\",\"file\":\"Assets/Editor/EnemyDirectionBatchReview.cs\",\"line\":753,\"stackTrace\":\"FTProject.EditorTools.EnemyDirectionBatchReview.StaticChecks () (at Assets/Editor/EnemyDirectionBatchReview.cs:362)\\nFTProject.EditorTools.EnemyDirectionBatchReview.Begin () (at Assets/Editor/EnemyDirectionBatchReview.cs:305)\\nFTProject.EditorTools.EnemyDirectionBatchReview.OnMode (UnityEditor.PlayModeStateChange state) (at Assets/Editor/EnemyDirectionBatchReview.cs:191)\\nUnityEngine.Debug:LogException(Exception)\\nFTProject.EditorTools.EnemyDirectionBatchReview:Fail(Exception) (at Assets/Editor/EnemyDirectionBatchReview.cs:753)\\nFTProject.EditorTools.EnemyDirectionBatchReview:OnMode(PlayModeStateChange) (at Assets/Editor/EnemyDirectionBatchReview.cs:191)\\nUnityEditor.EditorApplication:Internal_PlayModeStateChanged(PlayModeStateChange)\\n\"},{\"type\":\"Exception\",\"message\":\"TimeoutException: Stage exceeded real-frame timeout: UpWalk\",\"file\":\"Assets/Editor/EnemyDirectionBatchReview.cs\",\"line\":753,\"stackTrace\":\"FTProject.EditorTools.EnemyDirectionBatchReview.Update () (at Assets/Editor/EnemyDirectionBatchReview.cs:531)\\nUnityEngine.Debug:LogException(Exception)\\nFTProject.EditorTools.EnemyDirectionBatchReview:Fail(Exception) (at Assets/Editor/EnemyDirectionBatchReview.cs:753)\\nFTProject.EditorTools.EnemyDirectionBatchReview:Update() (at Assets/Editor/EnemyDirectionBatchReview.cs:625)\\nUnityEditor.EditorApplication:Internal_CallUpdateFunctions()\\n\"}]}"
+            }
+          ],
+          "structuredContent": {
+            "success": true,
+            "message": "Retrieved 2 log entries.",
+            "data": [
+              {
+                "type": "Exception",
+                "message": "IndexOutOfRangeException: Index was outside the bounds of the array.",
+                "file": "Assets/Editor/EnemyDirectionBatchReview.cs",
+                "line": 753,
+                "stackTrace": "FTProject.EditorTools.EnemyDirectionBatchReview.StaticChecks () (at Assets/Editor/EnemyDirectionBatchReview.cs:362)\nFTProject.EditorTools.EnemyDirectionBatchReview.Begin () (at Assets/Editor/EnemyDirectionBatchReview.cs:305)\nFTProject.EditorTools.EnemyDirectionBatchReview.OnMode (UnityEditor.PlayModeStateChange state) (at Assets/Editor/EnemyDirectionBatchReview.cs:191)\nUnityEngine.Debug:LogException(Exception)\nFTProject.EditorTools.EnemyDirectionBatchReview:Fail(Exception) (at Assets/Editor/EnemyDirectionBatchReview.cs:753)\nFTProject.EditorTools.EnemyDirectionBatchReview:OnMode(PlayModeStateChange) (at Assets/Editor/EnemyDirectionBatchReview.cs:191)\nUnityEditor.EditorApplication:Internal_PlayModeStateChanged(PlayModeStateChange)\n"
+              },
+              {
+                "type": "Exception",
+                "message": "TimeoutException: Stage exceeded real-frame timeout: UpWalk",
+                "file": "Assets/Editor/EnemyDirectionBatchReview.cs",
+                "line": 753,
+                "stackTrace": "FTProject.EditorTools.EnemyDirectionBatchReview.Update () (at Assets/Editor/EnemyDirectionBatchReview.cs:531)\nUnityEngine.Debug:LogException(Exception)\nFTProject.EditorTools.EnemyDirectionBatchReview:Fail(Exception) (at Assets/Editor/EnemyDirectionBatchReview.cs:753)\nFTProject.EditorTools.EnemyDirectionBatchReview:Update() (at Assets/Editor/EnemyDirectionBatchReview.cs:625)\nUnityEditor.EditorApplication:Internal_CallUpdateFunctions()\n"
+              }
+            ]
+          },
+          "isError": false
+        }
+      }
+    },
+    {
+      "method": "resources/read",
+      "params": {
+        "uri": "mcpforunity://editor/state"
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": "6e676053-63e1-490a-9ba3-a125b31f8222",
+        "result": {
+          "contents": [
+            {
+              "uri": "mcpforunity://editor/state",
+              "mimeType": "text/plain",
+              "text": "{\"success\":true,\"message\":\"Retrieved editor state.\",\"error\":null,\"data\":{\"schema_version\":\"unity-mcp/editor_state@2\",\"observed_at_unix_ms\":1793285197826,\"sequence\":7,\"unity\":{\"instance_id\":\"MyTowerGame@9e28c50b510eeb91\",\"unity_version\":\"2022.3.62f3c1\",\"project_id\":null,\"platform\":\"WindowsEditor\",\"is_batch_mode\":false},\"editor\":{\"is_focused\":false,\"play_mode\":{\"is_playing\":false,\"is_paused\":false,\"is_changing\":false},\"active_scene\":{\"path\":\"Assets/Scenes/Boot.unity\",\"guid\":\"f868a4d2158d5c6498694acdc8836145\",\"name\":\"Boot\"}},\"activity\":{\"phase\":\"idle\",\"since_unix_ms\":1793284942107,\"reasons\":[\"tick\"]},\"compilation\":{\"is_compiling\":false,\"is_domain_reload_pending\":false,\"last_compile_started_unix_ms\":null,\"last_compile_finished_unix_ms\":null,\"last_domain_reload_before_unix_ms\":null,\"last_domain_reload_after_unix_ms\":1793284940154},\"assets\":{\"is_updating\":false,\"external_changes_dirty\":true,\"external_changes_last_seen_unix_ms\":1793284975928,\"external_changes_dirty_since_unix_ms\":1793284975928,\"external_changes_last_cleared_unix_ms\":1793284821527,\"refresh\":{\"is_refresh_in_progress\":false,\"last_refresh_requested_unix_ms\":null,\"last_refresh_finished_unix_ms\":null}},\"tests\":{\"is_running\":false,\"mode\":null,\"current_job_id\":null,\"started_unix_ms\":null,\"started_by\":\"unknown\",\"last_run\":null},\"transport\":{\"unity_bridge_connected\":null,\"last_message_unix_ms\":null},\"settings\":{\"batch_execute_max_commands\":25},\"advice\":{\"ready_for_tools\":true,\"blocking_reasons\":[],\"recommended_retry_after_ms\":0,\"recommended_next_action\":\"none\"},\"staleness\":{\"age_ms\":354,\"is_stale\":false}},\"hint\":null}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "method": "tools/call",
+      "params": {
+        "name": "execute_code",
+        "arguments": {
+          "action": "execute",
+          "code": "return Newtonsoft.Json.JsonConvert.SerializeObject(new {playing=UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode,compiling=UnityEditor.EditorApplication.isCompiling,failed=UnityEditor.EditorUtility.scriptCompilationFailed,updating=UnityEditor.EditorApplication.isUpdating,scenes=System.Linq.Enumerable.Range(0,UnityEngine.SceneManagement.SceneManager.sceneCount).Select(i=>new {path=UnityEngine.SceneManagement.SceneManager.GetSceneAt(i).path,dirty=UnityEngine.SceneManagement.SceneManager.GetSceneAt(i).isDirty}).ToArray(),balance=FTProject.EditorTools.BalancePlayModeVerifier.Running,recording=FTProject.EditorTools.BalanceVideoRecorder.Running,review=FTProject.EditorTools.EnemyDirectionBatchReview.Running,manual=FTProject.GameClock.IsManualSimulation});"
+        }
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": "5d1b22d0-64bb-435a-9c56-2a30e0a0cc80",
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"success\":true,\"message\":\"Code executed successfully.\",\"data\":{\"result\":\"{\\\"playing\\\":false,\\\"compiling\\\":false,\\\"failed\\\":false,\\\"updating\\\":false,\\\"scenes\\\":[{\\\"path\\\":\\\"Assets/Scenes/Boot.unity\\\",\\\"dirty\\\":false}],\\\"balance\\\":false,\\\"recording\\\":false,\\\"review\\\":false,\\\"manual\\\":false}\",\"compiler\":\"codedom\"}}"
+            }
+          ],
+          "structuredContent": {
+            "success": true,
+            "message": "Code executed successfully.",
+            "data": {
+              "result": "{\"playing\":false,\"compiling\":false,\"failed\":false,\"updating\":false,\"scenes\":[{\"path\":\"Assets/Scenes/Boot.unity\",\"dirty\":false}],\"balance\":false,\"recording\":false,\"review\":false,\"manual\":false}",
+              "compiler": "codedom"
+            }
+          },
+          "isError": false
+        }
+      }
+    },
+    {
+      "method": "tools/call",
+      "params": {
+        "name": "execute_code",
+        "arguments": {
+          "action": "execute",
+          "code": "var atlas=\"Assets/_UIAssets/Monsters/Mounts/WolfMount/WolfMounted.png\";\nvar path=\"Assets/Prefabs/Enemy/Enemy_WolfMounfed.prefab\";\nvar all=System.Linq.Enumerable.ToArray(System.Linq.Enumerable.OfType<UnityEngine.Sprite>(UnityEditor.AssetDatabase.LoadAllAssetsAtPath(atlas)));\nvar names=new[]{\"HeadNormal\",\"HeadAngry\",\"HeadDead\"};\nvar heads=names.Select(n=>all.Single(s=>s.name==n)).ToArray();\nvar refs=heads.Select(s=>{string guid;long id;if(!UnityEditor.AssetDatabase.TryGetGUIDAndLocalFileIdentifier(s,out guid,out id))throw new System.Exception(\"No Sprite ID\");return new {name=s.name,guid=guid,fileID=id,path=UnityEditor.AssetDatabase.GetAssetPath(s)};}).ToArray();\nvar root=UnityEditor.PrefabUtility.LoadPrefabContents(path);\ntry{var receiver=root.GetComponent<FTProject.MonsterAnimEventReceiver>();\nif(!receiver||!receiver.HeadRenderer||receiver.HeadSprites==null||receiver.HeadSprites.Length!=0)throw new System.Exception(\"Unexpected receiver contract; no repair applied\");\nvar head=receiver.HeadRenderer;if(head.sprite!=heads[0])throw new System.Exception(\"Normal original head mismatch\");\nreceiver.HeadSprites=heads;UnityEditor.PrefabUtility.SaveAsPrefabAsset(root,path);\nreturn Newtonsoft.Json.JsonConvert.SerializeObject(new {repaired=true,beforeCount=0,afterCount=heads.Length,headPath=UnityEditor.AnimationUtility.CalculateTransformPath(head.transform,root.transform),bindings=refs});}\nfinally{UnityEditor.PrefabUtility.UnloadPrefabContents(root);}"
+        }
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": "ac656df9-85b2-4e6b-afa0-3f0948209ffc",
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"success\":true,\"message\":\"Code executed successfully.\",\"data\":{\"result\":\"{\\\"repaired\\\":true,\\\"beforeCount\\\":0,\\\"afterCount\\\":3,\\\"headPath\\\":\\\"Body/Head\\\",\\\"bindings\\\":[{\\\"name\\\":\\\"HeadNormal\\\",\\\"guid\\\":\\\"ed213743056d19147a0af20eaa1d672b\\\",\\\"fileID\\\":-1828946549344447192,\\\"path\\\":\\\"Assets/_UIAssets/Monsters/Mounts/WolfMount/WolfMounted.png\\\"},{\\\"name\\\":\\\"HeadAngry\\\",\\\"guid\\\":\\\"ed213743056d19147a0af20eaa1d672b\\\",\\\"fileID\\\":-7252215782646672311,\\\"path\\\":\\\"Assets/_UIAssets/Monsters/Mounts/WolfMount/WolfMounted.png\\\"},{\\\"name\\\":\\\"HeadDead\\\",\\\"guid\\\":\\\"ed213743056d19147a0af20eaa1d672b\\\",\\\"fileID\\\":-1381065623766834176,\\\"path\\\":\\\"Assets/_UIAssets/Monsters/Mounts/WolfMount/WolfMounted.png\\\"}]}\",\"compiler\":\"codedom\"}}"
+            }
+          ],
+          "structuredContent": {
+            "success": true,
+            "message": "Code executed successfully.",
+            "data": {
+              "result": "{\"repaired\":true,\"beforeCount\":0,\"afterCount\":3,\"headPath\":\"Body/Head\",\"bindings\":[{\"name\":\"HeadNormal\",\"guid\":\"ed213743056d19147a0af20eaa1d672b\",\"fileID\":-1828946549344447192,\"path\":\"Assets/_UIAssets/Monsters/Mounts/WolfMount/WolfMounted.png\"},{\"name\":\"HeadAngry\",\"guid\":\"ed213743056d19147a0af20eaa1d672b\",\"fileID\":-7252215782646672311,\"path\":\"Assets/_UIAssets/Monsters/Mounts/WolfMount/WolfMounted.png\"},{\"name\":\"HeadDead\",\"guid\":\"ed213743056d19147a0af20eaa1d672b\",\"fileID\":-1381065623766834176,\"path\":\"Assets/_UIAssets/Monsters/Mounts/WolfMount/WolfMounted.png\"}]}",
+              "compiler": "codedom"
+            }
+          },
+          "isError": false
+        }
+      }
+    },
+    {
+      "method": "resources/read",
+      "params": {
+        "uri": "mcpforunity://custom-tools"
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": "c001ad06-c962-47fb-96ee-55ca40c99980",
+        "result": {
+          "contents": [
+            {
+              "uri": "mcpforunity://custom-tools",
+              "mimeType": "text/plain",
+              "text": "{\"success\":true,\"message\":\"Custom tools retrieved successfully.\",\"error\":null,\"data\":{\"project_id\":\"9e28c50b510eeb91\",\"tool_count\":36,\"tools\":[{\"name\":\"manage_animation\",\"description\":\"Tool: manage_animation\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"generate_audio\",\"description\":\"Tool: generate_audio\",\"structured_output\":true,\"requires_polling\":true,\"poll_action\":\"status\",\"max_poll_seconds\":600,\"parameters\":[]},{\"name\":\"generate_image\",\"description\":\"Tool: generate_image\",\"structured_output\":true,\"requires_polling\":true,\"poll_action\":\"status\",\"max_poll_seconds\":300,\"parameters\":[]},{\"name\":\"generate_model\",\"description\":\"Tool: generate_model\",\"structured_output\":true,\"requires_polling\":true,\"poll_action\":\"status\",\"max_poll_seconds\":300,\"parameters\":[]},{\"name\":\"import_model\",\"description\":\"Tool: import_model\",\"structured_output\":true,\"requires_polling\":true,\"poll_action\":\"status\",\"max_poll_seconds\":300,\"parameters\":[]},{\"name\":\"import_model_file\",\"description\":\"Tool: import_model_file\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"batch_execute\",\"description\":\"Tool: batch_execute\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"blender_bridge\",\"description\":\"Bridge to a running Blender with the BlenderMCP addon: status, scene/object info, viewport screenshot, run Python in Blender, import a model (export → import → place → normalize), check the blender-mcp checkout for updates, and sync its addon into Blender.\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"manage_camera\",\"description\":\"Tool: manage_camera\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"execute_code\",\"description\":\"Tool: execute_code\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"execute_menu_item\",\"description\":\"Tool: execute_menu_item\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"find_gameobjects\",\"description\":\"Tool: find_gameobjects\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"manage_gameobject\",\"description\":\"Tool: manage_gameobject\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"get_test_job\",\"description\":\"Tool: get_test_job\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"manage_graphics\",\"description\":\"Tool: manage_graphics\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"manage_asset\",\"description\":\"Tool: manage_asset\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"manage_build\",\"description\":\"Tool: manage_build\",\"structured_output\":true,\"requires_polling\":true,\"poll_action\":\"status\",\"max_poll_seconds\":1800,\"parameters\":[]},{\"name\":\"manage_components\",\"description\":\"Tool: manage_components\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"manage_editor\",\"description\":\"Tool: manage_editor\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"manage_material\",\"description\":\"Tool: manage_material\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"manage_packages\",\"description\":\"Tool: manage_packages\",\"structured_output\":true,\"requires_polling\":true,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"manage_scene\",\"description\":\"Tool: manage_scene\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"manage_script\",\"description\":\"Tool: manage_script\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"manage_scriptable_object\",\"description\":\"Tool: manage_scriptable_object\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"manage_shader\",\"description\":\"Tool: manage_shader\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"manage_texture\",\"description\":\"Tool: manage_texture\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"manage_ui\",\"description\":\"Tool: manage_ui\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"manage_physics\",\"description\":\"Tool: manage_physics\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"manage_prefabs\",\"description\":\"Tool: manage_prefabs\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"manage_probuilder\",\"description\":\"Tool: manage_probuilder\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"manage_profiler\",\"description\":\"Tool: manage_profiler\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"read_console\",\"description\":\"Tool: read_console\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"refresh_unity\",\"description\":\"Tool: refresh_unity\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"run_tests\",\"description\":\"Tool: run_tests\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"unity_reflect\",\"description\":\"Tool: unity_reflect\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"manage_vfx\",\"description\":\"Tool: manage_vfx\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]}]},\"hint\":null}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "method": "resources/read",
+      "params": {
+        "uri": "mcpforunity://instances"
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": "b0cf5cfd-228b-4290-8db2-267cdaf1b06c",
+        "result": {
+          "contents": [
+            {
+              "uri": "mcpforunity://instances",
+              "mimeType": "text/plain",
+              "text": "{\"success\": true, \"transport\": \"http\", \"instance_count\": 1, \"instances\": [{\"id\": \"MyTowerGame@9e28c50b510eeb91\", \"name\": \"MyTowerGame\", \"hash\": \"9e28c50b510eeb91\", \"unity_version\": \"2022.3.62f3c1\", \"connected_at\": \"2026-10-29T14:46:36.122275+00:00\", \"session_id\": \"4b3c1723-5f70-4a27-bc78-6b83d09cbea3\"}]}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "method": "tools/call",
+      "params": {
+        "name": "set_active_instance",
+        "arguments": {
+          "instance": "MyTowerGame@9e28c50b510eeb91"
+        }
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": "9fa40870-4917-4ab0-9c61-a52bf159c8b9",
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"success\":true,\"message\":\"Active instance set to MyTowerGame@9e28c50b510eeb91\",\"data\":{\"instance\":\"MyTowerGame@9e28c50b510eeb91\",\"session_id\":\"de3f11701dfc43dcb8cb89236be85fe4\"}}"
+            }
+          ],
+          "structuredContent": {
+            "success": true,
+            "message": "Active instance set to MyTowerGame@9e28c50b510eeb91",
+            "data": {
+              "instance": "MyTowerGame@9e28c50b510eeb91",
+              "session_id": "de3f11701dfc43dcb8cb89236be85fe4"
+            }
+          },
+          "isError": false
+        }
+      }
+    },
+    {
+      "method": "resources/read",
+      "params": {
+        "uri": "mcpforunity://project/info"
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": "4d1c0ae2-2c89-484f-8585-efadd7c87277",
+        "result": {
+          "contents": [
+            {
+              "uri": "mcpforunity://project/info",
+              "mimeType": "text/plain",
+              "text": "{\"success\":true,\"message\":\"Retrieved project info.\",\"error\":null,\"data\":{\"projectRoot\":\"E:/MyTowerGame\",\"projectName\":\"MyTowerGame\",\"unityVersion\":\"2022.3.62f3c1\",\"platform\":\"Android\",\"assetsPath\":\"E:/MyTowerGame/Assets\"},\"hint\":null}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "method": "tools/call",
+      "params": {
+        "name": "execute_code",
+        "arguments": {
+          "action": "execute",
+          "code": "return Newtonsoft.Json.JsonConvert.SerializeObject(new {playing=UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode,compiling=UnityEditor.EditorApplication.isCompiling,failed=UnityEditor.EditorUtility.scriptCompilationFailed,updating=UnityEditor.EditorApplication.isUpdating,scenes=System.Linq.Enumerable.Range(0,UnityEngine.SceneManagement.SceneManager.sceneCount).Select(i=>new {path=UnityEngine.SceneManagement.SceneManager.GetSceneAt(i).path,dirty=UnityEngine.SceneManagement.SceneManager.GetSceneAt(i).isDirty}).ToArray(),balance=FTProject.EditorTools.BalancePlayModeVerifier.Running,recording=FTProject.EditorTools.BalanceVideoRecorder.Running,review=FTProject.EditorTools.EnemyDirectionBatchReview.Running,manual=FTProject.GameClock.IsManualSimulation});"
+        }
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": "a8e90572-b092-4be1-be2a-f2152b4ace0f",
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"success\":true,\"message\":\"Code executed successfully.\",\"data\":{\"result\":\"{\\\"playing\\\":false,\\\"compiling\\\":false,\\\"failed\\\":false,\\\"updating\\\":false,\\\"scenes\\\":[{\\\"path\\\":\\\"Assets/Scenes/Boot.unity\\\",\\\"dirty\\\":false}],\\\"balance\\\":false,\\\"recording\\\":false,\\\"review\\\":false,\\\"manual\\\":false}\",\"compiler\":\"codedom\"}}"
+            }
+          ],
+          "structuredContent": {
+            "success": true,
+            "message": "Code executed successfully.",
+            "data": {
+              "result": "{\"playing\":false,\"compiling\":false,\"failed\":false,\"updating\":false,\"scenes\":[{\"path\":\"Assets/Scenes/Boot.unity\",\"dirty\":false}],\"balance\":false,\"recording\":false,\"review\":false,\"manual\":false}",
+              "compiler": "codedom"
+            }
+          },
+          "isError": false
+        }
+      }
+    },
+    {
+      "method": "tools/call",
+      "params": {
+        "name": "execute_code",
+        "arguments": {
+          "action": "execute",
+          "code": "FTProject.EditorTools.EnemyDirectionSpec spec; FTProject.EditorTools.EnemyDirectionPrefabBuilder.TryGetSpec(\"WolfMounfed\",out spec);string text;bool pass=FTProject.EditorTools.EnemyDirectionalRigBuilder.Verify(spec,out text);return new {pass=pass,report=text};"
+        }
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": "81d4a483-329a-4359-bd1a-16459653965e",
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"success\":true,\"message\":\"Code executed successfully.\",\"data\":{\"result\":{\"pass\":true,\"report\":\"PASS Complete installed profile\\nPASS Battle prefab imported\\nPASS Prefab dependency Assets/_UIAssets/Monsters/Mounts/WolfMount/Directions/WolfMounfed_Directions.asset\\nPASS Prefab dependency Assets/_UIAssets/Monsters/Mounts/WolfMount/Directions/WolfMounfed_Directions.png\\nPASS Prefab dependency Assets/_UIAssets/Monsters/Mounts/WolfMount/Directions/Animations/WolfMounfed_Directions.controller\\nPASS Prefab dependency Assets/_UIAssets/Monsters/Birds/AdvancedHen/Directions/AdvancedHenFlash.mat\\nPASS Original horizontal curves retained Ready\\nPASS Original events retained Ready\\nPASS Original clip duration/loop retained Ready\\nPASS Original horizontal curves retained Attack\\nPASS Original events retained Attack\\nPASS Original clip duration/loop retained Attack\\nPASS Original horizontal curves retained Walk\\nPASS Original events retained Walk\\nPASS Original clip duration/loop retained Walk\\nPASS Original horizontal curves retained Death\\nPASS Original events retained Death\\nPASS Original clip duration/loop retained Death\\nPASS Rebuild hook applies on clone 0\\nPASS Repeat clone has one direction group/no Shadow 0\\nPASS Repeat clone preserves root/HP/event receiver 0\\nPASS Rebuild hook applies on clone 1\\nPASS Repeat clone has one direction group/no Shadow 1\\nPASS Repeat clone preserves root/HP/event receiver 1\\nPASS No missing script Enemy_WolfMounfed\\nPASS No missing script Body\\nPASS No missing script Head\\nPASS No missing script LegFrontL\\nPASS No missing script LegFrontR\\nPASS No missing script LegBackL\\nPASS No missing script LegBackR\\nPASS No missing script Tail\\nPASS No missing script AnchorBody\\nPASS No missing script AnchorWeapon\\nPASS No missing script AnchorStatus\\nPASS No missing script HpBar\\nPASS No missing script Bg\\nPASS No missing script Fill\\nPASS No missing script DirectionVisual\\nPASS No missing script Up\\nPASS No missing script Motion\\nPASS No missing script Body\\nPASS No missing script Sprite\\nPASS No missing script Head\\nPASS No missing script Sprite\\nPASS No missing script ForeL\\nPASS No missing script Sprite\\nPASS No missing script HindL\\nPASS No missing script Sprite\\nPASS No missing script ForeR\\nPASS No missing script Sprite\\nPASS No missing script HindR\\nPASS No missing script Sprite\\nPASS No missing script Tail\\nPASS No missing script Sprite\\nPASS No missing script Down\\nPASS No missing script Motion\\nPASS No missing script Body\\nPASS No missing script Sprite\\nPASS No missing script Head\\nPASS No missing script Sprite\\nPASS No missing script ForeL\\nPASS No missing script Sprite\\nPASS No missing script HindL\\nPASS No missing script Sprite\\nPASS No missing script ForeR\\nPASS No missing script Sprite\\nPASS No missing script HindR\\nPASS No missing script Sprite\\nPASS No missing script Tail\\nPASS No missing script Sprite\\nPASS YooAsset prefab and artwork collectors present\"},\"compiler\":\"codedom\"}}"
+            }
+          ],
+          "structuredContent": {
+            "success": true,
+            "message": "Code executed successfully.",
+            "data": {
+              "result": {
+                "pass": true,
+                "report": "PASS Complete installed profile\nPASS Battle prefab imported\nPASS Prefab dependency Assets/_UIAssets/Monsters/Mounts/WolfMount/Directions/WolfMounfed_Directions.asset\nPASS Prefab dependency Assets/_UIAssets/Monsters/Mounts/WolfMount/Directions/WolfMounfed_Directions.png\nPASS Prefab dependency Assets/_UIAssets/Monsters/Mounts/WolfMount/Directions/Animations/WolfMounfed_Directions.controller\nPASS Prefab dependency Assets/_UIAssets/Monsters/Birds/AdvancedHen/Directions/AdvancedHenFlash.mat\nPASS Original horizontal curves retained Ready\nPASS Original events retained Ready\nPASS Original clip duration/loop retained Ready\nPASS Original horizontal curves retained Attack\nPASS Original events retained Attack\nPASS Original clip duration/loop retained Attack\nPASS Original horizontal curves retained Walk\nPASS Original events retained Walk\nPASS Original clip duration/loop retained Walk\nPASS Original horizontal curves retained Death\nPASS Original events retained Death\nPASS Original clip duration/loop retained Death\nPASS Rebuild hook applies on clone 0\nPASS Repeat clone has one direction group/no Shadow 0\nPASS Repeat clone preserves root/HP/event receiver 0\nPASS Rebuild hook applies on clone 1\nPASS Repeat clone has one direction group/no Shadow 1\nPASS Repeat clone preserves root/HP/event receiver 1\nPASS No missing script Enemy_WolfMounfed\nPASS No missing script Body\nPASS No missing script Head\nPASS No missing script LegFrontL\nPASS No missing script LegFrontR\nPASS No missing script LegBackL\nPASS No missing script LegBackR\nPASS No missing script Tail\nPASS No missing script AnchorBody\nPASS No missing script AnchorWeapon\nPASS No missing script AnchorStatus\nPASS No missing script HpBar\nPASS No missing script Bg\nPASS No missing script Fill\nPASS No missing script DirectionVisual\nPASS No missing script Up\nPASS No missing script Motion\nPASS No missing script Body\nPASS No missing script Sprite\nPASS No missing script Head\nPASS No missing script Sprite\nPASS No missing script ForeL\nPASS No missing script Sprite\nPASS No missing script HindL\nPASS No missing script Sprite\nPASS No missing script ForeR\nPASS No missing script Sprite\nPASS No missing script HindR\nPASS No missing script Sprite\nPASS No missing script Tail\nPASS No missing script Sprite\nPASS No missing script Down\nPASS No missing script Motion\nPASS No missing script Body\nPASS No missing script Sprite\nPASS No missing script Head\nPASS No missing script Sprite\nPASS No missing script ForeL\nPASS No missing script Sprite\nPASS No missing script HindL\nPASS No missing script Sprite\nPASS No missing script ForeR\nPASS No missing script Sprite\nPASS No missing script HindR\nPASS No missing script Sprite\nPASS No missing script Tail\nPASS No missing script Sprite\nPASS YooAsset prefab and artwork collectors present"
+              },
+              "compiler": "codedom"
+            }
+          },
+          "isError": false
+        }
+      }
+    }
+  ]
+}

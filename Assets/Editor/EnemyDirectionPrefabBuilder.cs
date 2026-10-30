@@ -13,6 +13,7 @@ namespace FTProject.EditorTools
     public sealed class EnemyDirectionSpec
     {
         public string Name;
+        public string OriginalAtlasPath;
         public string ArtDir;          // .../Directions
         public string PrefabPath;      // Assets/Prefabs/Enemy/Enemy_X.prefab
         public string ControllerSource; // family AnimatorController whose clips drive the rig
@@ -186,8 +187,8 @@ namespace FTProject.EditorTools
             string folder = Path.GetDirectoryName(originalAtlasPath).Replace('\\', '/');
             string name = Path.GetFileNameWithoutExtension(originalAtlasPath);
             EnemyDirectionSpec spec;
-            if (!TryGetSpec(name, out spec)) return false;
-            var profile = AssetDatabase.LoadAssetAtPath<EnemyDirectionalProfile>(folder + "/Directions/" + name + "_Directions.asset");
+            if (!TryGetSpec(name, out spec) && !EnemyDirectionRemainingCatalog.TryGetSpecByAtlas(originalAtlasPath, out spec)) return false;
+            var profile = AssetDatabase.LoadAssetAtPath<EnemyDirectionalProfile>(spec.ProfilePath);
             if (!profile || !profile.IsComplete) return false;
             if (spec.UseSeparateViewRigs) EnemyDirectionalRigBuilder.Apply(root, profile, spec);
             else Apply(root, profile, spec);
@@ -370,9 +371,15 @@ namespace FTProject.EditorTools
                 new AnimatorControllerParameter { name = "Attack", type = AnimatorControllerParameterType.Trigger },
                 new AnimatorControllerParameter { name = "Action", type = AnimatorControllerParameterType.Bool }
             };
+            // PirateBoar also owns a native cannon Shot action. Retain it only on
+            // that character; existing six-state controllers keep their contract.
+            bool cannonShot = spec.Name == "PirateBoar" && clips.ContainsKey("Shot");
+            if (cannonShot) controller.AddParameter("Shot", AnimatorControllerParameterType.Trigger);
             var sm = controller.layers[0].stateMachine;
             sm.anyStateTransitions = new AnimatorStateTransition[0];
-            string[] names = { "Idle", "Ready", "Walk", "Run", "Death", "Attack" };
+            string[] names = cannonShot
+                ? new[] { "Idle", "Ready", "Walk", "Run", "Death", "Attack", "Shot" }
+                : new[] { "Idle", "Ready", "Walk", "Run", "Death", "Attack" };
             int[] values = { 0, 1, 2, 3, 9 };
             var states = new AnimatorState[names.Length];
             for (int i = 0; i < names.Length; i++)
@@ -388,6 +395,9 @@ namespace FTProject.EditorTools
             AddAnyState(sm, states[4], new DirCond(AnimatorConditionMode.Equals, 9, "State"));
             AddAnyState(sm, states[5], new DirCond(AnimatorConditionMode.If, 0, "Attack"),
                 new DirCond(AnimatorConditionMode.NotEqual, 9, "State"));
+            if (cannonShot)
+                AddAnyState(sm, states[6], new DirCond(AnimatorConditionMode.If, 0, "Shot"),
+                    new DirCond(AnimatorConditionMode.NotEqual, 9, "State"));
             // Locomotion has no AnyState re-entry. Direction changes only swap sprites.
             for (int from = 0; from < states.Length; from++)
             {
@@ -396,7 +406,7 @@ namespace FTProject.EditorTools
                 {
                     if (from == to) continue;
                     var transition = states[from].AddTransition(states[to]);
-                    transition.hasExitTime = from == 5;
+                    transition.hasExitTime = from >= 5;
                     transition.exitTime = 1f;
                     transition.hasFixedDuration = true;
                     transition.duration = 0f;

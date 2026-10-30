@@ -1,0 +1,35 @@
+{
+  "name": "Troll",
+  "kind": "giant",
+  "controller_family": "Giant",
+  "identity": "Stocky bald golden-ochre troll with large dark ochre round skin spots, sharply pointed ears, stern amber eyes with black pupils, angular zigzag closed mouth, one gray hoop earring on anatomical LEFT ear, three ivory teeth on a cord necklace, thick rounded belly, brown leather belt with gray oval spiral buckle and short ragged golden loincloth. Two thick short legs, three ivory front toenails per foot. Thick gold leather wrist bindings on BOTH arms. Anatomical RIGHT hand grips one brown wooden handle with a large faceted cream-and-gray STONE hammer head tied by crossing golden straps. Original normal head has no exposed long tusks; angry head opens dark mouth with small ivory teeth; dead head has two blank amber round eyes without pupils. No hair, tail, horns, armor, extra weapon, rider or extra limbs.",
+  "parts": [
+    "HeadNormal",
+    "HeadAngry",
+    "HeadDead",
+    "Body",
+    "ArmWeapon",
+    "ArmFree",
+    "Leg"
+  ],
+  "columns": 4,
+  "rows": 2,
+  "source": "Assets/_UIAssets/Monsters/Giants/Troll/Troll.prefab",
+  "atlas": "Assets/_UIAssets/Monsters/Giants/Troll/Troll.png",
+  "art_dir": "Assets/_UIAssets/Monsters/Giants/Troll/Directions",
+  "controller": "Assets/_UIAssets/Monsters/_Common/Animations/Giant/Controller.controller",
+  "source_observations": {
+    "viewed": [
+      "reference/source_prefab_offline.png",
+      "reference/Troll.png"
+    ],
+    "art_renderers": 8,
+    "legs": 2,
+    "arms": 2,
+    "weapon": "one stone hammer in anatomical right hand; original Weapon remains child of FistR under ArmR",
+    "torso": "front necklace teeth and gray oval belt buckle; back only necklace cord and plain belt",
+    "expressions": "normal stern amber; angry open dark mouth; dead blank round amber eyes, no X marks",
+    "lifecycle": "BaseEnemy.Init rebinds and resets directional visual, receiver head and speed; OnRecycle restores alpha, spawn scale and directional state; original arm/fist/weapon hierarchy remains for horizontal clips",
+    "native_events": "Attack SetHead0@0,1@0.25, Event Attack@0.766666651,SetHead0@0.783333361; Death SetHead2@0"
+  }
+}

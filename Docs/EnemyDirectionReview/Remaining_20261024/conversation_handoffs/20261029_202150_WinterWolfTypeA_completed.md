@@ -1,0 +1,21 @@
+# WinterWolfTypeA113 完成与 WinterWolfTypeB114 唯一串行交接
+
+时间 2026-10-29T20:21:51.484343+08:00。父线程 01a18704-42a8-7f52-bc92-f8ca404a0b39，旧token winterwarg-to-winterwolftypea-20261029_173527-8e8dd053-9008-4a8f-b69a-61a589f400a4。WinterWolfTypeA已通过record，状态completed_pending_user_art_review，user_approved=false。总进度102/108，剩余6项：PossessedWarg79 blocked、WinterWolfTypeB114、Wolf115、WolfHound116、WolfMounfed117、Zombie118。唯一下一角色WinterWolfTypeB，未创建后继前保持handoff_ready；只有创建明确成功并登记新owner/token后后继可开始生产。
+
+最终美术Up_local03_Down03_alpha_r01_layout_r01：Up为成功原图的本地03像素修订，移除重复躯干耳和后趾线，平涂后跟内侧保留描边；Down03 HTTP200，实际分件区域避开额外后脑。14透明分件、2048atlas、PPU100，填69封闭色键微孔，尾宽0.30。棕橄榄背/赭圆斑/高尖耳/白眉白口鼻宽白胸/四短犬腿白爪/整条象牙taupe尾；无项圈鞍背刺，原左右侧图保留。原件、修前alpha、布局和选图证据均保留，不重跑prepare或full stage覆盖清理版。
+
+安装清单installed_manifest.json永久保留，Builder/Verify全PASS。battle SHA711B88DCA3A10F847A5A3BDEED7AAD18781C92C37B4AC0CFE2F9A7666344AE43；22个生产绑定含Directions根.meta和battle.meta，与preplay一致；17个暂存文件不变。原source/atlas及meta、battle.meta、Wolf原float/PPtr/事件/loop/时长和非美术语义受保护。现场导入14sprite的rect/pivot/PPU与暂存逐项匹配，Multiple/alphaTransparency=true/mipmap=false；依赖和现有YooAsset收集器Verify通过，无发布构建。
+
+最终两轮真实Play：runtime_r01 84PASS/0FAIL、331PNG、records SHA470BBD1A87E173BA6ECBD9AE51CA940C5EF18A52C2D77A5148A4C09345FEB1AA；runtime_updeath_r01 84PASS/0FAIL、337PNG、records SHAE8C5C2C88104EFD44150B4CB1AC6735B55C85B3C080D2E90F4575CE708EF9608。总168PASS0FAIL、668原始PNG，均最终版本安装后运行并返回Boot；完整指纹在final_version_binding_20261029.json。
+
+实际看过两轮four_directions、runtime_visual_strip、14张完整角色时序/原生循环/GIF抽帧板，313个采样位/301不同真实PNG，12最终GIF各5编码帧共60帧；另看未裁原生Up、Down张嘴攻击、Up死亡连接、Down复用及最终双向GIF整帧。所审样本四向步态、原生状态、攻击/白闪恢复、Up/Down死亡旋转淡出、回收复用、暂停恢复/1x2x3x、连续转向与Flying保持连接，无地面阴影。未实时播放或全帧审完668张。原逐renderer死亡alpha会显出重叠层，不把它伪报为一体alpha。
+
+GIF实解码发现Up470ms/Down480ms；仅Docs以真实native phase累计10ms量化修至原Walk500ms，PNG及生产不变。六个修前GIF/manifest保留。AllGIF1642→1660，本角色18来源=12最终+6旧时长，源与集中副本SHA全匹配，所有旧来源哈希保留。状态只待用户审核。
+
+用户已改generate.mjs，Curl固定 --resolve aihub.dog:443:191.101.132.254。当前Down03直连HTTP200、raw1550181bytes，无本轮付费诊断。前三次Down结果和费用仍unknown，standing2/2已消耗且不重置；本次独立max1为代理执行界限，不是用户金额预算。authorized_edge_resume和原始日志、user-edge-fix-before副本及patch保留；不能把A专用恢复权限复制给B。WorkBuddy边缘报告是外部证据，不倒推旧请求未发送/未计费，也不采信PossessedWarg未发送说法。B首次请求直接使用Curl+固定域名TLS，不走system-local-proxy；注意首次普通请求的verifiedDirectTransport=false，须在当前进程设置NO_PROXY=aihub.dog并暂清HTTP_PROXY/HTTPS_PROXY/ALL_PROXY等，结束恢复原值，确保不会经代理绕开固定边缘。不得改系统hosts、TLS或跨域送密钥。
+
+完整路径并集Assets/Packages/ProjectSettings/Luban5585→5605，22变化、20新增、0删除、unexpected0：仅当前battle、Directions含根meta以及未改ReporterEditor确证自动Play时间戳build_info。共享C#、其他角色和配置无本轮漂移；历史全局scope失败保留，未称全局PASS。无UnityC#改动，未额外编译。最终正确8088身份、clean Boot、非Play/dirty、failed/compile/reload/update/tests/review/recording/balance/manual=false、ready=true、external_changes_dirty=false，error/errorCS0；未清日志、未控制桌面。
+
+最终入口：WinterWolfTypeA/final_validation_20261029.json、final_version_binding_20261029.json、scope_incremental_final_20261029.json、visual_review_final_20261029/review.json、gif_archive_verification_20261029.json、gif_quantization_fix_20261029.json、unity_release_final_20261029.json、handoff_release_final_20261029.json、runtime_summary.json与record_note_utf8.txt。旧blocked交接仅历史，不覆盖或回退。
+
+下一WinterWolfTypeB仅8个reference文件，六保护匹配；本父未审其源图或生成/暂存/安装/运行。实际battle=Assets/Prefabs/Enemy/Enemy_WinterWolfTypeB.prefab；source=Assets/_UIAssets/Monsters/Dogs/WinterWolfTypeB/WinterWolfTypeB.prefab；atlas=Assets/_UIAssets/Monsters/Dogs/WinterWolfTypeB/WinterWolfTypeB.png；controller=Assets/_UIAssets/Monsters/_Common/Animations/Wolf/Controller.controller；Directions=Assets/_UIAssets/Monsters/Dogs/WinterWolfTypeB/Directions。独立查看完整源atlas/prefab与原动画、四腿尾根和锚点，不复制A的色彩/耳/体形/布局。PossessedWarg旧request哈希与阻断一致，无Down raw/result/可查询ID，继续保留unknown。新token winterwolftypea-to-winterwolftypeb-20261029_202150-95ef4a42-ad29-4647-9b2c-ffe57580e7b0；完整prompt Docs/EnemyDirectionReview/Remaining_20261024/WinterWolfTypeB/successor_prompt_20261029_202150.txt。只创建一个fresh local新聊天，不fork/子代理/并行/定时器/模型覆盖；创建成功响应先落盘，父最后写chain转active新owner，此后父只读。

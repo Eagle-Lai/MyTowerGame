@@ -1,0 +1,11 @@
+# PossessedWarg79：一次有界恢复接力
+
+时间：2026-10-30T09:25:19.676640+08:00。父聊天：01a18832-7895-7a23-ba81-c2c410a5a454；新令牌：zombie-to-possessedwarg-20261030_092519-e9c91d1a-28d7-428f-ac88-9ea00046da2b。当前107/108；本聊天已经完成Zombie118，不能在同一聊天生产第二个角色，按用户明确授权的串行新聊天规则仅准备唯一PossessedWarg后继。
+
+本轮用户直接“继续任务”，并有真实standing原话“继续任务。后续同样的情况，不再需要我确认，可以继续静默执行”。原消息来源、SHA及本次解释见 Docs/EnemyDirectionReview/Remaining_20261024/resume_20261030_092519_PossessedWarg/bounded_resume_decision.json。本次允许Down revision_01一次新生产请求是代理结合当前指令与原授权作出的有界执行选择；不是用户本轮给出金额或次数的新原话。旧Down结果与可能费用unknown，原request与全部21材料不变；没有事实可将它改为ECONNRESET、未发送或未收费，不进入要求此类证据的自动网络恢复分支，不重置或借用历史计数。
+
+父本轮只做文件/命令行只读同步和Docs调度准备；生产修改0、Unity调用0、图像请求0、付费诊断0。六保护一致，Assets/Packages/ProjectSettings/Luban5705路径相比Zombie最终指纹仅build_info时间元数据改变，当前“Build from BF-202610081033 at 2026/10/30 9:02:36”，Reporter源码未变；具体触发未独立观察，不宣称全局零漂移，保留当前字节和新旧基线，见Docs/EnemyDirectionReview/Remaining_20261024/resume_20261030_092519_PossessedWarg/preexisting_production_drift.json。AllGIF1744。没有在途图像生成。Unity本轮未观察：Zombie昨日释放记录仅作历史；新owner必须先动态核8088身份、错误、fresh状态/probe与占用，不能继承昨日空闲结论。
+
+完整接力提示：Docs/EnemyDirectionReview/Remaining_20261024/resume_20261030_092519_PossessedWarg/successor_prompt_utf8.txt。开工快照：Docs/EnemyDirectionReview/Remaining_20261024/resume_20261030_092519_PossessedWarg/synchronization.json；完整生产基线：Docs/EnemyDirectionReview/Remaining_20261024/resume_20261030_092519_PossessedWarg/production_paths_before.json；21旧材料指纹：Docs/EnemyDirectionReview/Remaining_20261024/resume_20261030_092519_PossessedWarg/original_character_files.json；原chain/progress/NEXT/README/主prompt及生成器备份：Docs/EnemyDirectionReview/Remaining_20261024/resume_20261030_092519_PossessedWarg/backup_manifest.json。旧停止记录与历史总结保留。
+
+调度先handoff_ready，所有生产/Unity停止。仅创建一个全新本地PossessedWarg聊天，保存真实返回后将新threadId/hostId与该token登记active；父随后停止全部工作区写入。不fork、不子代理、不自动化、不并发、不发送跨聊天消息。创建结果不明先查响应/聊天列表，不重复创建。后继按完整提示严格扩展Docs工具、复用Up、一次恢复Down、单角色安装、两轮真实84、视觉与GIF审阅、record/范围/版本/归档；仅待用户美术审核。成功则108/108并chain complete，不空建后继；失败如实阻断。

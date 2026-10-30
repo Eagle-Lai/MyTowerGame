@@ -1,0 +1,41 @@
+{
+  "name": "ShardLizard",
+  "kind": "quadruped",
+  "controller_family": "Rat",
+  "identity": "Low chunky olive-brown lizard with ochre round patches and a pale scalloped lower flank/jaw, a broad blunt head with ivory eyes and angular golden forehead and cheek chips, one large flat-topped faceted GOLDEN dorsal shard with pale upper edge and ochre spot, four short stout reptile feet, and a long thick-rooted tapering segmented tail with small golden diamond chips and dorsal ridges. Thick dark olive outlines and simple warm cel shading. No ears, fur, saddle, rider, wings or extra organs.",
+  "parts": [
+    "HeadNormal",
+    "HeadAngry",
+    "HeadDead",
+    "Body",
+    "LegFront",
+    "LegBack",
+    "Tail"
+  ],
+  "columns": 4,
+  "rows": 2,
+  "source": "Assets/_UIAssets/Monsters/Rats/ShardLizard/ShardLizard.prefab",
+  "atlas": "Assets/_UIAssets/Monsters/Rats/ShardLizard/ShardLizard.png",
+  "art_dir": "Assets/_UIAssets/Monsters/Rats/ShardLizard/Directions",
+  "controller": "Assets/_UIAssets/Monsters/_Common/Animations/Rat/Controller.controller",
+  "reference_review": {
+    "observed_at": "2026-10-26T22:48:01.048661+08:00",
+    "method": "Actually viewed original atlas, complete serialized source-prefab offline render and complete battle-prefab offline render; read both structures and original sprite/controller/event bindings. These are reference images, not Play evidence.",
+    "observed_identity": "Low chunky olive-brown lizard with ochre round patches and a pale scalloped lower flank/jaw, a broad blunt head with ivory eyes and angular golden forehead and cheek chips, one large flat-topped faceted GOLDEN dorsal shard with pale upper edge and ochre spot, four short stout reptile feet, and a long thick-rooted tapering segmented tail with small golden diamond chips and dorsal ridges. Thick dark olive outlines and simple warm cel shading. No ears, fur, saddle, rider, wings or extra organs.",
+    "source_bindings": "Seven visible renderers: HeadNormal, Body, Tail, two LegFront and two LegBack. Source and battle use atlas GUID 172753c318ee91e4b8c57bf3f262cded. Battle receiver already binds HeadNormal/HeadAngry/HeadDead to the same atlas. Preserve these original side bindings.",
+    "controller": "Existing Rat controller; Idle/Ready/Walk/Run/Attack/Death and Attack/Action/State/Speed. Attack has SetHead and Event; Death has SetHead. The Rat family is a controller contract, not permission to replace lizard anatomy with a rat.",
+    "reference_files": [
+      "reference/ShardLizard.png",
+      "reference/source_prefab_offline.png",
+      "reference/battle_prefab_offline.png",
+      "reference/source_structure.json",
+      "reference/battle_structure.json"
+    ],
+    "corrections": "The generic preparation called the crystal shards cream. Actual images show warm golden cores with pale top facets and dark edges. The large back shard must not become a saddle, mane or cluster of new crystals. No mammal ears or fur.",
+    "up_anatomy": "Axial rear head with no eyes, mouth, teeth or nostrils. Gold back shard belongs only to torso. Four splayed feet seen from their backs, no front toe faces on rear heels. Tail attaches at near lower rump and trails down toward viewer.",
+    "down_anatomy": "Axial broad snout with paired ivory eyes and small original angular golden chips. Three aligned normal/angry/dead head states; angry opens jaw and dead follows original drooping/tongue state. Tail attaches at far upper rump and recedes upward behind torso.",
+    "future_layout_gate": "Up tail art will have top-center root; pack_character defaults to bottom Tail pivot and an upward slice. Before staging/installing, set a character-specific top-root pivot and trailing-down Up tail layout, inspect overlap and keep tail root connected through gait/attack/death. Do not install the generic layout without actual visual review.",
+    "generated_visual_review": false,
+    "user_approved": false
+  }
+}

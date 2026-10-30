@@ -1,0 +1,12 @@
+from pathlib import Path
+import json
+d=Path(__file__).resolve().parent
+p=d/'anatomy_plan.json';plan=json.loads(p.read_text(encoding='utf-8'))
+plan['individual_constraints']=['Warm ochre round torso with darker spots; long pale gold neck and head with no crest','Original five broad rounded tail feathers: dark ochre shafts, gold bands, pale taupe tips, one centered axial fan','One wing on each side with exactly three original tips; two thin gold shanks with rounded thighs','Front eyes round ivory, short hooked gold beak and single long gold wattle; death eyes blank round and tear','Pure back of head and neck, no eyes/beak/wattle; rear feet show heel and toes extending away']
+p.write_text(json.dumps(plan,ensure_ascii=False,indent=2)+chr(10),encoding='utf-8')
+for direction in ['Up','Down']:
+    path=d/'generation'/direction/'prompt.txt'
+    if (path.parent/'request.json').exists():raise ValueError('Keep paid requests immutable')
+    rear=direction=='Up'
+    text=path.read_text(encoding='utf-8')+chr(10)+'ForestTurkey individual rules: ORIGINAL warm ochre-brown compact round torso with gold spots, long smooth pale GOLD neck and small uncrested head. No red, no rooster comb, no white neck ring. Cells 1/2/3 contain the complete small head AND its long tapering neck ending in original pointed neck ruff. All three use identical alignment. Body cell is ONE clean compact round torso ONLY, NO tail fan, NO wings, NO feet, NO neck stump. Cell 5 is ONE small folded gold feather wing with exactly three tips, rounded root at TOP RIGHT. Cell 6 ONE thin gold leg with small rounded brown thigh and '+('plain rear heel, front claws and toes point AWAY and are foreshortened, no front toe fan or claws aimed toward viewer' if rear else 'three distinct gold front toes with small pale claw tips aimed toward viewer')+'. Cell 7 ONE detached broad AXIAL SYMMETRIC tail fan of exactly FIVE big round-tipped feathers, root BOTTOM CENTER and tips spread UP/OUT. Preserve original ochre shafts, golden transverse bands and taupe pale tips. No extra feathers and no turkey body attached to the fan. Torso and fan have separate cells and do not duplicate one another. '+('Pure rear neck and head: no eye/beak/wattle/inner mouth. Fan viewed from back.' if rear else 'Front face has two large round ivory eyes and short hooked golden beak, ONE long gold wattle. Angry narrows eyes; death has original blank round eyes and one tear, no X eyes.')+' No hollow roots or floating joints.'
+    path.write_text(text,encoding='utf-8')

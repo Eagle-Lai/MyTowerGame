@@ -1,0 +1,41 @@
+在E:/MyTowerGame继续敌人四方向串行续作，唯一角色WinterBoar(index110)。这是用户2026-10-26明确授权的“完成一个角色→总结/更新prompt→唯一全新local后继”循环。
+
+唯一dispatch_token：winterbear-to-winterboar-20261029_121124-c33ba1f5-87c8-4aee-8729-55b098f67a75
+父线程：01a18593-9b41-7262-bc3d-c7df48244120
+
+先完整读取当前磁盘：
+1. E:/MyTowerGame/AGENTS.md、ProjectSettings/ProjectVersion.txt。
+2. Docs/EnemyDirectionReview/README.md、PREFAB_CHANGES_SUMMARY_20261026.md。
+3. Docs/EnemyDirectionReview/Remaining_20261024/REMAINING_ENEMIES_EXECUTABLE_PROMPT_20261026.md。
+4. 同目录CONTINUATION_PROTOCOL_20261026.md、IMAGE_RELAY_RECOVERY_20261026.md、NEXT_ENEMY_TASK.md、conversation_chain.json、实时progress.json。
+5. 同目录standing_network_recovery_authorization_20261028.json、TreasureChest/standing_recovery_application_20261028.json，核对有界恢复授权，保留收费和结果不明证据。
+6. E:/MyTowerGame/Docs/EnemyDirectionReview/Remaining_20261024/conversation_handoffs/20261029_121124_WinterBear_completed.md。
+7. E:/MyTowerGame/Docs/EnemyDirectionReview/Remaining_20261024/WinterBoar/successor_assessment_20261029_121124.json。
+8. WinterBoar/reference原图、源结构与prefab；按需读取本角色流水线及共享实现直接调用、依赖、生命周期。
+
+只有chain.state=active、owner_thread_id等于本新聊天、current_character=WinterBoar、dispatch_token匹配才能操作生产、Unity和付费请求。父handoff_ready期间只读等登记，不抢锁、不修改链、不创建别的任务。父登记后停止全部工作区写入。先按实时文件恢复已有阶段，禁止盲重跑prepare/生成/安装。一次只做WinterBoar，不并发、不子代理、不fork、不计时器、不覆盖模型/推理设置。
+
+实时98/108。WinterBear109已record，art_r05，completed_pending_user_art_review、user_approved=false。剩余10项：PossessedWarg79旧blocked和结果不明Down付费请求保留、9项not_started；无可恢复已开始项，选最低index的WinterBoar110。不能盲用progress.current。108是授权数量，终项Zombie118。WinterBoar仅reference8文件；assessment/prompt/dispatch/creation为调度证据，无生成/暂存/安装/运行。
+
+WinterBoar生产路径：
+- battle：Assets/Prefabs/Enemy/Enemy_WinterBoar.prefab
+- source：Assets/_UIAssets/Monsters/Pigs/WinterBoar/WinterBoar.prefab
+- atlas：Assets/_UIAssets/Monsters/Pigs/WinterBoar/WinterBoar.png
+- controller：Assets/_UIAssets/Monsters/_Common/Animations/Boar/Controller.controller
+父只核六保护与reference匹配，未审新源图。必须实际查看完整原atlas/源prefab，核层级、renderer/腿尾等真实解剖、原float/PPtr/事件/时长/loop与移动/战斗/回收/同实例复用，独立制定WinterBoar正背面，不套熊或其他角色参数。开工前以当前磁盘包含既有用户修改建立Assets/Packages/ProjectSettings/Luban完整SHA基线及六保护，不用Git HEAD。
+
+逐阶段推进：源图解剖审阅→需要时按方向AIHub生成并实看raw→透明分件/atlas/pivot/PPU/layout/离线rig→保护/Unity空闲复核→仅本角色Builder安装/Verify→两轮真实Unity Play各84项，第二轮Up死亡→分批实际看原PNG/时序板/GIF，诚实记录抽样范围→最终安装/运行哈希绑定→UTF8 note/现有record流程→GIF归档SHA核对→完整路径并集/原组件语义审计。不能用程序PASS替代美术复核。视觉失败保留旧revision/运行历史、修复再测；优先复用成功raw，不删安装清单绕过防重。请求仍运行或结果不明先查进程/文件/响应，禁止盲目重发付费请求。不得无条件连跑各阶段。
+
+需要生成时读取imagegen技能，沿用generate_character.ps1/generate.mjs和用户已授权AIHub https://aihub.dog/v1，gpt-image-2、medium、1536x1024、n=1。密钥仅运行时解密并仅发aihub.dog，不随跨域重定向，结束清理；不输出密钥/base64。按实际格式/尺寸保存；usage估算不是实际账单。遵守有界网络恢复授权及intent/revision保护，PossessedWarg不明请求不重发、不删阻断，不以换角色付费试探。
+
+保护源atlas/源prefab/GUID/root/HP/碰撞/锚点/移动战斗参数和原侧面float/PPtr/事件/时长/loop。Up纯后脑无脸、后足方向正确，颈/肩髋/尾根连接，实际不存在的部件不新增。保留攻击、受击/致死白闪、全身死亡缩小旋转淡出、自动回收、同实例复用、暂停与1x/2x/3x，所有方向/状态无地面阴影。用既有方向系统，不加逐帧材质/层级查找。本角色不改共享C#、其他角色、配置表、Assets/ConfigJson、Assets/Gen或声音；不git pull/reset/clean/commit、不构建/设备部署、不更新长期memory。
+
+用户本轮已确认正确MCP为8088。使用http://127.0.0.1:8088/mcp及Remaining_20261024/mcp_call.py Client.identity，动态读取custom-tools/instances、明确选现场完整MyTowerGame ID，再project/info核E:/MyTowerGame和2022.3.62f3c1（以版本文件为准）。8082是其他工程、8080是CatchFish；根AGENTS的FreedomTower/D盘/8082为历史错配，本任务和用户8088指令覆盖，不改根规则文件。不用路由其他工程的注入unityMCP结果代替；可用既有直接HTTP客户端。域重载/重连后重选并核身份，不硬编码旧ID。离线按规则自主恢复；失败报告环节/具体开启动作，不伪称成功。默认仅Unity MCP，桌面控制须另弹确认，此prompt未授权桌面。
+
+本任务两轮真实Play明确授权，不重复询问。排查先本工程错误日志再状态和复现。只停本任务Play，不强停外来Play。最终单一clean Boot、非Play，tests/review/balance/recording/manual/compile/reload/update全部idle、failed=false/error0/ready=true；不清日志。C#只有另获明确授权才改，改后需正确工程refresh/compile/state/error闭环，编译时不继续改。缓存stale取新事实，不用端口/进程/旧快照代替端到端验证。
+
+前任WinterBear最终证据WinterBear/final_validation_20261029.json、version_binding_final_20261029.json、scope_incremental_final_20261029.json、visual_review_art_r05_20261029/review.json、gif_archive_verification_20261029.json。最终art_r05、22条prePlay路径不变；296+296=592真实PNG、168/0。离线r01..r04否决保留；r05局部去耳杯/弧形毛领与根部连接、短尾朝后，四足无地面阴影。3次HTTP200及1次Up初请求Curl55结果不明，按standing授权有界恢复、初请求和收费未知原样保留；成功raw复用，Down修正版alpha91..253需去半透明白底。实际审10板256采样位/229不同PNG、6原PNG、12GIF各5编码帧及4未裁切整帧，非实时播放/逐帧全审；淡出时既有逐renderer alpha可见透叠。AllGIF1582，本角色12当前审核GIF，源归档SHA匹配。5505→5525文件、路径并集22变化/20新增、unexpected0，本角色语义PASS、其余5保护/共享C#无漂移，Reporter自动时间戳单列；旧global291unexpected/6其他角色语义失败保留未重审，不称全局PASS。不运行前任prepare/stage/install/finalize或覆盖封存证据。
+
+每次实际查看1–2张清晰图，原图/完整帧留盘，不一次嵌全部角色/GIF历史。不能播放就实际看时序编码帧并明确限制，未看不写通过。中文UTF8，最终只能completed_pending_user_art_review、user_approved=false，不代替用户美术批准。
+
+完成WinterBoar全流程或准确记录真实阻断并释放Unity后，重读实时items，优先已开始可恢复项，否则最低index非blocked。写完整时间戳交接、更新README/执行prompt实时标记块、NEXT_ENEMY_TASK/progress并保留历史。按CONTINUATION_PROTOCOL主动创建唯一fresh local后继，不逐角色再问：chain先handoff_ready，现场list_projects确认E:/MyTowerGame，create_thread不传model/thinking、不fork，新聊天等active。创建明确成功后保存真实响应并登记新active owner/token为父最后工作区写入，此后父只读；一次有界wait_threads并给created-thread。创建不明先查真实列表，不重复创建；失败保留完整可执行NEXT并如实报告。循环至108项有效完成或只剩真实阻断。

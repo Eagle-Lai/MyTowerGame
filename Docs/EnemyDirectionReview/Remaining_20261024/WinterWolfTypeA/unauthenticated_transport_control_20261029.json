@@ -1,0 +1,23 @@
+{
+  "observed_at": "2026-10-29T17:54:59.334856+08:00",
+  "credential_present": false,
+  "new_paid_diagnostic_requests": 0,
+  "input_sha256": [
+    "6D1D4C82E02C3B8B9D9E3216EB7B274EFC7C55B0F16F33E6C2C4C3849AF232F8",
+    "ABE8641D7EA30FC639981D355E159ACCF5CB0361F8FD52287B16CDD0FC601AD6"
+  ],
+  "controls": [
+    {
+      "route": "direct",
+      "exit_code": 55,
+      "stdout": "\nCONTROL_METRICS={\"http_status\":000,\"uploaded\":65331,\"downloaded\":0,\"tls_verify\":0,\"seconds\":19.140623}\n",
+      "stderr": "curl: (55) Send failure: Connection was aborted\n"
+    },
+    {
+      "route": "existing_local_proxy",
+      "exit_code": 0,
+      "stdout": "{\"code\":\"API_KEY_REQUIRED\",\"message\":\"API key is required in Authorization header (Bearer scheme), x-api-key header, or x-goog-api-key header\"}\nCONTROL_METRICS={\"http_status\":401,\"uploaded\":434497,\"downloaded\":143,\"tls_verify\":0,\"seconds\":0.907376}\n",
+      "stderr": ""
+    }
+  ]
+}

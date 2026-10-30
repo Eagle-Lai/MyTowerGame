@@ -1,0 +1,282 @@
+{
+  "observed_at": "2026-10-25T08:21:16.985693+08:00",
+  "role": "ForestTurkey",
+  "start_status": "runtime_complete_pending_visual_check",
+  "completed_count_before": 26,
+  "project": {
+    "projectRoot": "E:/MyTowerGame",
+    "projectName": "MyTowerGame",
+    "unityVersion": "2022.3.62f3c1",
+    "platform": "Android",
+    "assetsPath": "E:/MyTowerGame/Assets"
+  },
+  "editor_state": {
+    "success": true,
+    "message": "Retrieved editor state.",
+    "error": null,
+    "data": {
+      "schema_version": "unity-mcp/editor_state@2",
+      "observed_at_unix_ms": 1792887674387,
+      "sequence": 9,
+      "unity": {
+        "instance_id": "MyTowerGame@9e28c50b510eeb91",
+        "unity_version": "2022.3.62f3c1",
+        "project_id": null,
+        "platform": "WindowsEditor",
+        "is_batch_mode": false
+      },
+      "editor": {
+        "is_focused": false,
+        "play_mode": {
+          "is_playing": false,
+          "is_paused": false,
+          "is_changing": false
+        },
+        "active_scene": {
+          "path": "Assets/Scenes/Boot.unity",
+          "guid": "f868a4d2158d5c6498694acdc8836145",
+          "name": "Boot"
+        }
+      },
+      "activity": {
+        "phase": "idle",
+        "since_unix_ms": 1792884728756,
+        "reasons": [
+          "tick"
+        ]
+      },
+      "compilation": {
+        "is_compiling": false,
+        "is_domain_reload_pending": false,
+        "last_compile_started_unix_ms": 1792882766931,
+        "last_compile_finished_unix_ms": 1792882767979,
+        "last_domain_reload_before_unix_ms": null,
+        "last_domain_reload_after_unix_ms": 1792883737113
+      },
+      "assets": {
+        "is_updating": false,
+        "external_changes_dirty": false,
+        "external_changes_last_seen_unix_ms": 1792883708763,
+        "external_changes_dirty_since_unix_ms": null,
+        "external_changes_last_cleared_unix_ms": 1792883708843,
+        "refresh": {
+          "is_refresh_in_progress": false,
+          "last_refresh_requested_unix_ms": null,
+          "last_refresh_finished_unix_ms": null
+        }
+      },
+      "tests": {
+        "is_running": false,
+        "mode": null,
+        "current_job_id": null,
+        "started_unix_ms": null,
+        "started_by": "unknown",
+        "last_run": null
+      },
+      "transport": {
+        "unity_bridge_connected": null,
+        "last_message_unix_ms": null
+      },
+      "settings": {
+        "batch_execute_max_commands": 25
+      },
+      "advice": {
+        "ready_for_tools": true,
+        "blocking_reasons": [],
+        "recommended_retry_after_ms": 0,
+        "recommended_next_action": "none"
+      },
+      "staleness": {
+        "age_ms": 274,
+        "is_stale": false
+      }
+    },
+    "hint": null
+  },
+  "protocol_history": [
+    {
+      "method": "initialize",
+      "params": {
+        "protocolVersion": "2025-03-26",
+        "capabilities": {},
+        "clientInfo": {
+          "name": "MyTowerGame-direction-review",
+          "version": "1.0"
+        }
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": "991d6d52-e8f8-4840-885f-2aae8eb2e131",
+        "result": {
+          "protocolVersion": "2025-03-26",
+          "capabilities": {
+            "experimental": {},
+            "logging": {},
+            "prompts": {
+              "listChanged": true
+            },
+            "resources": {
+              "subscribe": false,
+              "listChanged": true
+            },
+            "tools": {
+              "listChanged": true
+            },
+            "extensions": {
+              "io.modelcontextprotocol/ui": {}
+            }
+          },
+          "serverInfo": {
+            "name": "mcp-for-unity-server",
+            "version": "3.4.8"
+          },
+          "instructions": "\nThis server provides tools to interact with the Unity Game Engine Editor.\n\nI have a dynamic tool system. Always check the mcpforunity://custom-tools resource first to see what special capabilities are available for the current project.\n\nTargeting Unity instances:\n- Use the resource mcpforunity://instances to list active Unity sessions (Name@hash).\n- When multiple instances are connected, call set_active_instance with the exact Name@hash before using tools/resources to pin routing for the whole session. The server will error if multiple are connected and no active instance is set.\n- Alternatively, pass unity_instance as a parameter on any individual tool call to route just that call (e.g. unity_instance=\"MyGame@abc123\", unity_instance=\"abc\" for a hash prefix, or unity_instance=\"6401\" for a port number in stdio mode). This does not change the session default.\n\nImportant Workflows:\n\nResources vs Tools:\n- Use RESOURCES to read editor state (mcpforunity://editor/state, mcpforunity://project/info, mcpforunity://project/tags, mcpforunity://tests, etc)\n- Use TOOLS to perform actions and mutations (manage_editor for play mode control, tag/layer management, etc)\n- Always check related resources before modifying the engine state with tools\n\nReading resources (read this before using ANY resource named below):\n- Resources are addressed by URI, never by name. A resource's name and URI are NOT interchangeable: names use underscores (e.g. editor_state) while URIs use slashes (e.g. mcpforunity://editor/state). Do NOT build a URI by swapping separators in the name — you will 404.\n- These instructions always spell resources as full mcpforunity:// URIs — read one exactly as written. If you only have a name (from resources/list or another tool's output), look its URI up in resources/list rather than guessing it.\n- Resource payloads are wrapped: the content lives under a top-level `data` object, so field paths are `data.<section>.<field>` (e.g. `data.advice.ready_for_tools`), not bare top-level fields.\n- The mcpforunity:// URI names the resource, not the server. Some clients take a separate server key on a resource read — in Codex, tools are exposed as mcp__unityMCP__* but resources/read wants server: \"unityMCP\". If a read fails with an unknown-server error, list resources first and use the key exactly as returned.\n\nScript Management:\n- After creating or modifying scripts (by your own tools or the `manage_script` tool) use `read_console` to check for compilation errors before proceeding\n- Only after successful compilation can new components/types be used\n- You can poll mcpforunity://editor/state and read `data.compilation.is_compiling` to check if the domain reload is complete, or `data.advice.ready_for_tools` for overall readiness\n\nScene Setup:\n- Always include a Camera and main Light (Directional Light) in new scenes\n- Create prefabs with `manage_asset` for reusable GameObjects\n- Use `manage_scene` to load, save, and query scene information\n\nPath Conventions:\n- Unless specified otherwise, all paths are relative to the project's `Assets/` folder\n- Use forward slashes (/) in paths for cross-platform compatibility\n\nConsole Monitoring:\n- Check `read_console` regularly to catch errors, warnings, and compilation status\n- Filter by log type (Error, Warning, Log) to focus on specific issues\n\nMenu Items:\n- Use `execute_menu_item` when you have read the mcpforunity://menu-items resource\n- This lets you interact with Unity's menu system and third-party tools\n\nUnity API Verification (requires 'docs' tool group):\n- When the 'docs' tool group is active, use `unity_reflect` and `unity_docs` to verify Unity API details before answering questions or writing C# code. LLM training data frequently contains incorrect, outdated, or hallucinated Unity APIs.\n- BEFORE answering Unity API questions: search the project's assets (`manage_asset`) and reflect the API (`unity_reflect`) to verify. Do NOT rely on training data alone.\n- Common hallucination areas: shaders and materials (always search assets for actual shader names), package-specific APIs (Input System, Cinemachine, ProBuilder, NavMesh, URP/HDRP), and APIs that changed between Unity versions.\n- Workflow: `unity_reflect search` → `unity_reflect get_type` → `unity_reflect get_member` → `unity_docs get_doc` (if you need examples/caveats).\n- For shader/material questions: use `manage_asset(action=\"search\", filter_type=\"Shader\")` to find actual shaders in the project before recommending one.\n\nPayload sizing & paging (important):\n- Many Unity queries can return very large JSON. Prefer **paged + summary-first** calls.\n- `manage_scene(action=\"get_hierarchy\")`:\n  - Use `page_size` + `cursor` and follow `next_cursor` until null.\n  - `page_size` is **items per page**; recommended starting point: **50**.\n- `manage_gameobject(action=\"get_components\")`:\n  - Start with `include_properties=false` (metadata-only) and small `page_size` (e.g. **10-25**).\n  - Only request `include_properties=true` when needed; keep `page_size` small (e.g. **3-10**) to bound payloads.\n- `manage_asset(action=\"search\")`:\n  - Use paging (`page_size`, `page_number`) and keep `page_size` modest (e.g. **25-50**) to avoid token-heavy responses.\n  - Keep `generate_preview=false` unless you explicitly need thumbnails (previews may include large base64 payloads).\n"
+        }
+      }
+    },
+    {
+      "method": "resources/read",
+      "params": {
+        "uri": "mcpforunity://custom-tools"
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": "2d42e9d9-6393-4995-b538-ab6d9d9776d1",
+        "result": {
+          "contents": [
+            {
+              "uri": "mcpforunity://custom-tools",
+              "mimeType": "text/plain",
+              "text": "{\"success\":true,\"message\":\"Custom tools retrieved successfully.\",\"error\":null,\"data\":{\"project_id\":\"9e28c50b510eeb91\",\"tool_count\":36,\"tools\":[{\"name\":\"manage_animation\",\"description\":\"Tool: manage_animation\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"generate_audio\",\"description\":\"Tool: generate_audio\",\"structured_output\":true,\"requires_polling\":true,\"poll_action\":\"status\",\"max_poll_seconds\":600,\"parameters\":[]},{\"name\":\"generate_image\",\"description\":\"Tool: generate_image\",\"structured_output\":true,\"requires_polling\":true,\"poll_action\":\"status\",\"max_poll_seconds\":300,\"parameters\":[]},{\"name\":\"generate_model\",\"description\":\"Tool: generate_model\",\"structured_output\":true,\"requires_polling\":true,\"poll_action\":\"status\",\"max_poll_seconds\":300,\"parameters\":[]},{\"name\":\"import_model\",\"description\":\"Tool: import_model\",\"structured_output\":true,\"requires_polling\":true,\"poll_action\":\"status\",\"max_poll_seconds\":300,\"parameters\":[]},{\"name\":\"import_model_file\",\"description\":\"Tool: import_model_file\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"batch_execute\",\"description\":\"Tool: batch_execute\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"blender_bridge\",\"description\":\"Bridge to a running Blender with the BlenderMCP addon: status, scene/object info, viewport screenshot, run Python in Blender, import a model (export → import → place → normalize), check the blender-mcp checkout for updates, and sync its addon into Blender.\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"manage_camera\",\"description\":\"Tool: manage_camera\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"execute_code\",\"description\":\"Tool: execute_code\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"execute_menu_item\",\"description\":\"Tool: execute_menu_item\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"find_gameobjects\",\"description\":\"Tool: find_gameobjects\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"manage_gameobject\",\"description\":\"Tool: manage_gameobject\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"get_test_job\",\"description\":\"Tool: get_test_job\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"manage_graphics\",\"description\":\"Tool: manage_graphics\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"manage_asset\",\"description\":\"Tool: manage_asset\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"manage_build\",\"description\":\"Tool: manage_build\",\"structured_output\":true,\"requires_polling\":true,\"poll_action\":\"status\",\"max_poll_seconds\":1800,\"parameters\":[]},{\"name\":\"manage_components\",\"description\":\"Tool: manage_components\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"manage_editor\",\"description\":\"Tool: manage_editor\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"manage_material\",\"description\":\"Tool: manage_material\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"manage_packages\",\"description\":\"Tool: manage_packages\",\"structured_output\":true,\"requires_polling\":true,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"manage_scene\",\"description\":\"Tool: manage_scene\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"manage_script\",\"description\":\"Tool: manage_script\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"manage_scriptable_object\",\"description\":\"Tool: manage_scriptable_object\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"manage_shader\",\"description\":\"Tool: manage_shader\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"manage_texture\",\"description\":\"Tool: manage_texture\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"manage_ui\",\"description\":\"Tool: manage_ui\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"manage_physics\",\"description\":\"Tool: manage_physics\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"manage_prefabs\",\"description\":\"Tool: manage_prefabs\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"manage_probuilder\",\"description\":\"Tool: manage_probuilder\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"manage_profiler\",\"description\":\"Tool: manage_profiler\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"read_console\",\"description\":\"Tool: read_console\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"refresh_unity\",\"description\":\"Tool: refresh_unity\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"run_tests\",\"description\":\"Tool: run_tests\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"unity_reflect\",\"description\":\"Tool: unity_reflect\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"manage_vfx\",\"description\":\"Tool: manage_vfx\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]}]},\"hint\":null}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "method": "resources/read",
+      "params": {
+        "uri": "mcpforunity://instances"
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": "7e6774c9-7bd6-467f-85e3-7127b9b82788",
+        "result": {
+          "contents": [
+            {
+              "uri": "mcpforunity://instances",
+              "mimeType": "text/plain",
+              "text": "{\"success\": true, \"transport\": \"http\", \"instance_count\": 1, \"instances\": [{\"id\": \"MyTowerGame@9e28c50b510eeb91\", \"name\": \"MyTowerGame\", \"hash\": \"9e28c50b510eeb91\", \"unity_version\": \"2022.3.62f3c1\", \"connected_at\": \"2026-10-25T00:21:10.653993+00:00\", \"session_id\": \"13c0800d-cf1b-4283-b505-812c1ecec513\"}]}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "method": "tools/call",
+      "params": {
+        "name": "set_active_instance",
+        "arguments": {
+          "instance": "MyTowerGame@9e28c50b510eeb91"
+        }
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": "81d7b450-ccb9-402b-8571-0b73b1f7eaf2",
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"success\":true,\"message\":\"Active instance set to MyTowerGame@9e28c50b510eeb91\",\"data\":{\"instance\":\"MyTowerGame@9e28c50b510eeb91\",\"session_id\":\"d84e921afd8442b2bf061db77e51ed1c\"}}"
+            }
+          ],
+          "structuredContent": {
+            "success": true,
+            "message": "Active instance set to MyTowerGame@9e28c50b510eeb91",
+            "data": {
+              "instance": "MyTowerGame@9e28c50b510eeb91",
+              "session_id": "d84e921afd8442b2bf061db77e51ed1c"
+            }
+          },
+          "isError": false
+        }
+      }
+    },
+    {
+      "method": "resources/read",
+      "params": {
+        "uri": "mcpforunity://project/info"
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": "068c6e31-dc23-44df-95e2-06bd67703a51",
+        "result": {
+          "contents": [
+            {
+              "uri": "mcpforunity://project/info",
+              "mimeType": "text/plain",
+              "text": "{\"success\":true,\"message\":\"Retrieved project info.\",\"error\":null,\"data\":{\"projectRoot\":\"E:/MyTowerGame\",\"projectName\":\"MyTowerGame\",\"unityVersion\":\"2022.3.62f3c1\",\"platform\":\"Android\",\"assetsPath\":\"E:/MyTowerGame/Assets\"},\"hint\":null}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "method": "resources/read",
+      "params": {
+        "uri": "mcpforunity://editor/state"
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": "e4ffe4a9-1ac1-444d-b571-c4099f1fba55",
+        "result": {
+          "contents": [
+            {
+              "uri": "mcpforunity://editor/state",
+              "mimeType": "text/plain",
+              "text": "{\"success\":true,\"message\":\"Retrieved editor state.\",\"error\":null,\"data\":{\"schema_version\":\"unity-mcp/editor_state@2\",\"observed_at_unix_ms\":1792887674387,\"sequence\":9,\"unity\":{\"instance_id\":\"MyTowerGame@9e28c50b510eeb91\",\"unity_version\":\"2022.3.62f3c1\",\"project_id\":null,\"platform\":\"WindowsEditor\",\"is_batch_mode\":false},\"editor\":{\"is_focused\":false,\"play_mode\":{\"is_playing\":false,\"is_paused\":false,\"is_changing\":false},\"active_scene\":{\"path\":\"Assets/Scenes/Boot.unity\",\"guid\":\"f868a4d2158d5c6498694acdc8836145\",\"name\":\"Boot\"}},\"activity\":{\"phase\":\"idle\",\"since_unix_ms\":1792884728756,\"reasons\":[\"tick\"]},\"compilation\":{\"is_compiling\":false,\"is_domain_reload_pending\":false,\"last_compile_started_unix_ms\":1792882766931,\"last_compile_finished_unix_ms\":1792882767979,\"last_domain_reload_before_unix_ms\":null,\"last_domain_reload_after_unix_ms\":1792883737113},\"assets\":{\"is_updating\":false,\"external_changes_dirty\":false,\"external_changes_last_seen_unix_ms\":1792883708763,\"external_changes_dirty_since_unix_ms\":null,\"external_changes_last_cleared_unix_ms\":1792883708843,\"refresh\":{\"is_refresh_in_progress\":false,\"last_refresh_requested_unix_ms\":null,\"last_refresh_finished_unix_ms\":null}},\"tests\":{\"is_running\":false,\"mode\":null,\"current_job_id\":null,\"started_unix_ms\":null,\"started_by\":\"unknown\",\"last_run\":null},\"transport\":{\"unity_bridge_connected\":null,\"last_message_unix_ms\":null},\"settings\":{\"batch_execute_max_commands\":25},\"advice\":{\"ready_for_tools\":true,\"blocking_reasons\":[],\"recommended_retry_after_ms\":0,\"recommended_next_action\":\"none\"},\"staleness\":{\"age_ms\":274,\"is_stale\":false}},\"hint\":null}"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "production_files": {
+    "Assets/Prefabs/Enemy/Enemy_ForestTurkey.prefab": "CA38262F6C8FB2F6168B45305D136307CB01C9026842201B49E58D047B17AFE4",
+    "Assets/_UIAssets/Monsters/Birds/ForestTurkey/Directions/Animations.meta": "FAD50226A3A2384D2E635A43F8D69337345C7A4C47D8CB6DD874CDB2AA549909",
+    "Assets/_UIAssets/Monsters/Birds/ForestTurkey/Directions/ForestTurkey_Directions.asset": "8E288376174CDB31B13ED761483206D307DC537E3212892A2C166F0897AD8E07",
+    "Assets/_UIAssets/Monsters/Birds/ForestTurkey/Directions/ForestTurkey_Directions.asset.meta": "6B939B085C521FD23ADFC419331526F01CDB452994D9F32319D3C04CC67DD262",
+    "Assets/_UIAssets/Monsters/Birds/ForestTurkey/Directions/ForestTurkey_Directions.layout.json": "F6F0EA35C2C006F916CF12FCDF83CC29EF6BB7521CE50D2EC26898073A6FA4B3",
+    "Assets/_UIAssets/Monsters/Birds/ForestTurkey/Directions/ForestTurkey_Directions.layout.json.meta": "C4701823C544C4EAE1642C6E6B234D9E544818593D9B235882DA1FA49F86E30F",
+    "Assets/_UIAssets/Monsters/Birds/ForestTurkey/Directions/ForestTurkey_Directions.png": "A135223A7DBF70F9ACBF633C18E5B1F927E2C506C936BFF74D4A4F1C4516D940",
+    "Assets/_UIAssets/Monsters/Birds/ForestTurkey/Directions/ForestTurkey_Directions.png.meta": "E6505DE8C8EA4AF48A3A0995ADCA83AE59B450C1C018DAF108748E4BFC5DAB04",
+    "Assets/_UIAssets/Monsters/Birds/ForestTurkey/Directions/ForestTurkey_Directions.sprites.json": "DA3DA5D003893BF4BA4540A43A8B54876A56027F80F435C3C646BEE862423E0E",
+    "Assets/_UIAssets/Monsters/Birds/ForestTurkey/Directions/ForestTurkey_Directions.sprites.json.meta": "73D5598772E7BCA363BF3FB9ECFAB90B46696940CD7724C8BA537FBAF68C67B2",
+    "Assets/_UIAssets/Monsters/Birds/ForestTurkey/Directions/Animations/Attack_Directions.anim": "46920C00A8412E4B3A68A2A194D3A68284829E517F7BFC963DC0A51A2300A0B4",
+    "Assets/_UIAssets/Monsters/Birds/ForestTurkey/Directions/Animations/Attack_Directions.anim.meta": "9C522C255ECB91BA0F95E4CFBB20D35A8BC874F70E210A738A4DC0348375ECD5",
+    "Assets/_UIAssets/Monsters/Birds/ForestTurkey/Directions/Animations/Death_Directions.anim": "F98CE1A1F30EE58528870BB85A3666386A04386EF655226E7B2B8856AC8515F9",
+    "Assets/_UIAssets/Monsters/Birds/ForestTurkey/Directions/Animations/Death_Directions.anim.meta": "F900634B90C8E530AA916DD55A700F06EDA0685254F66FC3653176C96416C214",
+    "Assets/_UIAssets/Monsters/Birds/ForestTurkey/Directions/Animations/ForestTurkey_Directions.controller": "E17111AB5C5755D06CC199B93133BF2D287B3D93CA60D906C234231AFF47B810",
+    "Assets/_UIAssets/Monsters/Birds/ForestTurkey/Directions/Animations/ForestTurkey_Directions.controller.meta": "79690B84EFE673AD34DF286C3E39559387FCEA503F3B463D85B1D323158316B3",
+    "Assets/_UIAssets/Monsters/Birds/ForestTurkey/Directions/Animations/Ready_Directions.anim": "E98D353E97A8B06C707DFE19AABB69B674BB51FE41ED699AE37D54FCFA9F7F07",
+    "Assets/_UIAssets/Monsters/Birds/ForestTurkey/Directions/Animations/Ready_Directions.anim.meta": "A1E3D5583451244EE204A70C35AC24E2CA9FE249894269E27568F46A3388F991",
+    "Assets/_UIAssets/Monsters/Birds/ForestTurkey/Directions/Animations/Walk_Directions.anim": "B003E33488B9EE2962E00D83E356A0CC193163A923CBE5FCED7685DE551FD2DE",
+    "Assets/_UIAssets/Monsters/Birds/ForestTurkey/Directions/Animations/Walk_Directions.anim.meta": "84CAA7600519B50FB8BBEB97D93B3714DA8A59CF96BE95590F02E22FA400BD10"
+  },
+  "runtime_records_sha256": {
+    "runtime_r01": "2A29A7DC2CA76C87684C95680C5F3666CA0E4EB6CF795D7A17A801F4B84CFA06",
+    "runtime_updeath_r01": "B7D741D68BF26729CD5554A7840B7E3E1FC96C250D35E250116B9210287D4002"
+  },
+  "allgif_before": {
+    "count": 429,
+    "forest_turkey_count": 0
+  },
+  "git_status_before": " M .workbuddy/memory/2026-10-23.md\n M .workbuddy/memory/MEMORY.md\n M \".workbuddy/memory/VOL_01_\\347\\216\\257\\345\\242\\203\\346\\265\\201\\347\\250\\213\\344\\270\\216\\345\\207\\272\\345\\214\\205.md\"\n M Assets/Editor/Balance/BalancePlayModeVerifier.cs\n M Assets/Editor/Balance/BalanceVideoRecorder.cs\n M Assets/Editor/EnemyDirectionBatchReview.cs\n M Assets/Editor/EnemyDirectionPrefabBuilder.cs\n M Assets/Editor/EnemyDirectionalRigBuilder.cs\n M Assets/Prefabs/Enemy/Enemy_BugQueen.prefab\n M Assets/Prefabs/Enemy/Enemy_Bull.prefab\n M Assets/Prefabs/Enemy/Enemy_BullMounted.prefab\n M Assets/Prefabs/Enemy/Enemy_BullyRooster.prefab\n M Assets/Prefabs/Enemy/Enemy_Bunny.prefab\n M Assets/Prefabs/Enemy/Enemy_Burro.prefab\n M Assets/Prefabs/Enemy/Enemy_Butcher.prefab\n M Assets/Prefabs/Enemy/Enemy_Cannibal.prefab\n M Assets/Prefabs/Enemy/Enemy_Caterpillar.prefab\n M Assets/Prefabs/Enemy/Enemy_CaveCaterpillar.prefab\n M Assets/Prefabs/Enemy/Enemy_CaveRat.prefab\n M Assets/Prefabs/Enemy/Enemy_Cerberus.prefab\n M Assets/Prefabs/Enemy/Enemy_Chick.prefab\n M Assets/Prefabs/Enemy/Enemy_Chicken.prefab\n M Assets/Prefabs/Enemy/Enemy_Cow.prefab\n M Assets/Prefabs/Enemy/Enemy_Crawler.prefab\n M Assets/Prefabs/Enemy/Enemy_CrystalLizard.prefab\n M Assets/Prefabs/Enemy/Enemy_DarkBunny.prefab\n M Assets/Prefabs/Enemy/Enemy_Donkey.prefab\n M Assets/Prefabs/Enemy/Enemy_Drake.prefab\n M Assets/Prefabs/Enemy/Enemy_DreadEye.prefab\n M Assets/Prefabs/Enemy/Enemy_Dreadnought.prefab\n M Assets/Prefabs/Enemy/Enemy_Duck.prefab\n M Assets/Prefabs/Enemy/Enemy_EvilEye.prefab\n M Assets/Prefabs/Enemy/Enemy_FancyParasite.prefab\n M Assets/Prefabs/Enemy/Enemy_FlyingDemon.prefab\n M Assets/Prefabs/Enemy/Enemy_ForestTurkey.prefab\n M Assets/Scripts/Enemy/MonsterAnimEventReceiver.cs\n M Docs/EnemyDirectionReview/README.md\n M \"Docs/Prompt_\\345\\205\\263\\345\\215\\241\\345\\233\\236\\346\\224\\276\\350\\247\\206\\351\\242\\221\\345\\275\\225\\345\\210\\266.md\"\n M Tools/verify_level_videos.py\n?? .playwright-mcp/\n?? .workbuddy/memory/2026-10-24.md\n?? .workbuddy/memory/ARCHIVE_MEMORY_20261024.md\n?? Assets/Editor/EnemyDirectionRemainingCatalog.cs\n?? Assets/Editor/EnemyDirectionRemainingCatalog.cs.meta\n?? Assets/Editor/EnemyDirectionRemainingMotion.cs\n?? Assets/Editor/EnemyDirectionRemainingMotion.cs.meta\n?? Assets/_UIAssets/Monsters/Bats/DreadEye/Directions.meta\n?? Assets/_UIAssets/Monsters/Bats/DreadEye/Directions/\n?? Assets/_UIAssets/Monsters/Bats/EvilEye/Directions.meta\n?? Assets/_UIAssets/Monsters/Bats/EvilEye/Directions/\n?? Assets/_UIAssets/Monsters/Birds/BullyRooster/Directions.meta\n?? Assets/_UIAssets/Monsters/Birds/BullyRooster/Directions/\n?? Assets/_UIAssets/Monsters/Birds/Chick/Directions.meta\n?? Assets/_UIAssets/Monsters/Birds/Chick/Directions/\n?? Assets/_UIAssets/Monsters/Birds/Chicken/Directions.meta\n?? Assets/_UIAssets/Monsters/Birds/Chicken/Directions/\n?? Assets/_UIAssets/Monsters/Birds/Drake/Directions.meta\n?? Assets/_UIAssets/Monsters/Birds/Drake/Directions/\n?? Assets/_UIAssets/Monsters/Birds/Duck/Directions.meta\n?? Assets/_UIAssets/Monsters/Birds/Duck/Directions/\n?? Assets/_UIAssets/Monsters/Birds/ForestTurkey/Directions.meta\n?? Assets/_UIAssets/Monsters/Birds/ForestTurkey/Directions/\n?? Assets/_UIAssets/Monsters/Bunnies/Bunny/Directions.meta\n?? Assets/_UIAssets/Monsters/Bunnies/Bunny/Directions/\n?? Assets/_UIAssets/Monsters/Bunnies/DarkBunny/Directions.meta\n?? Assets/_UIAssets/Monsters/Bunnies/DarkBunny/Directions/\n?? Assets/_UIAssets/Monsters/Cattle/Bull/Directions.meta\n?? Assets/_UIAssets/Monsters/Cattle/Bull/Directions/\n?? Assets/_UIAssets/Monsters/Cattle/Burro/Directions.meta\n?? Assets/_UIAssets/Monsters/Cattle/Burro/Directions/\n?? Assets/_UIAssets/Monsters/Cattle/Cow/Directions.meta\n?? Assets/_UIAssets/Monsters/Cattle/Cow/Directions/\n?? Assets/_UIAssets/Monsters/Cattle/Donkey/Directions.meta\n?? Assets/_UIAssets/Monsters/Cattle/Donkey/Directions/\n?? Assets/_UIAssets/Monsters/Dogs/Cerberus/Directions.meta\n?? Assets/_UIAssets/Monsters/Dogs/Cerberus/Directions/\n?? Assets/_UIAssets/Monsters/Giants/Butcher/Directions.meta\n?? Assets/_UIAssets/Monsters/Giants/Butcher/Directions/\n?? Assets/_UIAssets/Monsters/Giants/Cannibal/Directions.meta\n?? Assets/_UIAssets/Monsters/Giants/Cannibal/Directions/\n?? Assets/_UIAssets/Monsters/Giants/Dreadnought/Directions.meta\n?? Assets/_UIAssets/Monsters/Giants/Dreadnought/Directions/\n?? Assets/_UIAssets/Monsters/Insects/BugQueen/Directions.meta\n?? Assets/_UIAssets/Monsters/Insects/BugQueen/Directions/\n?? Assets/_UIAssets/Monsters/Insects/Caterpillar/Directions.meta\n?? Assets/_UIAssets/Monsters/Insects/Caterpillar/Directions/\n?? Assets/_UIAssets/Monsters/Insects/CaveCaterpillar/Directions.meta\n?? Assets/_UIAssets/Monsters/Insects/CaveCaterpillar/Directions/\n?? Assets/_UIAssets/Monsters/Insects/Crawler/Directions.meta\n?? Assets/_UIAssets/Monsters/Insects/Crawler/Directions/\n?? Assets/_UIAssets/Monsters/Mounts/BullMounted/Directions.meta\n?? Assets/_UIAssets/Monsters/Mounts/BullMounted/Directions/\n?? Assets/_UIAssets/Monsters/Parasites/FancyParasite/Directions.meta\n?? Assets/_UIAssets/Monsters/Parasites/FancyParasite/Directions/\n?? Assets/_UIAssets/Monsters/Rats/CaveRat/Directions.meta\n?? Assets/_UIAssets/Monsters/Rats/CaveRat/Directions/\n?? Assets/_UIAssets/Monsters/Rats/CrystalLizard/Directions.meta\n?? Assets/_UIAssets/Monsters/Rats/CrystalLizard/Directions/\n?? Assets/_UIAssets/Monsters/Rats/FlyingDemon/Directions.meta\n?? Assets/_UIAssets/Monsters/Rats/FlyingDemon/Directions/\n?? Docs/EnemyDirectionReview/AllGIF/\n?? Docs/EnemyDirectionReview/Remaining_20261024/\n?? Tools/watch_video_batch.py\n",
+  "rule_discrepancy": "Disk AGENTS.md names D:/FreedomTower_1; current user task and executable prompt explicitly select E:/MyTowerGame, verified through unityMCP 8082.",
+  "contact_sheets": [
+    "Docs/EnemyDirectionReview/Remaining_20261024/ForestTurkey/visual_review_20261025_082114/gait_summary.png",
+    "Docs/EnemyDirectionReview/Remaining_20261024/ForestTurkey/visual_review_20261025_082114/action_reuse_summary.png",
+    "Docs/EnemyDirectionReview/Remaining_20261024/ForestTurkey/visual_review_20261025_082114/turn_pause_summary.png"
+  ],
+  "method": "Selected native GIF phases composed into summary images; no source or runtime evidence overwritten."
+}
