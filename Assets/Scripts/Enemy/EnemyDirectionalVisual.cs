@@ -36,6 +36,22 @@ namespace FTProject
         private static readonly int FlashHash = Shader.PropertyToID("_FlashAmount");
         private static readonly int DirHash = UnityEngine.Animator.StringToHash("Dir");
 
+        private void LateUpdate()
+        {
+            if (_hasFacing) RefreshView();
+        }
+
+        /// <summary>
+        /// Run after Animator evaluation/activation so clip defaults cannot restore another view.
+        /// Separate rigs keep their authored enabled/sprite curves and share the same action phase.
+        /// </summary>
+        public void RefreshView()
+        {
+            if (!IsConfigured) return;
+            ApplyVisibility();
+            if (!Profile.SeparateViewRigs && VerticalView) ApplyVerticalParts();
+        }
+
         public bool IsConfigured
         {
             get
@@ -159,23 +175,50 @@ namespace FTProject
 
         private void ApplyView()
         {
-            bool vertical = Facing == EnemyFacing.Up || Facing == EnemyFacing.Down;
+            ApplyVisibility();
+            if (Profile.SeparateViewRigs)
+            {
+                bool up = Facing == EnemyFacing.Up;
+                Head = up ? UpHead : DownHead;
+                Body = up ? UpBody : DownBody;
+                if (VerticalView) Head.sprite = CurrentParts().HeadAt(HeadIndex);
+                return;
+            }
+            if (VerticalView) ApplyVerticalParts();
+        }
+
+        private void ApplyVisibility()
+        {
+            bool vertical = VerticalView;
+            SetRenderingOff(HorizontalRenderers, vertical);
             if (Profile.SeparateViewRigs)
             {
                 // Original Bat clips animate SpriteRenderer.enabled on alternating wing poses.
                 // A renderer-level draw gate preserves those curves while hiding the entire side view.
-                foreach (var sr in HorizontalRenderers) if (sr) sr.forceRenderingOff = vertical;
                 bool up = Facing == EnemyFacing.Up;
-                foreach (var sr in UpRenderers) if (sr) sr.forceRenderingOff = !vertical || !up;
-                foreach (var sr in DownRenderers) if (sr) sr.forceRenderingOff = !vertical || up;
-                Head = up ? UpHead : DownHead;
-                Body = up ? UpBody : DownBody;
-                if (vertical) Head.sprite = CurrentParts().HeadAt(HeadIndex);
+                SetRenderingOff(UpRenderers, !vertical || !up);
+                SetRenderingOff(DownRenderers, !vertical || up);
                 return;
             }
-            foreach (var sr in HorizontalRenderers) if (sr) sr.enabled = !vertical;
-            Head.enabled = Body.enabled = WingL.enabled = WingR.enabled = LegL.enabled = LegR.enabled = vertical;
-            if (!vertical) return;
+            foreach (var sr in HorizontalRenderers) if (sr) SetEnabled(sr, !vertical);
+            SetEnabled(Head, vertical); SetEnabled(Body, vertical);
+            SetEnabled(WingL, vertical); SetEnabled(WingR, vertical);
+            SetEnabled(LegL, vertical); SetEnabled(LegR, vertical);
+        }
+
+        private static void SetRenderingOff(SpriteRenderer[] renderers, bool off)
+        {
+            foreach (var sr in renderers)
+                if (sr && sr.forceRenderingOff != off) sr.forceRenderingOff = off;
+        }
+
+        private static void SetEnabled(SpriteRenderer renderer, bool enabled)
+        {
+            if (renderer.enabled != enabled) renderer.enabled = enabled;
+        }
+
+        private void ApplyVerticalParts()
+        {
             var parts = CurrentParts();
             Head.sprite = parts.HeadAt(HeadIndex);
             Body.sprite = parts.Body;

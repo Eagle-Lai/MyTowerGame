@@ -226,6 +226,7 @@ namespace FTProject
             {
                 // Init is called before a pooled instance is activated. Sample only after activation.
                 _anim.Update(0f);
+                _directionalVisual.RefreshView();
             }
             UpdateHpBar();
         }
@@ -403,13 +404,12 @@ namespace FTProject
                 return;
             }
 
-            if (_path == null || _path.Count == 0)
+            if (_path == null || _path.Count == 0 || dt <= 0f)
             {
                 return;
             }
 
             MoveAlongPath(dt);
-            FaceMoveDirection();
         }
 
         /// <summary>
@@ -467,7 +467,7 @@ namespace FTProject
                 step = dir;
             }
             transform.position = new Vector3(pos.x + step.x, pos.y + step.y, 0f);
-            _lastDir = dir;
+            FaceMovement(Position - pos);
             _flyProgress = Mathf.Clamp01(1f - (dist - step.magnitude) / _flyTotal);
         }
 
@@ -479,26 +479,18 @@ namespace FTProject
                 return;
             }
 
-            if (_pathIndex >= _path.Count)
+            int previousPathIndex = _pathIndex;
+            Vector2 dir;
+            if (!TryGetGroundMoveDirection(out dir))
             {
                 OnReachEnd();
                 return;
             }
+            // Keep the existing arrival frame; skip duplicate points together without extra moves.
+            if (_pathIndex != previousPathIndex) return;
 
-            Vector2 target = _path[_pathIndex].Center;
             Vector2 pos = Position;
-            Vector2 dir = target - pos;
             float dist = dir.magnitude;
-
-            if (dist <= ArriveThreshold)
-            {
-                _pathIndex++;
-                if (_pathIndex >= _path.Count)
-                {
-                    OnReachEnd();
-                }
-                return;
-            }
 
             Vector2 step = dir / dist * (_speed * dt);
             // 防止单帧冲过目标点（低帧率时步长可能大于剩余距离）
@@ -507,13 +499,43 @@ namespace FTProject
                 step = dir;
             }
             transform.position = new Vector3(pos.x + step.x, pos.y + step.y, 0f);
-            _lastDir = dir;
+            FaceMovement(Position - pos);
         }
 
         private Vector2 _lastDir = Vector2.right;
 
+        /// <summary>Skip reached/duplicate waypoints using the same rule for spawn, repath and walking.</summary>
+        private bool TryGetGroundMoveDirection(out Vector2 direction)
+        {
+            direction = Vector2.zero;
+            if (_path == null) return false;
+            Vector2 pos = Position;
+            while (_pathIndex < _path.Count)
+            {
+                Point point = _path[_pathIndex];
+                if (point != null)
+                {
+                    direction = point.Center - pos;
+                    if (direction.sqrMagnitude > ArriveThreshold * ArriveThreshold) return true;
+                }
+                _pathIndex++;
+            }
+            direction = Vector2.zero;
+            return false;
+        }
+
+        /// <summary>Only actual movement changes facing; a stopped enemy retains its last direction.</summary>
+        private void FaceMovement(Vector2 movement)
+        {
+            float distance = movement.magnitude;
+            if (distance <= 0f) return;
+            // Facing must not depend on frame rate, speed or the remaining distance to a waypoint.
+            _lastDir = movement / distance;
+            FaceMoveDirection();
+        }
+
         /// <summary>
-        /// 按移动方向做水平翻转。
+        /// 按世界移动方向切换四向表现；无方向配置时沿用水平翻转。
         ///
         /// 【为什么之前是错的】原实现假设"美术默认朝右"，于是向右移动时不翻转。
         /// 但本美术包的怪物**默认朝左**（以 Rat 为例：Head 在 -X=-1.19，Tail 在 +X=+0.99），
@@ -602,73 +624,67 @@ namespace FTProject
         // 路径
         // ------------------------------------------------------------------
 
-    public void SetPath(List<Point> path)
-    {
-        _path = path;
-        _pathIndex = 0;
+        public void SetPath(List<Point> path)
+        {
+            _path = path;
+            _pathIndex = 0;
 
-        // 飞行单位：不逐格走 A*，改为"当前位置 → 终点"的直线。
-        // 【为什么入口放在 SetPath 而不是 Init】路径在任何时候都可能被重设，
-        // 把飞行分支收在这里，就不会出现"某条重设路径的调用绕过了飞行逻辑"。
-        if (_flying)
-        {
-            SetupFlyingPath(path);
-            return;
-        }
-        // 让第一格从当前位置自然衔接：若已经在第一格附近，直接跳到下一格
-        if (_path != null && _path.Count > 1)
-        {
-            Vector2 pos = Position;
-            if (Vector2.Distance(pos, _path[0].Center) < ArriveThreshold * 2f)
+            // 飞行单位：不逐格走 A*，改为"当前位置 → 终点"的直线。
+            // 【为什么入口放在 SetPath 而不是 Init】路径在任何时候都可能被重设，
+            // 把飞行分支收在这里，就不会出现"某条重设路径的调用绕过了飞行逻辑"。
+            if (_flying)
             {
-                _pathIndex = 1;
+                SetupFlyingPath(path);
+                return;
             }
-        }
-
-        if (_directionalVisual != null && _directionalVisual.IsConfigured)
-        {
-            // Use the next actual displacement, including a purely vertical first segment.
-            if (_path != null)
+            // 让第一格从当前位置自然衔接：若已经在第一格附近，直接跳到下一格
+            if (_path != null && _path.Count > 1 && _path[0] != null)
             {
-                for (int i = _pathIndex; i < _path.Count; i++)
+                Vector2 pos = Position;
+                if (Vector2.Distance(pos, _path[0].Center) < ArriveThreshold * 2f)
                 {
-                    Vector2 direction = _path[i].Center - Position;
-                    if (direction.sqrMagnitude <= ArriveThreshold * ArriveThreshold) continue;
-                    _pathIndex = i;
-                    _lastDir = direction;
-                    FaceMoveDirection();
-                    break;
+                    _pathIndex = 1;
                 }
             }
-            return;
-        }
 
-        // ------------------------------------------------------------------
-        // 初始朝向：沿路径向前找第一段"横向"移动，让怪物出生时就面朝那个方向。
-        //
-        // 【为什么必须做】路径经常以纯纵向开头（本工程实测：
-        //   (0,0)→(1,0)→…→(8,0)→(8,1)→…→(8,15)，即先向下 8 格再向右 15 格）。
-        // 而侧视精灵在纯纵向移动时**不能翻转**（翻了会上下颠倒），
-        // 于是怪物在纵向段会一直保持美术默认朝向 —— 看起来就是
-        // "怪物朝下走却面朝左"，这也是玩家反馈"朝向与运动方向不匹配"的真正原因
-        // （跟 artFaceLeft 取 0 还是 1 无关，所以之前两轮改配置都没用）。
-        //
-        // 让它出生时就面朝"路径接下来要转向的那个方向"，全程观感就一致了。
-        // ------------------------------------------------------------------
-        if (_path != null && _path.Count > 1)
-        {
-            for (int i = 1; i < _path.Count; i++)
+            if (_directionalVisual != null && _directionalVisual.IsConfigured)
             {
-                float dx = _path[i].Center.x - _path[i - 1].Center.x;
-                if (Mathf.Abs(dx) > 0.01f)
+                // Face the current first valid segment, including a vertical spawn or a repath.
+                Vector2 direction;
+                if (TryGetGroundMoveDirection(out direction))
                 {
-                    _lastDir = new Vector2(Mathf.Sign(dx), 0f);
+                    _lastDir = direction.normalized;
                     FaceMoveDirection();
-                    break;
+                }
+                return;
+            }
+
+            // ------------------------------------------------------------------
+            // 初始朝向：沿路径向前找第一段"横向"移动，让怪物出生时就面朝那个方向。
+            //
+            // 【为什么必须做】路径经常以纯纵向开头（本工程实测：
+            //   (0,0)→(1,0)→…→(8,0)→(8,1)→…→(8,15)，即先向下 8 格再向右 15 格）。
+            // 而侧视精灵在纯纵向移动时**不能翻转**（翻了会上下颠倒），
+            // 于是怪物在纵向段会一直保持美术默认朝向 —— 看起来就是
+            // "怪物朝下走却面朝左"，这也是玩家反馈"朝向与运动方向不匹配"的真正原因
+            // （跟 artFaceLeft 取 0 还是 1 无关，所以之前两轮改配置都没用）。
+            //
+            // 让它出生时就面朝"路径接下来要转向的那个方向"，全程观感就一致了。
+            // ------------------------------------------------------------------
+            if (_path != null && _path.Count > 1)
+            {
+                for (int i = 1; i < _path.Count; i++)
+                {
+                    float dx = _path[i].Center.x - _path[i - 1].Center.x;
+                    if (Mathf.Abs(dx) > 0.01f)
+                    {
+                        _lastDir = new Vector2(Mathf.Sign(dx), 0f);
+                        FaceMoveDirection();
+                        break;
+                    }
                 }
             }
         }
-    }
 
         /// <summary>
         /// 当前**剩余**路径（_pathIndex 及其后的格子）是否经过 (row, col)。
