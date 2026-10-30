@@ -126,6 +126,8 @@ namespace FTProject.EditorTools
             string root = BalanceWorkbenchProcess.ProjectRoot;
             string evidence = Path.Combine(root, "Docs/BalanceEvidence/L02-L30-ManualBalance-100Gold");
             string ffmpeg = ResolveFfmpeg();
+            double videoSpeed = SessionState.GetFloat("FT.Balance.VideoSpeed", 2f);
+            var skipped = new List<string>();
 
             JSONNode request = new JSONObject();
             request["output"] = Path.Combine(root, "Library/BalanceWorkbench/Video-Batch");
@@ -149,22 +151,55 @@ namespace FTProject.EditorTools
                 if (planned == null || planned.Count == 0)
                     throw new InvalidDataException("Operations file is empty: " + operations);
 
+                // Flat layout since 2026-10-24 (user request): every cut lands directly in
+                // Docs/LevelVideos/ instead of a per-level subfolder. The recorder derives the
+                // frame dir (_frames_Lxx_完整通关) and the run log from this same path.
+                string videoPath = Path.Combine(root, "Docs/LevelVideos", levelTag + "_完整通关.mp4");
+                // Resume support: a multi-hour batch must not re-render a level that already has a
+                // valid cut, otherwise any restart costs a full pass over the finished levels.
+                // 16MB is far below a real cut (shortest level is ~80MB) but far above a truncated one.
+                // The size alone is not enough: ffmpeg writes the mp4 incrementally, so a level
+                // caught mid-encode looks "done" by size (L10 on 2026-10-23 sat at 276MB while
+                // its end line was still seconds away). The recorder's run log is the authority.
+                string delivered = BalanceVideoRecorder.DeliveredPath(videoPath, videoSpeed);
+                string runLog = Path.ChangeExtension(videoPath, ".log.txt");
+                bool finished = File.Exists(runLog)
+                    && File.ReadAllText(runLog).Contains("end ok=True");
+                if (finished && File.Exists(delivered) && new FileInfo(delivered).Length > 16L * 1024 * 1024)
+                {
+                    skipped.Add(levelTag);
+                    continue;
+                }
+
                 JSONNode run = new JSONObject();
                 run["profileId"] = SessionState.GetString("FT.Balance.TestProfile", "D04");
                 run["levelId"] = level; run["strategy"] = "replay"; run["speed"] = 1;
                 run["waitForFunds"] = false; run["captureStages"] = false; run["screenshots"] = false;
                 run["operationsPath"] = operations; run["wallTimeoutSeconds"] = 7200;
                 run["recordVideo"] = true;
-                run["videoOutput"] = Path.Combine(root, "Docs/LevelVideos", levelTag, levelTag + "_完整通关.mp4");
+                run["videoOutput"] = videoPath;
                 run["videoWidth"] = 1280; run["videoHeight"] = 720; run["videoFps"] = 15;
                 run["videoFfmpeg"] = ffmpeg;
+                // Delivered playback speed. The in-game 2x/3x toggle cannot speed up a fixed-step
+                // replay (step / Speed is multiplied back by Speed inside GameClock), so the speed
+                // is applied at encode time by declaring a higher input framerate. Only the fast
+                // cut is written (user decision 2026-10-23); no separate 1x master.
+                run["videoSpeed"] = videoSpeed;
                 request["runs"].Add(run);
+            }
+
+            if (request["runs"].Count == 0)
+            {
+                UnityEngine.Debug.Log("[BalanceVideo] nothing to record: all " + levels.Length +
+                                      " levels already have a valid cut.");
+                return;
             }
 
             string path = Path.Combine(root, "Library/BalanceWorkbench/video-request-batch.json");
             Directory.CreateDirectory(Path.GetDirectoryName(path));
             File.WriteAllText(path, request.ToString(2));
-            UnityEngine.Debug.Log("[BalanceVideo] request written: " + path + " runs=" + levels.Length);
+            UnityEngine.Debug.Log("[BalanceVideo] request written: " + path + " runs=" + request["runs"].Count +
+                                  (skipped.Count > 0 ? " skipped=" + string.Join(",", skipped.ToArray()) : ""));
             StartBatch(path);
         }
 
@@ -308,7 +343,8 @@ namespace FTProject.EditorTools
                             run["videoHeight"].AsInt > 0 ? run["videoHeight"].AsInt : 720,
                             run["videoFps"].AsDouble > 0 ? run["videoFps"].AsDouble : 15,
                             _request["stepSeconds"].AsDouble,
-                            run["videoFfmpeg"].Value);
+                            run["videoFfmpeg"].Value,
+                            run["videoSpeed"].AsDouble > 0 ? run["videoSpeed"].AsDouble : 1.0);
                     }
                     WriteStatus("running");
                     // Let Unity realize the newly instantiated scene objects for one rendered frame.

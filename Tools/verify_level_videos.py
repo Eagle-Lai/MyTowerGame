@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 """校验 Docs/LevelVideos 下的关卡录像：时长、分辨率、编码，并抽取关键帧。
 
+默认校验倍速成片（`Lxx_完整通关_2x.mp4`）；若该关只有 1x 母版则退回校验母版。
+
 用法：
     python Tools/verify_level_videos.py            # 校验全部已产出的视频
     python Tools/verify_level_videos.py L02        # 只校验 L02
@@ -59,13 +61,40 @@ def extract_frames(path, level, count=5):
     return saved
 
 
+def resolve_video(level):
+    """返回该关要校验的视频：倍速成片优先，没有则退回 1x 母版。
+
+    2026-10-23 起录制端只产出倍速片（用户口径），早于该日期的关卡可能只有母版。
+    2026-10-24 起全部视频平铺在 `Docs/LevelVideos/` 根下（用户要求归拢到一个文件夹），
+    这里同时兼容旧的每关子目录布局。
+    """
+    names = ("%s_完整通关_2x.mp4" % level, "%s_完整通关.mp4" % level)
+    for base in (VIDEO_DIR, os.path.join(VIDEO_DIR, level)):
+        for name in names:
+            path = os.path.join(base, name)
+            if os.path.isfile(path):
+                return path
+    return None
+
+
+def discover_levels():
+    """发现待校验关卡：平铺文件名 `Lxx_完整通关*.mp4` 优先，兼容每关子目录。"""
+    levels = set()
+    if not os.path.isdir(VIDEO_DIR):
+        return []
+    for name in os.listdir(VIDEO_DIR):
+        path = os.path.join(VIDEO_DIR, name)
+        if os.path.isfile(path) and name.startswith("L") and name.endswith(".mp4"):
+            levels.add(name.split("_")[0])
+        elif os.path.isdir(path) and name.startswith("L"):
+            levels.add(name)
+    return sorted(levels)
+
+
 def main():
     args = [a for a in sys.argv[1:] if not a.startswith("--")]
     want_frames = "--frames" in sys.argv
-    targets = args or sorted(
-        d for d in os.listdir(VIDEO_DIR)
-        if d.startswith("L") and os.path.isdir(os.path.join(VIDEO_DIR, d))
-    ) if os.path.isdir(VIDEO_DIR) else []
+    targets = args or discover_levels()
 
     if not os.path.isfile(FFPROBE):
         print("ffprobe 不存在:", FFPROBE)
@@ -73,8 +102,8 @@ def main():
 
     rows = []
     for level in targets:
-        path = os.path.join(VIDEO_DIR, level, "%s_完整通关.mp4" % level)
-        if not os.path.isfile(path):
+        path = resolve_video(level)
+        if path is None:
             print("%-5s 缺少视频" % level)
             continue
         info = probe(path)
