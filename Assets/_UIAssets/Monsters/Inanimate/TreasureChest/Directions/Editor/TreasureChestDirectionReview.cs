@@ -226,7 +226,7 @@ namespace FTProject.EditorTools
 
             string family=spec==null?"":new DirectoryInfo(Path.GetDirectoryName(spec.ControllerSource)).Name;
 
-            return new EnemyConfig(new cfg.EnemyData(990001,1f,20f,name+" isolated direction review",0,1000,"Enemy_"+name,0f,1,1,1f,.3f,flying?1:0,family,"In-memory only; never exported"));
+            return new EnemyConfig(new cfg.EnemyData(990001,1f,20f,name+" isolated direction review",0,1000,"Enemy_"+name,0f,1,1,1f,.3f,flying?1:0,family,"In-memory only; never exported",1));
 
         }
 
@@ -414,7 +414,7 @@ namespace FTProject.EditorTools
 
                 legacy.transform.position=Vector3.zero;
 
-                var legacyConfig=new EnemyConfig(new cfg.EnemyData(990002,1,20,"Untouched legacy clone",0,1000,"Enemy_BugQueen",0,1,1,1,.3f,0,"","Review only"));
+                var legacyConfig=new EnemyConfig(new cfg.EnemyData(990002,1,20,"Untouched legacy clone",0,1000,"Enemy_BugQueen",0,1,1,1,.3f,0,"","Review only",1));
 
                 legacy.Init(legacyConfig,duplicates);float x=legacy.transform.localScale.x;
 
