@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using NUnit.Framework;
 using UnityEngine;
@@ -39,7 +39,7 @@ namespace FTProject.Tests
             { var metrics = Metrics(); invalidate(metrics); var result = LevelRatingEvaluator.Evaluate(Profile(), metrics); Assert.That(result.valid, Is.False); Assert.That(result.stars, Is.Zero); }
         }
         [Test]
-        public void NewCampaignRequiresAll25WavesAndRejectsOld20WaveCheckpoint()
+        public void NewCampaignRequiresAll25Waves()
         {
             var old = Metrics(); var profile = Profile();
             profile.expectedWaveCount = 25; profile.expectedEnemyCount = 25;
@@ -52,9 +52,28 @@ namespace FTProject.Tests
             Assert.That(LevelRatingEvaluator.Evaluate(profile, current).stars, Is.EqualTo(5));
             current.waves.RemoveAt(24);
             Assert.That(LevelRatingEvaluator.Evaluate(profile, current).valid, Is.False);
-            var snapshot = new LevelSnapshot { valid = true, formatVersion = 2, levelId = 1, roundCursor = 20, hp = 20, maxHp = 20, gold = 100, metrics = old, ratingProfile = Profile(), levelTimerStarted = true };
-            string reason;
-            Assert.That(LevelCheckpointValidator.IsCompatible(snapshot, profile, 25, out reason), Is.False);
+        }
+
+        /// <summary>
+        /// 防回归：局内塔阵 / 金币 / 生命**不得**再有任何落盘入口（2026-10-30 用户定规）。
+        ///
+        /// 这条测试是"删除"本身的守卫：谁把 SaveSnapshotNow / SetSnapshot / 失败续局点加回来，
+        /// 这里会立刻变红。它不验证行为，只验证 API 面 —— 但正是这个 API 面曾构成
+        /// "退出/失败就能拿回布阵并把同一波重打一遍"的漏洞。
+        /// </summary>
+        [Test]
+        public void GameplayMustNotExposeRunStatePersistenceApi()
+        {
+            const System.Reflection.BindingFlags flags = System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance;
+            foreach (var name in new[] { "SetSnapshot", "TrySetSnapshot", "ClearSnapshot", "TryClearSnapshot", "SaveFailedRunCheckpoint", "TryGetFailedRunCheckpoint", "ClearFailedRunCheckpoint" })
+            {
+                Assert.That(typeof(SaveManager).GetMethod(name, flags), Is.Null, "SaveManager." + name + " must stay deleted");
+            }
+            const System.Reflection.BindingFlags anyInstance = System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Static;
+            foreach (var name in new[] { "SaveSnapshotNow", "TryRestoreSnapshot", "TryRestoreFailedRun", "CaptureFailedRunCheckpoint", "TryGetResumableCheckpoint" })
+            {
+                Assert.That(typeof(GameFlowManager).GetMethod(name, anyInstance), Is.Null, "GameFlowManager." + name + " must stay deleted");
+            }
         }
 
         [Test]
@@ -282,77 +301,7 @@ namespace FTProject.Tests
             else storage = new JsonSaveStorage(crypto, directory);
             storage.Initialize(); return storage;
         }
-        [TestCase(false)] [TestCase(true)]
-        public void SnapshotWriteAndReplayClearFailuresRetainDurableBoundaryAndRetry(bool sqlite)
-        {
-            const System.Reflection.BindingFlags fields = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic;
-            string directory = Path.Combine(Path.GetTempPath(), "FTProject-checkpoint-failure-" + Guid.NewGuid().ToString("N")); Directory.CreateDirectory(directory);
-            var manager = SaveManager.Instance;
-            var storageField = typeof(SaveManager).GetField("_storage", fields);
-            var dataField = typeof(SaveManager).GetField("_data", fields);
-            var loadedField = typeof(SaveManager).GetField("_loaded", fields);
-            object originalStorage = storageField.GetValue(manager), originalData = dataField.GetValue(manager), originalLoaded = loadedField.GetValue(manager);
-            ISaveStorage storage = null;
-            try
-            {
-                storage = Open(sqlite, directory);
-                var boundary = new LevelSnapshot { valid = true, formatVersion = 2, levelId = 1, roundCursor = 4, gold = 137, hp = 19, maxHp = 20, metrics = Metrics(), ratingProfile = Profile() };
-                boundary.towers.Add(new TowerSnapshot { row = 2, col = 3, type = 1, level = 2 });
-                storage.SaveSnapshot(boundary);
-                var data = new SaveData { snapshot = storage.LoadSnapshot() };
-                storageField.SetValue(manager, storage); dataField.SetValue(manager, data); loadedField.SetValue(manager, true);
-                string before = JsonUtility.ToJson(manager.Snapshot);
-                var replacement = JsonUtility.FromJson<LevelSnapshot>(before); replacement.roundCursor = 5; replacement.gold = 200;
-                SqliteDatabase database = sqlite ? (SqliteDatabase)storage.GetType().GetField("_db", fields).GetValue(storage) : null;
-                if (sqlite) database.Execute("PRAGMA query_only=ON");
-                else Directory.CreateDirectory(Path.Combine(directory, "freetower_save.json.tmp"));
-                LogAssert.Expect(LogType.Warning, new Regex("\\[Save\\]"));
-                Assert.That(manager.TrySetSnapshot(replacement), Is.False);
-                Assert.That(JsonUtility.ToJson(manager.Snapshot), Is.EqualTo(before));
-                LogAssert.Expect(LogType.Warning, new Regex("\\[Save\\]"));
-                manager.SetSnapshot(replacement);
-                Assert.That(JsonUtility.ToJson(manager.Snapshot), Is.EqualTo(before));
-                LogAssert.Expect(LogType.Warning, new Regex("\\[Save\\]"));
-                Assert.That(manager.TryClearSnapshot(), Is.False);
-                Assert.That(manager.HasSnapshot, Is.True);
-                LogAssert.Expect(LogType.Warning, new Regex("\\[Save\\]"));
-                manager.ClearSnapshot(true);
-                Assert.That(JsonUtility.ToJson(manager.Snapshot), Is.EqualTo(before));
-                using (var reopened = Open(sqlite, directory)) Assert.That(JsonUtility.ToJson(reopened.LoadSnapshot()), Is.EqualTo(before));
-                if (sqlite) database.Execute("PRAGMA query_only=OFF");
-                else Directory.Delete(Path.Combine(directory, "freetower_save.json.tmp"));
-                Assert.That(manager.TrySetSnapshot(replacement), Is.True, "an old error must not poison a later successful write");
-                Assert.That(manager.Snapshot.roundCursor, Is.EqualTo(5));
-                Assert.That(manager.TryClearSnapshot(), Is.True);
-                Assert.That(manager.HasSnapshot, Is.False);
-                using (var reopened = Open(sqlite, directory)) Assert.That(reopened.LoadSnapshot().valid, Is.False);
-            }
-            finally
-            {
-                if (storage != null) storage.Dispose();
-                storageField.SetValue(manager, originalStorage); dataField.SetValue(manager, originalData); loadedField.SetValue(manager, originalLoaded);
-                Directory.Delete(directory, true);
-            }
-        }
-        [Test]
-        public void CompleteCheckpointRestoresFinalCursorAndRejectsPartialEvidence()
-        {
-            var profile = Profile(); var m = Metrics(); m.combatElapsedSeconds = 99.999499123456;
-            var s = new LevelSnapshot { valid = true, formatVersion = 2, levelId = 1, roundCursor = 20, hp = 20, maxHp = 20, gold = 22, metrics = m, ratingProfile = profile, levelTimerStarted = true };
-            string reason;
-            Assert.That(LevelCheckpointValidator.IsCompatible(s, profile, 20, out reason), Is.True, reason);
-            s = JsonUtility.FromJson<LevelSnapshot>(JsonUtility.ToJson(s));
-            Assert.That(s.roundCursor, Is.EqualTo(20)); Assert.That(s.metrics.combatElapsedSeconds, Is.EqualTo(m.combatElapsedSeconds));
-            s.autoNextRemainingSeconds = float.NaN; Assert.That(LevelCheckpointValidator.IsCompatible(s, profile, 20, out reason), Is.False);
-            s.autoNextRemainingSeconds = 0f;
-            s.metrics.planHash = "another-plan"; Assert.That(LevelCheckpointValidator.IsCompatible(s, profile, 20, out reason), Is.False);
-            s.metrics.planHash = profile.planHash; s.metrics.killed--; Assert.That(LevelCheckpointValidator.IsCompatible(s, profile, 20, out reason), Is.False);
-            s.metrics.killed++;
-            s.towers.Add(new TowerSnapshot { row = 1, col = 2, level = 1, type = 1, runtimeStateSaved = true, lastDirection = Vector2.right });
-            Assert.That(LevelCheckpointValidator.IsCompatible(s, profile, 20, out reason), Is.True, reason);
-            s.towers[0].fireTimer = float.PositiveInfinity; Assert.That(LevelCheckpointValidator.IsCompatible(s, profile, 20, out reason), Is.False); s.towers[0].fireTimer = 0f;
-            s.towers.Add(new TowerSnapshot { row = 1, col = 2, level = 2, type = 1, runtimeStateSaved = true, lastDirection = Vector2.right }); Assert.That(LevelCheckpointValidator.IsCompatible(s, profile, 20, out reason), Is.False);
-        }
+
         [TestCase(false)] [TestCase(true)]
         public void LegacyBackendUpgradePreservesOriginalValuesAndSettings(bool sqlite)
         {

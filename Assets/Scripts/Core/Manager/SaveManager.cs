@@ -1,11 +1,19 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
 
 namespace FTProject
 {
     /// <summary>
-    /// 存档管理器（业务门面）：关卡解锁与星级、玩家设置、局内快照、通用键值。
+    /// 存档管理器（业务门面）：关卡解锁与星级、玩家设置、通用键值。
+    ///
+    /// 【2026-10-30 口径变更：局内状态不再落盘】
+    ///   塔阵 / 金币 / 生命只存在于本局内存里，**只有通关**（<see cref="RecordClear"/>）
+    ///   才把星级、最快用时、最佳剩余生命写进存档。退出、失败、杀进程一律本局作废。
+    ///   原因：过去在波次边界/退出/失败写快照，玩家中途退出再进来就能拿回布阵与金币血量，
+    ///   等于可以反复重打同一波 —— 这是漏洞，不是便利。
+    ///   历史遗留的 level_snapshot / snapshot_tower 行与 kv 里的失败续局点在启动时清空
+    ///   （见 <see cref="PurgeLegacyRunState"/>）。
     ///
     /// ==================================================================
     /// 【本次改造：从"自己写 JSON"变成"委托给数据层"】
@@ -37,6 +45,11 @@ namespace FTProject
         private SaveData _data;
         private bool _loaded;
         public const int MaxStars = LevelRatingEvaluator.MaxStars;
+        /// <summary>
+        /// v1 的"失败续局点"存储键。**新版本只读来清理、不再写入** ——
+        /// 保留常量是为了让旧库里的这条 kv 能在启动时被精确删掉（见 PurgeLegacyRunState）。
+        /// </summary>
+        private const string LegacyFailedRunKey = "checkpoint/failed-run";
         public static bool IsTestStorage { get { return !string.IsNullOrEmpty(SaveStorageFactory.ActiveTestContextId); } }
         private sealed class StorageScope : IDisposable
         {
@@ -144,18 +157,51 @@ namespace FTProject
 
                 _data.settings = _storage.LoadSettings() ?? new GameSettings();
                 _data.levels = _storage.LoadLevels() ?? new List<LevelProgress>();
-                _data.snapshot = _storage.LoadSnapshot() ?? new LevelSnapshot();
                 if (_data.settings == null) _data.settings = new GameSettings();
                 _data.settings.audio = AudioPreferences.Normalize(_data.settings.audio);
                 if (_data.levels == null) _data.levels = new List<LevelProgress>();
-                if (_data.snapshot == null) _data.snapshot = new LevelSnapshot();
-                if (_data.snapshot.towers == null) _data.snapshot.towers = new List<TowerSnapshot>();
+                _data.snapshot = new LevelSnapshot();
+                PurgeLegacyRunState();
             }
             catch (Exception ex)
             {
                 // 连存储都建不起来时，用一个内存存档把游戏跑起来（本局有效、退出即失）。
                 Debug.LogError("[Save] 存档存储初始化失败，本次运行将使用内存存档（不会落盘）：" + ex.Message);
                 _data = new SaveData();
+            }
+        }
+
+        /// <summary>
+        /// 清掉旧版本留下的"局内状态"存档（2026-10-30 口径变更）。
+        ///
+        /// 【为什么需要它】v1~v2 的存档里可能有 level_snapshot / snapshot_tower 两张表的残留，
+        /// 以及 kv_store 里 key = checkpoint/failed-run 的失败续局点。新版本不再读也不再写这些数据，
+        /// 但如果不清，老玩家的库会一直带着一份"半局状态"（塔阵 / 金币 / 生命），
+        /// 一旦将来有人误把读取逻辑加回来，漏洞立刻复活。所以启动时按"存在才清"处理一次。
+        /// 【为什么是"存在才清"】没有残留就不写盘 —— 不给每次启动增加无意义的磁盘写。
+        /// </summary>
+        private void PurgeLegacyRunState()
+        {
+            if (_storage == null)
+            {
+                return;
+            }
+            try
+            {
+                LevelSnapshot legacy = _storage.LoadSnapshot();
+                if (legacy != null && legacy.valid)
+                {
+                    _storage.SaveSnapshot(new LevelSnapshot());
+                }
+                string ignored;
+                if (_storage.TryGetValue(LegacyFailedRunKey, out ignored))
+                {
+                    _storage.DeleteValue(LegacyFailedRunKey);
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning("[Save] 清理遗留局内快照失败（可忽略）：" + ex.Message);
             }
         }
 
@@ -182,7 +228,6 @@ namespace FTProject
                 {
                     _storage.SaveLevel(_data.levels[i]);
                 }
-                _storage.SaveSnapshot(_data.snapshot);
                 _storage.Flush();
             }
             catch (Exception ex)
@@ -257,14 +302,6 @@ namespace FTProject
             if (_storage != null)
             {
                 _storage.SaveSettings(_data.settings);
-            }
-        }
-
-        private void PersistSnapshot()
-        {
-            if (_storage != null)
-            {
-                _storage.SaveSnapshot(_data.snapshot);
             }
         }
 
@@ -416,7 +453,6 @@ namespace FTProject
             SaveProgressMigration.ArchiveForVersion(candidate, profile.versionKey);
             if (_storage != null && !_storage.CommitClear(candidate)) { Debug.LogWarning("[Save] Rating migration deferred: archive could not be persisted"); return; }
             _data.levels[_data.levels.IndexOf(p)] = candidate;
-            _data.snapshot = new LevelSnapshot();
             if (_storage != null) { _storage.SetValue("rating-migrated/" + levelId, profile.versionKey, true); _storage.Flush(); }
         }
         public bool RecordClear(int levelId, LevelRatingResult result)
@@ -444,7 +480,6 @@ namespace FTProject
             int index = _data.levels.IndexOf(original);
             if (_storage != null && !_storage.CommitClear(p)) return false;
             if (index < 0) _data.levels.Add(p); else _data.levels[index] = p;
-            _data.snapshot = new LevelSnapshot();
             if (_storage != null) _storage.Flush();
             return true;
         }
@@ -555,158 +590,6 @@ namespace FTProject
             _data.settings.language = lang.ToCode();
             PersistSettings();
             if (_storage != null) _storage.Flush();
-        }
-
-        // ------------------------------------------------------------------
-        // 局内快照
-        // ------------------------------------------------------------------
-
-        public bool HasSnapshot
-        {
-            get
-            {
-                EnsureLoaded();
-                return _data.snapshot != null && _data.snapshot.valid;
-            }
-        }
-
-        public LevelSnapshot Snapshot
-        {
-            get
-            {
-                EnsureLoaded();
-                return _data.snapshot;
-            }
-        }
-
-        /// <summary>写入局内快照并立刻落盘（回合结束时由 GameFlowManager 调用）。</summary>
-        public void SetSnapshot(LevelSnapshot snap)
-        {
-            TrySetSnapshot(snap);
-        }
-
-        /// <summary>Publish a checkpoint only after storage confirms the complete write.</summary>
-        public bool TrySetSnapshot(LevelSnapshot snap)
-        {
-            EnsureLoaded();
-            if (_storage == null) return false;
-            var candidate = snap != null ? JsonUtility.FromJson<LevelSnapshot>(JsonUtility.ToJson(snap)) : new LevelSnapshot();
-            try
-            {
-                _storage.SaveSnapshot(candidate);
-                _storage.Flush();
-                if (!string.IsNullOrEmpty(_storage.LastError)) return false;
-                LevelSnapshot persisted = _storage.LoadSnapshot();
-                if (!string.IsNullOrEmpty(_storage.LastError) || persisted == null || JsonUtility.ToJson(persisted) != JsonUtility.ToJson(candidate)) return false;
-                _data.snapshot = persisted;
-                return true;
-            }
-            catch (Exception ex)
-            {
-                Debug.LogWarning("[Save] Checkpoint was not published: " + ex.Message);
-                return false;
-            }
-        }
-
-        /// <summary>Keep the previous resumable boundary if durable invalidation fails.</summary>
-        public bool TryClearSnapshot()
-        {
-            return TrySetSnapshot(new LevelSnapshot());
-        }
-
-        /// <summary>开始新一局时作废快照。</summary>
-        public void ClearSnapshot(bool save)
-        {
-            EnsureLoaded();
-            if (save) TryClearSnapshot();
-            else _data.snapshot = new LevelSnapshot();
-        }
-
-        // ------------------------------------------------------------------
-        // 失败续局（2026-10-29）
-        //
-        // 【为什么不用 level_snapshot 表】那份存档会被评级版本迁移（EnsureRatingVersion）
-        //   整份清空，而本需求的核心场景恰恰是"改完配置表再接着打"。
-        //   这里落在 kv_store 的明文键里，不参与评级版本校验，改表与重启都不丢。
-        // ------------------------------------------------------------------
-
-        /// <summary>失败续局的存储键（kv_store，明文）</summary>
-        private const string FailedRunKey = "checkpoint/failed-run";
-
-        private FailedRunCheckpoint _failedRun;
-        private bool _failedRunLoaded;
-
-        /// <summary>失败时写入续局点；落盘失败只告警，不影响结算流程。</summary>
-        public void SaveFailedRunCheckpoint(FailedRunCheckpoint checkpoint)
-        {
-            EnsureLoaded();
-            if (checkpoint == null || !checkpoint.IsValid())
-            {
-                return;
-            }
-            checkpoint.savedAtUnix = SaveSchema.Now();
-            _failedRun = checkpoint;
-            _failedRunLoaded = true;
-            if (_storage == null)
-            {
-                return;
-            }
-            try
-            {
-                _storage.SetValue(FailedRunKey, checkpoint.ToJson(), false);
-                _storage.Flush();
-                if (!string.IsNullOrEmpty(_storage.LastError))
-                {
-                    Debug.LogWarning("[Save] 失败续局存档未能落盘：" + _storage.LastError);
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.LogWarning("[Save] 失败续局存档写入异常：" + ex.Message);
-            }
-        }
-
-        /// <summary>读回失败续局点；没有/损坏/字段不自洽时返回 false。</summary>
-        public bool TryGetFailedRunCheckpoint(out FailedRunCheckpoint checkpoint)
-        {
-            EnsureLoaded();
-            checkpoint = null;
-            if (!_failedRunLoaded)
-            {
-                _failedRunLoaded = true;
-                string json;
-                if (_storage != null && _storage.TryGetValue(FailedRunKey, out json))
-                {
-                    _failedRun = FailedRunCheckpoint.FromJson(json);
-                }
-            }
-            if (_failedRun == null || !_failedRun.IsValid())
-            {
-                return false;
-            }
-            checkpoint = _failedRun;
-            return true;
-        }
-
-        /// <summary>清掉失败续局点（通关、显式重开、切到别的关时调用）。</summary>
-        public void ClearFailedRunCheckpoint()
-        {
-            EnsureLoaded();
-            _failedRun = null;
-            _failedRunLoaded = true;
-            if (_storage == null)
-            {
-                return;
-            }
-            try
-            {
-                _storage.DeleteValue(FailedRunKey);
-                _storage.Flush();
-            }
-            catch (Exception ex)
-            {
-                Debug.LogWarning("[Save] 失败续局存档清除异常：" + ex.Message);
-            }
         }
 
         // ------------------------------------------------------------------

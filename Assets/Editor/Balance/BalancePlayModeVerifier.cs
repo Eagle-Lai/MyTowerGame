@@ -293,8 +293,8 @@ namespace FTProject.EditorTools
                     string profile = run["profileId"].Value;
                     var rating = Configs.GetLevelRating(run["levelId"].AsInt);
                     if (rating == null || rating.profileId != profile) throw new InvalidOperationException("Requested profile differs from loaded candidate.");
-                    // Each trial starts clean even if the previous trial failed halfway through.
-                    SaveManager.Instance.ClearSnapshot(true);
+                    // 【2026-10-30】每次试跑不再需要先清"上一轮的续局快照"：
+                    // 局内状态根本不落盘，InitLevel 一定从第一波、满血、初始金币开始。
                     UIManager.Instance.Close(MainMenuView.LogicalName);
                     UIManager.Instance.Close(SelectView.LogicalName);
                     UIManager.Instance.Close(LevelDetailView.LogicalName);
@@ -328,7 +328,6 @@ namespace FTProject.EditorTools
                             previousWave = wave; previousTime = time;
                         }
                     }
-                    BalanceCheckpointVerifier.Begin(flow, run);
                     _runWall = EditorApplication.timeSinceStartup;
                     if (run["recordVideo"].AsBool)
                     {
@@ -376,27 +375,12 @@ namespace FTProject.EditorTools
                 if (step <= 0 || step > .1f) throw new InvalidOperationException("Step must be in (0,.1]");
                 for (int i = 0; i < count; i++)
                 {
-                    if (!BalanceCheckpointVerifier.BeforeStep(flow)) break;
                     if (!string.IsNullOrEmpty(_pendingScreenshot) && flow.State == GameFlowState.RoundRunning &&
                         flow.CurrentRoundIndex == _pendingScreenshotWave && flow.RunMetrics.waves.Count > 0 &&
                         flow.RunMetrics.waves[flow.RunMetrics.waves.Count - 1].successfulSpawned > 0)
                     {
                         ScreenCapture.CaptureScreenshot(_pendingScreenshot); _pendingScreenshot = null;
                         WriteStatus("rendering_wave_screenshot"); return;
-                    }
-                    int rollbackWave = BalanceCheckpointVerifier.ConsumeOperationRollbackWave();
-                    if (rollbackWave > 0 && _plannedOperations != null)
-                    {
-                        foreach (var actual in Operations)
-                            if (actual["waveOrdinal"].AsInt == rollbackWave && actual["timeMs"].AsLong > 0 && actual.HasKey("sourceIndex"))
-                                ReplayedOperations.Remove(actual["sourceIndex"].AsInt);
-                        int index = -1;
-                        foreach (var op in _plannedOperations)
-                        {
-                            index++;
-                            if (op.Value["waveOrdinal"].AsInt == rollbackWave && op.Value["timeMs"].AsLong > 0) ReplayedOperations.Remove(index);
-                        }
-                        Operations.RemoveAll(op => op["waveOrdinal"].AsInt == rollbackWave && op["timeMs"].AsLong > 0);
                     }
                     if (flow.State == GameFlowState.GameOver) { RecordResult(flow, run, "finished"); return; }
                     var metrics = (LevelRunMetrics)RunField.GetValue(flow);
@@ -434,7 +418,6 @@ namespace FTProject.EditorTools
                     TimerManager.Instance.Update(step);
                     EventDispatcher.TriggerEvent(EventName.UpdateEvent);
                     _flowLate();
-                    BalanceCheckpointVerifier.AfterStep(flow);
                     StepCosts.Add((EditorApplication.timeSinceStartup - stepStart) * 1000);
                     if (BalanceVideoRecorder.Running)
                     {
@@ -450,7 +433,7 @@ namespace FTProject.EditorTools
             {
                 File.WriteAllText(Path.Combine(_out, "failure.txt"), ex.ToString());
                 JSONNode failure = new JSONObject();
-                failure["exception"] = ex.ToString(); failure["checkpointChecks"] = BalanceCheckpointVerifier.CurrentChecks;
+                failure["exception"] = ex.ToString();
                 if (_runIndex < Runs.Count) failure["run"] = Runs[_runIndex];
                 if (GameFlowManager.Instance != null && GameFlowManager.Instance.RunMetrics != null)
                     failure["metrics"] = JSON.Parse(JsonUtility.ToJson(GameFlowManager.Instance.RunMetrics));
@@ -688,6 +671,19 @@ namespace FTProject.EditorTools
             Operations.Add(op);
         }
 
+        /// <summary>终局塔阵签名（格位/类型/等级），用于倍速比对与结果留痕。</summary>
+        private static string TowerSignature()
+        {
+            var parts = new List<string>();
+            foreach (var tower in TowerManager.Instance.Towers)
+            {
+                if (tower == null || tower.Cell == null || tower.Config == null) continue;
+                parts.Add(tower.Cell.Row + ":" + tower.Cell.Col + ":" + tower.Config.Type + ":" + tower.Config.Level);
+            }
+            parts.Sort(System.StringComparer.Ordinal);
+            return string.Join(";", parts);
+        }
+
         private static JSONNode TowerContributions()
         {
             JSONNode result = new JSONArray();
@@ -791,7 +787,8 @@ namespace FTProject.EditorTools
             if (_request["renderedPerformance"].AsBool) entry["renderedPerformance"] = BalanceRenderSampler.Report();
             if (!string.IsNullOrEmpty(_operationError)) entry["operationError"] = _operationError;
             entry["storagePath"] = SaveManager.Instance.StorageLocation;
-            entry["checkpointChecks"] = BalanceCheckpointVerifier.Complete(flow);
+            // 【2026-10-30】终局塔阵签名留在结果里，供 ×1/×2/×3 比对"布阵没有被倍速改变"。
+            entry["finalTowerSignature"] = TowerSignature();
             Results.Add(entry);
             WriteResults();
             // One mp4 per run: flush here so a multi-level batch produces one file per level.
@@ -814,7 +811,7 @@ namespace FTProject.EditorTools
             var array = new JSONArray(); foreach (var n in Results) array.Add(n);
             File.WriteAllText(Path.Combine(_out, "unity-results.json"), array.ToString(2));
             if (Results.Exists(n => !string.IsNullOrEmpty(n["speedComparisonGroup"].Value)))
-                File.WriteAllText(Path.Combine(_out, "speed-comparison.json"), BalanceCheckpointVerifier.CompareSpeedResults(Results).ToString(2));
+                File.WriteAllText(Path.Combine(_out, "speed-comparison.json"), BalanceSpeedComparison.Compare(Results).ToString(2));
         }
 
         private static void WriteStatus(string phase)

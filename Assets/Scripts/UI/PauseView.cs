@@ -149,7 +149,11 @@ namespace FTProject
         {
             // 同上：退出对局由 QuitToSelect → TeardownLevel 统一解除暂停
             ConfirmView.Show(Localization.Get("Back to Levels")??"Back to Levels",
-                Localization.Get("Leave this battle?")??"Leave this battle? The last saved checkpoint is kept.",
+                // 【2026-10-30】局内不再落盘：退出即本局作废（塔阵/金币/生命都不保留）。
+                // 注意：这句英文只是**词条缺失时的兜底**；真正的显示文案来自 Localization 表
+                // （tblocalization 里 "Leave this battle?" 目前仍写着"只保留最后成功保存的波次检查点"），
+                // 需要人工改表 + Luban 导出 + 重封才会变，见本次改动说明。
+                Localization.Get("Leave this battle?")??"Leave this battle? This run will be discarded.",
                 ConfirmType.Warning,()=>EventDispatcher.TriggerEvent(EventName.QuitToSelectRequestEvent),
                 Localization.Get("Back to Levels")??"Back to Levels",Localization.Get("Cancel")??"Cancel");
         }

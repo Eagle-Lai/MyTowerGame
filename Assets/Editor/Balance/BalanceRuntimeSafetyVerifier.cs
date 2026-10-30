@@ -332,8 +332,9 @@ namespace FTProject.EditorTools
                 var fixture = TerminalFixture(); Set(flow, "_run", fixture); Set(flow, "_roundCursor", profile.expectedWaveCount);
                 PlayerDataManager.Instance.RestoreState(1, 137, fixture.hp, fixture.maxHp, fixture.killed, 0);
                 GameClock.RestoreTimers(fixture.combatElapsedSeconds, fixture.levelElapsedSeconds, true);
-                flow.SaveSnapshotNow(); Check(save.HasSnapshot && backend.LoadSnapshot().valid, "Durable complete terminal checkpoint before write fault");
-                string before = JsonUtility.ToJson(save.Data.Find(1)), checkpoint = JsonUtility.ToJson(save.Snapshot);
+                // 【2026-10-30】局内不再写快照：这里原来先落一份"终局检查点"再注入写盘故障，
+                // 现在只剩"通关记录"这一份要保证原子性，检查点相关断言一并删除。
+                string before = JsonUtility.ToJson(save.Data.Find(1));
                 if (json) { blockedPath = backend.Location + ".tmp"; Directory.CreateDirectory(blockedPath); }
                 else { database = Field(backend, "_db"); ExecuteDatabase(database, "PRAGMA query_only=ON"); }
                 blocked = true;
@@ -341,7 +342,7 @@ namespace FTProject.EditorTools
                 var info = PopupInfo();
                 Check(info.savePending && !info.progressSaved && !info.newRecord && info.ratingResult.valid, "Real CompleteVictory -> Win -> popup enters pending state");
                 Check(info.ratingResult.metrics.runId == fixture.runId, "Pending result freezes the original runId");
-                Check(JsonUtility.ToJson(save.Data.Find(1)) == before && JsonUtility.ToJson(save.Snapshot) == checkpoint && backend.LoadSnapshot().valid, "Failed commit publishes neither progress nor checkpoint removal");
+                Check(JsonUtility.ToJson(save.Data.Find(1)) == before, "Failed commit publishes no progress change");
                 Check(JsonUtility.ToJson(backend.LoadLevels()[0]) == before, "Failed backend remains at prior best/count");
                 var view = Popup(); var next = (Button)Field(view, "_nextBtn"); Check(next != null && (!next.gameObject.activeInHierarchy || !next.interactable), "Actual Next button unavailable while pending");
                 int nextEvents = 0; Action<int> observer = ignored => nextEvents++;
@@ -352,7 +353,7 @@ namespace FTProject.EditorTools
                 if (json) Directory.Delete(blockedPath); else ExecuteDatabase(database, "PRAGMA query_only=OFF"); blocked = false;
                 Call(Popup(), "OnClickRetry"); info = PopupInfo();
                 Check(info.progressSaved && !info.savePending && info.newRecord && info.ratingResult.metrics.runId == fixture.runId, "Actual retry button saves same runId and refreshes popup");
-                Check(save.Data.Find(1).clearCount == 3 && save.GetStars(1) == 5 && !save.HasSnapshot && !backend.LoadSnapshot().valid, "Exactly one clear commits with atomic checkpoint invalidation");
+                Check(save.Data.Find(1).clearCount == 3 && save.GetStars(1) == 5, "Exactly one clear commits");
                 Check(((Button)Field(Popup(), "_nextBtn")).interactable, "Next becomes available after durable success");
                 Check(save.RecordClear(1, LevelRatingEvaluator.Evaluate(profile, fixture)), "Duplicate same-run result is accepted idempotently");
                 Call(flow, "CompleteVictory"); PlayerDataManager.Instance.Win();
@@ -360,12 +361,12 @@ namespace FTProject.EditorTools
                 if (json)
                 {
                     backend.Dispose(); backend.Initialize();
-                    Check(backend.LoadLevels()[0].clearCount == 3 && !backend.LoadSnapshot().valid, "JSON reopen observes exactly one saved result");
+                    Check(backend.LoadLevels()[0].clearCount == 3, "JSON reopen observes exactly one saved result");
                 }
                 else
                 {
                     using (save.SetTestStorageContext(GetTestContext()))
-                        Check(save.Data.Find(1).clearCount == 3 && !save.HasSnapshot && save.IsRunCommitted(1, fixture.runId), "SQLite close/reopen observes durable one-run result");
+                        Check(save.Data.Find(1).clearCount == 3 && save.IsRunCommitted(1, fixture.runId), "SQLite close/reopen observes durable one-run result");
                     backend = Storage; database = null;
                 }
             }

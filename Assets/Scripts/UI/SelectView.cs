@@ -311,9 +311,9 @@ namespace FTProject
             }
             if (_selectedLevelId <= 0 || !_levels.Exists(x => x.Id == _selectedLevelId))
             {
-                int resume, wave;
-                _selectedLevelId = GameFlowManager.TryGetResumableCheckpoint(out resume, out wave)
-                    ? resume : _levels[Mathf.Max(0, FirstUnclearedIndex())].Id;
+                // 【2026-10-30】不再优先选中"可续玩的关"（局内不落盘，没有续局），
+                // 默认落在第一关未通关的关卡上。
+                _selectedLevelId = _levels[Mathf.Max(0, FirstUnclearedIndex())].Id;
             }
             RefreshHeader(count);
             SelectGridLevel(_selectedLevelId);
@@ -323,8 +323,6 @@ namespace FTProject
         {
             _selectedLevelId = id;
             SaveManager save = SaveManager.Instance;
-            int resume, wave;
-            bool hasResume = GameFlowManager.TryGetResumableCheckpoint(out resume, out wave);
             for (int i = 0; i < _levels.Count; i++)
             {
                 int levelId = _levels[i].Id;
@@ -334,8 +332,8 @@ namespace FTProject
                 body.GetComponent<Image>().color = levelId == id ? new Color(.10f,.27f,.34f) : new Color(.118f,.161f,.224f);
                 body.GetComponent<Outline>().effectColor = levelId == id ? new Color(.208f,.878f,1f) : new Color(.325f,.404f,.498f);
                 TMP_Text label = body.Find("Label").GetComponent<TMP_Text>();
+                // 【2026-10-30】去掉了"Continue"这一档：局内不落盘，没有可续玩的局。
                 string status = !unlocked ? Localization.Get("Locked") ?? "Locked"
-                    : hasResume && resume == levelId ? Localization.Get("Continue") ?? "Continue"
                     : stars > 0 ? new string('★', stars) + new string('☆', LevelRatingEvaluator.MaxStars - stars)
                     : save != null && save.GetLegacyStars(levelId) > 0
                         ? Localization.Get("Legacy clear; current version unrated") ?? "Legacy clear; current version unrated"

@@ -147,21 +147,17 @@ namespace FTProject
 
         private void RefreshContinueState()
         {
-            int levelId;
-            int nextWave;
-            bool canContinue = GameFlowManager.TryGetResumableCheckpoint(out levelId, out nextWave);
+            // 【2026-10-30】局内不再落盘，"继续游戏"没有可续的东西了：
+            //   主菜单只剩一条"开始"路径（进选关）。ContinueBtn 仍可能在已生成的
+            //   MainMenu.prefab 里，这里恒隐藏，不依赖重跑 UI 生成器。
+            if (_continueBtn != null && _continueBtn.gameObject.activeSelf)
+            {
+                _continueBtn.gameObject.SetActive(false);
+            }
             if (_startBtn != null)
             {
-                _startBtn.GetComponent<Image>().color = canContinue ? new Color(.118f,.161f,.224f) : new Color(.208f,.878f,1f);
-                _startBtn.GetComponentInChildren<TMP_Text>(true).color = canContinue ? new Color(.91f,.941f,.98f) : new Color(.031f,.043f,.071f);
-            }
-            if (_continueBtn == null) return;
-            _continueBtn.gameObject.SetActive(canContinue);
-            TMP_Text label = FindText("Panel/ContinueBtn/Label");
-            if (label != null && canContinue)
-            {
-                label.text = Localization.Get("Continue") ?? "继续游戏";
-                LanguageManager.ApplyFont(label);
+                _startBtn.GetComponent<Image>().color = new Color(.208f,.878f,1f);
+                _startBtn.GetComponentInChildren<TMP_Text>(true).color = new Color(.031f,.043f,.071f);
             }
         }
 
@@ -176,7 +172,8 @@ namespace FTProject
 
         private void OnClickContinue()
         {
-            // 有存档也先进入选关，由玩家决定续玩该关还是选择其他关卡。
+            // 【2026-10-30】"继续游戏"入口已下线（局内不再落盘），按钮恒隐藏；
+            // 这里保留回调只为兼容旧 prefab 的连线，点了等同于"开始"进选关。
             OnClickStart();
         }
 

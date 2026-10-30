@@ -3,7 +3,7 @@ import argparse, pathlib
 import balance_pipeline as core
 
 def main():
-    ap=argparse.ArgumentParser();ap.add_argument('--out',required=True);ap.add_argument('--kind',choices=['reference','checkpoints','performance'],default='reference');a=ap.parse_args()
+    ap=argparse.ArgumentParser();ap.add_argument('--out',required=True);ap.add_argument('--kind',choices=['reference','controls','performance'],default='reference');a=ap.parse_args()
     recipe=core.read_json(core.DEFAULT_RECIPE);out=pathlib.Path(a.out).resolve()
     index=core.read_json(core.ROOT/'Luban/BalanceDesign/Evidence30x25/Par/reference-index.json')
     candidates={p['id']:core.write_candidate(core.generate(recipe,p['id']),core.JOBS/('final-maze-'+p['id'])) for p in recipe['profiles']}
@@ -12,9 +12,11 @@ def main():
         p,L=row['profileId'],row['levelId']
         if a.kind!='reference' and (p!='D04' or L!=30):continue
         base={'profileId':p,'levelId':L,'strategy':'maze','speed':1,'candidateDirectory':str(candidates[p]),'operationsPath':row['operationsPath'],'capacity':row['capacity'],'screenshots':a.kind=='reference' and p=='D04' and L in [1,10,20,30]}
-        if a.kind=='checkpoints':
-            for scenario,wave,speed in [('boundary_resume',24,1),('half_wave_rollback',25,1),('terminal_duplicate',25,1),('speed_baseline',25,1),('speed_baseline',25,2),('speed_baseline',25,3)]:
-                runs.append(dict(base,checkpointScenario=scenario,checkpointWave=wave,speed=speed,speedComparisonGroup='L30-final-operations' if scenario=='speed_baseline' else ''))
+        if a.kind=='controls':
+            # 【2026-10-30】原来这里还会发 boundary_resume / half_wave_rollback / terminal_duplicate
+            # 三个"续局"场景；局内改为不落盘后整条续玩链路已删除，只剩倍速一致性基线。
+            for speed in (1,2,3):
+                runs.append(dict(base,speed=speed,speedComparisonGroup='L30-final-operations'))
         else:
             if a.kind=='performance':
                 base.pop('candidateDirectory',None)
@@ -22,7 +24,7 @@ def main():
                 high=dict(base,strategy='high-occupancy-performance',operationsPath=str(core.ROOT/'Luban/BalanceDesign/Evidence30x25/Simulation/high/D04/mixed/L30-mixed/operations.json'),waitForFunds=True)
                 runs.append(high)
             runs.append(base)
-    if a.kind=='checkpoints':
+    if a.kind=='controls':
         plan=core.generate(recipe,'D04')
         for L in [1,10,20,30]:
             path=core.ROOT/'Luban/BalanceDesign/Evidence30x25/Simulation/high/D04/mixed'/f'L{L:02}-mixed/operations.json'

@@ -235,9 +235,8 @@ namespace FTProject
             }
             if (_playLabel != null)
             {
-                int resumeId, nextWave;
-                bool resume = GameFlowManager.TryGetResumableCheckpoint(out resumeId, out nextWave) && resumeId == levelId;
-                _playLabel.text = resume ? (Localization.Get("Continue") ?? "Continue") : stars > 0
+                // 【2026-10-30】不再有"继续"这一档（局内不落盘，进关永远是全新一局）。
+                _playLabel.text = stars > 0
                     ? (Localization.Get("Challenge Again") ?? "再次挑战")
                     : (Localization.Get("Start Challenge") ?? "开始挑战");
             }
@@ -340,17 +339,8 @@ namespace FTProject
 
         private void RestartConfirmed()
         {
-            SaveManager save = SaveManager.Instance;
-            // 选关入口会续玩兼容快照；“从头重打”须先确认清除已落盘，再进入同一入口。
-            if (save != null && !save.TryClearSnapshot())
-            {
-                EventDispatcher.TriggerEvent<string>(EventName.ShowTipEvent,
-                    Localization.Get("Checkpoint could not be cleared; original progress preserved")
-                    ?? "未能清除续玩存档，原进度已保留");
-                return;
-            }
-            // 从关卡详情点"重玩"同样意味着放弃失败续局（否则进关会又恢复到失败那一波）。
-            if (save != null) save.ClearFailedRunCheckpoint();
+            // 【2026-10-30】"重玩"不再需要先清续局存档：局内状态根本没落盘，
+            // 进关（SelectLevelRequestEvent）本身就是从第一波、满血、初始金币重开。
             OnClickPlay();
         }
 

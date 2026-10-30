@@ -82,9 +82,16 @@ namespace FTProject
     }
 
     /// <summary>
-    /// 局内快照：支持"退出后继续"。
-    /// 【为什么不存整个棋盘】棋盘完全由 TBLevelMap 决定，存 levelId 就能重建；
-    /// 真正会变、且重建不出来的只有"玩家干了什么"：花了多少钱、掉了多少血、建了哪些塔、打到第几回合。
+    /// 局内快照（**2026-10-30 起不再由游戏写入**）。
+    ///
+    /// 【它现在是什么】只是存档格式里的一个占位结构：
+    ///   旧版本用它做"退出后继续"，会在波次边界/退出/失败把塔阵、金币、生命落盘；
+    ///   那条路径构成"反复重打同一波"的漏洞，已整体下线。
+    ///   现在游戏只在启动时用它清空历史残留（SaveManager.PurgeLegacyRunState），
+    ///   存储层（ISaveStorage.LoadSnapshot/SaveSnapshot）与旧库结构保留兼容。
+    /// 【为什么不直接删掉类型】level_snapshot / snapshot_tower 两张表在老玩家的库里还在，
+    ///   读/写这两张表仍需要这个 DTO；删类型就得连着改表结构迁移，风险大于收益。
+    /// 【为什么不存整个棋盘】棋盘完全由 TBLevelMap 决定，存 levelId 就能重建。
     /// </summary>
     [Serializable]
     public class LevelSnapshot
