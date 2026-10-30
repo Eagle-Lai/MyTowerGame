@@ -349,6 +349,8 @@ namespace FTProject
                     ?? "未能清除续玩存档，原进度已保留");
                 return;
             }
+            // 从关卡详情点"重玩"同样意味着放弃失败续局（否则进关会又恢复到失败那一波）。
+            if (save != null) save.ClearFailedRunCheckpoint();
             OnClickPlay();
         }
 

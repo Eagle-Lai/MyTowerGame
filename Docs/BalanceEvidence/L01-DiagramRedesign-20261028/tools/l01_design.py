@@ -258,9 +258,9 @@ def build_plan_from_disk():
     rounds = {r['id']: r for r in rows(L01 / 'RoundData.xlsx')}
     lists = {r['id']: r for r in rows(L01 / 'EnemyList.xlsx')}
     variants = {r['id']: r for r in rows(L01 / 'EnemyData.xlsx')}
-    towers = rows(DATA / 'TowerInfo.xlsx')
-    globs = rows(DATA / 'Global.xlsx')
-    bullets = rows(DATA / 'BulletData.xlsx')
+    towers = rows(L01 / 'TowerInfo.xlsx')
+    globs = rows(L01 / 'LevelRules.xlsx')
+    bullets = rows(L01 / 'BulletData.xlsx')
     for t in towers:
         t['upgradeTo'] = int(t['upgradeTo']); t['canAttackAir'] = int(t['canAttackAir'] or 0)
     order = [int(x) for x in str(scene['RoundList']).split(',')]

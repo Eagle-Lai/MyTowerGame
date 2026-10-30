@@ -623,6 +623,93 @@ namespace FTProject
         }
 
         // ------------------------------------------------------------------
+        // 失败续局（2026-10-29）
+        //
+        // 【为什么不用 level_snapshot 表】那份存档会被评级版本迁移（EnsureRatingVersion）
+        //   整份清空，而本需求的核心场景恰恰是"改完配置表再接着打"。
+        //   这里落在 kv_store 的明文键里，不参与评级版本校验，改表与重启都不丢。
+        // ------------------------------------------------------------------
+
+        /// <summary>失败续局的存储键（kv_store，明文）</summary>
+        private const string FailedRunKey = "checkpoint/failed-run";
+
+        private FailedRunCheckpoint _failedRun;
+        private bool _failedRunLoaded;
+
+        /// <summary>失败时写入续局点；落盘失败只告警，不影响结算流程。</summary>
+        public void SaveFailedRunCheckpoint(FailedRunCheckpoint checkpoint)
+        {
+            EnsureLoaded();
+            if (checkpoint == null || !checkpoint.IsValid())
+            {
+                return;
+            }
+            checkpoint.savedAtUnix = SaveSchema.Now();
+            _failedRun = checkpoint;
+            _failedRunLoaded = true;
+            if (_storage == null)
+            {
+                return;
+            }
+            try
+            {
+                _storage.SetValue(FailedRunKey, checkpoint.ToJson(), false);
+                _storage.Flush();
+                if (!string.IsNullOrEmpty(_storage.LastError))
+                {
+                    Debug.LogWarning("[Save] 失败续局存档未能落盘：" + _storage.LastError);
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning("[Save] 失败续局存档写入异常：" + ex.Message);
+            }
+        }
+
+        /// <summary>读回失败续局点；没有/损坏/字段不自洽时返回 false。</summary>
+        public bool TryGetFailedRunCheckpoint(out FailedRunCheckpoint checkpoint)
+        {
+            EnsureLoaded();
+            checkpoint = null;
+            if (!_failedRunLoaded)
+            {
+                _failedRunLoaded = true;
+                string json;
+                if (_storage != null && _storage.TryGetValue(FailedRunKey, out json))
+                {
+                    _failedRun = FailedRunCheckpoint.FromJson(json);
+                }
+            }
+            if (_failedRun == null || !_failedRun.IsValid())
+            {
+                return false;
+            }
+            checkpoint = _failedRun;
+            return true;
+        }
+
+        /// <summary>清掉失败续局点（通关、显式重开、切到别的关时调用）。</summary>
+        public void ClearFailedRunCheckpoint()
+        {
+            EnsureLoaded();
+            _failedRun = null;
+            _failedRunLoaded = true;
+            if (_storage == null)
+            {
+                return;
+            }
+            try
+            {
+                _storage.DeleteValue(FailedRunKey);
+                _storage.Flush();
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning("[Save] 失败续局存档清除异常：" + ex.Message);
+            }
+        }
+
+        // ------------------------------------------------------------------
         // 通用键值（给其它模块存取零散本地数据用）
         // ------------------------------------------------------------------
 

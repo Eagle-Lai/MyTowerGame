@@ -78,7 +78,7 @@ namespace FTProject
             }
             UnityEngine.SceneManagement.SceneManager.sceneLoaded += OnSceneLoaded;
             AudioSettings.OnAudioConfigurationChanged += OnAudioConfigurationChanged;
-            EventDispatcher.AddEventListener<BaseEnemy, int>(EventName.EnemyKilledEvent, OnEnemyKilled);
+            EventDispatcher.AddEventListener<BaseEnemy, float>(EventName.EnemyKilledEvent, OnEnemyKilled);
             EventDispatcher.AddEventListener<BaseEnemy, int>(EventName.EnemyReachedEndEvent, OnLeak);
             EventDispatcher.AddEventListener<BaseEnemy>(EventName.EnemyResetEvent, OnEnemyReset);
             EventDispatcher.AddEventListener<int, int>(EventName.PlayerHpChangeEvent, OnHp);
@@ -405,7 +405,7 @@ namespace FTProject
             SoundCue cue; if (TryEnemyCue(enemy, out cue)) Play(cue, enemy);
         }
 
-        private void OnEnemyKilled(BaseEnemy enemy, int reward)
+        private void OnEnemyKilled(BaseEnemy enemy, float reward)
         {
             if (!_ready || enemy == null) return;
             foreach (var voice in _short) if (voice.enemy == enemy) ResetVoice(voice);
@@ -578,8 +578,10 @@ namespace FTProject
             if (SaveManager.Instance.SaveAudioSettings()) _settingsDirty = false;
             else _saveAt = Time.realtimeSinceStartup + 5;
         }
-        private void OnApplicationPause(bool paused) { _background = paused; if (paused) FlushSettings(); RefreshSuspension(); }
-        private void OnApplicationFocus(bool focused) { _focused = focused; if (!focused) FlushSettings(); RefreshSuspension(); }
+        // 【编辑器后台运行】与 GameFlowManager 同一口径：编辑器窗口失焦不算"进后台"，
+        // 不挂起声音（设置落盘仍由 _saveAt 定时/退出路径兜底）；真机行为保持原样。
+        private void OnApplicationPause(bool paused) { if (Application.isEditor) return; _background = paused; if (paused) FlushSettings(); RefreshSuspension(); }
+        private void OnApplicationFocus(bool focused) { if (Application.isEditor) return; _focused = focused; if (!focused) FlushSettings(); RefreshSuspension(); }
         private void RefreshSuspension()
         {
             if (!_ready) return;
@@ -596,7 +598,7 @@ namespace FTProject
             FlushSettings(); _alive = false; StopAllCoroutines();
             UnityEngine.SceneManagement.SceneManager.sceneLoaded -= OnSceneLoaded;
             AudioSettings.OnAudioConfigurationChanged -= OnAudioConfigurationChanged;
-            EventDispatcher.RemoveEventListener<BaseEnemy, int>(EventName.EnemyKilledEvent, OnEnemyKilled);
+            EventDispatcher.RemoveEventListener<BaseEnemy, float>(EventName.EnemyKilledEvent, OnEnemyKilled);
             EventDispatcher.RemoveEventListener<BaseEnemy, int>(EventName.EnemyReachedEndEvent, OnLeak);
             EventDispatcher.RemoveEventListener<BaseEnemy>(EventName.EnemyResetEvent, OnEnemyReset);
             EventDispatcher.RemoveEventListener<int, int>(EventName.PlayerHpChangeEvent, OnHp);

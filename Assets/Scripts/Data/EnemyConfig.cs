@@ -35,10 +35,12 @@ namespace FTProject
         /// <summary>护甲减伤 0~1（最终伤害 = 伤害 × (1 - Armor)）</summary>
         public float Armor { get { return Mathf.Clamp01(_d.Armor); } }
 
-        /// <summary>击杀奖励金币（未配则取全局默认）</summary>
-        public int Reward
+        /// <summary>击杀奖励金币（小数）。【2026-10-29 flatdrop】改为 float：
+        /// 每个变体给 0.16~1.40 的小数单价，由 PlayerDataManager 累加，满 1 才真正入账；
+        /// 0 表示该变体确实不给金（当前 L01 已无 0 值变体）。不再回退 Global.DefaultReward。</summary>
+        public float Reward
         {
-            get { return _d.Reward > 0 ? _d.Reward : Configs.Global.DefaultReward; }
+            get { return _d.Reward; }
         }
 
         /// <summary>漏怪扣除的玩家生命（未配则取全局默认）</summary>

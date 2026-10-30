@@ -36,6 +36,7 @@ namespace FTProject
             { "tbbulletdata", new ResAddress(ResBundle.Config, "tbbulletdata", "Assets/ConfigJson/tbbulletdata.json") },
             { "tblevelmap",   new ResAddress(ResBundle.Config, "tblevelmap",   "Assets/ConfigJson/tblevelmap.json") },
             { "tbglobal",     new ResAddress(ResBundle.Config, "tbglobal",     "Assets/ConfigJson/tbglobal.json") },
+            { "tblevelrules", new ResAddress(ResBundle.Config, "tblevelrules", "Assets/ConfigJson/tblevelrules.json") },
             { "tblocalization", new ResAddress(ResBundle.Config, "tblocalization", "Assets/ConfigJson/tblocalization.json") },
             { "tblevelrating", new ResAddress(ResBundle.Config, "tblevelrating", "Assets/ConfigJson/tblevelrating.json") },
 

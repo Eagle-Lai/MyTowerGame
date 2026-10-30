@@ -33,10 +33,11 @@ public sealed partial class EnemyData :  Bright.Config.BeanBase
         { if(!_json["isFlying"].IsNumber) { throw new SerializationException(); }  IsFlying = _json["isFlying"]; }
         { if(!_json["animController"].IsString) { throw new SerializationException(); }  AnimController = _json["animController"]; }
         { if(!_json["desc"].IsString) { throw new SerializationException(); }  Desc = _json["desc"]; }
+        { if(!_json["levelId"].IsNumber) { throw new SerializationException(); }  LevelId = _json["levelId"]; }
         PostInit();
     }
 
-    public EnemyData(int id, float speed, float hp, string name, int type, int interval, string resName, float armor, int reward, int damageToPlayer, float scale, float bodyRadius, int isFlying, string animController, string desc ) 
+    public EnemyData(int id, float speed, float hp, string name, int type, int interval, string resName, float armor, float reward, int damageToPlayer, float scale, float bodyRadius, int isFlying, string animController, string desc, int levelId ) 
     {
         this.Id = id;
         this.Speed = speed;
@@ -53,6 +54,7 @@ public sealed partial class EnemyData :  Bright.Config.BeanBase
         this.IsFlying = isFlying;
         this.AnimController = animController;
         this.Desc = desc;
+        this.LevelId = levelId;
         PostInit();
     }
 
@@ -93,7 +95,7 @@ public sealed partial class EnemyData :  Bright.Config.BeanBase
     /// <summary>
     /// 击杀奖励金币
     /// </summary>
-    public int Reward { get; private set; }
+    public float Reward { get; private set; }
     /// <summary>
     /// 漏怪扣除玩家生命
     /// </summary>
@@ -118,6 +120,10 @@ public sealed partial class EnemyData :  Bright.Config.BeanBase
     /// 备注
     /// </summary>
     public string Desc { get; private set; }
+    /// <summary>
+    /// 所属关卡 id（本表每关独立一份，2026-10-30 拆分）
+    /// </summary>
+    public int LevelId { get; private set; }
 
     public const int __ID__ = 953306930;
     public override int GetTypeId() => __ID__;
@@ -149,6 +155,7 @@ public sealed partial class EnemyData :  Bright.Config.BeanBase
         + "IsFlying:" + IsFlying + ","
         + "AnimController:" + AnimController + ","
         + "Desc:" + Desc + ","
+        + "LevelId:" + LevelId + ","
         + "}";
     }
     

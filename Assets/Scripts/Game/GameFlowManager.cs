@@ -40,19 +40,42 @@ namespace FTProject
             levelId = 0;
             nextWave = 0;
             SaveManager save = SaveManager.Instance;
-            if (save == null || !save.HasSnapshot || !Configs.IsLoaded) return false;
-            LevelSnapshot snapshot = save.Snapshot;
-            if (snapshot == null || !save.IsUnlocked(snapshot.levelId)) return false;
-            LevelConfig level = Configs.GetLevel(snapshot.levelId);
-            if (level == null) return false;
-            LevelRatingProfile profile = Configs.GetLevelRating(level.Id);
-            string reason;
-            int waves = level.RoundIds != null ? level.RoundIds.Count : 0;
-            if (!LevelCheckpointValidator.IsCompatible(snapshot, profile, waves, out reason) ||
-                save.IsRunCommitted(level.Id, snapshot.metrics != null ? snapshot.metrics.runId : null)) return false;
-            levelId = level.Id;
-            nextWave = Mathf.Min(snapshot.roundCursor + 1, waves);
-            return true;
+            if (save == null || !Configs.IsLoaded) return false;
+            if (save.HasSnapshot)
+            {
+                LevelSnapshot snapshot = save.Snapshot;
+                if (snapshot != null && save.IsUnlocked(snapshot.levelId))
+                {
+                    LevelConfig level = Configs.GetLevel(snapshot.levelId);
+                    if (level != null)
+                    {
+                        LevelRatingProfile profile = Configs.GetLevelRating(level.Id);
+                        string reason;
+                        int waves = level.RoundIds != null ? level.RoundIds.Count : 0;
+                        if (LevelCheckpointValidator.IsCompatible(snapshot, profile, waves, out reason) &&
+                            !save.IsRunCommitted(level.Id, snapshot.metrics != null ? snapshot.metrics.runId : null))
+                        {
+                            levelId = level.Id;
+                            nextWave = Mathf.Min(snapshot.roundCursor + 1, waves);
+                            return true;
+                        }
+                    }
+                }
+            }
+            // 【2026-10-29】失败续局兜底：改过配置表后上面那份快照会被评级版本迁移清空，
+            // 但玩家"改完数值接着打失败的那一波"正是要的场景，所以这里还认一份不带版本校验的续局点。
+            FailedRunCheckpoint failedRun;
+            if (save.TryGetFailedRunCheckpoint(out failedRun) && save.IsUnlocked(failedRun.levelId))
+            {
+                LevelConfig failedLevel = Configs.GetLevel(failedRun.levelId);
+                if (failedLevel != null && failedLevel.RoundIds != null && failedLevel.RoundIds.Count > 0)
+                {
+                    levelId = failedRun.levelId;
+                    nextWave = Mathf.Clamp(failedRun.failedWave, 1, failedLevel.RoundIds.Count);
+                    return true;
+                }
+            }
+            return false;
         }
 
         [Header("场景引用（由 SceneMainBuilder 自动填充）")]
@@ -116,7 +139,7 @@ namespace FTProject
         private void OnEnable()
         {
             EventDispatcher.AddEventListener<bool>(EventName.ConfigLoadedEvent, OnConfigLoaded);
-            EventDispatcher.AddEventListener<BaseEnemy, int>(EventName.EnemyKilledEvent, OnRatedEnemyKilled);
+            EventDispatcher.AddEventListener<BaseEnemy, float>(EventName.EnemyKilledEvent, OnRatedEnemyKilled);
             EventDispatcher.AddEventListener<BaseEnemy, int>(EventName.EnemyReachedEndEvent, OnRatedEnemyLeaked);
             EventDispatcher.AddEventListener(EventName.StartRoundRequestEvent, OnStartRequest);
             EventDispatcher.AddEventListener<bool>(EventName.GameOverEvent, OnGameOver);
@@ -147,7 +170,7 @@ namespace FTProject
         private void OnDisable()
         {
             EventDispatcher.RemoveEventListener<bool>(EventName.ConfigLoadedEvent, OnConfigLoaded);
-            EventDispatcher.RemoveEventListener<BaseEnemy, int>(EventName.EnemyKilledEvent, OnRatedEnemyKilled);
+            EventDispatcher.RemoveEventListener<BaseEnemy, float>(EventName.EnemyKilledEvent, OnRatedEnemyKilled);
             EventDispatcher.RemoveEventListener<BaseEnemy, int>(EventName.EnemyReachedEndEvent, OnRatedEnemyLeaked);
             EventDispatcher.RemoveEventListener(EventName.StartRoundRequestEvent, OnStartRequest);
             EventDispatcher.RemoveEventListener<bool>(EventName.GameOverEvent, OnGameOver);
@@ -262,6 +285,10 @@ namespace FTProject
             // 进 Loading 就把倍速复位 ×1（P2b 硬性约束③）：新一局应当从最慢档开始
             ResetGameSpeed();
 
+            // 塔表/子弹表已按关拆分：先切作用域，后面所有 GetTower*/GetBullet 才是本关的数据。
+            // 必须放在取 Level/Map 之后、建棋盘与 HUD 之前（HUD 建塔按钮会立刻查塔配置）。
+            Configs.SetActiveLevel(levelId);
+
             Level = Configs.GetLevel(levelId);
             Map = Configs.GetLevelMapOfLevel(levelId);
             if (Level == null || Map == null)
@@ -362,7 +389,12 @@ namespace FTProject
 
             // ⑩ M3-5：若本关存在局内快照，恢复到"上次退出的那一刻"。
             //    放在最后：棋盘/管理器/HUD 都已就绪，恢复出来的塔才有地方落。
-            TryRestoreSnapshot(Level.Id);
+            //    【2026-10-29】普通快照不兼容（例如刚改过配置表）时，退回"失败续局"：
+            //    只认波次/塔阵/金币/生命，不带版本校验，本局不计星。
+            if (!TryRestoreSnapshot(Level.Id))
+            {
+                TryRestoreFailedRun(Level.Id);
+            }
 
             State = GameFlowState.Preparing;
             // The restored cursor must be published together with the restored economy and statistics.
@@ -729,17 +761,25 @@ namespace FTProject
             ResetGameSpeed();
             Debug.Log(string.Format("[Flow] 本局结束：{0}\n{1}",
                 victory ? "胜利" : "失败", PlayerDataManager.Instance.DumpDebugInfo()));
+
+            // 【2026-10-29】失败时留一份"本波开头"的续局点：改完配置表后可以从这一波重来
+            // （不校验配置版本，代价是本局不计星）。胜利则清掉，避免下次误弹出续局。
+            if (victory)
+            {
+                SaveManager.Instance.ClearFailedRunCheckpoint();
+            }
+            else
+            {
+                CaptureFailedRunCheckpoint();
+            }
+
             Tips(victory
                 ? (Localization.Get("Congratulations!") ?? "恭喜通关！")
                 : (Localization.Get("Defense failed...") ?? "防御失败……"));
 
-            // 屏幕震动（UI 补全 C3）：只有"失败"才震，且给最大的系数 1.5 ——
-            // 生命归零是本局最重的一次负面事件；胜利时抖一下反而像出错。
-            if (!victory && CameraController.Instance != null && Configs.Global != null)
-            {
-                CameraController.Instance.Shake(
-                    Configs.Global.ShakeAmplitude * 1.5f, Configs.Global.ShakeDurationSec);
-            }
+            // 【2026-10-30 用户定规】关卡内只允许"怪到达终点"震屏：
+            // 失败结算原来的 1.5 倍震动已移除（生命归零本身就来自漏怪，那一次震动已经发生过，
+            // 再叠一次最大幅度只会让结算界面在抖）。
 
             ShowClearPopup(victory);
         }
@@ -809,9 +849,9 @@ namespace FTProject
                 wave.peakAlive = Mathf.Max(wave.peakAlive, _unresolvedEnemies.Count);
             }
         }
-        private void OnRatedEnemyKilled(BaseEnemy enemy, int reward) { RecordEnemyOutcome(enemy, false, reward); }
+        private void OnRatedEnemyKilled(BaseEnemy enemy, float reward) { RecordEnemyOutcome(enemy, false, reward); }
         private void OnRatedEnemyLeaked(BaseEnemy enemy, int damage) { RecordEnemyOutcome(enemy, true, 0); }
-        private void RecordEnemyOutcome(BaseEnemy enemy, bool leaked, int reward)
+        private void RecordEnemyOutcome(BaseEnemy enemy, bool leaked, float reward)
         {
             if (_run == null || enemy == null || !_unresolvedEnemies.Remove(enemy)) return;
             // Read identity before ReachedEnd recycles the object; HP is read only at final settlement.
@@ -829,8 +869,12 @@ namespace FTProject
                 if (wave.successfulSpawned == wave.expected && wave.killed + wave.leaked == wave.expected) GameClock.SetCombatRunning(false);
             }
         }
-        private void OnApplicationPause(bool paused) { GameClock.SetBackground(paused); }
-        private void OnApplicationFocus(bool focused) { GameClock.SetBackground(!focused); }
+        // 【编辑器后台运行】Player Settings 已开 Run In Background（玩家循环不会停），
+        // 但编辑器窗口一失焦就会回调 OnApplicationFocus(false)，把 GameClock 切到后台，
+        // DeltaTime 归零、整个模拟冻结——表现为"切走窗口游戏就停"。
+        // 编辑器里"窗口失焦"≠"应用进后台"，这里对编辑器直接忽略；真机（Android）行为不变。
+        private void OnApplicationPause(bool paused) { if (!Application.isEditor) GameClock.SetBackground(paused); }
+        private void OnApplicationFocus(bool focused) { if (!Application.isEditor) GameClock.SetBackground(!focused); }
 
         // ------------------------------------------------------------------
         // 关卡结算弹窗
@@ -934,6 +978,14 @@ namespace FTProject
             {
                 return;
             }
+            // 【2026-10-29】从"失败续局"进来的局 statisticsValid=false，这份统计过不了
+            // LevelCheckpointValidator（评级口径本来就不认跨配置/跨尝试的成绩）。写进去只会在
+            // 下次进关时弹一条"快照不兼容"的误导提示，所以这类局干脆不落普通快照 ——
+            // 失败续局点本身还在，退出后仍能从失败那一波重来。
+            if (!_run.statisticsValid)
+            {
+                return;
+            }
             LevelSnapshot snap = new LevelSnapshot();
             snap.valid = true;
             snap.levelId = Level.Id;
@@ -976,16 +1028,16 @@ namespace FTProject
         /// Restore the complete checkpoint, including statistics and fractional clocks.
         /// Any incompatible content or missing tower invalidates the entire checkpoint.
         /// </summary>
-        private void TryRestoreSnapshot(int levelId)
+        private bool TryRestoreSnapshot(int levelId)
         {
             if (!SaveManager.Instance.HasSnapshot)
             {
-                return;
+                return false;
             }
             LevelSnapshot snap = SaveManager.Instance.Snapshot;
             if (snap == null || snap.levelId != levelId)
             {
-                return;
+                return false;
             }
             string invalidReason;
             if (!LevelCheckpointValidator.IsCompatible(snap, _ratingProfile, _roundIds.Count, out invalidReason) || SaveManager.Instance.IsRunCommitted(levelId, snap.metrics != null ? snap.metrics.runId : null))
@@ -993,7 +1045,7 @@ namespace FTProject
                 Debug.LogWarning("[Rating] Checkpoint discarded; restart current level: " + invalidReason);
                 Tips(Localization.Get("Checkpoint incompatible: restart level") ?? "Checkpoint incompatible: restart level");
                 SaveManager.Instance.ClearSnapshot(true);
-                return;
+                return false;
             }
 
             PlayerDataManager.Instance.RestoreState(levelId, snap.gold, snap.hp, snap.maxHp, snap.metrics.killed, snap.metrics.leaked);
@@ -1015,7 +1067,7 @@ namespace FTProject
                     SaveManager.Instance.ClearSnapshot(true);
                     AStarManager.Instance.RequestRefresh();
                     Debug.LogWarning("[Rating] Tower restoration failed: checkpoint discarded, level restarted");
-                    return;
+                    return false;
                 }
             }
 
@@ -1039,6 +1091,156 @@ namespace FTProject
                 levelId, _roundCursor, _roundIds.Count, built));
             Tips(Localization.Get("Resumed from checkpoint (next wave: {0})", _roundCursor + 1)
                 ?? string.Format("已从完整检查点继续（下一波：第 {0} 波）", _roundCursor + 1));
+            return true;
+        }
+
+        /// <summary>
+        /// 从「失败续局」恢复（2026-10-29）：塔阵 / 金币 / 生命 / 波次游标。
+        ///
+        /// 【与 TryRestoreSnapshot 的区别】这里**不校验配置版本** —— 玩家改完数值表
+        /// 再打失败的那一波，正是这条路径存在的意义（做法见 FailedRunCheckpoint 注释）。
+        /// 【代价】本局不计星：statisticsValid=timingValid=false、debugOverride=true，
+        /// 评级会以 "Debug result / Invalid rating evidence" 拒绝入档，不改写通关记录。
+        /// </summary>
+        private bool TryRestoreFailedRun(int levelId)
+        {
+            FailedRunCheckpoint cp;
+            if (!SaveManager.Instance.TryGetFailedRunCheckpoint(out cp) || cp.levelId != levelId || cp.towers == null)
+            {
+                return false;
+            }
+            if (_roundIds.Count == 0)
+            {
+                return false;
+            }
+
+            PlayerDataManager.Instance.RestoreState(levelId, Mathf.Max(0, cp.gold), Mathf.Max(1, cp.hp), Mathf.Max(1, cp.maxHp), 0, 0);
+
+            int built = 0;
+            for (int i = 0; i < cp.towers.Count; i++)
+            {
+                FailedRunTower t = cp.towers[i];
+                BaseTower restored = t != null ? TowerManager.Instance.RestoreTower(t.type, t.level, t.row, t.col) : null;
+                if (restored == null)
+                {
+                    // 一颗塔建不起来就整份作废：半套塔阵继续打只会得到假的难度结论。
+                    TowerManager.Instance.ClearAll();
+                    PlayerDataManager.Instance.InitFromLevel(Level);
+                    SaveManager.Instance.ClearFailedRunCheckpoint();
+                    AStarManager.Instance.RequestRefresh();
+                    Debug.LogWarning(string.Format("[Flow] 失败续局的塔阵无法重建（第 {0} 座），已放弃续局", i + 1));
+                    Tips(Localization.Get("Failed-run checkpoint discarded") ?? "失败续局的塔阵已失效，改为从头开始");
+                    return false;
+                }
+                built++;
+            }
+
+            _roundCursor = Mathf.Clamp(cp.completedWaves, 0, _roundIds.Count - 1);
+            _run = BuildResumedRunMetrics(cp);
+            GameClock.RestoreTimers(cp.combatElapsedSeconds, cp.levelElapsedSeconds, false);
+            _autoNextTimer = 0f; _autoNextTipAcc = 0f;
+
+            // 恢复出来的塔会重设 A* 墙标记，不重算路径怪物会穿塔而过（同 TryRestoreSnapshot）。
+            if (AStarManager.Instance != null)
+            {
+                AStarManager.Instance.RequestRefresh();
+            }
+            if (pathArrowView != null && AStarManager.Instance != null)
+            {
+                pathArrowView.Render(AStarManager.Instance.CurrentPathWorld);
+            }
+
+            Debug.Log(string.Format("[Flow] 已从失败续局继续：{0}，重建塔 {1} 座，下一波 {2}/{3}（本局不计星）",
+                cp.Describe(), built, _roundCursor + 1, _roundIds.Count));
+            Tips(string.Format(Localization.Get("Resumed failed run (wave {0}); stars disabled") ?? "已从失败的一局继续（第 {0} 波），本局不计星", _roundCursor + 1));
+            return true;
+        }
+
+        /// <summary>续局用的运行统计：只填展示与流程需要的字段，评级相关全部标记为不可用。</summary>
+        private LevelRunMetrics BuildResumedRunMetrics(FailedRunCheckpoint cp)
+        {
+            LevelRunMetrics m = new LevelRunMetrics();
+            m.runId = System.Guid.NewGuid().ToString("N");
+            if (_ratingProfile != null)
+            {
+                m.profileId = _ratingProfile.profileId;
+                m.profileRevision = _ratingProfile.profileRevision;
+                m.balanceRevision = _ratingProfile.balanceRevision;
+                m.ratingRevision = _ratingProfile.ratingRevision;
+                m.planHash = _ratingProfile.planHash;
+                m.expectedEnemyCount = _ratingProfile.expectedEnemyCount;
+            }
+            m.expectedWaveCount = _roundIds.Count;
+            m.completedWaveCount = _roundCursor;
+            m.hp = PlayerDataManager.Instance.Hp;
+            m.maxHp = PlayerDataManager.Instance.MaxHp;
+            m.combatElapsedSeconds = cp.combatElapsedSeconds;
+            m.levelElapsedSeconds = cp.levelElapsedSeconds;
+            m.victory = false;
+            m.statisticsValid = false;
+            m.timingValid = false;
+            m.debugOverride = true;
+            return m;
+        }
+
+        /// <summary>
+        /// 失败时把"本波开始那一刻"存成续局点。
+        ///
+        /// 【数据来源】OnStartRequest 在本波开始前刚调过 SaveSnapshotNow()，
+        /// 所以 SaveManager.Snapshot 恰好就是「失败这一波的开头」：金币/生命/塔阵都在开波前。
+        /// 快照缺失（例如上一次是续局进来且没再存过）时退化为"当前塔阵 + 满血重打本波"。
+        /// </summary>
+        private void CaptureFailedRunCheckpoint()
+        {
+            if (Level == null || _roundIds.Count == 0)
+            {
+                return;
+            }
+
+            FailedRunCheckpoint cp = new FailedRunCheckpoint();
+            cp.levelId = Level.Id;
+            cp.completedWaves = Mathf.Clamp(_roundCursor, 0, _roundIds.Count);
+            cp.failedWave = Mathf.Clamp(_roundCursor + 1, 1, _roundIds.Count);
+            cp.configVersionKey = _ratingProfile != null ? _ratingProfile.versionKey : string.Empty;
+
+            LevelSnapshot snap = SaveManager.Instance.Snapshot;
+            if (snap != null && snap.valid && snap.levelId == Level.Id && snap.towers != null)
+            {
+                cp.gold = snap.gold;
+                cp.hp = Mathf.Max(1, snap.hp);
+                cp.maxHp = Mathf.Max(1, snap.maxHp);
+                cp.combatElapsedSeconds = snap.metrics != null ? snap.metrics.combatElapsedSeconds : 0d;
+                cp.levelElapsedSeconds = snap.metrics != null ? snap.metrics.levelElapsedSeconds : 0d;
+                for (int i = 0; i < snap.towers.Count; i++)
+                {
+                    TowerSnapshot t = snap.towers[i];
+                    if (t == null) continue;
+                    cp.towers.Add(new FailedRunTower { row = t.row, col = t.col, type = t.type, level = t.level });
+                }
+            }
+            else
+            {
+                cp.gold = PlayerDataManager.Instance.Gold;
+                cp.maxHp = Mathf.Max(1, PlayerDataManager.Instance.MaxHp);
+                cp.hp = cp.maxHp;
+                cp.combatElapsedSeconds = GameClock.CombatElapsedSeconds;
+                cp.levelElapsedSeconds = GameClock.LevelElapsedSeconds;
+                System.Collections.Generic.IList<BaseTower> towers = TowerManager.Instance.Towers;
+                for (int i = 0; i < towers.Count; i++)
+                {
+                    BaseTower t = towers[i];
+                    if (t == null || t.Cell == null || t.Config == null) continue;
+                    cp.towers.Add(new FailedRunTower { row = t.Cell.Row, col = t.Cell.Col, type = t.Config.Type, level = t.Config.Level });
+                }
+            }
+
+            if (!cp.IsValid())
+            {
+                Debug.LogWarning("[Flow] 失败续局点字段不自洽，已跳过：" + cp.Describe());
+                return;
+            }
+            SaveManager.Instance.SaveFailedRunCheckpoint(cp);
+            Debug.Log("[Flow] 已记录失败续局点：" + cp.Describe());
         }
 
         // ------------------------------------------------------------------
@@ -1125,6 +1327,12 @@ namespace FTProject
             {
                 return;
             }
+            // 换关时丢弃别的关的失败续局点，避免下次进关被"上一关的残局"劫持。
+            FailedRunCheckpoint failedRun;
+            if (SaveManager.Instance.TryGetFailedRunCheckpoint(out failedRun) && failedRun.levelId != levelId)
+            {
+                SaveManager.Instance.ClearFailedRunCheckpoint();
+            }
             if (SaveManager.Instance.HasSnapshot && SaveManager.Instance.Snapshot.levelId != levelId && !SaveManager.Instance.TryClearSnapshot())
             {
                 Tips(Localization.Get("Checkpoint could not be cleared; original progress preserved") ?? "无法清除续玩记录，已保留原进度");
@@ -1169,6 +1377,8 @@ namespace FTProject
                 Tips(Localization.Get("Checkpoint could not be cleared; original progress preserved") ?? "无法清除续玩记录，已保留原进度");
                 return;
             }
+            // 显式"重玩"= 放弃失败续局，否则 StartLevel 会立刻把残局恢复回来。
+            SaveManager.Instance.ClearFailedRunCheckpoint();
             StartLevel(Level.Id);
         }
 

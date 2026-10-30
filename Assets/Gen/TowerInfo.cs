@@ -37,10 +37,12 @@ public sealed partial class TowerInfo :  Bright.Config.BeanBase
         { if(!_json["effectValue"].IsNumber) { throw new SerializationException(); }  EffectValue = _json["effectValue"]; }
         { if(!_json["desc"].IsString) { throw new SerializationException(); }  Desc = _json["desc"]; }
         { if(!_json["canAttackAir"].IsNumber) { throw new SerializationException(); }  CanAttackAir = _json["canAttackAir"]; }
+        { if(!_json["airDamageScale"].IsNumber) { throw new SerializationException(); }  AirDamageScale = _json["airDamageScale"]; }
+        { if(!_json["levelId"].IsNumber) { throw new SerializationException(); }  LevelId = _json["levelId"]; }
         PostInit();
     }
 
-    public TowerInfo(int id, int type, string name, string resName, int level, float radius, int power, float CD, int prices, int bulletId, int targetMode, int searchIntervalMs, float rotateSpeed, int upgradeTo, int sellPrice, int effectType, float effectValue, string desc, int canAttackAir ) 
+    public TowerInfo(int id, int type, string name, string resName, int level, float radius, int power, float CD, int prices, int bulletId, int targetMode, int searchIntervalMs, float rotateSpeed, int upgradeTo, int sellPrice, int effectType, float effectValue, string desc, int canAttackAir, float airDamageScale, int levelId ) 
     {
         this.Id = id;
         this.Type = type;
@@ -61,6 +63,8 @@ public sealed partial class TowerInfo :  Bright.Config.BeanBase
         this.EffectValue = effectValue;
         this.Desc = desc;
         this.CanAttackAir = canAttackAir;
+        this.AirDamageScale = airDamageScale;
+        this.LevelId = levelId;
         PostInit();
     }
 
@@ -142,6 +146,14 @@ public sealed partial class TowerInfo :  Bright.Config.BeanBase
     /// 是否可攻击飞行单位 0否/1是（留空视为 0。三塔型定案：普通1/火力0/减速1）
     /// </summary>
     public int CanAttackAir { get; private set; }
+    /// <summary>
+    /// 对空伤害倍率 1=不变（只对飞行单位生效，地面伤害仍走 power）
+    /// </summary>
+    public float AirDamageScale { get; private set; }
+    /// <summary>
+    /// 所属关卡 id（本表每关独立一份，2026-10-30 拆分）
+    /// </summary>
+    public int LevelId { get; private set; }
 
     public const int __ID__ = -86035657;
     public override int GetTypeId() => __ID__;
@@ -177,6 +189,8 @@ public sealed partial class TowerInfo :  Bright.Config.BeanBase
         + "EffectValue:" + EffectValue + ","
         + "Desc:" + Desc + ","
         + "CanAttackAir:" + CanAttackAir + ","
+        + "AirDamageScale:" + AirDamageScale + ","
+        + "LevelId:" + LevelId + ","
         + "}";
     }
     

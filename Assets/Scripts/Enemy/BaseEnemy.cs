@@ -786,13 +786,15 @@ namespace FTProject
             IsAlive = false;
 
             // ★ 击杀奖励（v1.0 遗漏：原实现死亡时不发奖励）
-            int reward = Config.Reward;
+            // 【2026-10-29】reward 改为小数：每只 0.16~1.40，由 AddGold 累加满 1 才入账，
+            // 因此单只击杀的金币变化不一定是 +1，这是预期行为。
+            float reward = Config.Reward;
             PlayerDataManager.Instance.AddGold(reward);
             // 统计口径：结算界面的「击杀 N」读的就是这个计数器。
             // 【为什么必须在这里调】OnEnemyKilled 存在但**全工程没有任何调用点**，
             // 于是 TotalKilled 恒为 0 —— 结算弹窗永远显示"击杀 0"。
             PlayerDataManager.Instance.OnEnemyKilled();
-            EventDispatcher.TriggerEvent<BaseEnemy, int>(EventName.EnemyKilledEvent, this, reward);
+            EventDispatcher.TriggerEvent<BaseEnemy, float>(EventName.EnemyKilledEvent, this, reward);
 
             SetAnimState(EnemyAnimState.Death);
 
@@ -818,10 +820,11 @@ namespace FTProject
 
             // 漏怪是玩家最该立刻感知的负面反馈 → 屏幕震动。
             // 幅度按"漏这一只有多疼"分级：Boss 漏掉（dmg=10）比小怪（dmg=1）震得明显得多。
+            // 【2026-10-30 用户定规】这是关卡内唯一允许震动的事件，其它反馈一律不震。
             if (CameraController.Instance != null && Configs.Global != null)
             {
                 float amp = Configs.Global.ShakeAmplitude * (1f + 0.35f * Mathf.Max(0, dmg - 1));
-                CameraController.Instance.Shake(amp, Configs.Global.ShakeDurationSec);
+                CameraController.Instance.ShakeOnEnemyLeak(amp, Configs.Global.ShakeDurationSec);
             }
 
             if (CombatSystem.Instance != null && CombatSystem.Instance.Grid != null)

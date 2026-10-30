@@ -22,6 +22,9 @@ namespace FTProject
         public int CurrentLevelId { get; private set; }
         public bool IsGameOver { get; private set; }
 
+        /// <summary>击杀小数金币的取整余数（0 ≤ x &lt; 1），只在本局有效，见 AddGold(float)</summary>
+        private float _goldCarry;
+
         public override void OnInit()
         {
             base.OnInit();
@@ -29,6 +32,7 @@ namespace FTProject
             Hp = 0;
             MaxHp = 0;
             IsGameOver = false;
+            _goldCarry = 0f;
         }
 
         /// <summary>按关卡配置初始化经济与生命</summary>
@@ -49,6 +53,7 @@ namespace FTProject
             TotalKilled = 0;
             TotalLeaked = 0;
             IsGameOver = false;
+            _goldCarry = 0f;
 
             EventDispatcher.TriggerEvent<int, int>(EventName.GoldChangeEvent, Gold, Gold);
             EventDispatcher.TriggerEvent<int, int>(EventName.PlayerHpChangeEvent, Hp, Hp);
@@ -71,6 +76,7 @@ namespace FTProject
             IsGameOver = false;
             TotalKilled = killed;
             TotalLeaked = leaked;
+            _goldCarry = 0f;
 
             EventDispatcher.TriggerEvent<int, int>(EventName.GoldChangeEvent, Gold, 0);
             EventDispatcher.TriggerEvent<int, int>(EventName.PlayerHpChangeEvent, Hp, 0);
@@ -104,14 +110,30 @@ namespace FTProject
             return true;
         }
 
-        public void AddGold(int amount)
+        /// <summary>
+        /// 金币入账（支持小数）。
+        ///
+        /// 【为什么是 float】2026-10-29 起击杀金按「小数单价」配置（L01 每只 0.16~1.40），
+        /// 掉落的零头先攒在 _goldCarry 里，累计满 1 才真正加到 Gold 并发事件 ——
+        /// 所以玩家看到的是「每只都在掉、满 1 进账」，而不是 90% 的怪一分不给。
+        /// 【为什么零头不落存档】它只是本局内的取整余数（< 1 金），跨局沿用会让
+        /// 同一关的复现收入随上一局残留而漂移；InitFromLevel / RestoreState 一律清零。
+        /// </summary>
+        public void AddGold(float amount)
         {
-            if (amount <= 0)
+            if (amount <= 0f)
             {
                 return;
             }
-            Gold += amount;
-            EventDispatcher.TriggerEvent<int, int>(EventName.GoldChangeEvent, Gold, amount);
+            _goldCarry += amount;
+            int whole = Mathf.FloorToInt(_goldCarry + 1e-4f);
+            if (whole <= 0)
+            {
+                return;
+            }
+            _goldCarry -= whole;
+            Gold += whole;
+            EventDispatcher.TriggerEvent<int, int>(EventName.GoldChangeEvent, Gold, whole);
         }
 
         /// <summary>击杀敌人（由 BaseEnemy.Die 调用，奖励已在外部结算）</summary>

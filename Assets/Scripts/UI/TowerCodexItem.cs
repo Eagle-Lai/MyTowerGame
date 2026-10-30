@@ -149,7 +149,8 @@ namespace FTProject
             var levels = new System.Collections.Generic.List<TowerConfig>();
             if (Configs.TowerTable != null)
                 foreach (var row in Configs.TowerTable.DataList)
-                    if (row.Type == _config.Type) levels.Add(new TowerConfig(row));
+                    // 塔表已按关卡拆分（2026-10-30）：图鉴只列当前关卡的那 9 行
+                    if (row.Type == _config.Type && row.LevelId == Configs.ActiveLevelId) levels.Add(new TowerConfig(row));
             levels.Sort((a, b) => a.Level.CompareTo(b.Level));
             var text = new System.Text.StringBuilder();
             foreach (TowerConfig level in levels)

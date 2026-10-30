@@ -273,13 +273,8 @@ namespace FTProject
         private void Explode(Vector2 center)
         {
             GameAudio.Play(SoundCue.BlastHit);
-            // 屏幕震动（UI 补全 C3）：范围攻击爆炸是最"有分量"的打击反馈。
-            // 系数 0.3 —— 爆炸发生得很频繁，按漏怪的 1.0 会晃到没法玩。
-            if (CameraController.Instance != null && Configs.Global != null)
-            {
-                CameraController.Instance.Shake(
-                    Configs.Global.ShakeAmplitude * 0.3f, Configs.Global.ShakeDurationSec);
-            }
+            // 【2026-10-30 用户定规】关卡内只允许"怪到达终点"震屏，
+            // 爆炸不再触发震动（原先按漏怪的 0.3 倍抖一下）。
 
             CombatSystem cs = CombatSystem.Instance;
             if (cs != null && cs.Grid != null && _aoeRadius > 0f)

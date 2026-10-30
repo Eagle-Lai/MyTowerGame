@@ -101,7 +101,7 @@ namespace FTProject
                 Localization.Get("Configured variants: {0}",variants.Count)??("Configured variants: "+variants.Count),
                 Range(variants,x=>x.Hp,"0.#"),Localization.Get("Speed")??"Speed",Range(variants,x=>x.Speed,"0.##"),
                 Localization.Get("Armor")??"Armor",Range(variants,x=>x.Armor,"P0"),
-                Localization.Get("Gold")??"Gold",Range(variants,x=>x.Reward,"0"),Localization.Get(enemy.Desc)??enemy.Desc);
+                Localization.Get("Gold")??"Gold",Range(variants,x=>x.Reward,"0.##"),Localization.Get(enemy.Desc)??enemy.Desc);
             MonsterCodexPortrait portrait=portraits.Find(x=>x.resource==enemy.ResName);
             _portrait.sprite=portrait!=null?portrait.sprite:null;_portrait.enabled=_portrait.sprite!=null;
             if(!_portrait.enabled)_stats.text+="\n"+(Localization.Get("Unavailable")??"Unavailable");

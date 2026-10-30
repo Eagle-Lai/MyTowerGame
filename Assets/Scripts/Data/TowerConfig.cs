@@ -147,6 +147,19 @@ namespace FTProject
         /// </summary>
         public bool CanAttackAir { get { return _t.CanAttackAir != 0; } }
 
+        /// <summary>
+        /// 对空伤害倍率（1 = 不变）。**只对飞行单位生效**，地面伤害仍然只看 Power。
+        ///
+        /// 【为什么要单独一列】"3 级普通塔对空 +10%" 这种需求如果直接改 power，
+        /// 地面伤害会一起涨 10%，违背"其余数值保持不变"。所以命中结算时按目标是否飞行
+        /// 乘这个倍率（见 BaseTower.HurtEnemy），power 本身仍是唯一的地面伤害权威。
+        /// 【默认 1】表里留空/填 0 都视为 1（倍率 0 没有意义，且空单元格 Luban 给 0）。
+        /// </summary>
+        public float AirDamageScale
+        {
+            get { return _t.AirDamageScale > 0f ? _t.AirDamageScale : 1f; }
+        }
+
         public string Desc { get { return _t.Desc; } }
 
         public override string ToString()

@@ -652,7 +652,8 @@ namespace FTProject
         /// 【2026-10-17 表现改版：移除真实子弹，《坚守阵地》式即时命中】
         ///   开火瞬间直接结算伤害，塔上只重放一段枪口焰序列帧（TowerFireFx）；
         ///   火力塔在落点补播爆炸序列帧。攻击节奏完全不变：
-        ///   冷却间隔（CooldownSec）、索敌/锁定、伤害值（Power）、后坐、震动全部照旧。
+        ///   冷却间隔（CooldownSec）、索敌/锁定、伤害值（Power）、后坐全部照旧
+        ///   （原开火/爆炸的震屏已于 2026-10-30 移除，见下方 Fire 内注释）。
         ///   唯一的判定差异是"伤害不再等弹体飞行"——即时命中本来就是去掉真实子弹后的题中之义。
         ///
         /// 【为什么数值仍从子弹表取】aoeRadius / effectType / effectValue 的权威来源
@@ -663,13 +664,8 @@ namespace FTProject
         {
             _recoilTimer = RecoilDurationSec;   // M4-3：开火即后坐，回位在 TickRecoil 里推进
 
-            // 屏幕震动（UI 补全 C3）：满级塔开火给一点"重火力"的手感。
-            // 系数 0.15 —— 满级塔攻速不低，震感必须轻到"感觉得到但不烦人"。
-            if (Config.Level >= 2 && CameraController.Instance != null && Configs.Global != null)
-            {
-                CameraController.Instance.Shake(
-                    Configs.Global.ShakeAmplitude * 0.15f, Configs.Global.ShakeDurationSec);
-            }
+            // 【2026-10-30 用户定规】关卡内只允许"怪到达终点"震屏：
+            // 满级塔开火的 0.15 倍震动已移除，开火手感只保留炮管后坐与枪口焰。
 
             // 减速光环塔走 TickSlowAura，永远不会到这里（与原 FiresBullet 口径一致的防御分支）
             if (!Config.FiresBullet)
@@ -691,12 +687,7 @@ namespace FTProject
                 // 对落点 aoeRadius（格）内全部存活敌人造成同等伤害 + 命中效果。
                 Vector2 center = target.Position;
                 DetonateAt(center, bulletCfg.AoeRadius, Config.Power, bulletCfg);
-                // 爆炸的分量感：与原 BaseBullet.Explode 同系数 0.3（爆炸很频繁，晃多了没法玩）
-                if (CameraController.Instance != null && Configs.Global != null)
-                {
-                    CameraController.Instance.Shake(
-                        Configs.Global.ShakeAmplitude * 0.3f, Configs.Global.ShakeDurationSec);
-                }
+                // 【2026-10-30 用户定规】火力塔落点爆炸不再震动（原按漏怪 0.3 倍抖一下）。
                 TowerFireFx.PlayBlastAt(center);
             }
             else
@@ -722,6 +713,13 @@ namespace FTProject
             if (e == null || !e.IsAlive)
             {
                 return;
+            }
+            // 【2026-10-29】对空伤害倍率：只对飞行单位生效（表 TowerInfo.airDamageScale）。
+            // 放在这里而不是调用点，是为了让单体命中与 AOE 落点共用同一条口径 ——
+            // 将来火力塔若开放对空，不用再补一次。地面伤害不受影响。
+            if (e.Config != null && e.Config.IsFlying)
+            {
+                damage *= Config.AirDamageScale;
             }
 #if UNITY_EDITOR
             float effective = damage * (1f - e.Config.Armor);

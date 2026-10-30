@@ -30,7 +30,7 @@ namespace FTProject
         public float maxZoomOutFactor = 2f;
 
         /// <summary>
-        /// 全局唯一实例（供战斗侧触发震动）。
+        /// 全局唯一实例（供战斗侧触发"漏怪"震动）。
         /// 【为什么允许为 null 调用】场景没相机时不应该让"漏怪扣血"这种核心逻辑崩掉，
         /// 调用方统一写成 if (CameraController.Instance != null)。
         /// </summary>
@@ -108,14 +108,19 @@ namespace FTProject
         }
 
         /// <summary>
-        /// 触发一次屏幕震动。
+        /// 屏幕震动的**唯一**入口：怪物走到终点（漏怪）。
+        ///
+        /// 【2026-10-30 用户定规】关卡内只有"怪到达终点"允许让场景抖动，
+        /// 其余任何事件（开火、爆炸、命中、失败结算……）一律不得震动。
+        /// 因此这里不再保留通用的 <c>Shake</c> 接口：方法名本身就是白名单，
+        /// 谁想加抖动都必须显式改这里的 API，避免又被顺手加回"打击反馈"。
         ///
         /// 【为什么不叠加而是取更强的一次】连续漏怪时如果每次都叠加，
         /// 相机振幅会迅速累积到看不清操作 —— 震动是反馈，不该变成惩罚。
         /// 【为什么在 LateUpdate 施加偏移】Update 里 FitBoard / 缩放改的是"真实位置"，
         /// 偏移必须最后叠加，否则会被它们覆盖掉（或者反过来污染真实位置）。
         /// </summary>
-        public void Shake(float amplitude, float durationSec)
+        public void ShakeOnEnemyLeak(float amplitude, float durationSec)
         {
             if (amplitude <= 0f || durationSec <= 0f)
             {

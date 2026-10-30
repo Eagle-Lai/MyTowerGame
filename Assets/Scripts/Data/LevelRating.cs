@@ -29,7 +29,9 @@ namespace FTProject
     public sealed class WaveRunMetrics
     {
         public int ordinal, expected, successfulSpawned, killed, leaked, bossLeaked, criticalLeaked;
-        public int gold, hp, killGold, clearGold, peakAlive, spawnDeferredCount;
+        public int gold, hp, clearGold, peakAlive, spawnDeferredCount;
+        /// <summary>本波击杀金合计。2026-10-29 起奖励为小数单价，这里随之为 float。</summary>
+        public float killGold;
         public double combatStartSeconds, combatEndSeconds, levelEndSeconds;
     }
 

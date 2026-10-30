@@ -88,7 +88,7 @@ namespace FTProject.EditorTools
             if(name=="SellConfirmView")
             {
                 textAt("Panel/TowerName",tr("Normal Tower")+"  Lv.1");
-                var globals=SimpleJSON.JSONNode.Parse(File.ReadAllText("Assets/ConfigJson/tbglobal.json"));float rate=globals[0]["sellRefundRate"].AsFloat;
+                var globals=SimpleJSON.JSONNode.Parse(File.ReadAllText("Assets/ConfigJson/tblevelrules.json"));float rate=globals[0]["sellRefundRate"].AsFloat;
                 textAt("Panel/WarnText",string.Format(tr("Refund {0}% of total investment.\nThis cannot be undone."),Mathf.RoundToInt(rate*100)));
                 textAt("Panel/RefundValue","22");
             }
@@ -241,7 +241,7 @@ namespace FTProject.EditorTools
                 textAt("Panel/UpgradeInfo",upgradeText);
                 textAt("Panel/UpgradeBtn/Label",next!=null?string.Format(tr("Upgrade ({0})"),next.Prices):tr("MAX"));
                 root.transform.Find("Panel/UpgradeBtn").GetComponent<Button>().interactable=next!=null&&!state.Contains("poor");
-                var globals=SimpleJSON.JSONNode.Parse(File.ReadAllText("Assets/ConfigJson/tbglobal.json"));
+                var globals=SimpleJSON.JSONNode.Parse(File.ReadAllText("Assets/ConfigJson/tblevelrules.json"));
                 float refundRate=globals[0]["sellRefundRate"].AsFloat;
                 textAt("Panel/SellBtn/Label",string.Format(tr("Sell (+{0})"),Mathf.Max(0,Mathf.RoundToInt(tower.SellPrice*refundRate))));
                 textAt("Panel/RangeBtn/Label",tr("Range"));

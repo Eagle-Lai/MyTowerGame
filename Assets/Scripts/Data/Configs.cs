@@ -36,11 +36,86 @@ namespace FTProject
         public static TBSceneInfo LevelTable { get; private set; }
         public static TBLevelMap LevelMapTable { get; private set; }
         public static TBGlobal GlobalTable { get; private set; }
+        public static TBLevelRules RulesTable { get; private set; }
         public static TBLocalization LocalizationTable { get; private set; }
         public static TBLevelRating RatingTable { get; private set; }
 
         /// <summary>全局参数（单行）</summary>
         public static GlobalConfig Global { get; private set; }
+
+        /// <summary>
+        /// 当前对局所在关卡 id（默认 1）。
+        ///
+        /// 【为什么需要它】2026-10-30 起 `TowerInfo` / `BulletData` 从"全局一张表"拆成
+        /// **每关一套**（`Levels/Lxx/*.xlsx`，id 规则 塔=levelId*1000+n、子弹=levelId*100+n）。
+        /// 合并表里同时存在 30 关的行，所以任何塔/子弹查询都必须先知道"哪一关"。
+        /// 由 `GameFlowManager.InitLevel` 在进关时设置；编辑器工具未进关时默认 1。
+        /// </summary>
+        public static int ActiveLevelId { get; private set; } = 1;
+
+        /// <summary>进关时切换作用域（塔/子弹/关卡规则查询随之为本关数据）</summary>
+        public static void SetActiveLevel(int levelId)
+        {
+            if (levelId > 0)
+            {
+                ActiveLevelId = levelId;
+            }
+            RebuildGlobalConfig();
+        }
+
+        private static Global _globalRow;
+        private static readonly Dictionary<int, LevelRules> RulesByLevel = new Dictionary<int, LevelRules>();
+
+        /// <summary>按当前关卡重新绑定 Global 门面（引擎常量来自 Global 行，玩法常量来自本关 Rules 行）</summary>
+        private static void RebuildGlobalConfig()
+        {
+            if (_globalRow == null)
+            {
+                Global = null;
+                return;
+            }
+            LevelRules rules;
+            RulesByLevel.TryGetValue(ActiveLevelId, out rules);
+            Global = new GlobalConfig(_globalRow, rules);
+        }
+
+        private static readonly Dictionary<int, Dictionary<int, TowerInfo>> TowerIndexByLevel =
+            new Dictionary<int, Dictionary<int, TowerInfo>>();
+        private static readonly Dictionary<int, Dictionary<int, BulletData>> BulletIndexByLevel =
+            new Dictionary<int, Dictionary<int, BulletData>>();
+
+        /// <summary>把合并表按 levelId 建索引：塔 key = type*10+level，子弹 key = 原 id。</summary>
+        private static void BuildLevelIndexes()
+        {
+            TowerIndexByLevel.Clear();
+            BulletIndexByLevel.Clear();
+            if (TowerTable != null && TowerTable.DataList != null)
+            {
+                foreach (TowerInfo t in TowerTable.DataList)
+                {
+                    Dictionary<int, TowerInfo> map;
+                    if (!TowerIndexByLevel.TryGetValue(t.LevelId, out map))
+                    {
+                        map = new Dictionary<int, TowerInfo>();
+                        TowerIndexByLevel[t.LevelId] = map;
+                    }
+                    map[t.Type * 10 + t.Level] = t;
+                }
+            }
+            if (BulletTable != null && BulletTable.DataList != null)
+            {
+                foreach (BulletData b in BulletTable.DataList)
+                {
+                    Dictionary<int, BulletData> map;
+                    if (!BulletIndexByLevel.TryGetValue(b.LevelId, out map))
+                    {
+                        map = new Dictionary<int, BulletData>();
+                        BulletIndexByLevel[b.LevelId] = map;
+                    }
+                    map[b.Id] = b;
+                }
+            }
+        }
 
         public static bool IsLoaded { get; private set; }
 
@@ -55,7 +130,7 @@ namespace FTProject
         {
             "tbenemydata", "tbtowerinfo", "tbbulletdata", "tbenemylist",
             "tbrounddata", "tbsceneinfo", "tblevelmap", "tbglobal",
-            "tblocalization", "tblevelrating"
+            "tblevelrules", "tblocalization", "tblevelrating"
         };
 
         // ------------------------------------------------------------------
@@ -110,10 +185,24 @@ namespace FTProject
                 LevelTable = LoadTable("tbsceneinfo", n => new TBSceneInfo(n));
                 LevelMapTable = LoadTable("tblevelmap", n => new TBLevelMap(n));
                 GlobalTable = LoadTable("tbglobal", n => new TBGlobal(n));
+                RulesTable = LoadTable("tblevelrules", n => new TBLevelRules(n));
                 LocalizationTable = LoadTable("tblocalization", n => new TBLocalization(n));
                 RatingTable = LoadTable("tblevelrating", n => new TBLevelRating(n));
 
-                // Global 是单行表，单独取
+                // 塔/子弹已按关卡拆分，建"关卡 → 表行"索引，供 GetTower*/GetBullet 按作用域查询
+                BuildLevelIndexes();
+
+                // 玩法常量已按关卡拆分：建 levelId → LevelRules 索引
+                RulesByLevel.Clear();
+                if (RulesTable != null && RulesTable.DataList != null)
+                {
+                    foreach (LevelRules r in RulesTable.DataList)
+                    {
+                        RulesByLevel[r.Id] = r;
+                    }
+                }
+
+                // Global 是单行表，单独取（引擎常量）；玩法常量随 ActiveLevelId 绑定
                 if (GlobalTable != null)
                 {
                     Global g = GlobalTable.GetOrDefault(1);
@@ -123,7 +212,8 @@ namespace FTProject
                     }
                     if (g != null)
                     {
-                        Global = new GlobalConfig(g);
+                        _globalRow = g;
+                        RebuildGlobalConfig();
                     }
                     else
                     {
@@ -283,9 +373,18 @@ namespace FTProject
                         }
                         foreach (int enemyId in wg.EnemyIndexs)
                         {
-                            if (EnemyTable.GetOrDefault(enemyId) == null)
+                            EnemyData ed = EnemyTable.GetOrDefault(enemyId);
+                            if (ed == null)
                             {
                                 sb.AppendLine(string.Format("  · 波次 {0} 引用的怪物 id={1} 不存在", waveId, enemyId));
+                                problems++;
+                            }
+                            else if (ed.LevelId != lv.Id)
+                            {
+                                // 怪物表已按关拆分（2026-10-30）：跨关引用会让"改一关动全身"重新出现，
+                                // 所以自检里直接当成配置错误拦下来。
+                                sb.AppendLine(string.Format("  · 波次 {0} 引用了第 {1} 关的怪物 id={2}（本关是第 {3} 关）",
+                                    waveId, ed.LevelId, enemyId, lv.Id));
                                 problems++;
                             }
                         }
@@ -361,7 +460,7 @@ namespace FTProject
         }
         private static string CalculateRuntimeContentHash(IDictionary<string, string> jsonTexts, IList<cfg.LevelRating> ratingRows)
         {
-            string[] keys = { "tbenemydata", "tbenemylist", "tbrounddata", "tbsceneinfo", "tblevelmap", "tbtowerinfo", "tbbulletdata", "tbglobal" };
+            string[] keys = { "tbenemydata", "tbenemylist", "tbrounddata", "tbsceneinfo", "tblevelmap", "tbtowerinfo", "tbbulletdata", "tbglobal", "tblevelrules" };
             var text = new System.Text.StringBuilder();
             foreach (string key in keys)
             {
@@ -415,24 +514,25 @@ namespace FTProject
             LoadAsync(onDone);
         }
 
+        /// <summary>取塔配置（id 落在当前关卡段内；传 1..9 这类"关内局部 id"会自动补上关前缀）。</summary>
         public static TowerConfig GetTower(int id)
         {
-            TowerInfo t = TowerTable != null ? TowerTable.GetOrDefault(id) : null;
-            if (t == null)
+            TowerConfig cfg = GetTowerSilent(id);
+            if (cfg == null)
             {
-                Debug.LogError(string.Format("[Config] TBTowerInfo 中找不到 id={0}", id));
-                return null;
+                Debug.LogError(string.Format("[Config] 关卡 {0} 的 TBTowerInfo 中找不到 id={1}", ActiveLevelId, id));
             }
-            return new TowerConfig(t);
+            return cfg;
         }
 
-        /// <summary>取某类塔的指定等级（M0 只用 level=1）</summary>
+        /// <summary>取某类塔的指定等级（当前关卡作用域，M0 只用 level=1）</summary>
         public static TowerConfig GetTowerByTypeAndLevel(int type, int level)
         {
             TowerConfig cfg = GetTowerByTypeAndLevelSilent(type, level);
             if (cfg == null)
             {
-                Debug.LogError(string.Format("[Config] TBTowerInfo 中找不到 type={0} level={1} 的塔", type, level));
+                Debug.LogError(string.Format("[Config] 关卡 {0} 的 TBTowerInfo 中找不到 type={1} level={2} 的塔",
+                    ActiveLevelId, type, level));
             }
             return cfg;
         }
@@ -444,25 +544,26 @@ namespace FTProject
         /// </summary>
         public static TowerConfig GetTowerByTypeAndLevelSilent(int type, int level)
         {
-            if (TowerTable == null || TowerTable.DataList == null)
-            {
-                return null;
-            }
-            foreach (TowerInfo t in TowerTable.DataList)
-            {
-                if (t.Type == type && t.Level == level)
-                {
-                    return new TowerConfig(t);
-                }
-            }
-            return null;
+            Dictionary<int, TowerInfo> map;
+            if (!TowerIndexByLevel.TryGetValue(ActiveLevelId, out map)) return null;
+            TowerInfo t;
+            return map.TryGetValue(type * 10 + level, out t) ? new TowerConfig(t) : null;
         }
 
         /// <summary>按 id 取塔配置，找不到时**静默返回 null**（不打印错误）。</summary>
         public static TowerConfig GetTowerSilent(int id)
         {
-            TowerInfo t = TowerTable != null ? TowerTable.GetOrDefault(id) : null;
+            TowerInfo t = TowerTable != null ? TowerTable.GetOrDefault(NormalizeTowerId(id)) : null;
             return t != null ? new TowerConfig(t) : null;
+        }
+
+        /// <summary>
+        /// 兼容"关内局部 id"：老工具/老脚本里塔 id 常写 1..9、子弹 id 写 1..7。
+        /// 塔全局 id 从 1000 起、子弹从 100 起，所以 &lt;1000 / &lt;100 的一律按当前关卡补齐。
+        /// </summary>
+        private static int NormalizeTowerId(int id)
+        {
+            return id > 0 && id < 1000 ? ActiveLevelId * 1000 + id : id;
         }
 
         /// <summary>
@@ -487,10 +588,11 @@ namespace FTProject
 
         public static BulletConfig GetBullet(int id)
         {
-            BulletData b = BulletTable != null ? BulletTable.GetOrDefault(id) : null;
+            int real = id > 0 && id < 100 ? ActiveLevelId * 100 + id : id;
+            BulletData b = BulletTable != null ? BulletTable.GetOrDefault(real) : null;
             if (b == null)
             {
-                Debug.LogError(string.Format("[Config] TBBulletData 中找不到 id={0}", id));
+                Debug.LogError(string.Format("[Config] 关卡 {0} 的 TBBulletData 中找不到 id={1}", ActiveLevelId, id));
                 return null;
             }
             return new BulletConfig(b);

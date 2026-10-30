@@ -29,10 +29,11 @@ public sealed partial class BulletData :  Bright.Config.BeanBase
         { if(!_json["effectValue"].IsNumber) { throw new SerializationException(); }  EffectValue = _json["effectValue"]; }
         { if(!_json["scale"].IsNumber) { throw new SerializationException(); }  Scale = _json["scale"]; }
         { if(!_json["desc"].IsString) { throw new SerializationException(); }  Desc = _json["desc"]; }
+        { if(!_json["levelId"].IsNumber) { throw new SerializationException(); }  LevelId = _json["levelId"]; }
         PostInit();
     }
 
-    public BulletData(int id, string name, string resName, float speed, float hitRadius, int lifeTimeMs, float aoeRadius, int effectType, float effectValue, float scale, string desc ) 
+    public BulletData(int id, string name, string resName, float speed, float hitRadius, int lifeTimeMs, float aoeRadius, int effectType, float effectValue, float scale, string desc, int levelId ) 
     {
         this.Id = id;
         this.Name = name;
@@ -45,6 +46,7 @@ public sealed partial class BulletData :  Bright.Config.BeanBase
         this.EffectValue = effectValue;
         this.Scale = scale;
         this.Desc = desc;
+        this.LevelId = levelId;
         PostInit();
     }
 
@@ -97,6 +99,10 @@ public sealed partial class BulletData :  Bright.Config.BeanBase
     /// 备注
     /// </summary>
     public string Desc { get; private set; }
+    /// <summary>
+    /// 所属关卡 id（本表每关独立一份，2026-10-30 拆分）
+    /// </summary>
+    public int LevelId { get; private set; }
 
     public const int __ID__ = -1791863828;
     public override int GetTypeId() => __ID__;
@@ -124,6 +130,7 @@ public sealed partial class BulletData :  Bright.Config.BeanBase
         + "EffectValue:" + EffectValue + ","
         + "Scale:" + Scale + ","
         + "Desc:" + Desc + ","
+        + "LevelId:" + LevelId + ","
         + "}";
     }
     

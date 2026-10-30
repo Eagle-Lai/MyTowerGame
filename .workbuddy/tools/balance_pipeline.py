@@ -932,19 +932,30 @@ def require_openpyxl():
 
 
 def assert_tower_radius_type():
-    """The shipped TowerInfo sheet must declare radius as float, otherwise 2.15/2.3 truncate."""
+    """每关的 TowerInfo sheet 都必须把 radius 声明成 float，否则 2.15/2.3 会被截断。
+
+    2026-10-30 起塔表已按关卡拆分（Levels/Lxx/TowerInfo.xlsx），这里逐个检查 30 份；
+    根目录旧的 Datas/TowerInfo.xlsx 已不参与导出，不再检查。
+    """
     import openpyxl
-    path=DATA/'TowerInfo.xlsx'
-    wb=openpyxl.load_workbook(path,read_only=True);ws=wb[wb.sheetnames[0]]
-    header=[c.value for c in next(ws.iter_rows(min_row=1,max_row=1))]
-    types=[c.value for c in next(ws.iter_rows(min_row=2,max_row=2))]
-    try:
-        col=header.index('radius')
-    except ValueError:
-        raise RuntimeError('TowerInfo.xlsx has no radius column')
-    declared=str(types[col]).strip()
-    if declared!='float':
-        raise RuntimeError(f'TowerInfo.xlsx radius type must be float, found {declared!r}')
+    checked=0
+    for lv in range(1,31):
+        path=DATA/'Levels'/f'L{lv:02d}'/'TowerInfo.xlsx'
+        if not path.exists():
+            raise RuntimeError(f'缺少关卡塔表：{path}')
+        wb=openpyxl.load_workbook(path,read_only=True);ws=wb[wb.sheetnames[0]]
+        header=[c.value for c in next(ws.iter_rows(min_row=1,max_row=1))]
+        types=[c.value for c in next(ws.iter_rows(min_row=2,max_row=2))]
+        try:
+            col=header.index('radius')
+        except ValueError:
+            raise RuntimeError(f'{path.name} (L{lv:02d}) has no radius column')
+        declared=str(types[col]).strip()
+        if declared!='float':
+            raise RuntimeError(f'Levels/L{lv:02d}/TowerInfo.xlsx radius type must be float, found {declared!r}')
+        checked+=1
+    if checked!=30:
+        raise RuntimeError(f'expected 30 level tower sheets, checked {checked}')
 
 
 def stage_export(plan,out):

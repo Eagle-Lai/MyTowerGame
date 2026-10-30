@@ -33,6 +33,7 @@ namespace FTProject
             var levels = new TBSceneInfo(JSONNode.Parse(json["tbsceneinfo"]));
             var maps = new TBLevelMap(JSONNode.Parse(json["tblevelmap"]));
             var globals = new TBGlobal(JSONNode.Parse(json["tbglobal"]));
+            var rules = new TBLevelRules(JSONNode.Parse(json["tblevelrules"]));
             var localization = new TBLocalization(JSONNode.Parse(json["tblocalization"]));
             JSONNode ratingJson = JSONNode.Parse(json["tblevelrating"]);
             foreach (JSONNode node in ratingJson.Children) node["runtimeContentHash"] = "";
@@ -43,11 +44,14 @@ namespace FTProject
             var global = globals.GetOrDefault(1);
             if (global == null) throw new InvalidDataException("Candidate global config is missing");
 
-            var oldEnemies = EnemyTable; var oldTowers = TowerTable; var oldBullets = BulletTable; var oldGroups = WaveTable; var oldRounds = RoundTable; var oldLevels = LevelTable; var oldMaps = LevelMapTable; var oldGlobals = GlobalTable; var oldLocalization = LocalizationTable; var oldRating = RatingTable; var oldGlobal = Global;
+            var oldEnemies = EnemyTable; var oldTowers = TowerTable; var oldBullets = BulletTable; var oldGroups = WaveTable; var oldRounds = RoundTable; var oldLevels = LevelTable; var oldMaps = LevelMapTable; var oldGlobals = GlobalTable; var oldRules = RulesTable; var oldLocalization = LocalizationTable; var oldRating = RatingTable; var oldGlobal = Global; var oldGlobalRow = _globalRow;
             var oldJson = new Dictionary<string, string>(LoadedJson); bool oldVerified = RatingContentVerified; bool oldLoaded = IsLoaded;
             try
             {
-                EnemyTable = enemies; TowerTable = towers; BulletTable = bullets; WaveTable = groups; RoundTable = rounds; LevelTable = levels; LevelMapTable = maps; GlobalTable = globals; LocalizationTable = localization; RatingTable = rating; Global = new GlobalConfig(global);
+                EnemyTable = enemies; TowerTable = towers; BulletTable = bullets; WaveTable = groups; RoundTable = rounds; LevelTable = levels; LevelMapTable = maps; GlobalTable = globals; RulesTable = rules; LocalizationTable = localization; RatingTable = rating;
+                BuildLevelIndexes();
+                RulesByLevel.Clear(); foreach (LevelRules lr in rules.DataList) RulesByLevel[lr.Id] = lr;
+                _globalRow = global; RebuildGlobalConfig();
                 LoadedJson.Clear(); foreach (var pair in json) LoadedJson[pair.Key] = pair.Value;
                 if (!VerifyRatingContent()) throw new InvalidDataException("Candidate rating/content self-check failed");
                 RatingContentVerified = true; IsLoaded = true;
@@ -56,7 +60,7 @@ namespace FTProject
             }
             catch
             {
-                EnemyTable = oldEnemies; TowerTable = oldTowers; BulletTable = oldBullets; WaveTable = oldGroups; RoundTable = oldRounds; LevelTable = oldLevels; LevelMapTable = oldMaps; GlobalTable = oldGlobals; LocalizationTable = oldLocalization; RatingTable = oldRating; Global = oldGlobal;
+                EnemyTable = oldEnemies; TowerTable = oldTowers; BulletTable = oldBullets; WaveTable = oldGroups; RoundTable = oldRounds; LevelTable = oldLevels; LevelMapTable = oldMaps; GlobalTable = oldGlobals; RulesTable = oldRules; LocalizationTable = oldLocalization; RatingTable = oldRating; _globalRow = oldGlobalRow; BuildLevelIndexes(); Global = oldGlobal;
                 LoadedJson.Clear(); foreach (var pair in oldJson) LoadedJson[pair.Key] = pair.Value;
                 RatingContentVerified = oldVerified; IsLoaded = oldLoaded;
                 throw;

@@ -107,7 +107,7 @@ def build_plan_static_towers():
     global _TOWER_CACHE
     if _TOWER_CACHE is None:
         import openpyxl
-        wb = openpyxl.load_workbook(l01_design.DATA / 'TowerInfo.xlsx', data_only=True)
+        wb = openpyxl.load_workbook(l01_design.L01 / 'TowerInfo.xlsx', data_only=True)
         ws = wb.worksheets[0]
         heads = {c.value: c.column for c in ws[1] if c.value}
         rows = []
@@ -139,7 +139,7 @@ def simulate_level_tracked(plan, L, step_ms, out, seed=42):
         alive = []; cursor = 0; elapsed = 0.0; wave_kills = wave_leaks = wave_income = 0
         peak = 0; deferred = 0; leak_roles = collections.Counter()
         while cursor < len(w['enemyIds']) or alive:
-            if elapsed > 240: error = 'wave simulation exceeded 240 seconds'; break
+            if elapsed > bs.POLICY.get('maxWaveSeconds', 240): error = 'wave simulation exceeded limit'; break
             while cursor < len(w['enemyIds']) and elapsed + 1e-9 >= cursor * w['spawnIntervalMs'] / 1000:
                 if len(alive) >= tables['tbglobal'][0].get('maxEnemyAlive', 200): deferred += 1; break
                 cfg = enemy_table[w['enemyIds'][cursor]]
