@@ -29,6 +29,15 @@
     代码在 `Assets/Editor/SortingLayerNormalizer.cs`；怪物/塔生成器已内置同样规则，重跑不会回退。
   - 敌人美术源包（`_UIAssets/Monsters/**`）自带 SortingGroup 序不统一（0/1/2/3/4、100–104、201–204），
     所以 `MonsterPrefabBuilder` 克隆后必须 `NormalizeSortingGroup`，否则 31 个怪整组错位。
+- ★★**存档口径：局内一律不落盘（2026-10-30 用户定规，最高优先级）**
+  - 只有**通关**才写档：`SaveManager.RecordClear` → 星级 / 最快用时 / 最佳战斗用时 / 最佳剩余生命 / committedRunIds（`level_progress`）。
+  - 塔阵 / 金币 / 生命**只存内存**：进关走 `PlayerDataManager.InitFromLevel`（初始金币、满血、0 塔、`_roundCursor=0`）；退出 / 失败 / 杀进程 = 本局作废，从第 1 波重打。
+  - **不要**再恢复这些写法：`SaveSnapshotNow()`（开波前 / 每波结束 / 退出）、`SaveManager.SetSnapshot/TrySetSnapshot`、`CaptureFailedRunCheckpoint`（kv `checkpoint/failed-run`）。它们构成"反复重打同一波"的漏洞，已整体删除（`FailedRunCheckpoint.cs`、`LevelCheckpointValidator.cs` 一并删）。
+  - 旧档清理：`SaveManager.PurgeLegacyRunState()` 在 `EnsureLoaded` 时"存在才清"（`LoadSnapshot().valid` 才写回空快照、kv 键存在才删），不给每次启动加写盘；表结构仍是 schema 4，`level_snapshot`/`snapshot_tower` 保留为遗留表。
+  - 遗留件（无运行时调用点，仅单测/清理用）：`LevelSnapshot`/`TowerSnapshot` DTO、`ISaveStorage.LoadSnapshot/SaveSnapshot`、`BaseTower.CaptureCheckpointState/RestoreCheckpointState`。改表结构前先想清楚要不要连它们一起删。
+  - UI 入口：主菜单 `ContinueBtn` 恒隐藏；`SelectView` 不再优先选"可续玩关"、格子无 `Continue`；`LevelDetailView` 按钮只判星级；`PauseView` 退出确认的兜底英文已改，但**词条 `Leave this battle?` 仍是旧说法**（配置表需人工改 + 重封）。
+  - 验证工具：`BalanceCheckpointVerifier` 已改名 `BalanceSpeedComparison`（只做 ×1/×2/×3 一致性 + `finalTowerSignature`），`--kind checkpoints` 改名 `controls`；`checkpointScenario` / `checkpointWave` 参数现在无效。
+  - 详见 `Docs/SavePolicy_2026-10-30.md`；`Docs/FailedRunResume_2026-10-29.md` 与 `Docs/LevelRating_Runtime_And_Save.md` 已加"被取代"横幅，里面的快照段落属历史。
 - ★★放置规则 v4（2026-10-22 用户需求：路径预览 + 放置判定，权威代码 `Tower/TowerPlacement.cs`、`AStarWrapper/AStarManager.cs`、`Game/PathArrowView.cs`）
   - ① **预览只画不改**：悬停格变化 → `AStarManager.ComputePathWithExtraWall(row,col)` 临时置墙跑一次 A* →
     结果存 `PreviewPathWorld`，经 `EventName.PreviewPathEvent` 交给 `PathArrowView.RenderPreview`，
