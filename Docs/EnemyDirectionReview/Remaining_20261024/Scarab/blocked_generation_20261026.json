@@ -1,0 +1,66 @@
+{
+  "character": "Scarab",
+  "index": 92,
+  "status": "blocked",
+  "blocked_at": "2026-10-26T22:27:40.155461+08:00",
+  "owner_thread_id": "01a17887-910d-7c00-a95f-47bf502733a8",
+  "dispatch_token": "sabretoothtiger-to-scarab-58090935f01d4567808d10984539ade4",
+  "stage": "initial image generation; no stage/install/runtime work performed",
+  "blocked_reason": "Both independent first-time image requests returned explicit HTTP 503 failures with No available compatible accounts. Up and Down produced no raw.png. Do not retry either request, infer a successful image, stage or install assets, enter Play, or modify production. Preserve both request/result files. Recovery requires restored compatible image-account availability and a new unique attempt path; the original requests must remain unchanged.",
+  "artifacts": {
+    "anatomy_plan": "anatomy_plan.json",
+    "up_prompt": "generation/Up/prompt.txt",
+    "up_request": "generation/Up/request.json",
+    "up_result": "generation/Up/result.json",
+    "down_prompt": "generation/Down/prompt.txt",
+    "down_request": "generation/Down/request.json",
+    "down_result": "generation/Down/result.json",
+    "installation_baseline": "incremental_before_20261026.json"
+  },
+  "request_results": {
+    "up": {
+      "status": 503,
+      "message": "No available compatible accounts",
+      "raw_png": false
+    },
+    "down": {
+      "status": 503,
+      "message": "No available compatible accounts",
+      "raw_png": false
+    }
+  },
+  "generated_visual_review": "Not possible because no generated image was returned. Reference atlas, serialized prefab and prepared anatomy/prompt materials remain available for a future recovery.",
+  "production_snapshot": {
+    "path": "incremental_before_20261026.json",
+    "file_count": 5138,
+    "changed_files_before_block": [],
+    "protected_six_unchanged": {
+      "Assets/Prefabs/Enemy/Enemy_Scarab.prefab": "346099D3011640F5FC454FAE7B0E892C9546F41F9329EED67E8FDF44788BF5C9",
+      "Assets/Prefabs/Enemy/Enemy_Scarab.prefab.meta": "03733D75A8D86C330882C8139F31D5187F1021895C3BDEE2453B57CEC3274006",
+      "Assets/_UIAssets/Monsters/Insects/Scarab/Scarab.prefab": "EE3EBADBBB9D406DCFA21544E31F52DADA0EF2BBBC5E4E340EBE33432FB5C500",
+      "Assets/_UIAssets/Monsters/Insects/Scarab/Scarab.prefab.meta": "C220D8CC023822C1525CEF62C39B0532A9D3DDEA552092B898D923F8993404B6",
+      "Assets/_UIAssets/Monsters/Insects/Scarab/Scarab.png": "4BC35A3598A0A9AE1641E501F31E43436853D832E890999DC9C889FE0FA6FBF6",
+      "Assets/_UIAssets/Monsters/Insects/Scarab/Scarab.png.meta": "B09221A70F33E83716F20019BAC5ECE56508FB8B6B925C8BA6F9CF67486FF786"
+    },
+    "legacy_scope_reference": {
+      "source": "RoyalBoar/scope_incremental_20261026.json",
+      "unexpected_count": 291,
+      "legacy_pass": false,
+      "classification_note": "Historical global scope contains 291 pre-existing unexpected entries; this snapshot is additive and does not reset them."
+    }
+  },
+  "production_changes": false,
+  "unity": {
+    "project": "E:/MyTowerGame",
+    "version": "2022.3.62f3c1",
+    "state": "not_touched_for_Scarab",
+    "safe_handoff_reference": "../SabretoothTiger/unity_release_blocked_20261026_220101.json",
+    "note": "Scarab stopped before any Unity refresh, compile, install, Play or scene mutation. The prior safe Boot/non-Play handoff remains the only Unity evidence for this blocked attempt."
+  },
+  "progress_before": {
+    "completed_count": 79,
+    "authorized_count": 108,
+    "user_approved": false
+  },
+  "next_recovery": "After compatible image-account availability is restored, create a new uniquely named Scarab generation attempt, re-read the preserved request/result files and continue the full per-character install and runtime gates. Never overwrite or resend these failed requests."
+}

@@ -1,0 +1,12 @@
+--- Assets/Editor/EnemyDirectionalRigBuilder.cs before
++++ Assets/Editor/EnemyDirectionalRigBuilder.cs after
+@@ -28,7 +28,8 @@
+         }
+         [Serializable] public sealed class View { public string direction; public Part[] parts; }
+         [Serializable] public sealed class Anatomy { public int legs, wings, claws, tails, arms, feelers; }
+-        [Serializable] public sealed class Layout { public Anatomy anatomy; public string motionKind; public int schema; public string name, controllerSource; public bool flying; public float referenceBottom, referenceHeight; public View[] views; }
++        [Serializable] public sealed class MotionTuning { public float legAngle,legLift,bodyBob,bodyRoll,tailSwing; }
++        [Serializable] public sealed class Layout { public Anatomy anatomy; public MotionTuning motion; public string motionKind; public int schema; public string name, controllerSource; public bool flying; public float referenceBottom, referenceHeight; public View[] views; }
+ 
+         public static bool TryGetSpec(string name, out EnemyDirectionSpec spec)
+         {

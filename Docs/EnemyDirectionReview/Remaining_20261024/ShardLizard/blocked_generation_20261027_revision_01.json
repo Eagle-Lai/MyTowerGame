@@ -1,0 +1,49 @@
+{
+  "character": "ShardLizard",
+  "index": 94,
+  "status": "blocked",
+  "blocked_at": "2026-10-27T17:49:39.765796+08:00",
+  "owner_thread_id": "01a178a8-fc5a-77b0-9881-0a0b40872da8",
+  "dispatch_token": "scarabmounted-to-shardlizard-e066b2f9cbb54a5ca5b215b2e08ea8d2",
+  "stage": "Up revision_01 explicit HTTP failure",
+  "block_reason": "ShardLizard Up revision_01 production recovery returned HTTP 503: No available compatible accounts. No image output. Down was not requested. The single bounded recovery attempt is exhausted; no automatic retry.",
+  "image_requests_this_continuation": 1,
+  "total_shardlizard_image_requests": 2,
+  "charge_status": "Not established by HTTP failure; no claim of no charge.",
+  "request_results": {
+    "Up": {
+      "status": "explicit_http_failure",
+      "revision": "revision_01",
+      "request": "Docs/EnemyDirectionReview/Remaining_20261024/ShardLizard/generation/Up/revision_01/request.json",
+      "result": "Docs/EnemyDirectionReview/Remaining_20261024/ShardLizard/generation/Up/revision_01/result.json",
+      "http_status": 503,
+      "error": {
+        "message": "No available compatible accounts",
+        "type": "api_error"
+      },
+      "started_at_utc": "2026-10-27T09:48:22.560Z",
+      "finished_at_utc": "2026-10-27T09:48:23.009Z",
+      "raw_created": false,
+      "uncertain_result": false
+    },
+    "Down": {
+      "status": "not_requested",
+      "prompt": "Docs/EnemyDirectionReview/Remaining_20261024/ShardLizard/generation/Down/prompt.txt"
+    }
+  },
+  "previous_block_record": "Docs/EnemyDirectionReview/Remaining_20261024/ShardLizard/blocked_generation_20261027.json",
+  "recovery_intent": "Docs/EnemyDirectionReview/Remaining_20261024/ShardLizard/generation/Up/revision_01/recovery_intent.json",
+  "guard_checks": "Docs/EnemyDirectionReview/Remaining_20261024/ShardLizard/generation/Up/revision_01/guard_checks.json",
+  "scope_audit": "Docs/EnemyDirectionReview/Remaining_20261024/ShardLizard/scope_recovery_20261027_174939.json",
+  "parent_request_preserved": true,
+  "parent_result_preserved": true,
+  "unity_operated": false,
+  "not_performed": [
+    "No raw visual review",
+    "No stage/install/Verify",
+    "No Unity Play or runtime media",
+    "No record or GIF archive update",
+    "No successor created"
+  ],
+  "next_step": "Wait for an actionable change in compatible image-account availability or direct new user direction. Preserve all requests/outcomes; do not loop over revisions. Empty provider monitoring data alone proves neither outage nor restoration."
+}

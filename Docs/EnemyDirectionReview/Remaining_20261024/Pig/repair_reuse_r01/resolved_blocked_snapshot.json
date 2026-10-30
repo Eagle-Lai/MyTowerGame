@@ -1,0 +1,30 @@
+{
+  "index": 70,
+  "name": "Pig",
+  "status": "blocked",
+  "blocked_at": "2026-10-25T21:10:02.164960+08:00",
+  "blocked_reason": "After death and same-instance reuse, side Body remains inverted during ContinuousTurns. Final visual contact shows Right and Left upside down. Death_Directions has Body localEulerAnglesRaw.z 0 to -180; Walk_Directions has no Body Euler binding. This matches retained death pose after pool reuse.",
+  "blocked_evidence": "Pig/blocked_visual_review_20261025.json",
+  "completed_stage": "Installed; both runtime reviews passed; final visual review failed. record was NOT executed.",
+  "visual_reviewed": true,
+  "visual_pass": false,
+  "visual_note": "Visual failure: side Body upside down after death/pool reuse during ContinuousTurns; see blocked_visual_review_20261025.json. No completion record.",
+  "runtime": [
+    {
+      "revision": "runtime_r01",
+      "pass": 84,
+      "fail": 0,
+      "frames": 340,
+      "records_sha256": "C0AD4D9C0BD8FAC60E2E886BF3B56F2A193684C1FD6C2D069CB98DA0E5BA7FD9"
+    },
+    {
+      "revision": "runtime_updeath_r01",
+      "pass": 84,
+      "fail": 0,
+      "frames": 341,
+      "records_sha256": "56FC2C883A6B02457752E4297C9CD978950ECB03094D1ECEF63713EA839C055B"
+    }
+  ],
+  "actual_frames": 681,
+  "user_approved": false
+}

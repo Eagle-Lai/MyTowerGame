@@ -1,0 +1,39 @@
+在 E:/MyTowerGame 继续敌人四方向串行续作。本聊天唯一角色 Watchdog(index 105)，是用户已授权循环中的唯一全新 local 后继。
+
+唯一 dispatch token：wasp-to-watchdog-20261029_010456-a6f96d67-324e-4b30-9ff0-555b83354188
+父线程：01a1833c-f96c-74a1-b7f2-2281f6ab321d
+
+开工完整读取当前磁盘：
+1. E:/MyTowerGame/AGENTS.md、ProjectSettings/ProjectVersion.txt。
+2. E:/MyTowerGame/Docs/EnemyDirectionReview/README.md、PREFAB_CHANGES_SUMMARY_20261026.md。
+3. E:/MyTowerGame/Docs/EnemyDirectionReview/Remaining_20261024/REMAINING_ENEMIES_EXECUTABLE_PROMPT_20261026.md。
+4. 同目录 CONTINUATION_PROTOCOL_20261026.md、IMAGE_RELAY_RECOVERY_20261026.md、NEXT_ENEMY_TASK.md、conversation_chain.json、实时progress.json。
+5. 同目录standing_network_recovery_authorization_20261028.json、TreasureChest/standing_recovery_application_20261028.json，核对原授权证据，不改写旧uncertain/收费结果，不无限重试。
+6. E:/MyTowerGame/Docs/EnemyDirectionReview/Remaining_20261024/conversation_handoffs/20261029_010456_Wasp_completed.md。
+7. E:/MyTowerGame/Docs/EnemyDirectionReview/Remaining_20261024/Watchdog/successor_assessment_20261029_010456.json。
+8. Watchdog/reference/source_structure.json及完整源参考，相关流水线脚本及实现/调用/生命周期。
+
+只有 chain.state=active、owner_thread_id为本新聊天、current_character=Watchdog、dispatch_token与上方一致，才可操作Unity、生产或付费生成。父线程先handoff_ready，此时只读等待登记，不超时抢锁。父创建成功登记后停止全部工作区写入。开工检查新出现的请求/安装/运行文件，恢复已有阶段，避免重复prepare、生成、安装。
+
+当前93/108。Wasp104已record，最终art_r02_flap_r03，completed_pending_user_art_review、user_approved=false。Watchdog105当前not_started，仅reference8文件，无anatomy/generation/raw/staged/install/runtime；assessment/prompt/dispatch仅调度文档。PossessedWarg旧blocked和结果不明的Down付费请求保留，不自动重发、不伪称完成。
+
+Watchdog源路径：
+- Assets/Prefabs/Enemy/Enemy_Watchdog.prefab
+- Assets/_UIAssets/Monsters/Dogs/Watchdog/Watchdog.prefab
+- Assets/_UIAssets/Monsters/Dogs/Watchdog/Watchdog.png
+- Controller: Assets/_UIAssets/Monsters/_Common/Animations/Wolf/Controller.controller
+reference六保护已匹配，开工仍现场核对。读完整atlas、prefab层级/绑定、controller依赖、原float/PPtr/事件/时长/loop及战斗/回收/同实例复用。自行制定Watchdog正背解剖、四足后跟与尾根、装备/头身分配；不套Warg或PossessedWatchdog具体造型。改动前建立本角色Assets/Packages/ProjectSettings/Luban全路径SHA增量基线及六保护，以当前磁盘含用户改动为准，不以Git HEAD为基线。
+
+逐阶段执行原prompt：审原图/解剖→按需逐方向AIHub并实看raw→透明分件/切片/pivot/PPU/layout和离线proof审阅→六保护与Unity空闲复核→仅Watchdog安装Builder/Verify→两轮真实Unity Play各84项→分批实际看PNG/时序板/GIF并准确记抽样→最终生产与运行版本哈希绑定→UTF8 note/record→GIF归档SHA→路径并集增量及原组件语义审计。程序PASS不能代替美术检查；视觉失败须修复重测，保留旧revision。复用已有成功raw，结果不明先查进程/落盘/返回，不盲重发。
+
+AIHub https://aihub.dog/v1，gpt-image-2、medium、1536x1024、n=1，复用generate_character.ps1/generate.mjs；密钥运行时读取，仅发aihub.dog，结束清理，不输出密钥或base64。遵循现有有界网络恢复授权、新intent/revision及防重护栏。Usage本地估算不当已确认账单。
+
+保护原atlas、源prefab、GUID/root、HP/碰撞/锚点/移动战斗参数及原侧面动画曲线/PPtr/事件/时长/loop。Up必须纯后脑、正确后足方向；肩髋/颈/尾相连，不额外发明原资源没有的部件。保留攻击、受击/致死白闪、全身死亡缩小淡出、自动回收、同实例复用、暂停和1×2×3×。使用现有方向系统，不增逐帧材料/层级查找或另一套方向系统。不改其他角色或共享C#；不改配置表、Assets/ConfigJson、Assets/Gen、声音。禁止Git pull/reset/clean/commit、构建部署、fork、子代理、并行角色、计时器、模型/推理覆盖、长期memory更新。
+
+正确Unity端点 http://127.0.0.1:8088/mcp，版本2022.3.62f3c1。复用Remaining_20261024/mcp_call.py的Client.identity：动态读custom-tools/instances，明确set当前MyTowerGame完整ID，再project/info核E:/MyTowerGame及版本。8082是其他工程，8080是CatchFish；根AGENTS中FreedomTower/D盘/8082是历史错配，本任务覆盖。重连/域重载后重新核对。MCP离线按工程规则自主恢复；失败报告具体环节与开启步骤，不能假称验证完成。默认使用Unity MCP；电脑/桌面控制须先弹对话确认，本prompt不授权桌面。只停本任务授权Play，不强停外来任务。
+
+本任务已授权两轮真实Play测试，无需重复询问。最终Unity须单一clean Boot、非Play，tests/review/balance/recording/manual/compile/reload/update全部idle，failed=false、error0、ready=true，不清日志。若以后获得明确C#改动授权，必须正确工程refresh/compile/state/error闭环，编译期间不继续改代码。空闲缓存stale须取新事实，不能以端口监听或旧resource冒充成功。
+
+前任Wasp最终证据：Wasp/final_validation_20261029.json及version_binding_final/scope_incremental_final/visual_review_final_20261029/review.json/gif_archive_verification。art_r02清洋红、翼根共画布340×500/pivot(300/340,.5)、后头order30；flap_r03仅四自有动画以1/12秒切翼，Death下翼，时长.5秒60fps及其他绑定/事件/设置/侧向均不变。完整22路径最终清单在flap_cadence_r03/manifest.json。runtime_r01 299帧、runtime_updeath_r01 297帧，各84/0，共168/0和596真实PNG。实际看两轮四向/strip、10板256采样位/232不同PNG、8原PNG及12GIF各5编码帧；未实时播放或逐GIF全帧。血条与触角有间距、无裁切。AllGIF1510，Wasp12当前版且源/归档SHA一致。5405→5425路径并集22变化20新增、unexpected0、本角色语义/源保护/共享C#无漂移；Reporter时间戳单列。历史global291 unexpected/6其他角色语义失败未重跑，不称全局PASS。不要重跑前任stage/pack/Build/install，勿删installed_manifest或改前任生产。
+
+最终状态只能completed_pending_user_art_review、user_approved=false，不替用户批准。完成Watchdog全流程或记录真实阻断并释放Unity后，重新评估实时队列：优先恢复已开始可恢复项，否则最低index非blocked。完整落盘交接，更新README实时块、原执行prompt实时块、NEXT/progress。用户已授权“一个完成→总结/更新prompt→唯一fresh local后继”循环，不逐角色再问。chain先handoff_ready，现场list_projects确认E:/MyTowerGame，再create_thread唯一全新local、不传model/thinking、不fork；新聊天等待active。create明确成功保存真实响应，登记new owner/token active作为父最后一次工作区写入，此后只读；一次有界wait_threads并报告真实created-thread。创建结果不明先查列表，不重复创建；失败保留完整可执行交接并如实报告。循环至108全部有效完成或仅余真实阻断，不绕过阻断付费试探。

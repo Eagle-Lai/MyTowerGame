@@ -1,0 +1,9 @@
+var art="Assets/_UIAssets/Monsters/Horses/Horse/Directions";
+var controller=UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEditor.Animations.AnimatorController>(art+"/Animations/Horse_Directions.controller");
+var run=UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEngine.AnimationClip>(art+"/Animations/Run_Directions.anim");
+var layout=UnityEngine.JsonUtility.FromJson<FTProject.EditorTools.EnemyDirectionalRigBuilder.Layout>(System.IO.File.ReadAllText(art+"/Horse_Directions.layout.json"));
+var sprites=new System.Collections.Generic.Dictionary<string,UnityEngine.Sprite>();foreach(var asset in UnityEditor.AssetDatabase.LoadAllAssetsAtPath(art+"/Horse_Directions.png")){var sprite=asset as UnityEngine.Sprite;if(sprite)sprites[sprite.name]=sprite;}
+if(!FTProject.EditorTools.EnemyDirectionRemainingMotion.TryAdd(run,"Walk",layout,sprites))throw new System.InvalidOperationException("Run gait repair not applied");
+var state=System.Linq.Enumerable.First(controller.layers[0].stateMachine.states,x=>x.state.name=="Run").state;state.motion=run;
+UnityEditor.EditorUtility.SetDirty(run);UnityEditor.EditorUtility.SetDirty(state);UnityEditor.EditorUtility.SetDirty(controller);UnityEditor.AssetDatabase.SaveAssets();
+FTProject.EditorTools.EnemyDirectionSpec spec;FTProject.EditorTools.EnemyDirectionPrefabBuilder.TryGetSpec("Horse",out spec);string report;bool pass=FTProject.EditorTools.EnemyDirectionalRigBuilder.Verify(spec,out report);return new {pass=pass,report=report};

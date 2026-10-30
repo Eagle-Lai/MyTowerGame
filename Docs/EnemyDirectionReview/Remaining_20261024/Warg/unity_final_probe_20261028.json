@@ -1,0 +1,28 @@
+{
+  "actions": [
+    {
+      "method": "resource",
+      "uri": "mcpforunity://editor/state"
+    },
+    {
+      "method": "tool",
+      "name": "read_console",
+      "arguments": {
+        "action": "get",
+        "types": [
+          "error"
+        ],
+        "count": "50",
+        "format": "json"
+      }
+    },
+    {
+      "method": "tool",
+      "name": "execute_code",
+      "arguments": {
+        "action": "execute",
+        "code": "return new { projectRoot=System.IO.Path.GetFullPath(System.IO.Path.Combine(UnityEngine.Application.dataPath,\"..\")),unityVersion=UnityEngine.Application.unityVersion,playing=UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode,compiling=UnityEditor.EditorApplication.isCompiling,failed=UnityEditor.EditorUtility.scriptCompilationFailed,updating=UnityEditor.EditorApplication.isUpdating,scene=UnityEngine.SceneManagement.SceneManager.GetActiveScene().path,sceneCount=UnityEngine.SceneManagement.SceneManager.sceneCount,sceneDirty=System.Linq.Enumerable.Any(System.Linq.Enumerable.Range(0,UnityEngine.SceneManagement.SceneManager.sceneCount),i=>UnityEngine.SceneManagement.SceneManager.GetSceneAt(i).isDirty),balance=FTProject.EditorTools.BalancePlayModeVerifier.Running,recording=FTProject.EditorTools.BalanceVideoRecorder.Running,review=FTProject.EditorTools.EnemyDirectionBatchReview.Running,manual=FTProject.GameClock.IsManualSimulation };"
+      }
+    }
+  ]
+}

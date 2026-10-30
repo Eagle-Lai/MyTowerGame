@@ -1,0 +1,7 @@
+{
+  "actions": [
+    {"method":"resource","uri":"mcpforunity://editor/state"},
+    {"method":"tool","name":"read_console","arguments":{"action":"get","types":["error"],"count":"50","format":"json"}},
+    {"method":"tool","name":"execute_code","arguments":{"action":"execute","code":"return new { scene=UnityEngine.SceneManagement.SceneManager.GetActiveScene().path, dirty=UnityEngine.SceneManagement.SceneManager.GetActiveScene().isDirty, playing=UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode, compiling=UnityEditor.EditorApplication.isCompiling, updating=UnityEditor.EditorApplication.isUpdating, failed=UnityEditor.EditorUtility.scriptCompilationFailed, review=FTProject.EditorTools.EnemyDirectionBatchReview.Running, balance=FTProject.EditorTools.BalancePlayModeVerifier.Running, recording=FTProject.EditorTools.BalanceVideoRecorder.Running, manual=FTProject.GameClock.IsManualSimulation };"}}
+  ]
+}

@@ -1,0 +1,64 @@
+--- generate.mjs.before
++++ generate.mjs
+@@ -50,7 +50,48 @@
+ const inputs=[path.join(root,name,'reference',path.basename(target.atlas)),path.join(root,name,'reference','source_prefab_offline.png')];
+ const sha=file=>createHash('sha256').update(fs.readFileSync(file)).digest('hex');
+ let recovery,artRevision,verifiedDirectTransport=false;
+-if(authorizedResume){
++if(authorizedResume&&name==='PossessedWarg'){
++ if(direction!=='Down'||revision!=='revision_01'||!curlTransport||systemLocalProxy)throw new Error('PossessedWarg resume is Down revision_01, direct Curl only');
++ const authorizationFile=path.join(root,name,'authorized_resume_20261030.json');
++ const authorization=JSON.parse(fs.readFileSync(authorizationFile,'utf8'));
++ const intentFile=path.join(dir,'recovery_intent.json');
++ const intent=JSON.parse(fs.readFileSync(intentFile,'utf8'));
++ const chain=JSON.parse(fs.readFileSync(path.join(root,'conversation_chain.json'),'utf8'));
++ const token='zombie-to-possessedwarg-20261030_092519-e9c91d1a-28d7-428f-ac88-9ea00046da2b';
++ if(chain.state!=='active'||chain.current_character!==name||chain.owner_thread_id!==process.env.CODEX_THREAD_ID||chain.dispatch_token!==token||authorization.owner_thread_id!==chain.owner_thread_id||authorization.dispatch_token!==token||intent.owner_thread_id!==chain.owner_thread_id||intent.dispatch_token!==token)throw new Error('PossessedWarg resume requires its actual active owner and exact dispatch token');
++ const projectRoot=path.resolve(root,'../../..');
++ const evidencePath=p=>{const absolute=path.resolve(projectRoot,p);if(!absolute.startsWith(projectRoot+path.sep))throw new Error('Evidence path outside project');return absolute;};
++ const equalSha=(file,expected)=>sha(file).toUpperCase()===expected?.toUpperCase();
++ const decisionFile=evidencePath(authorization.parent_decision_file);
++ const decision=JSON.parse(fs.readFileSync(decisionFile,'utf8'));
++ const originalListFile=evidencePath(decision.preserved_evidence_file);
++ const originals=JSON.parse(fs.readFileSync(originalListFile,'utf8'));
++ const originalMessages=evidencePath(decision.standing_original_messages_file);
++ const messages=JSON.parse(fs.readFileSync(originalMessages,'utf8'));
++ const originalText=JSON.stringify(messages);
++ const parameters={endpoint:'https://aihub.dog/v1/images/edits',model:'gpt-image-2',quality:'medium',size:'1536x1024',n:1};
++ if(!equalSha(decisionFile,authorization.parent_decision_sha256)||!equalSha(originalListFile,decision.preserved_evidence_sha256)||!equalSha(originalMessages,decision.standing_original_messages_sha256)||!equalSha(evidencePath(decision.standing_recovery_record),decision.standing_recovery_record_sha256)||!originalText.includes('01a180aa-7768-7222-bc85-7aa51e801cdd')||!originalText.includes('继续任务。后续同样的情况，不再需要我确认，可以继续静默执行'))throw new Error('PossessedWarg parent decision or original standing evidence drift');
++ if(decision.character!==name||decision.direction!==direction||decision.revision!==revision||decision.planned_dispatch_token!==token||decision.max_requests!==1||decision.original_outcome!=='unknown'||decision.original_possible_charge!=='unknown'||decision.resets_automatic_counter!==false||JSON.stringify(decision.parameters)!==JSON.stringify(parameters))throw new Error('Invalid once-only parent decision; original outcome and charge stay unknown');
++ if(authorization.user_statement!=='继续任务'||authorization.max_requests!==1||authorization.character!==name||authorization.direction!==direction||authorization.revision!==revision||authorization.transport!=='curl_https_no_retry'||authorization.force_direct!==true||authorization.edge_ip!=='191.101.132.254'||authorization.accept_possible_duplicate_charge!==true||authorization.original_outcome!=='unknown'||authorization.original_possible_charge!=='unknown'||authorization.resets_automatic_counter!==false||JSON.stringify(authorization.parameters)!==JSON.stringify(parameters)||!equalSha(fileURLToPath(import.meta.url),authorization.generator_sha256))throw new Error('PossessedWarg current authorization scope or generator fingerprint mismatch');
++ if(!equalSha(authorizationFile,intent.authorization_sha256)||intent.parent_decision_sha256!==authorization.parent_decision_sha256||intent.max_requests!==1||intent.character!==name||intent.direction!==direction||intent.revision!==revision||intent.generator_sha256!==authorization.generator_sha256||intent.original_outcome!=='unknown'||intent.original_possible_charge!=='unknown'||JSON.stringify(intent.protected_six)!==JSON.stringify(decision.protected_six)||JSON.stringify(intent.preserved_evidence)!==JSON.stringify(originals))throw new Error('PossessedWarg intent fingerprint mismatch');
++ if(Object.keys(originals).length!==21||Object.keys(decision.protected_six).length!==6)throw new Error('PossessedWarg needs the complete original evidence and six source protections');
++ for(const [p,s] of Object.entries(originals))if(!equalSha(path.join(root,name,p),s))throw new Error('Original PossessedWarg evidence changed: '+p);
++ for(const [p,s] of Object.entries(decision.protected_six))if(!equalSha(evidencePath(p),s))throw new Error('Protected production/source drift: '+p);
++ if(!equalSha(path.join(root,name,'generation/Down/request.json'),'B2B3C9FB4B78E2FFB5E606FCE95BB2843575982CADBE6C6E97D352346D27BA4A')||!equalSha(path.join(dir,'prompt.txt'),intent.prompt_sha256)||JSON.stringify(inputs.map(p=>sha(p).toUpperCase()))!==JSON.stringify(intent.input_sha256))throw new Error('PossessedWarg request, prompt or original reference drift');
++ const collect=p=>fs.readdirSync(p,{withFileTypes:true}).flatMap(e=>e.isDirectory()?collect(path.join(p,e.name)):[path.join(p,e.name)]);
++ const oldDown=path.join(root,name,'generation/Down');
++ if(collect(oldDown).some(p=>/\.(png|jpg|jpeg|webp)$/i.test(p)||path.basename(p)==='request.json'&&p!==path.join(oldDown,'request.json')))throw new Error('Existing Down image/request must be recovered; no further bounded request');
++ const processes=spawnSync('powershell.exe',['-NoProfile','-Command',"@(Get-CimInstance Win32_Process | Where-Object { ($_.Name -eq 'node.exe' -and $_.CommandLine -match 'generate[.]mjs' -and $_.ProcessId -ne "+process.pid+") -or ($_.Name -eq 'curl.exe' -and $_.CommandLine -match 'aihub[.]dog') }).Count"],{encoding:'utf8',windowsHide:true});
++ if(processes.status!==0||processes.stdout.trim()!=='0')throw new Error('Another image request is in flight or process inspection failed');
++ if(!preflight){
++  const unityFile=path.join(root,name,'resume_unity_preflight_20261030.json');
++  const unity=JSON.parse(fs.readFileSync(unityFile,'utf8'));const age=Date.now()-Date.parse(unity.observed_at);
++  if(unity.owner_thread_id!==chain.owner_thread_id||unity.dispatch_token!==token||unity.project?.projectRoot!=='E:/MyTowerGame'||unity.project?.unityVersion!=='2022.3.62f3c1'||unity.ready!==true||unity.idle!==true||unity.transport!=='http://127.0.0.1:8088/mcp'||!Number.isFinite(age)||age<0||age>120000)throw new Error('PossessedWarg needs fresh matching Unity identity, readiness and idle evidence');
++  if(Object.keys(process.env).some(k=>/^(HTTP_PROXY|HTTPS_PROXY|ALL_PROXY)$/i.test(k)&&process.env[k])||process.env.NO_PROXY!=='aihub.dog')throw new Error('PossessedWarg must clear proxy variables only in the invoking process');
++ }
++ verifiedDirectTransport=true;
++ recovery={mode:'bounded_PossessedWarg_resume_preserving_unknown_original',authorization:authorizationFile,authorization_sha256:sha(authorizationFile),intent:intentFile,intent_sha256:sha(intentFile),parent_decision:decisionFile,parent_decision_sha256:sha(decisionFile),max_requests:1,transport:'curl_https_no_retry',prior_outcome:'unknown',prior_charge:'unknown',resets_automatic_counter:false};
++}else if(authorizedResume){
+  const winterWolfTypeAEdgeResume=name==='WinterWolfTypeA'&&direction==='Down'&&revision==='revision_03';
+  const winterOgreResume=name==='WinterOgre'&&direction==='Up'&&['revision_03','revision_04','revision_05'].includes(revision);
+  const winterOgreProxyResume=winterOgreResume&&revision==='revision_04';
+@@ -239,6 +280,11 @@
+   for(const input of inputs)argv.push('--form','image[]=@"'+input.replaceAll('\\','/')+'";type=image/png');
+   const childEnv={...process.env};delete childEnv.AIHUB_IMAGE_API_KEY;
+   const result=spawnSync('curl.exe',argv,{input:'header = "Authorization: Bearer '+process.env.AIHUB_IMAGE_API_KEY+'"\n',encoding:'utf8',maxBuffer:32*1024*1024,timeout:610000,windowsHide:true,env:childEnv});
++  if(recovery?.mode==='bounded_PossessedWarg_resume_preserving_unknown_original'){
++   const match=result.stdout?.match(/\nCURL_HTTP_STATUS=(\d{3})\s*$/);
++   fs.writeFileSync(path.join(dir,'transport_outcome.json'),JSON.stringify({observed_at:new Date().toISOString(),process_exit:result.status,error:result.error?{name:result.error.name,code:result.error.code,message:result.error.message}:null,http_status:match?Number(match[1]):null,stderr:result.stderr,automatic_retries:0,possible_charge:'not_independently_verified'},null,2),{flag:'wx'});
++   if(result.stdout)fs.writeFileSync(path.join(dir,'provider_response.txt'),match?result.stdout.slice(0,match.index):result.stdout,{flag:'wx'});
++  }
+   if(result.error||result.status!==0)throw new Error('curl transport failed '+(result.status??result.error?.code)+' '+(result.stderr??'').slice(0,500));
+   const match=result.stdout.match(/\nCURL_HTTP_STATUS=(\d{3})\s*$/);if(!match)throw new Error('curl returned no HTTP outcome');
+   const status=Number(match[1]);response={status,ok:status>=200&&status<300};data=JSON.parse(result.stdout.slice(0,match.index));

@@ -1,0 +1,14 @@
+from pathlib import Path
+from datetime import datetime,timezone,timedelta
+from PIL import Image
+import hashlib,json,os
+D=Path(__file__).resolve().parent;H=D.parent;read=lambda p:json.loads(p.read_text(encoding='utf-8-sig'));sha=lambda p:hashlib.sha256(p.read_bytes()).hexdigest().upper()
+c=read(H/'conversation_chain.json');assert c['state']=='active' and c['current_character']=='VolcanoParasite' and c['owner_thread_id']==os.environ['CODEX_THREAD_ID']
+parent=D/'generation/Down'; raw=parent/'raw.png'; result=read(parent/'result.json');assert result['status']==200 and result['bytes']==raw.stat().st_size
+review={'observed_at':datetime.now(timezone(timedelta(hours=8))).isoformat(),'raw_sha256':sha(raw),'size':list(Image.open(raw).size),'decision':'rejected_for_final_use_missing_lower_teeth','actual_visual_observations':['Full returned raw viewed. Axial front, no eyes, golden spotted skin and dark curved horns match.','All three front heads have prominent upper teeth but no clear lower tooth row; the original has large teeth on BOTH jaws. Needs targeted correction.','No ground shadow or invented feet. Body has rounded opaque connection. Preserve initial raw/request/result unchanged.'],'user_approved':False}
+(parent/'raw_review_20261028.json').write_text(json.dumps(review,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+out=parent/'revision_01';out.mkdir(exist_ok=False)
+prompt=(parent/'prompt.txt').read_text(encoding='utf-8')+'\nTARGETED CORRECTION TO IMAGE 3: Image 3 is the first front sheet. Preserve its exact layout, palette, dark curved horns, eyeless anatomy, body sections, crisp outline, magenta background and equal head scales. Correct ONLY the mouth in the three head cells: original reference 1 and assembled reference 2 have TWO opposing rows of enormous ivory teeth, upper teeth pointing DOWN and lower teeth pointing UP from the pale golden lower jaw. Draw a visible shallow dark mouth gap between those opposing rows. Normal closed-ish teeth interlock; Angry slightly wider mouth opening but same outer scale; Dead original chipped/broken teeth. Do NOT add eyes. The pale golden bottom jaw must have 4-5 upward ivory lower teeth, NOT be an empty golden lip. Keep both rows distinctly readable. Do not duplicate the head or paint teeth onto body cells.\n'
+(out/'prompt.txt').write_text(prompt,encoding='utf-8')
+(out/'generation_intent.json').write_text(json.dumps({'character':'VolcanoParasite','direction':'Down','revision':'revision_01','owner_thread_id':c['owner_thread_id'],'dispatch_token':c['dispatch_token'],'max_requests':1,'reason':'Missing lower teeth observed in initial raw. Targeted original-identity art correction.','parent_raw_sha256':sha(raw),'parent_result_sha256':sha(parent/'result.json'),'prompt_sha256':sha(out/'prompt.txt')},ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+print(json.dumps({'revision':'revision_01','max_requests':1,'initial_raw_preserved':True}))

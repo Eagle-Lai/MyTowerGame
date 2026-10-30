@@ -1,0 +1,54 @@
+{
+  "observed_at": "2026-10-28T15:59:00.720469+08:00",
+  "status": "completed_pending_user_art_review",
+  "user_approved": false,
+  "note": "Up/Down正式生成各一次HTTP200，未付费重试。Up最终选local_raster_revision_03/Up_sheet.png，Down选local_raster_revision_02/Down_sheet.png；原raw保留。本地r01去除Up头部重复耳，r02仅压扁生成躯干恢复圆胖比例；两版被否决布局保留，最终后脑盖住颈帽、四短足根嵌入身体、尾巴细小。旧两轮673帧因后脚残留淡三角痕降为历史，r03完整同行插值清除后跟内痕、保持外轮廓，仅替换当前角色图集后重跑。保留原tan/ochre斑点野猪、象牙色獠牙、躯干上唯一一对耳、四短足和细尖尾；Up后脑无脸无獠牙，Down正常圆眼、攻击斜眉、死亡空白圆眼及短吐舌可辨。原含HP的8个非Shadow Sprite PPtr及非美术语义保持，只移除授权战斗Shadow。源Boar Death旋转Body而Walk无复位，只在Swine自有Walk补Body Euler三轴常量0，136原float绑定/PPtr/事件/时长/loop保持，改后139；图集返修后动画SHA不变，不改共享资源或C#。现场反射采样多数错过复用阶段，仅有旧轮行走Body0观察，不能声称量测复用前后Euler0；复用恢复由实际断言及PNG证明。最终runtime_r02为84/0、338帧，runtime_updeath_r02为84/0、339帧，共677真实PNG。实际看最终四方向与strip、全部10张时序/步态/愤怒板(256采样位/238张不同实际帧)、双向死亡和复用后Left三张原尺寸PNG及后脚原尺寸切片。抽样可见短足小幅对角摆动、头身轻摇、连续四向转向；攻击表情切换、受击/致死白闪结束、双向倾斜淡出/回收、复用正常朝向、暂停静止及1x/2x/3x推进。未见断开的根部、重复耳、紫底残留或地面阴影。淡出半透明阶段可透见头身重叠轮廓；正背相对原侧图更窄、材质更平滑，最终美术判断交用户。方法为真实PNG时序抽样，未实时播放GIF全片、未逐张审完677帧。实现与内部审阅完成，user_approved=false。",
+  "viewed_sheets": [
+    "runtime_r02_angry_detail.png",
+    "runtime_r02_sequence_0.png",
+    "runtime_r02_sequence_1.png",
+    "runtime_r02_sequence_2.png",
+    "runtime_r02_walk_cycle.png",
+    "runtime_updeath_r02_angry_detail.png",
+    "runtime_updeath_r02_sequence_0.png",
+    "runtime_updeath_r02_sequence_1.png",
+    "runtime_updeath_r02_sequence_2.png",
+    "runtime_updeath_r02_walk_cycle.png"
+  ],
+  "sample_slots": 256,
+  "distinct_actual_frame_samples": 238,
+  "source_manifest": "sources.json",
+  "sources_sha256": "282DB9FBB61DFF2C0CE684F207CE28121798DB4857403508D3141EE6D033B05E",
+  "viewed_sheet_sha256": {
+    "runtime_r02_angry_detail.png": "31452262A4FF7D9E0089D05C170BDEA13A1F6D557B24C718266DB1811A837722",
+    "runtime_r02_sequence_0.png": "80D4FC271BFECED64C40FB44E1EEAB3C56C79FCDA35703E240FDFE8F0CB2EBC7",
+    "runtime_r02_sequence_1.png": "E0C63379B45D1A08294126DF87056A8004B29F587223D3646ABDEDE7500D4465",
+    "runtime_r02_sequence_2.png": "786AA1B11E11AD371D370801E59DFCBED398880437D1FE3508C7B385FF520BF6",
+    "runtime_r02_walk_cycle.png": "D9DABC8965C9CF90F226190F4D671F7BAB607246A70E4F01734B0CAA427AB232",
+    "runtime_updeath_r02_angry_detail.png": "37E18A6916670DE12D83A2A0EDAB1A74A3A69C48622839CCC2FC301ED0E2ED99",
+    "runtime_updeath_r02_sequence_0.png": "9E587A3EE11EA01546F4DA789E884A2FFA3D8970F0CB8A072BB9CD60F44B7BCD",
+    "runtime_updeath_r02_sequence_1.png": "539A662410CDD3B9AF4DC06A1E0153FCFBF6B83B7AFCB9B03A96B1CD79D6F6FC",
+    "runtime_updeath_r02_sequence_2.png": "3C5D7D15A1A7D04A6FC387A9A2664A5D6CD06A030C669BF4BC38B45118C608BF",
+    "runtime_updeath_r02_walk_cycle.png": "092726B59BF988F1F64F7E5982E48F82CA56E7AE9A4AD707D4B70F29DB52FF50"
+  },
+  "additional_viewed": [
+    "runtime_r02/four_directions.png",
+    "runtime_visual_strip.png",
+    "runtime_r02/frames/DeathAutoRecycle_00162.png",
+    "runtime_r02/frames/ContinuousTurns_00323.png",
+    "runtime_updeath_r02/frames/DeathAutoRecycle_00162.png",
+    "staged_art/Up_LegFront.png"
+  ],
+  "additional_viewed_sha256": {
+    "runtime_r02/four_directions.png": "31F67FF488D7668A3E390768646A62D8AC8062E0B48980313C652FD6349038FB",
+    "runtime_visual_strip.png": "286BBE5EED638DC8ADA499EEFF69061C281FC029C7BADEF50EE611A42DDAAB2B",
+    "runtime_r02/frames/DeathAutoRecycle_00162.png": "E30B1DD3BA0414B6B1C2B4C42CBE77618653F2173B6CFCD43C54C28309B8AAA8",
+    "runtime_r02/frames/ContinuousTurns_00323.png": "3500CAFC3FD8D9466D29026A7DA3E6B0174AF96A6CC2D999B5E5AB76A00E9D14",
+    "runtime_updeath_r02/frames/DeathAutoRecycle_00162.png": "29C6E8528F8391169192446A3DC97F59651315AC21A2F2B02F77854ACE9175C7",
+    "staged_art/Up_LegFront.png": "8E98CA68F2D9990D347B8510801DB99B9E7381A8D54D7D97EB3F330B0544634D"
+  },
+  "method": "Chronological actual PNG samples, gait-cycle and angry sheets, three full runtime PNGs and native heel; no live GIF playback or exhaustive all-frame review",
+  "rejected_previous": "local_raster_revision_03/rejected_previous.json",
+  "live_euler_limitation": "Live reflection mostly missed reuse stage; no measured pre/post-reuse Euler-zero claim",
+  "final_version_binding": "version_binding_final_20261028.json"
+}

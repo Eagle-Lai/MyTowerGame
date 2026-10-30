@@ -1,0 +1,19 @@
+{
+  "observed_at": "2026-10-29T18:28:40+08:00",
+  "recorded_by": "WorkBuddy agent session (user direct instruction: 好的，请你实施修复方案)",
+  "scope": "Docs-only generation CLI change. No Unity C# / Assets / Packages / ProjectSettings / Luban changes.",
+  "authorization": "Direct user instruction in the WorkBuddy session following the edge-map diagnosis, implementing image_transport_edge_map_20261029_1830.md. This supersedes the proxy-transport recommendation in WinterOgre/transport_fix_20261029.json (that recommendation relied on unauthenticated 401 controls, which cannot see upstream routing).",
+  "evidence": "Docs/EnemyDirectionReview/Remaining_20261024/image_transport_edge_map_20261029_1830.md",
+  "generator_before_sha256": "AEC22E7E34C402A3CB0871972731E84B632185E53E98E1937FEE83F89490A2DA",
+  "generator_after_sha256": "C0F4717AE38BE50F5B022BD8C09D46E97E92026FF0FF6BFA4C8D309BE2F39D30",
+  "generator_diff_summary": [
+    "argv (curl transport): direct branch now pushes --noproxy '*' when verifiedDirectTransport (preserved original behavior) AND --resolve aihub.dog:443:191.101.132.254; proxy branch unchanged (lines 218-223)",
+    "request record: add resolve_transport {hostname,ip,scope} for curl transports (line ~209)",
+    "preflight print: include resolve_transport"
+  ],
+  "generator_diff": "--- a/generate.mjs (AEC22E7E34C402A3CB0871972731E84B632185E53E98E1937FEE83F89490A2DA)\n+++ b/generate.mjs (C0F4717AE38BE50F5B022BD8C09D46E97E92026FF0FF6BFA4C8D309BE2F39D30)\n@@ curl argv\n-  if(systemLocalProxy)argv.push('--proxy','http://127.0.0.1:7897','--noproxy','');\n-  if(verifiedDirectTransport)argv.push('--noproxy','*');\n+  if(systemLocalProxy){argv.push('--proxy','http://127.0.0.1:7897','--noproxy','');}\n+  else{\n+   if(verifiedDirectTransport)argv.push('--noproxy','*');\n+   argv.push('--resolve','aihub.dog:443:191.101.132.254');\n+  }\n@@ request object\n-  ...(systemLocalProxy?{proxy_transport:{...}}:{}),inputs,input_sha256:inputs.map(sha),prompt,\n+  ...(systemLocalProxy?{proxy_transport:{...}}:{}),...(curlTransport?{resolve_transport:{hostname:'aihub.dog',ip:'191.101.132.254',scope:'Pinned good image-upstream edge per Docs/EnemyDirectionReview/Remaining_20261024/image_transport_edge_map_20261029_1830.md'}}:{}),inputs,input_sha256:inputs.map(sha),prompt,\n@@ preflight print\n-  ...proxy_transport:request.proxy_transport,inputs,...\n+  ...proxy_transport:request.proxy_transport,resolve_transport:request.resolve_transport,inputs,...\n",
+  "changes": "Direct curl transport now pins the verified good image-upstream edge 191.101.132.254 via curl --resolve, eliminating the DNS round-robin that intermittently routed paid image-edit requests to the broken 216.236.62.158/159 edges (Curl52 @10.02s / Curl28 @21s). node_fetch transport unchanged (no --resolve equivalent applied; do not use it for paid requests). Proxy transport unchanged in code but condemned by evidence: Clash DNS resolves aihub.dog to broken edges, 3/3 authenticated proxy attempts failed. Fallback good edge 191.101.132.62 documented for manual swap if 191.101.132.254 degrades.",
+  "verification": "node --check syntax OK; edge map probes 2026-10-29 18:20-18:25: 191.101.132.254/.62 authenticated edits HTTP 200 (19-20s), 216.236.62.158 Curl52@10.02s, 216.236.62.159 Curl28@21s; first functional proof will be the next bounded authorized request (expect HTTP 200 in 20-40s).",
+  "rollback": "Delete the single line 'if(!systemLocalProxy)argv.push('--resolve','aihub.dog:443:191.101.132.254');' and the resolve_transport fields; DNS round-robin behavior restored.",
+  "protection_notes": "Assets/Packages/ProjectSettings/Luban untouched (drift checks unaffected). Prior uncertain attempt evidence and all generation/ artifacts untouched. progress.json/conversation_chain.json untouched (owner-thread owned)."
+}

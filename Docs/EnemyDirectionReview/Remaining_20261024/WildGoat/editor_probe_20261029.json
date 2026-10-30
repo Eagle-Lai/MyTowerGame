@@ -1,0 +1,12 @@
+{
+  "actions": [
+    {
+      "method": "tool",
+      "arguments": {
+        "action": "execute",
+        "code": "return new { playing = UnityEditor.EditorApplication.isPlaying, compiling = UnityEditor.EditorApplication.isCompiling, updating = UnityEditor.EditorApplication.isUpdating, domain = UnityEditor.EditorApplication.isCompiling || UnityEditor.EditorApplication.isUpdating, scriptFailed = UnityEditor.EditorUtility.scriptCompilationFailed };"
+      },
+      "name": "execute_code"
+    }
+  ]
+}

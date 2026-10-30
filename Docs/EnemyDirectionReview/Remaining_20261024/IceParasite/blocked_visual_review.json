@@ -1,0 +1,225 @@
+{
+  "name": "IceParasite",
+  "index": 48,
+  "status": "blocked",
+  "category": "其他",
+  "reason": "真实转向 GIF 的对象池复用后 Left/Right 行走出现倒置：晶刺朝下、浅色腹面朝上。两轮程序断言虽各 84/0，但未检查该姿态错误，视觉验收不通过。",
+  "diagnosis": "Death_Directions 的 Body/localEulerAnglesRaw.z 结束值为 -180；Walk_Directions 和 Ready_Directions 没有 Body 旋转绑定。首次侧面行走正常，死亡复用后侧面残留倒置。",
+  "last_completed_stage": "单角色安装、Builder Verify、两轮真实 Unity Play、6 张实际图像审阅；尚未 record。",
+  "runtime": {
+    "name": "IceParasite",
+    "runtime": [
+      {
+        "revision": "runtime_r01",
+        "pass": 84,
+        "fail": 0,
+        "frames": 341,
+        "records_sha256": "223F7D70F07BD03E7C8F0BEF79050D78C581FB04BA75AE525371C88AEB995CF3"
+      },
+      {
+        "revision": "runtime_updeath_r01",
+        "pass": 84,
+        "fail": 0,
+        "frames": 341,
+        "records_sha256": "C4FCE2DDBA97298F0E3E75681611C6B8C28A08A60CFD708A332E23AC55ED4746"
+      }
+    ],
+    "passes": 168,
+    "failures": 0,
+    "actual_frames": 682,
+    "visual_strip_sources": [
+      {
+        "revision": "runtime_r01",
+        "file": "frames/UpWalk_00000.png",
+        "frame": 1
+      },
+      {
+        "revision": "runtime_r01",
+        "file": "frames/UpWalk_00004.png",
+        "frame": 39
+      },
+      {
+        "revision": "runtime_r01",
+        "file": "frames/UpWalk_00008.png",
+        "frame": 113
+      },
+      {
+        "revision": "runtime_r01",
+        "file": "frames/UpWalk_00012.png",
+        "frame": 186
+      },
+      {
+        "revision": "runtime_r01",
+        "file": "frames/UpWalk_00016.png",
+        "frame": 259
+      },
+      {
+        "revision": "runtime_r01",
+        "file": "frames/UpWalk_00020.png",
+        "frame": 328
+      },
+      {
+        "revision": "runtime_r01",
+        "file": "frames/DownWalk_00021.png",
+        "frame": 334
+      },
+      {
+        "revision": "runtime_r01",
+        "file": "frames/DownWalk_00025.png",
+        "frame": 403
+      },
+      {
+        "revision": "runtime_r01",
+        "file": "frames/DownWalk_00029.png",
+        "frame": 477
+      },
+      {
+        "revision": "runtime_r01",
+        "file": "frames/DownWalk_00034.png",
+        "frame": 569
+      },
+      {
+        "revision": "runtime_r01",
+        "file": "frames/DownWalk_00038.png",
+        "frame": 646
+      },
+      {
+        "revision": "runtime_r01",
+        "file": "frames/DownWalk_00042.png",
+        "frame": 718
+      },
+      {
+        "revision": "runtime_r01",
+        "file": "frames/Attack_00115.png",
+        "frame": 2020
+      },
+      {
+        "revision": "runtime_r01",
+        "file": "frames/Attack_00123.png",
+        "frame": 2166
+      },
+      {
+        "revision": "runtime_r01",
+        "file": "frames/Attack_00131.png",
+        "frame": 2317
+      },
+      {
+        "revision": "runtime_r01",
+        "file": "frames/Attack_00138.png",
+        "frame": 2444
+      },
+      {
+        "revision": "runtime_r01",
+        "file": "frames/Attack_00146.png",
+        "frame": 2595
+      },
+      {
+        "revision": "runtime_r01",
+        "file": "frames/Attack_00154.png",
+        "frame": 2747
+      },
+      {
+        "revision": "runtime_updeath_r01",
+        "file": "frames/DeathAutoRecycle_00159.png",
+        "frame": 2812
+      },
+      {
+        "revision": "runtime_updeath_r01",
+        "file": "frames/DeathAutoRecycle_00161.png",
+        "frame": 2849
+      },
+      {
+        "revision": "runtime_updeath_r01",
+        "file": "frames/DeathAutoRecycle_00163.png",
+        "frame": 2888
+      },
+      {
+        "revision": "runtime_updeath_r01",
+        "file": "frames/DeathAutoRecycle_00166.png",
+        "frame": 2946
+      },
+      {
+        "revision": "runtime_updeath_r01",
+        "file": "frames/DeathAutoRecycle_00168.png",
+        "frame": 2983
+      },
+      {
+        "revision": "runtime_updeath_r01",
+        "file": "frames/DeathAutoRecycle_00170.png",
+        "frame": 3023
+      }
+    ],
+    "status": "runtime_complete_pending_visual_check"
+  },
+  "evidence": [
+    {
+      "revision": "runtime_r01",
+      "stage": "RightWalk",
+      "facing": "Right",
+      "frame": 1316,
+      "file": "frames/RightWalk_00076.png",
+      "sha256": "5CF6198B9544890AE30E646625BAC35EC702F02F03742B885C97A03BE86B0B84",
+      "state": "Walk",
+      "normalizedTime": 7.692301273345947,
+      "alive": true
+    },
+    {
+      "revision": "runtime_r01",
+      "stage": "ContinuousTurns",
+      "facing": "Right",
+      "frame": 4896,
+      "file": "frames/ContinuousTurns_00272.png",
+      "sha256": "0C2395F55C12981237CED4B1910830E93E09BC18B3C47E1CCC0EDE35C54ED3DC",
+      "state": "Walk",
+      "normalizedTime": 13.789480209350586,
+      "alive": true
+    },
+    {
+      "revision": "runtime_r01",
+      "stage": "LeftWalk",
+      "facing": "Left",
+      "frame": 926,
+      "file": "frames/LeftWalk_00054.png",
+      "sha256": "36064863C21A84A8C2775B577F9FB075D1A008AADE5B498F2E306D5B754A5486",
+      "state": "Walk",
+      "normalizedTime": 5.488844871520996,
+      "alive": true
+    },
+    {
+      "revision": "runtime_r01",
+      "stage": "ContinuousTurns",
+      "facing": "Left",
+      "frame": 5708,
+      "file": "frames/ContinuousTurns_00316.png",
+      "sha256": "87CE74F75A2BE6DE174CF7FD077CE99E47C49EED0D530C3EEC6DCFB4C096F1BB",
+      "state": "Walk",
+      "normalizedTime": 18.274770736694336,
+      "alive": true
+    }
+  ],
+  "review_media": [
+    "runtime_r01/four_directions.png",
+    "runtime_visual_strip.png",
+    "runtime_visual_review_board.png",
+    "runtime_r01/walk_turn.gif",
+    "side_rotation_diagnosis_r02.json"
+  ],
+  "images_viewed": [
+    "reference/source_prefab_offline.png",
+    "generation/Up/raw.png",
+    "generation/Down/raw.png",
+    "offline_layout_review.png",
+    "runtime_r01/four_directions.png",
+    "runtime_visual_review_board.png"
+  ],
+  "image_budget": {
+    "viewed": 6,
+    "maximum": 6,
+    "remaining": 0
+  },
+  "repair_completed": "Down HeadDead 多出的叉形眼已在 generation/Down/revision_01 定点修除，旧原图保留；复用旋转缺陷未修复。",
+  "next_action": "新建 repair revision 并备份当前证据，仅对 IceParasite 专用 Ready/Walk 动画增加 Body 旋转复位绑定，保留原有侧面曲线、事件和共享实现。修复后运行 start_runtime.py IceParasite runtime_r02，返回非 Play 后运行 start_runtime.py IceParasite runtime_updeath_r02 up，重新审阅媒体。不要重新安装覆盖 installed_manifest。",
+  "production_state": "保持 IceParasite 已安装资源与 prefab 便于复现；未回滚，未改共享 C#、共享动画或其他角色。",
+  "scope_audit": "session_scope_comparison.json：本轮原有文件仅 IceParasite prefab 与 Reporter 自动 build_info 变化；291 项历史差异与前一 Husky 审计相同，无新增差异。",
+  "observed_at": "2026-10-25T11:59:53.721296+08:00"
+}

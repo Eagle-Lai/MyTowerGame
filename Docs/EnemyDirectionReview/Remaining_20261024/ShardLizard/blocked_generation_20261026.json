@@ -1,0 +1,412 @@
+{
+  "character": "ShardLizard",
+  "index": 94,
+  "status": "blocked",
+  "blocked_at": "2026-10-26T22:50:38.190703+08:00",
+  "owner_thread_id": "01a178a8-fc5a-77b0-9881-0a0b40872da8",
+  "dispatch_token": "scarabmounted-to-shardlizard-e066b2f9cbb54a5ca5b215b2e08ea8d2",
+  "stage": "reference reviewed; generation withheld due to inherited upstream block",
+  "blocked_reason": "Inherited upstream image-service block, not a failed ShardLizard request. ScarabMounted Up returned HTTP 402 insufficient_balance: Upstream image account has insufficient balance. No restored balance/compatible-account evidence was found in the supplied handoff or subsequent local result records. ShardLizard Up and Down have never been requested; only reviewed references, anatomy and prompts were prepared. No paid probe or retry, stage, install, Verify, Play or record was performed. Resume only after restored service evidence; preserve all upstream requests, failures and PossessedWarg unknown outcome.",
+  "paid_requests_this_thread": 0,
+  "request_results": {
+    "Up": {
+      "status": "not_requested",
+      "prompt": "generation/Up/prompt.txt"
+    },
+    "Down": {
+      "status": "not_requested",
+      "prompt": "generation/Down/prompt.txt"
+    }
+  },
+  "upstream_evidence": {
+    "source": "Docs/EnemyDirectionReview/Remaining_20261024/ScarabMounted/generation/Up/result.json",
+    "result": {
+      "finished": "2026-10-26T14:37:47.456Z",
+      "status": 402,
+      "error": {
+        "code": "insufficient_balance",
+        "message": "Upstream image account has insufficient balance",
+        "type": "upstream_error"
+      }
+    },
+    "sha256": "40955FFD1A5F0D590524E14171E3C55766D5D1D918734E85D8C404BEAF3909FD",
+    "later_local_result_records": [
+      {
+        "path": "Docs/EnemyDirectionReview/Remaining_20261024/ScarabMounted/generation/Up/result.json",
+        "sha256": "40955FFD1A5F0D590524E14171E3C55766D5D1D918734E85D8C404BEAF3909FD",
+        "finished": "2026-10-26T14:37:47.456Z",
+        "status": 402,
+        "error": {
+          "code": "insufficient_balance",
+          "message": "Upstream image account has insufficient balance",
+          "type": "upstream_error"
+        }
+      }
+    ],
+    "restoration_evidence_found": false,
+    "assessment_method": "Read existing handoffs and local result records; no network/model-list/billable probe. A model listing alone would not establish balance or compatible-account availability."
+  },
+  "reference_review": {
+    "observed_at": "2026-10-26T22:48:01.048661+08:00",
+    "method": "Actually viewed original atlas, complete serialized source-prefab offline render and complete battle-prefab offline render; read both structures and original sprite/controller/event bindings. These are reference images, not Play evidence.",
+    "observed_identity": "Low chunky olive-brown lizard with ochre round patches and a pale scalloped lower flank/jaw, a broad blunt head with ivory eyes and angular golden forehead and cheek chips, one large flat-topped faceted GOLDEN dorsal shard with pale upper edge and ochre spot, four short stout reptile feet, and a long thick-rooted tapering segmented tail with small golden diamond chips and dorsal ridges. Thick dark olive outlines and simple warm cel shading. No ears, fur, saddle, rider, wings or extra organs.",
+    "source_bindings": "Seven visible renderers: HeadNormal, Body, Tail, two LegFront and two LegBack. Source and battle use atlas GUID 172753c318ee91e4b8c57bf3f262cded. Battle receiver already binds HeadNormal/HeadAngry/HeadDead to the same atlas. Preserve these original side bindings.",
+    "controller": "Existing Rat controller; Idle/Ready/Walk/Run/Attack/Death and Attack/Action/State/Speed. Attack has SetHead and Event; Death has SetHead. The Rat family is a controller contract, not permission to replace lizard anatomy with a rat.",
+    "reference_files": [
+      "reference/ShardLizard.png",
+      "reference/source_prefab_offline.png",
+      "reference/battle_prefab_offline.png",
+      "reference/source_structure.json",
+      "reference/battle_structure.json"
+    ],
+    "corrections": "The generic preparation called the crystal shards cream. Actual images show warm golden cores with pale top facets and dark edges. The large back shard must not become a saddle, mane or cluster of new crystals. No mammal ears or fur.",
+    "up_anatomy": "Axial rear head with no eyes, mouth, teeth or nostrils. Gold back shard belongs only to torso. Four splayed feet seen from their backs, no front toe faces on rear heels. Tail attaches at near lower rump and trails down toward viewer.",
+    "down_anatomy": "Axial broad snout with paired ivory eyes and small original angular golden chips. Three aligned normal/angry/dead head states; angry opens jaw and dead follows original drooping/tongue state. Tail attaches at far upper rump and recedes upward behind torso.",
+    "future_layout_gate": "Up tail art will have top-center root; pack_character defaults to bottom Tail pivot and an upward slice. Before staging/installing, set a character-specific top-root pivot and trailing-down Up tail layout, inspect overlap and keep tail root connected through gait/attack/death. Do not install the generic layout without actual visual review.",
+    "generated_visual_review": false,
+    "user_approved": false
+  },
+  "evidence_hashes": {
+    "anatomy_plan.json": "1B88CE2B12AA192BB25CA4524B09FC6827510FE6645E9C12B4E3D092A2B2063D",
+    "reference_review.json": "AA614DAA799E613332F772397CCE3236C9B51E7FBC41317199AE26D87CE29219",
+    "generation/Up/prompt.txt": "884D80E4F303BD2EC497ACB6C2B8963E8F44FAF12ED5542C66B2288637B54EFB",
+    "generation/Down/prompt.txt": "68778B2A5E6D81F05954849E56CA5C97F122692E4654077CF76E32476258D270"
+  },
+  "production_snapshot": {
+    "path": "incremental_before_20261026.json",
+    "file_count": 5138,
+    "changed": [],
+    "added": [],
+    "protected_six_unchanged": {
+      "Assets/Prefabs/Enemy/Enemy_ShardLizard.prefab": "2F7C598A97742F6BD8D83504CE7E8962F1D49FCF57292583372AF7D28250B0DA",
+      "Assets/Prefabs/Enemy/Enemy_ShardLizard.prefab.meta": "CA0615B6BCCB94CDAB64345D7DAE6E1E9661705E9C4ABBBE6782F5A61D15A0F9",
+      "Assets/_UIAssets/Monsters/Rats/ShardLizard/ShardLizard.prefab": "A0C70597663AA9C871D90584AF38CE137762D881A00B66E4A5B29678F5DDB38E",
+      "Assets/_UIAssets/Monsters/Rats/ShardLizard/ShardLizard.prefab.meta": "EE1EF7D52CF8B12498B8067254F2840D465337E1BB249854D146793BEBCF99EF",
+      "Assets/_UIAssets/Monsters/Rats/ShardLizard/ShardLizard.png": "75435EAFD8ABF515D8A3CE16A8F878C10C91B3A730B4922686978BB225647726",
+      "Assets/_UIAssets/Monsters/Rats/ShardLizard/ShardLizard.png.meta": "FB0525498ECD9C88C02868FFB93E5292498BBFEE2032FA2C0C581CA08855D27A"
+    },
+    "legacy_scope_reference": {
+      "source": "RoyalBoar/scope_incremental_20261026.json",
+      "unexpected_count": 291,
+      "legacy_pass": false,
+      "classification_note": "Historical audit unchanged; this is a new additive character intake"
+    }
+  },
+  "preserved_upstream_artifact_hashes": {
+    "Docs/EnemyDirectionReview/Remaining_20261024/PossessedWarg/generation/Down/prompt.txt": "23D7BE3F64321E1C7F2FB1AA489DF6A7F5932226CAA1364E49C02F1A76BF2866",
+    "Docs/EnemyDirectionReview/Remaining_20261024/PossessedWarg/generation/Down/request.json": "B2B3C9FB4B78E2FFB5E606FCE95BB2843575982CADBE6C6E97D352346D27BA4A",
+    "Docs/EnemyDirectionReview/Remaining_20261024/PossessedWarg/generation/Up/prompt.txt": "EA762422EFB8FB795ABB233519071A3DE1CDA3DFFFB61568B4711FC69FD84E38",
+    "Docs/EnemyDirectionReview/Remaining_20261024/PossessedWarg/generation/Up/raw.png": "8B015639A80D16F54901C294CECF061A08479E5E7029206FB6C05057DB106868",
+    "Docs/EnemyDirectionReview/Remaining_20261024/PossessedWarg/generation/Up/request.json": "C53336C4BDFA3B1875DB458B36CDA596491EFEE943C1345CBC6881EB45B087C4",
+    "Docs/EnemyDirectionReview/Remaining_20261024/PossessedWarg/generation/Up/result.json": "702CDD4A14BD757DF550B2ABB97E018E9DDAE3B5B3E70D33AD2C15F1CACF3CE0",
+    "Docs/EnemyDirectionReview/Remaining_20261024/SabretoothTiger/generation/Down/prompt.txt": "3124AE1CF00E0E83F3A96AEAAB2DE0B51657A2DC240BAC73A8FF5A47451CEF55",
+    "Docs/EnemyDirectionReview/Remaining_20261024/SabretoothTiger/generation/Down/request.json": "1B496AE167A62920B8A926E080FF064902D25BC50B4E3849B3E55B5550F172F1",
+    "Docs/EnemyDirectionReview/Remaining_20261024/SabretoothTiger/generation/Down/result.json": "1F8D7C45BD36AD01CDA416C3651BB3438820404D7A99F6E0E1254164CEC63704",
+    "Docs/EnemyDirectionReview/Remaining_20261024/SabretoothTiger/generation/Up/prompt.txt": "026EC9F0AAC86E227921271BA80FEC8C75EBFD65FD9698ACB39F88F934DBF199",
+    "Docs/EnemyDirectionReview/Remaining_20261024/SabretoothTiger/generation/Up/request.json": "2A2FD26C080F75B273783DFD1DF7CCB9F7BD851120FB305D46C940514D244EBC",
+    "Docs/EnemyDirectionReview/Remaining_20261024/SabretoothTiger/generation/Up/result.json": "2138766CE734E7BC4D1455732ED84347A12437B5FC063B7C9A3568B244274493",
+    "Docs/EnemyDirectionReview/Remaining_20261024/Scarab/generation/Down/prompt.txt": "8DC5567FAC6ACA72AA7D948C38463F8CE4268BB9FDF9D275B7517EF1AD69B455",
+    "Docs/EnemyDirectionReview/Remaining_20261024/Scarab/generation/Down/request.json": "3780FE8100A677849AF493B338ACA899E65CD205052CA975353166945D452FD0",
+    "Docs/EnemyDirectionReview/Remaining_20261024/Scarab/generation/Down/result.json": "DF5D4604C840A3B4A435372CF5EFAAA784EC219122A0EBB1B9E040C3A1C73904",
+    "Docs/EnemyDirectionReview/Remaining_20261024/Scarab/generation/Up/prompt.txt": "861DC80E0E3E178CA8B95B40397F42F0E3AE858D75856C6ABDE6DD38F41BFCB7",
+    "Docs/EnemyDirectionReview/Remaining_20261024/Scarab/generation/Up/request.json": "A20AC079CD0E31028B682F31014EBDD588B9473D3962BBA6AD2BFB987ABB1E65",
+    "Docs/EnemyDirectionReview/Remaining_20261024/Scarab/generation/Up/result.json": "8931CF296C74B705ACEB1F46FCD6F3A7658AA6B63E19E80457A871B090115FB0",
+    "Docs/EnemyDirectionReview/Remaining_20261024/ScarabMounted/generation/Down/prompt.txt": "5E7CA52A0D65086F29D82AC360FC5085C40683228D4A546D8F9A8B159975960F",
+    "Docs/EnemyDirectionReview/Remaining_20261024/ScarabMounted/generation/Up/prompt.txt": "E949CEE249D74FBE7B3C80E1CEC4BEF040E9B8F66E36B3782F1924457FA65B64",
+    "Docs/EnemyDirectionReview/Remaining_20261024/ScarabMounted/generation/Up/request.json": "322E96BCBEF023503FC41B6EBE0CFA484DD87669F7630F572011AF27AB8DF43D",
+    "Docs/EnemyDirectionReview/Remaining_20261024/ScarabMounted/generation/Up/result.json": "40955FFD1A5F0D590524E14171E3C55766D5D1D918734E85D8C404BEAF3909FD"
+  },
+  "production_changes": false,
+  "unity": {
+    "project": {
+      "projectRoot": "E:/MyTowerGame",
+      "projectName": "MyTowerGame",
+      "unityVersion": "2022.3.62f3c1",
+      "platform": "Android",
+      "assetsPath": "E:/MyTowerGame/Assets"
+    },
+    "release_file": "unity_release_blocked_20261026_225038.json",
+    "probe": {
+      "scene": "Assets/Scenes/Boot.unity",
+      "dirty": false,
+      "playing": false,
+      "compiling": false,
+      "updating": false,
+      "failed": false,
+      "review": false,
+      "balance": false,
+      "recording": false,
+      "manual": false
+    },
+    "error_count": 0,
+    "read_only_probes": true
+  },
+  "runtime": {
+    "verify": "not_executed",
+    "normal_round": "not_executed",
+    "up_death_round": "not_executed",
+    "media_review": "not_executed",
+    "record": "not_executed",
+    "new_gifs": 0
+  },
+  "progress": {
+    "completed_count": 79,
+    "authorized_count": 108,
+    "allgif_count": 1210,
+    "status_counts": {
+      "completed_pending_user_art_review": 79,
+      "blocked": 5,
+      "not_started": 24
+    }
+  },
+  "remaining_dependency_assessment": [
+    {
+      "index": 95,
+      "name": "Sheep",
+      "status": "not_started",
+      "generated_raw_count": 0,
+      "has_staged_art": false,
+      "has_install": false,
+      "has_runtime": false,
+      "decision": "Further production needs the same blocked image service; do not create another reference-only blocked successor"
+    },
+    {
+      "index": 96,
+      "name": "SlugQueen",
+      "status": "not_started",
+      "generated_raw_count": 0,
+      "has_staged_art": false,
+      "has_install": false,
+      "has_runtime": false,
+      "decision": "Further production needs the same blocked image service; do not create another reference-only blocked successor"
+    },
+    {
+      "index": 97,
+      "name": "Swine",
+      "status": "not_started",
+      "generated_raw_count": 0,
+      "has_staged_art": false,
+      "has_install": false,
+      "has_runtime": false,
+      "decision": "Further production needs the same blocked image service; do not create another reference-only blocked successor"
+    },
+    {
+      "index": 98,
+      "name": "Tiger",
+      "status": "not_started",
+      "generated_raw_count": 0,
+      "has_staged_art": false,
+      "has_install": false,
+      "has_runtime": false,
+      "decision": "Further production needs the same blocked image service; do not create another reference-only blocked successor"
+    },
+    {
+      "index": 99,
+      "name": "TreasureChest",
+      "status": "not_started",
+      "generated_raw_count": 0,
+      "has_staged_art": false,
+      "has_install": false,
+      "has_runtime": false,
+      "decision": "Further production needs the same blocked image service; do not create another reference-only blocked successor"
+    },
+    {
+      "index": 100,
+      "name": "Troll",
+      "status": "not_started",
+      "generated_raw_count": 0,
+      "has_staged_art": false,
+      "has_install": false,
+      "has_runtime": false,
+      "decision": "Further production needs the same blocked image service; do not create another reference-only blocked successor"
+    },
+    {
+      "index": 101,
+      "name": "Turkey",
+      "status": "not_started",
+      "generated_raw_count": 0,
+      "has_staged_art": false,
+      "has_install": false,
+      "has_runtime": false,
+      "decision": "Further production needs the same blocked image service; do not create another reference-only blocked successor"
+    },
+    {
+      "index": 102,
+      "name": "VolcanoParasite",
+      "status": "not_started",
+      "generated_raw_count": 0,
+      "has_staged_art": false,
+      "has_install": false,
+      "has_runtime": false,
+      "decision": "Further production needs the same blocked image service; do not create another reference-only blocked successor"
+    },
+    {
+      "index": 103,
+      "name": "Warg",
+      "status": "not_started",
+      "generated_raw_count": 0,
+      "has_staged_art": false,
+      "has_install": false,
+      "has_runtime": false,
+      "decision": "Further production needs the same blocked image service; do not create another reference-only blocked successor"
+    },
+    {
+      "index": 104,
+      "name": "Wasp",
+      "status": "not_started",
+      "generated_raw_count": 0,
+      "has_staged_art": false,
+      "has_install": false,
+      "has_runtime": false,
+      "decision": "Further production needs the same blocked image service; do not create another reference-only blocked successor"
+    },
+    {
+      "index": 105,
+      "name": "Watchdog",
+      "status": "not_started",
+      "generated_raw_count": 0,
+      "has_staged_art": false,
+      "has_install": false,
+      "has_runtime": false,
+      "decision": "Further production needs the same blocked image service; do not create another reference-only blocked successor"
+    },
+    {
+      "index": 106,
+      "name": "WhiteWolf",
+      "status": "not_started",
+      "generated_raw_count": 0,
+      "has_staged_art": false,
+      "has_install": false,
+      "has_runtime": false,
+      "decision": "Further production needs the same blocked image service; do not create another reference-only blocked successor"
+    },
+    {
+      "index": 107,
+      "name": "WildGoat",
+      "status": "not_started",
+      "generated_raw_count": 0,
+      "has_staged_art": false,
+      "has_install": false,
+      "has_runtime": false,
+      "decision": "Further production needs the same blocked image service; do not create another reference-only blocked successor"
+    },
+    {
+      "index": 108,
+      "name": "WildRooster",
+      "status": "not_started",
+      "generated_raw_count": 0,
+      "has_staged_art": false,
+      "has_install": false,
+      "has_runtime": false,
+      "decision": "Further production needs the same blocked image service; do not create another reference-only blocked successor"
+    },
+    {
+      "index": 109,
+      "name": "WinterBear",
+      "status": "not_started",
+      "generated_raw_count": 0,
+      "has_staged_art": false,
+      "has_install": false,
+      "has_runtime": false,
+      "decision": "Further production needs the same blocked image service; do not create another reference-only blocked successor"
+    },
+    {
+      "index": 110,
+      "name": "WinterBoar",
+      "status": "not_started",
+      "generated_raw_count": 0,
+      "has_staged_art": false,
+      "has_install": false,
+      "has_runtime": false,
+      "decision": "Further production needs the same blocked image service; do not create another reference-only blocked successor"
+    },
+    {
+      "index": 111,
+      "name": "WinterOgre",
+      "status": "not_started",
+      "generated_raw_count": 0,
+      "has_staged_art": false,
+      "has_install": false,
+      "has_runtime": false,
+      "decision": "Further production needs the same blocked image service; do not create another reference-only blocked successor"
+    },
+    {
+      "index": 112,
+      "name": "WinterWarg",
+      "status": "not_started",
+      "generated_raw_count": 0,
+      "has_staged_art": false,
+      "has_install": false,
+      "has_runtime": false,
+      "decision": "Further production needs the same blocked image service; do not create another reference-only blocked successor"
+    },
+    {
+      "index": 113,
+      "name": "WinterWolfTypeA",
+      "status": "not_started",
+      "generated_raw_count": 0,
+      "has_staged_art": false,
+      "has_install": false,
+      "has_runtime": false,
+      "decision": "Further production needs the same blocked image service; do not create another reference-only blocked successor"
+    },
+    {
+      "index": 114,
+      "name": "WinterWolfTypeB",
+      "status": "not_started",
+      "generated_raw_count": 0,
+      "has_staged_art": false,
+      "has_install": false,
+      "has_runtime": false,
+      "decision": "Further production needs the same blocked image service; do not create another reference-only blocked successor"
+    },
+    {
+      "index": 115,
+      "name": "Wolf",
+      "status": "not_started",
+      "generated_raw_count": 0,
+      "has_staged_art": false,
+      "has_install": false,
+      "has_runtime": false,
+      "decision": "Further production needs the same blocked image service; do not create another reference-only blocked successor"
+    },
+    {
+      "index": 116,
+      "name": "WolfHound",
+      "status": "not_started",
+      "generated_raw_count": 0,
+      "has_staged_art": false,
+      "has_install": false,
+      "has_runtime": false,
+      "decision": "Further production needs the same blocked image service; do not create another reference-only blocked successor"
+    },
+    {
+      "index": 117,
+      "name": "WolfMounfed",
+      "status": "not_started",
+      "generated_raw_count": 0,
+      "has_staged_art": false,
+      "has_install": false,
+      "has_runtime": false,
+      "decision": "Further production needs the same blocked image service; do not create another reference-only blocked successor"
+    },
+    {
+      "index": 118,
+      "name": "Zombie",
+      "status": "not_started",
+      "generated_raw_count": 0,
+      "has_staged_art": false,
+      "has_install": false,
+      "has_runtime": false,
+      "decision": "Further production needs the same blocked image service; do not create another reference-only blocked successor"
+    }
+  ],
+  "successor_created": false,
+  "recovery_conditions": [
+    "Evidence that upstream image balance and compatible-account availability are restored; do not test with another billable character request.",
+    "Resume this existing ShardLizard owner chat; validate owner/token and explicitly reactivate the chain before Unity or production work.",
+    "Reuse reviewed references/anatomy/prompts; both first requests remain unsent. Do not rerun preparation.",
+    "Before stage/install, adapt top-root trailing-down Up tail pivot/layout as recorded, then actually inspect generated art, transparency, connections and footprint.",
+    "Install Verify, two real 84-check Play rounds, real media review, UTF-8 note, record and GIF archive are all still required."
+  ]
+}

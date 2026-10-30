@@ -1,0 +1,348 @@
+{
+  "identity": {
+    "projectRoot": "E:/MyTowerGame",
+    "projectName": "MyTowerGame",
+    "unityVersion": "2022.3.62f3c1",
+    "platform": "Android",
+    "assetsPath": "E:/MyTowerGame/Assets"
+  },
+  "state": {
+    "success": true,
+    "message": "Retrieved editor state.",
+    "error": null,
+    "data": {
+      "schema_version": "unity-mcp/editor_state@2",
+      "observed_at_unix_ms": 1792858705767,
+      "sequence": 8,
+      "unity": {
+        "instance_id": "MyTowerGame@9e28c50b510eeb91",
+        "unity_version": "2022.3.62f3c1",
+        "project_id": null,
+        "platform": "WindowsEditor",
+        "is_batch_mode": false
+      },
+      "editor": {
+        "is_focused": true,
+        "play_mode": {
+          "is_playing": false,
+          "is_paused": false,
+          "is_changing": false
+        },
+        "active_scene": {
+          "path": "Assets/Scenes/Boot.unity",
+          "guid": "f868a4d2158d5c6498694acdc8836145",
+          "name": "Boot"
+        }
+      },
+      "activity": {
+        "phase": "idle",
+        "since_unix_ms": 1792858705767,
+        "reasons": [
+          "tick"
+        ]
+      },
+      "compilation": {
+        "is_compiling": false,
+        "is_domain_reload_pending": false,
+        "last_compile_started_unix_ms": 1792850904559,
+        "last_compile_finished_unix_ms": 1792850904590,
+        "last_domain_reload_before_unix_ms": null,
+        "last_domain_reload_after_unix_ms": 1792858686339
+      },
+      "assets": {
+        "is_updating": false,
+        "external_changes_dirty": false,
+        "external_changes_last_seen_unix_ms": 1792858637848,
+        "external_changes_dirty_since_unix_ms": null,
+        "external_changes_last_cleared_unix_ms": 1792858637925,
+        "refresh": {
+          "is_refresh_in_progress": false,
+          "last_refresh_requested_unix_ms": null,
+          "last_refresh_finished_unix_ms": null
+        }
+      },
+      "tests": {
+        "is_running": false,
+        "mode": null,
+        "current_job_id": null,
+        "started_unix_ms": null,
+        "started_by": "unknown",
+        "last_run": null
+      },
+      "transport": {
+        "unity_bridge_connected": null,
+        "last_message_unix_ms": null
+      },
+      "settings": {
+        "batch_execute_max_commands": 25
+      },
+      "advice": {
+        "ready_for_tools": false,
+        "blocking_reasons": [
+          "stale_status"
+        ],
+        "recommended_retry_after_ms": 500,
+        "recommended_next_action": "retry_later"
+      },
+      "staleness": {
+        "age_ms": 716725,
+        "is_stale": true
+      }
+    },
+    "hint": null
+  },
+  "probe": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"success\":true,\"message\":\"Code executed successfully.\",\"data\":{\"result\":{\"failed\":false,\"playing\":false,\"compiling\":false,\"updating\":false,\"dirty\":false},\"compiler\":\"codedom\"}}"
+      }
+    ],
+    "structuredContent": {
+      "success": true,
+      "message": "Code executed successfully.",
+      "data": {
+        "result": {
+          "failed": false,
+          "playing": false,
+          "compiling": false,
+          "updating": false,
+          "dirty": false
+        },
+        "compiler": "codedom"
+      }
+    },
+    "isError": false
+  },
+  "errors": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"success\":true,\"message\":\"Retrieved 0 log entries.\",\"data\":[]}"
+      }
+    ],
+    "structuredContent": {
+      "success": true,
+      "message": "Retrieved 0 log entries.",
+      "data": []
+    },
+    "isError": false
+  },
+  "history": [
+    {
+      "method": "initialize",
+      "params": {
+        "protocolVersion": "2025-03-26",
+        "capabilities": {},
+        "clientInfo": {
+          "name": "MyTowerGame-direction-review",
+          "version": "1.0"
+        }
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": "7896eb11-0891-4989-b080-a53b66cee10b",
+        "result": {
+          "protocolVersion": "2025-03-26",
+          "capabilities": {
+            "experimental": {},
+            "logging": {},
+            "prompts": {
+              "listChanged": true
+            },
+            "resources": {
+              "subscribe": false,
+              "listChanged": true
+            },
+            "tools": {
+              "listChanged": true
+            },
+            "extensions": {
+              "io.modelcontextprotocol/ui": {}
+            }
+          },
+          "serverInfo": {
+            "name": "mcp-for-unity-server",
+            "version": "3.4.8"
+          },
+          "instructions": "\nThis server provides tools to interact with the Unity Game Engine Editor.\n\nI have a dynamic tool system. Always check the mcpforunity://custom-tools resource first to see what special capabilities are available for the current project.\n\nTargeting Unity instances:\n- Use the resource mcpforunity://instances to list active Unity sessions (Name@hash).\n- When multiple instances are connected, call set_active_instance with the exact Name@hash before using tools/resources to pin routing for the whole session. The server will error if multiple are connected and no active instance is set.\n- Alternatively, pass unity_instance as a parameter on any individual tool call to route just that call (e.g. unity_instance=\"MyGame@abc123\", unity_instance=\"abc\" for a hash prefix, or unity_instance=\"6401\" for a port number in stdio mode). This does not change the session default.\n\nImportant Workflows:\n\nResources vs Tools:\n- Use RESOURCES to read editor state (mcpforunity://editor/state, mcpforunity://project/info, mcpforunity://project/tags, mcpforunity://tests, etc)\n- Use TOOLS to perform actions and mutations (manage_editor for play mode control, tag/layer management, etc)\n- Always check related resources before modifying the engine state with tools\n\nReading resources (read this before using ANY resource named below):\n- Resources are addressed by URI, never by name. A resource's name and URI are NOT interchangeable: names use underscores (e.g. editor_state) while URIs use slashes (e.g. mcpforunity://editor/state). Do NOT build a URI by swapping separators in the name — you will 404.\n- These instructions always spell resources as full mcpforunity:// URIs — read one exactly as written. If you only have a name (from resources/list or another tool's output), look its URI up in resources/list rather than guessing it.\n- Resource payloads are wrapped: the content lives under a top-level `data` object, so field paths are `data.<section>.<field>` (e.g. `data.advice.ready_for_tools`), not bare top-level fields.\n- The mcpforunity:// URI names the resource, not the server. Some clients take a separate server key on a resource read — in Codex, tools are exposed as mcp__unityMCP__* but resources/read wants server: \"unityMCP\". If a read fails with an unknown-server error, list resources first and use the key exactly as returned.\n\nScript Management:\n- After creating or modifying scripts (by your own tools or the `manage_script` tool) use `read_console` to check for compilation errors before proceeding\n- Only after successful compilation can new components/types be used\n- You can poll mcpforunity://editor/state and read `data.compilation.is_compiling` to check if the domain reload is complete, or `data.advice.ready_for_tools` for overall readiness\n\nScene Setup:\n- Always include a Camera and main Light (Directional Light) in new scenes\n- Create prefabs with `manage_asset` for reusable GameObjects\n- Use `manage_scene` to load, save, and query scene information\n\nPath Conventions:\n- Unless specified otherwise, all paths are relative to the project's `Assets/` folder\n- Use forward slashes (/) in paths for cross-platform compatibility\n\nConsole Monitoring:\n- Check `read_console` regularly to catch errors, warnings, and compilation status\n- Filter by log type (Error, Warning, Log) to focus on specific issues\n\nMenu Items:\n- Use `execute_menu_item` when you have read the mcpforunity://menu-items resource\n- This lets you interact with Unity's menu system and third-party tools\n\nUnity API Verification (requires 'docs' tool group):\n- When the 'docs' tool group is active, use `unity_reflect` and `unity_docs` to verify Unity API details before answering questions or writing C# code. LLM training data frequently contains incorrect, outdated, or hallucinated Unity APIs.\n- BEFORE answering Unity API questions: search the project's assets (`manage_asset`) and reflect the API (`unity_reflect`) to verify. Do NOT rely on training data alone.\n- Common hallucination areas: shaders and materials (always search assets for actual shader names), package-specific APIs (Input System, Cinemachine, ProBuilder, NavMesh, URP/HDRP), and APIs that changed between Unity versions.\n- Workflow: `unity_reflect search` → `unity_reflect get_type` → `unity_reflect get_member` → `unity_docs get_doc` (if you need examples/caveats).\n- For shader/material questions: use `manage_asset(action=\"search\", filter_type=\"Shader\")` to find actual shaders in the project before recommending one.\n\nPayload sizing & paging (important):\n- Many Unity queries can return very large JSON. Prefer **paged + summary-first** calls.\n- `manage_scene(action=\"get_hierarchy\")`:\n  - Use `page_size` + `cursor` and follow `next_cursor` until null.\n  - `page_size` is **items per page**; recommended starting point: **50**.\n- `manage_gameobject(action=\"get_components\")`:\n  - Start with `include_properties=false` (metadata-only) and small `page_size` (e.g. **10-25**).\n  - Only request `include_properties=true` when needed; keep `page_size` small (e.g. **3-10**) to bound payloads.\n- `manage_asset(action=\"search\")`:\n  - Use paging (`page_size`, `page_number`) and keep `page_size` modest (e.g. **25-50**) to avoid token-heavy responses.\n  - Keep `generate_preview=false` unless you explicitly need thumbnails (previews may include large base64 payloads).\n"
+        }
+      }
+    },
+    {
+      "method": "resources/read",
+      "params": {
+        "uri": "mcpforunity://custom-tools"
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": "ff7f5913-50d6-4cc0-88f2-8c8d63a41573",
+        "result": {
+          "contents": [
+            {
+              "uri": "mcpforunity://custom-tools",
+              "mimeType": "text/plain",
+              "text": "{\"success\":true,\"message\":\"Custom tools retrieved successfully.\",\"error\":null,\"data\":{\"project_id\":\"9e28c50b510eeb91\",\"tool_count\":36,\"tools\":[{\"name\":\"manage_animation\",\"description\":\"Tool: manage_animation\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"generate_audio\",\"description\":\"Tool: generate_audio\",\"structured_output\":true,\"requires_polling\":true,\"poll_action\":\"status\",\"max_poll_seconds\":600,\"parameters\":[]},{\"name\":\"generate_image\",\"description\":\"Tool: generate_image\",\"structured_output\":true,\"requires_polling\":true,\"poll_action\":\"status\",\"max_poll_seconds\":300,\"parameters\":[]},{\"name\":\"generate_model\",\"description\":\"Tool: generate_model\",\"structured_output\":true,\"requires_polling\":true,\"poll_action\":\"status\",\"max_poll_seconds\":300,\"parameters\":[]},{\"name\":\"import_model\",\"description\":\"Tool: import_model\",\"structured_output\":true,\"requires_polling\":true,\"poll_action\":\"status\",\"max_poll_seconds\":300,\"parameters\":[]},{\"name\":\"import_model_file\",\"description\":\"Tool: import_model_file\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"batch_execute\",\"description\":\"Tool: batch_execute\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"blender_bridge\",\"description\":\"Bridge to a running Blender with the BlenderMCP addon: status, scene/object info, viewport screenshot, run Python in Blender, import a model (export → import → place → normalize), check the blender-mcp checkout for updates, and sync its addon into Blender.\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"manage_camera\",\"description\":\"Tool: manage_camera\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"execute_code\",\"description\":\"Tool: execute_code\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"execute_menu_item\",\"description\":\"Tool: execute_menu_item\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"find_gameobjects\",\"description\":\"Tool: find_gameobjects\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"manage_gameobject\",\"description\":\"Tool: manage_gameobject\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"get_test_job\",\"description\":\"Tool: get_test_job\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"manage_graphics\",\"description\":\"Tool: manage_graphics\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"manage_asset\",\"description\":\"Tool: manage_asset\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"manage_build\",\"description\":\"Tool: manage_build\",\"structured_output\":true,\"requires_polling\":true,\"poll_action\":\"status\",\"max_poll_seconds\":1800,\"parameters\":[]},{\"name\":\"manage_components\",\"description\":\"Tool: manage_components\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"manage_editor\",\"description\":\"Tool: manage_editor\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"manage_material\",\"description\":\"Tool: manage_material\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"manage_packages\",\"description\":\"Tool: manage_packages\",\"structured_output\":true,\"requires_polling\":true,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"manage_scene\",\"description\":\"Tool: manage_scene\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"manage_script\",\"description\":\"Tool: manage_script\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"manage_scriptable_object\",\"description\":\"Tool: manage_scriptable_object\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"manage_shader\",\"description\":\"Tool: manage_shader\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"manage_texture\",\"description\":\"Tool: manage_texture\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"manage_ui\",\"description\":\"Tool: manage_ui\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"manage_physics\",\"description\":\"Tool: manage_physics\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"manage_prefabs\",\"description\":\"Tool: manage_prefabs\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"manage_probuilder\",\"description\":\"Tool: manage_probuilder\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"manage_profiler\",\"description\":\"Tool: manage_profiler\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"read_console\",\"description\":\"Tool: read_console\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"refresh_unity\",\"description\":\"Tool: refresh_unity\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"run_tests\",\"description\":\"Tool: run_tests\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"unity_reflect\",\"description\":\"Tool: unity_reflect\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"manage_vfx\",\"description\":\"Tool: manage_vfx\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]}]},\"hint\":null}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "method": "resources/read",
+      "params": {
+        "uri": "mcpforunity://instances"
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": "302489d0-4219-457a-9d6f-6a145bc020bb",
+        "result": {
+          "contents": [
+            {
+              "uri": "mcpforunity://instances",
+              "mimeType": "text/plain",
+              "text": "{\"success\": true, \"transport\": \"http\", \"instance_count\": 1, \"instances\": [{\"id\": \"MyTowerGame@9e28c50b510eeb91\", \"name\": \"MyTowerGame\", \"hash\": \"9e28c50b510eeb91\", \"unity_version\": \"2022.3.62f3c1\", \"connected_at\": \"2026-10-24T16:30:17.695312+00:00\", \"session_id\": \"4a3bf849-35b3-4101-be84-dddcf813b708\"}]}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "method": "tools/call",
+      "params": {
+        "name": "set_active_instance",
+        "arguments": {
+          "instance": "MyTowerGame@9e28c50b510eeb91"
+        }
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": "53d63543-42c3-4b38-92a9-835660e17650",
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"success\":true,\"message\":\"Active instance set to MyTowerGame@9e28c50b510eeb91\",\"data\":{\"instance\":\"MyTowerGame@9e28c50b510eeb91\",\"session_id\":\"88d1071c0ba54adeb3451b6243855723\"}}"
+            }
+          ],
+          "structuredContent": {
+            "success": true,
+            "message": "Active instance set to MyTowerGame@9e28c50b510eeb91",
+            "data": {
+              "instance": "MyTowerGame@9e28c50b510eeb91",
+              "session_id": "88d1071c0ba54adeb3451b6243855723"
+            }
+          },
+          "isError": false
+        }
+      }
+    },
+    {
+      "method": "resources/read",
+      "params": {
+        "uri": "mcpforunity://project/info"
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": "7a915cc5-bc93-4b43-955b-1a64663d10d7",
+        "result": {
+          "contents": [
+            {
+              "uri": "mcpforunity://project/info",
+              "mimeType": "text/plain",
+              "text": "{\"success\":true,\"message\":\"Retrieved project info.\",\"error\":null,\"data\":{\"projectRoot\":\"E:/MyTowerGame\",\"projectName\":\"MyTowerGame\",\"unityVersion\":\"2022.3.62f3c1\",\"platform\":\"Android\",\"assetsPath\":\"E:/MyTowerGame/Assets\"},\"hint\":null}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "method": "resources/read",
+      "params": {
+        "uri": "mcpforunity://editor/state"
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": "6cfdf12b-cd8c-4ede-9538-2c023bca8917",
+        "result": {
+          "contents": [
+            {
+              "uri": "mcpforunity://editor/state",
+              "mimeType": "text/plain",
+              "text": "{\"success\":true,\"message\":\"Retrieved editor state.\",\"error\":null,\"data\":{\"schema_version\":\"unity-mcp/editor_state@2\",\"observed_at_unix_ms\":1792858705767,\"sequence\":8,\"unity\":{\"instance_id\":\"MyTowerGame@9e28c50b510eeb91\",\"unity_version\":\"2022.3.62f3c1\",\"project_id\":null,\"platform\":\"WindowsEditor\",\"is_batch_mode\":false},\"editor\":{\"is_focused\":true,\"play_mode\":{\"is_playing\":false,\"is_paused\":false,\"is_changing\":false},\"active_scene\":{\"path\":\"Assets/Scenes/Boot.unity\",\"guid\":\"f868a4d2158d5c6498694acdc8836145\",\"name\":\"Boot\"}},\"activity\":{\"phase\":\"idle\",\"since_unix_ms\":1792858705767,\"reasons\":[\"tick\"]},\"compilation\":{\"is_compiling\":false,\"is_domain_reload_pending\":false,\"last_compile_started_unix_ms\":1792850904559,\"last_compile_finished_unix_ms\":1792850904590,\"last_domain_reload_before_unix_ms\":null,\"last_domain_reload_after_unix_ms\":1792858686339},\"assets\":{\"is_updating\":false,\"external_changes_dirty\":false,\"external_changes_last_seen_unix_ms\":1792858637848,\"external_changes_dirty_since_unix_ms\":null,\"external_changes_last_cleared_unix_ms\":1792858637925,\"refresh\":{\"is_refresh_in_progress\":false,\"last_refresh_requested_unix_ms\":null,\"last_refresh_finished_unix_ms\":null}},\"tests\":{\"is_running\":false,\"mode\":null,\"current_job_id\":null,\"started_unix_ms\":null,\"started_by\":\"unknown\",\"last_run\":null},\"transport\":{\"unity_bridge_connected\":null,\"last_message_unix_ms\":null},\"settings\":{\"batch_execute_max_commands\":25},\"advice\":{\"ready_for_tools\":false,\"blocking_reasons\":[\"stale_status\"],\"recommended_retry_after_ms\":500,\"recommended_next_action\":\"retry_later\"},\"staleness\":{\"age_ms\":716725,\"is_stale\":true}},\"hint\":null}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "method": "tools/call",
+      "params": {
+        "name": "execute_code",
+        "arguments": {
+          "action": "execute",
+          "code": "return new {failed=UnityEditor.EditorUtility.scriptCompilationFailed,playing=UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode,compiling=UnityEditor.EditorApplication.isCompiling,updating=UnityEditor.EditorApplication.isUpdating,dirty=UnityEngine.SceneManagement.SceneManager.GetActiveScene().isDirty};"
+        }
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": "723b2475-28a4-49d9-9215-8e36e8815ca0",
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"success\":true,\"message\":\"Code executed successfully.\",\"data\":{\"result\":{\"failed\":false,\"playing\":false,\"compiling\":false,\"updating\":false,\"dirty\":false},\"compiler\":\"codedom\"}}"
+            }
+          ],
+          "structuredContent": {
+            "success": true,
+            "message": "Code executed successfully.",
+            "data": {
+              "result": {
+                "failed": false,
+                "playing": false,
+                "compiling": false,
+                "updating": false,
+                "dirty": false
+              },
+              "compiler": "codedom"
+            }
+          },
+          "isError": false
+        }
+      }
+    },
+    {
+      "method": "tools/call",
+      "params": {
+        "name": "read_console",
+        "arguments": {
+          "action": "get",
+          "types": [
+            "error"
+          ],
+          "count": "50",
+          "format": "json"
+        }
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": "68e943cc-eab7-4853-a7a1-2db15d6d0185",
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"success\":true,\"message\":\"Retrieved 0 log entries.\",\"data\":[]}"
+            }
+          ],
+          "structuredContent": {
+            "success": true,
+            "message": "Retrieved 0 log entries.",
+            "data": []
+          },
+          "isError": false
+        }
+      }
+    }
+  ]
+}

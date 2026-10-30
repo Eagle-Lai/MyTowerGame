@@ -1,0 +1,22 @@
+{
+  "observed_at": "2026-10-28T12:14:34.642756+08:00",
+  "status": "rejected_by_internal_visual_review",
+  "user_approved": false,
+  "revisions": [
+    "runtime_r01",
+    "runtime_updeath_r01"
+  ],
+  "technical_checks": "168 PASS / 0 FAIL; insufficient for visual approval",
+  "inspected": [
+    "runtime_r01/four_directions.png",
+    "runtime_visual_strip.png",
+    "visual_review_final_20261028/runtime_r01_sequence_0.png",
+    "visual_review_final_20261028/runtime_r01_walk_cycle.png",
+    "visual_review_final_20261028/runtime_r01_sequence_1.png",
+    "visual_review_final_20261028/runtime_r01_sequence_2.png",
+    "visual_review_final_20261028/runtime_updeath_r01_sequence_0.png",
+    "visual_review_final_20261028/runtime_updeath_r01_walk_cycle.png"
+  ],
+  "finding": "Both ContinuousTurns sequences show the original side body upside down after real death/pool reuse. Vertical rigs recover. The source Death anim rotates Body z to -180 while the source/copied Walk has no Body rotation binding.",
+  "remedy": "Add only missing constant zero Body Euler rotation tracks to Scarab copied Walk. Preserve all existing source curves/events/timing, source/shared clips and C#; new r02 Play evidence required."
+}

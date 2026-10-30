@@ -1,0 +1,78 @@
+{
+  "observed_at": "2026-10-28T18:07:01.724447+08:00",
+  "parent_script": "pack_character.py",
+  "parent_sha256": "3612E7CA33429F34A7321429EE990029BE205E0232D03F785F4F48D067E8885E",
+  "target_extractor_sha256": "EC17441F12B4C2F1A3C9A72027657D282FA026520A2AE87D82557589959EC4EC",
+  "changes": [
+    "Keep independently generated Up_HeadDead/open state",
+    "Reuse normal state for HeadAngry compatibility on both views",
+    "Bottom-align whole-state canvases, pivot bottom center",
+    "Body intentionally transparent1px reference; no invented body anatomy"
+  ],
+  "state_slots": {
+    "HeadNormal": "whole closed chest",
+    "HeadAngry": "same closed chest",
+    "HeadDead": "whole open chest",
+    "Body": "transparent compatibility carrier"
+  },
+  "source_selection": {
+    "Up": "local_raster_revision_01/Up_sheet.png",
+    "Down": "generation/Down/raw.png",
+    "transparent_parts": [
+      "Up_Body",
+      "Down_Body"
+    ],
+    "rectangles": {
+      "Up_HeadNormal": [
+        0,
+        0,
+        384,
+        512
+      ],
+      "Up_HeadAngry": [
+        384,
+        0,
+        768,
+        512
+      ],
+      "Up_HeadDead": [
+        768,
+        0,
+        1152,
+        512
+      ],
+      "Up_Body": [
+        1152,
+        0,
+        1536,
+        512
+      ],
+      "Down_HeadNormal": [
+        40,
+        100,
+        460,
+        500
+      ],
+      "Down_HeadAngry": [
+        560,
+        100,
+        980,
+        500
+      ],
+      "Down_HeadDead": [
+        1060,
+        20,
+        1480,
+        500
+      ],
+      "Down_Body": [
+        0,
+        512,
+        384,
+        1024
+      ]
+    },
+    "selection_note": "Whole Container states. Body is a transparent reference-only carrier; no second anatomical body exists. HeadAngry duplicates closed state. Up rear open state must not be replaced by closed state. Target extractor aligns bottoms and normalizes closed states to384x365 within384x480 shared state canvases; opened height relative to closed preserved, width matches closed. This corrects generated direction/state proportion variance without using original side art to fake a view."
+  },
+  "shared_script_modified": false
+}

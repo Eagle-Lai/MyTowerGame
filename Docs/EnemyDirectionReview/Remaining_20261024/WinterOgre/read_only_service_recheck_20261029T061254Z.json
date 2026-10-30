@@ -1,0 +1,106 @@
+{
+  "observed_at": "2026-10-29T06:12:54.025Z",
+  "character": "WinterOgre",
+  "owner_thread_id": "01a18619-6aa0-7a31-ac62-10a82077950b",
+  "dispatch_token": "winterboar-to-winterogre-20261029_131318-14b528b1-8990-455f-8069-d7ea49019046",
+  "chain_state": "blocked",
+  "purpose": "Inspect current authentication/models and key usage. No image-generation/edit POST and no retry allowance change.",
+  "source": {
+    "usage_endpoint": "AIHub public KeyUsageView-DpOKodHs.js: fetch /v1/usage with Authorization Bearer and start_date/end_date/days/timezone parameters.",
+    "source_url": "https://aihub.dog/assets/KeyUsageView-DpOKodHs.js"
+  },
+  "prior_requests_unchanged": true,
+  "unknown_charges_not_reclassified": true,
+  "paid_requests": 0,
+  "responses": [
+    {
+      "url": "https://aihub.dog/v1/models",
+      "method": "GET",
+      "duration_ms": 334,
+      "process_exit": 0,
+      "http_status": 200,
+      "body_keys": [
+        "data",
+        "object"
+      ],
+      "model_count": 22,
+      "image_models": [
+        "gpt-image-1",
+        "gpt-image-1.5",
+        "gpt-image-2",
+        "gpt-image-2.5",
+        "gpt-image-2.5-flare",
+        "gpt-image-2.5-sunburst"
+      ]
+    },
+    {
+      "url": "https://aihub.dog/v1/usage?start_date=2026-10-29&end_date=2026-10-29&days=1&timezone=Asia%2FShanghai",
+      "method": "GET",
+      "duration_ms": 344,
+      "process_exit": 0,
+      "http_status": 200,
+      "body": {
+        "balance": 85.06479869,
+        "daily_usage": [
+          {
+            "date": "2026-10-29",
+            "requests": 15,
+            "input_tokens": 35241,
+            "output_tokens": 20580,
+            "cache_read_tokens": 0,
+            "cache_write_tokens": 0,
+            "total_tokens": 55821,
+            "cost": 1.05,
+            "actual_cost": 1.05
+          }
+        ],
+        "isValid": true,
+        "mode": "unrestricted",
+        "model_stats": [
+          {
+            "model": "gpt-image-2",
+            "requests": 15,
+            "input_tokens": 35241,
+            "output_tokens": 20580,
+            "cache_creation_tokens": 0,
+            "cache_read_tokens": 0,
+            "total_tokens": 55821,
+            "cost": 1.05,
+            "actual_cost": 1.05,
+            "account_cost": 0.86475
+          }
+        ],
+        "planName": "钱包余额",
+        "remaining": 85.06479869,
+        "unit": "USD",
+        "usage": {
+          "average_duration_ms": 29443.211143695014,
+          "rpm": 0,
+          "today": {
+            "actual_cost": 1.05,
+            "cache_creation_tokens": 0,
+            "cache_read_tokens": 0,
+            "cost": 1.05,
+            "input_tokens": 35241,
+            "output_tokens": 20580,
+            "requests": 15,
+            "total_tokens": 55821
+          },
+          "total": {
+            "actual_cost": 23.87,
+            "cache_creation_tokens": 0,
+            "cache_read_tokens": 0,
+            "cost": 23.87,
+            "input_tokens": 70532,
+            "output_tokens": 44273,
+            "requests": 341,
+            "total_tokens": 114805
+          },
+          "tpm": 0
+        }
+      }
+    }
+  ],
+  "completed_at": "2026-10-29T06:12:54.705Z",
+  "limitations": "GET/models or unauthenticated POST reachability does not prove billable image edits are available. Aggregate usage alone cannot assign a result or charge to an unknown individual request."
+}

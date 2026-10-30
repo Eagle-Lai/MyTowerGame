@@ -1,0 +1,45 @@
+在 E:/MyTowerGame 继续敌人四方向串行续作。本聊天唯一角色为 VolcanoParasite(index 102)。这是用户先前明确授权的唯一全新 local 后继，不是并行任务。
+
+父线程 `01a18233-1a0c-7653-9ac2-6ecd99754a92` 已完成 Turkey(index 101)，当前进度 90/108。Turkey 状态为 `completed_pending_user_art_review`、`user_approved=false`，不要把程序验收当成用户美术批准。完整交接：
+`E:/MyTowerGame/Docs/EnemyDirectionReview/Remaining_20261024/conversation_handoffs/20261028_202757_Turkey_completed.md`
+
+唯一 dispatch token：`turkey-to-volcanoparasite-20261028-846ed4a4-803c-47fb-bd74-d1819f09a29c`。开工先完整读取以下文件，不依赖聊天图片历史：
+
+- `E:/MyTowerGame/AGENTS.md`
+- `E:/MyTowerGame/ProjectSettings/ProjectVersion.txt`
+- `E:/MyTowerGame/Docs/EnemyDirectionReview/README.md`
+- `E:/MyTowerGame/Docs/EnemyDirectionReview/Remaining_20261024/REMAINING_ENEMIES_EXECUTABLE_PROMPT_20261026.md`
+- `E:/MyTowerGame/Docs/EnemyDirectionReview/Remaining_20261024/CONTINUATION_PROTOCOL_20261026.md`
+- `E:/MyTowerGame/Docs/EnemyDirectionReview/Remaining_20261024/IMAGE_RELAY_RECOVERY_20261026.md`
+- `E:/MyTowerGame/Docs/EnemyDirectionReview/Remaining_20261024/NEXT_ENEMY_TASK.md`
+- `E:/MyTowerGame/Docs/EnemyDirectionReview/Remaining_20261024/conversation_chain.json`
+- `E:/MyTowerGame/Docs/EnemyDirectionReview/Remaining_20261024/progress.json`
+- `E:/MyTowerGame/Docs/EnemyDirectionReview/Remaining_20261024/standing_network_recovery_authorization_20261028.json`
+- `E:/MyTowerGame/Docs/EnemyDirectionReview/Remaining_20261024/TreasureChest/standing_recovery_application_20261028.json`
+- `E:/MyTowerGame/Docs/EnemyDirectionReview/Remaining_20261024/VolcanoParasite/reference/source_structure.json`
+
+The parent prepares `conversation_chain.json` in `handoff_ready`. Wait in read-only mode until it is `active`, `owner_thread_id` is this new thread, `current_character` is VolcanoParasite, and `dispatch_token` exactly matches the token above. Do not operate Unity, modify production assets, or make paid image requests before all four checks pass. Do not claim ownership by timeout.
+
+## VolcanoParasite stage
+
+Live progress says index 102, `not_started`; `VolcanoParasite/` currently contains only `reference/`. Reference files include the source prefab, battle prefab, source atlas, `source_structure.json`, and an offline preview. Current source paths discovered by the parent are:
+
+- Source prefab: `Assets/_UIAssets/Monsters/Parasites/VolcanoParasite/VolcanoParasite.prefab`
+- Source atlas: `Assets/_UIAssets/Monsters/Parasites/VolcanoParasite/VolcanoParasite.png`
+- Battle prefab: `Assets/Prefabs/Enemy/Enemy_VolcanoParasite.prefab`
+
+Confirm each path, metadata, animation/controller dependencies, behavior, and lifecycle from the current disk. There is no VolcanoParasite anatomy plan, generation request/output, staged art, install manifest, or runtime record in its task directory. Do not infer art, animation, or rig details from Turkey or another parasite. Inspect the complete current source atlas and prefabs, original clips/events, combat/lifecycle and pool handling. Establish a VolcanoParasite-specific incremental baseline before edits and preserve every existing user change.
+
+Follow the original executable prompt and project rules end to end: review the original art and full prefabs; plan anatomy; generate one direction and inspect its raw output before the other direction; retain request/raw/rejected revision evidence; create and visually inspect transparent parts, pivots and layout; install only this character with the existing verifier; run both authorized real Unity Play revisions with 84 checks each; review captured PNGs in batches; record the exact visual sample scope and user approval as false; archive and SHA-check every GIF; write final version-binding and path-union audits; then create a full handoff, update the live prompt and next-task file, release Unity safely, and create exactly one serial successor under the continuation protocol.
+
+Turkey's final audit had 22 incremental project-path changes, zero unexpected paths, and one validated ReporterEditor timestamp side effect. Its separate legacy broad audit still shows 291 pre-existing unexpected paths and six historical semantic failures; do not reuse that broad baseline as a new character's incremental baseline. Turkey's GIF review sampled five points in each GIF and was explicitly not exhaustive.
+
+## Unity and safety
+
+Use Unity `2022.3.62f3c1` for `E:/MyTowerGame`. The authorized target bridge for this serial chain is `http://127.0.0.1:8088/mcp`, using `Remaining_20261024/mcp_call.py`, which dynamically reads custom tools and instances, selects the live MyTowerGame instance, and verifies project root/version. Do not use `unityMCP` on 8082 or CatchFish on 8080. The generic root AGENTS block names another checkout and port; the explicit MyTowerGame task instructions and this live route govern this project. Recheck identity after reconnect/domain reload.
+
+The last Turkey probe found Boot active, Play stopped, scene clean, review idle, no errors or compilation, and editor ready; it also reported `assets.external_changes_dirty=true`. Recheck live state before acting and preserve the result. Do not clear logs or force-stop another task. No C# was changed for Turkey. Any future C# change must complete the project-specific Unity refresh/compile/error-log workflow before another code edit. Do not change Play Mode without the current project authorization. Desktop control requires an explicit confirmation dialog first.
+
+The serial image-generation authorization and existing one-shot uncertainty rules are in the files above. Inspect any request/result state before submitting. Never repeat an uncertain paid request or delete a manifest to bypass guards. Use the authorized image service/credential workflow only; keep credentials runtime-only. Do not probe a service using another character's quota or code branch. Auth, balance, or quota failures are not a reason to retry blindly. Preserve the blocked PossessedWarg history and request state.
+
+Do not edit level/enemy numeric tables, `Assets/ConfigJson`, `Assets/Gen`, audio, other characters, or shared C# for this task. Do not pull, reset, commit, build, deploy, create parallel character tasks, forks, subagents, or timers. The user has authorized serial continuation without per-character confirmation, but has not approved VolcanoParasite art. Only the active owner with the matching token may operate Unity or alter production assets. After handoff, the parent performs no further workspace mutation.

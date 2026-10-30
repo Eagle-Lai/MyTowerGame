@@ -1,0 +1,33 @@
+{
+  "name": "Porcupine",
+  "index": 74,
+  "status": "blocked",
+  "blocked_from_status": "runtime_complete_pending_visual_check",
+  "category": "其他：真实帧视觉未通过",
+  "reason": "两轮真实 Play 的程序断言均为 84 PASS / 0 FAIL，但最终汇总图的 ContinuousTurns 取样中，复用后的 Right/Left 侧面身体呈翻倒姿态，而最初四方向取样的左右侧面是直立的。不能将程序 PASS 等同于视觉通过。主动看图已达本轮 6 张上限，新的动作返修还需要新 revision 和重新视觉确认，故不执行 record，也不把角色写为完成。",
+  "completed_steps": ["prepare", "Up 原图及 revision_01", "Down 原图", "离线切片和 layout_revision_01", "单角色安装及 Builder Verify", "runtime_r01", "runtime_updeath_r01", "最终实际帧视觉检查，结论不通过"],
+  "observed_visual": "灰褐色、奶油色环纹背刺、四短足和正面门齿得到保留；Up 无五官、无虚构尾巴，背面金斑和反向爪纹已返修。四向取样未见地面阴影。死亡取样显示白闪、侧倒、缩小和淡出，复用的 Down 图恢复完整身体及绿色血条。随后连续转向的侧面 Walk 图却呈翻倒姿态，需修复复用后的横向姿态复位。",
+  "runtime": [
+    {"revision":"runtime_r01","pass":84,"fail":0,"frames":339,"records_sha256":"57A74009212416B64487733E1BBBAB4C5D767E7095714407B83103DD2A8A4432"},
+    {"revision":"runtime_updeath_r01","pass":84,"fail":0,"frames":339,"records_sha256":"B4CB8C3A4C4F4B2A3ACEE463810D345CBBB6A289B85541750CB73142C89673BE"}
+  ],
+  "suspected_cause_not_proven": "Porcupine 原始 Death 包含 Body 旋转曲线，Walk/Ready 未写 Body 旋转；可能涉及复用时 Rebind 的默认姿态捕获。该推断尚未用新 revision 的真实 Play 探针确认，不能当作已定位。",
+  "failure_samples": [
+    {"revision":"runtime_r01","file":"frames/ContinuousTurns_00272.png","unity_frame":5004,"facing":"Right","state":"Walk","alive":true},
+    {"revision":"runtime_r01","file":"frames/ContinuousTurns_00307.png","unity_frame":5652,"facing":"Left","state":"Walk","alive":true},
+    {"revision":"runtime_r01","file":"frames/ContinuousTurns_00324.png","unity_frame":5964,"facing":"Left","state":"Walk","alive":true}
+  ],
+  "viewed_images": [
+    "reference/source_prefab_offline.png",
+    "generation/Up/raw.png",
+    "selected_raw_review.png (Up revision_01 + Down raw)",
+    "layout_revisions/revision_00/offline_rig_proof.png",
+    "offline_rig_proof.png (layout_revision_01)",
+    "final_visual_review_montage.png (four_directions + runtime_visual_strip + turn/death/reuse/pause GIF samples)"
+  ],
+  "viewed_image_count": 6,
+  "editor_evidence": "postruntime_editor_20261026.json",
+  "state_kept": "保留本角色已安装 Directions、prefab 和两轮失败视觉证据，不回滚、不覆盖。未改共享 C#、其他角色或配置表。Unity 已自动返回 Boot 非 Play，review/recording=false、dirty=false、scriptCompilationFailed=false，错误日志 0 条。",
+  "progress_policy": "只将 Porcupine 写为 blocked；completed_count 保持 62，不执行 record/collect_gifs，不将本轮 GIF 标为当前审核通过。",
+  "next_action": "先以新 repair revision 保存当前 Directions 和 installed_manifest，确认复用后的 Body 实际旋转，再仅修 Porcupine 专属 Controller/动画的姿态复位；不得修改共享动画。随后用 start_runtime.py Porcupine runtime_r02 与 start_runtime.py Porcupine runtime_updeath_r02 up 跑两轮，按新 revision 组装媒体并重新视觉确认；本轮 r01 保留。"
+}

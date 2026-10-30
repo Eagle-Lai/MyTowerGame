@@ -1,0 +1,26 @@
+{
+  "status": "blocked",
+  "blocked_stage": "runtime_visual_check",
+  "blocked_reason": "橄榄褐色无足分节体、赭黄色斑点和象牙色巨齿在正背面保持原设；Up revision_01 去除了错误的侧面管口，头部到渐细尾端连续连接，背面没有眼睛、牙齿、翅膀或额外附肢。初始四方向画面无地面阴影，上下方向可见轻微分节伸缩；Up 死亡出现白闪、侧倒和淡出，Down 复用恢复正常外观。但 runtime_r01 的 walk_turn.gif 显示死亡回收并复用后切换到 Left/Right 时原侧面身体倒置，头部和牙口处于身体下方；与初始 LeftWalk/RightWalk 的正常朝向不同。程序两轮各84 PASS、0 FAIL不能替代本次视觉失败。诊断显示原 Death 的 Body/localEulerAnglesRaw.z 从0到-180度，而 Ready/Walk没有Body旋转曲线；当前证据支持死亡姿态残留，但尚未完成修复验证。为遵守不改原侧面float曲线、不改共享动画及对象池契约的约束，本轮保持安装现场和失败证据，标记blocked，不执行record，不认定美术通过。",
+  "blocked_report": "Docs/EnemyDirectionReview/Remaining_20261024/MosquitoParasite/blocked_report.json",
+  "runtime": [
+    {
+      "revision": "runtime_r01",
+      "pass": 84,
+      "fail": 0,
+      "frames": 341,
+      "records_sha256": "37C4F3CE738DE1DD7379817DDFF19F1D1503A8AF47DEC5680BF31B60721D2AD9"
+    },
+    {
+      "revision": "runtime_updeath_r01",
+      "pass": 84,
+      "fail": 0,
+      "frames": 342,
+      "records_sha256": "26A11FCCA20BA626C9567222C1ABE4382ECFC545EB71EE7EBA9CE2387B2658FE"
+    }
+  ],
+  "actual_frames": 683,
+  "visual_reviewed": true,
+  "visual_pass": false,
+  "visual_note": "橄榄褐色无足分节体、赭黄色斑点和象牙色巨齿在正背面保持原设；Up revision_01 去除了错误的侧面管口，头部到渐细尾端连续连接，背面没有眼睛、牙齿、翅膀或额外附肢。初始四方向画面无地面阴影，上下方向可见轻微分节伸缩；Up 死亡出现白闪、侧倒和淡出，Down 复用恢复正常外观。但 runtime_r01 的 walk_turn.gif 显示死亡回收并复用后切换到 Left/Right 时原侧面身体倒置，头部和牙口处于身体下方；与初始 LeftWalk/RightWalk 的正常朝向不同。程序两轮各84 PASS、0 FAIL不能替代本次视觉失败。诊断显示原 Death 的 Body/localEulerAnglesRaw.z 从0到-180度，而 Ready/Walk没有Body旋转曲线；当前证据支持死亡姿态残留，但尚未完成修复验证。为遵守不改原侧面float曲线、不改共享动画及对象池契约的约束，本轮保持安装现场和失败证据，标记blocked，不执行record，不认定美术通过。"
+}

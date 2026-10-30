@@ -1,0 +1,189 @@
+{
+  "project": {
+    "projectRoot": "E:/MyTowerGame",
+    "projectName": "MyTowerGame",
+    "unityVersion": "2022.3.62f3c1",
+    "platform": "Android",
+    "assetsPath": "E:/MyTowerGame/Assets"
+  },
+  "name": "Swine",
+  "revision": "runtime_r01",
+  "death_up": false,
+  "response": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"success\":true,\"message\":\"Code executed successfully.\",\"data\":{\"result\":true,\"compiler\":\"codedom\"}}"
+      }
+    ],
+    "structuredContent": {
+      "success": true,
+      "message": "Code executed successfully.",
+      "data": {
+        "result": true,
+        "compiler": "codedom"
+      }
+    },
+    "isError": false
+  },
+  "protocol_history": [
+    {
+      "method": "initialize",
+      "params": {
+        "protocolVersion": "2025-03-26",
+        "capabilities": {},
+        "clientInfo": {
+          "name": "MyTowerGame-direction-review",
+          "version": "1.0"
+        }
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": "958a4c56-3c34-47fa-adc4-bfc3ce58e08b",
+        "result": {
+          "protocolVersion": "2025-03-26",
+          "capabilities": {
+            "experimental": {},
+            "logging": {},
+            "prompts": {
+              "listChanged": true
+            },
+            "resources": {
+              "subscribe": false,
+              "listChanged": true
+            },
+            "tools": {
+              "listChanged": true
+            },
+            "extensions": {
+              "io.modelcontextprotocol/ui": {}
+            }
+          },
+          "serverInfo": {
+            "name": "mcp-for-unity-server",
+            "version": "3.4.8"
+          },
+          "instructions": "\nThis server provides tools to interact with the Unity Game Engine Editor.\n\nI have a dynamic tool system. Always check the mcpforunity://custom-tools resource first to see what special capabilities are available for the current project.\n\nTargeting Unity instances:\n- Use the resource mcpforunity://instances to list active Unity sessions (Name@hash).\n- When multiple instances are connected, call set_active_instance with the exact Name@hash before using tools/resources to pin routing for the whole session. The server will error if multiple are connected and no active instance is set.\n- Alternatively, pass unity_instance as a parameter on any individual tool call to route just that call (e.g. unity_instance=\"MyGame@abc123\", unity_instance=\"abc\" for a hash prefix, or unity_instance=\"6401\" for a port number in stdio mode). This does not change the session default.\n\nImportant Workflows:\n\nResources vs Tools:\n- Use RESOURCES to read editor state (mcpforunity://editor/state, mcpforunity://project/info, mcpforunity://project/tags, mcpforunity://tests, etc)\n- Use TOOLS to perform actions and mutations (manage_editor for play mode control, tag/layer management, etc)\n- Always check related resources before modifying the engine state with tools\n\nReading resources (read this before using ANY resource named below):\n- Resources are addressed by URI, never by name. A resource's name and URI are NOT interchangeable: names use underscores (e.g. editor_state) while URIs use slashes (e.g. mcpforunity://editor/state). Do NOT build a URI by swapping separators in the name — you will 404.\n- These instructions always spell resources as full mcpforunity:// URIs — read one exactly as written. If you only have a name (from resources/list or another tool's output), look its URI up in resources/list rather than guessing it.\n- Resource payloads are wrapped: the content lives under a top-level `data` object, so field paths are `data.<section>.<field>` (e.g. `data.advice.ready_for_tools`), not bare top-level fields.\n- The mcpforunity:// URI names the resource, not the server. Some clients take a separate server key on a resource read — in Codex, tools are exposed as mcp__unityMCP__* but resources/read wants server: \"unityMCP\". If a read fails with an unknown-server error, list resources first and use the key exactly as returned.\n\nScript Management:\n- After creating or modifying scripts (by your own tools or the `manage_script` tool) use `read_console` to check for compilation errors before proceeding\n- Only after successful compilation can new components/types be used\n- You can poll mcpforunity://editor/state and read `data.compilation.is_compiling` to check if the domain reload is complete, or `data.advice.ready_for_tools` for overall readiness\n\nScene Setup:\n- Always include a Camera and main Light (Directional Light) in new scenes\n- Create prefabs with `manage_asset` for reusable GameObjects\n- Use `manage_scene` to load, save, and query scene information\n\nPath Conventions:\n- Unless specified otherwise, all paths are relative to the project's `Assets/` folder\n- Use forward slashes (/) in paths for cross-platform compatibility\n\nConsole Monitoring:\n- Check `read_console` regularly to catch errors, warnings, and compilation status\n- Filter by log type (Error, Warning, Log) to focus on specific issues\n\nMenu Items:\n- Use `execute_menu_item` when you have read the mcpforunity://menu-items resource\n- This lets you interact with Unity's menu system and third-party tools\n\nUnity API Verification (requires 'docs' tool group):\n- When the 'docs' tool group is active, use `unity_reflect` and `unity_docs` to verify Unity API details before answering questions or writing C# code. LLM training data frequently contains incorrect, outdated, or hallucinated Unity APIs.\n- BEFORE answering Unity API questions: search the project's assets (`manage_asset`) and reflect the API (`unity_reflect`) to verify. Do NOT rely on training data alone.\n- Common hallucination areas: shaders and materials (always search assets for actual shader names), package-specific APIs (Input System, Cinemachine, ProBuilder, NavMesh, URP/HDRP), and APIs that changed between Unity versions.\n- Workflow: `unity_reflect search` → `unity_reflect get_type` → `unity_reflect get_member` → `unity_docs get_doc` (if you need examples/caveats).\n- For shader/material questions: use `manage_asset(action=\"search\", filter_type=\"Shader\")` to find actual shaders in the project before recommending one.\n\nPayload sizing & paging (important):\n- Many Unity queries can return very large JSON. Prefer **paged + summary-first** calls.\n- `manage_scene(action=\"get_hierarchy\")`:\n  - Use `page_size` + `cursor` and follow `next_cursor` until null.\n  - `page_size` is **items per page**; recommended starting point: **50**.\n- `manage_gameobject(action=\"get_components\")`:\n  - Start with `include_properties=false` (metadata-only) and small `page_size` (e.g. **10-25**).\n  - Only request `include_properties=true` when needed; keep `page_size` small (e.g. **3-10**) to bound payloads.\n- `manage_asset(action=\"search\")`:\n  - Use paging (`page_size`, `page_number`) and keep `page_size` modest (e.g. **25-50**) to avoid token-heavy responses.\n  - Keep `generate_preview=false` unless you explicitly need thumbnails (previews may include large base64 payloads).\n"
+        }
+      }
+    },
+    {
+      "method": "resources/read",
+      "params": {
+        "uri": "mcpforunity://custom-tools"
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": "3ceee0bc-1c8a-4274-b4ee-5d15b3488850",
+        "result": {
+          "contents": [
+            {
+              "uri": "mcpforunity://custom-tools",
+              "mimeType": "text/plain",
+              "text": "{\"success\":true,\"message\":\"Custom tools retrieved successfully.\",\"error\":null,\"data\":{\"project_id\":\"9e28c50b510eeb91\",\"tool_count\":36,\"tools\":[{\"name\":\"manage_animation\",\"description\":\"Tool: manage_animation\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"generate_audio\",\"description\":\"Tool: generate_audio\",\"structured_output\":true,\"requires_polling\":true,\"poll_action\":\"status\",\"max_poll_seconds\":600,\"parameters\":[]},{\"name\":\"generate_image\",\"description\":\"Tool: generate_image\",\"structured_output\":true,\"requires_polling\":true,\"poll_action\":\"status\",\"max_poll_seconds\":300,\"parameters\":[]},{\"name\":\"generate_model\",\"description\":\"Tool: generate_model\",\"structured_output\":true,\"requires_polling\":true,\"poll_action\":\"status\",\"max_poll_seconds\":300,\"parameters\":[]},{\"name\":\"import_model\",\"description\":\"Tool: import_model\",\"structured_output\":true,\"requires_polling\":true,\"poll_action\":\"status\",\"max_poll_seconds\":300,\"parameters\":[]},{\"name\":\"import_model_file\",\"description\":\"Tool: import_model_file\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"batch_execute\",\"description\":\"Tool: batch_execute\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"blender_bridge\",\"description\":\"Bridge to a running Blender with the BlenderMCP addon: status, scene/object info, viewport screenshot, run Python in Blender, import a model (export → import → place → normalize), check the blender-mcp checkout for updates, and sync its addon into Blender.\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"manage_camera\",\"description\":\"Tool: manage_camera\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"execute_code\",\"description\":\"Tool: execute_code\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"execute_menu_item\",\"description\":\"Tool: execute_menu_item\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"find_gameobjects\",\"description\":\"Tool: find_gameobjects\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"manage_gameobject\",\"description\":\"Tool: manage_gameobject\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"get_test_job\",\"description\":\"Tool: get_test_job\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"manage_graphics\",\"description\":\"Tool: manage_graphics\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"manage_asset\",\"description\":\"Tool: manage_asset\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"manage_build\",\"description\":\"Tool: manage_build\",\"structured_output\":true,\"requires_polling\":true,\"poll_action\":\"status\",\"max_poll_seconds\":1800,\"parameters\":[]},{\"name\":\"manage_components\",\"description\":\"Tool: manage_components\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"manage_editor\",\"description\":\"Tool: manage_editor\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"manage_material\",\"description\":\"Tool: manage_material\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"manage_packages\",\"description\":\"Tool: manage_packages\",\"structured_output\":true,\"requires_polling\":true,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"manage_scene\",\"description\":\"Tool: manage_scene\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"manage_script\",\"description\":\"Tool: manage_script\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"manage_scriptable_object\",\"description\":\"Tool: manage_scriptable_object\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"manage_shader\",\"description\":\"Tool: manage_shader\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"manage_texture\",\"description\":\"Tool: manage_texture\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"manage_ui\",\"description\":\"Tool: manage_ui\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"manage_physics\",\"description\":\"Tool: manage_physics\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"manage_prefabs\",\"description\":\"Tool: manage_prefabs\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"manage_probuilder\",\"description\":\"Tool: manage_probuilder\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"manage_profiler\",\"description\":\"Tool: manage_profiler\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"read_console\",\"description\":\"Tool: read_console\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"refresh_unity\",\"description\":\"Tool: refresh_unity\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"run_tests\",\"description\":\"Tool: run_tests\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"unity_reflect\",\"description\":\"Tool: unity_reflect\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]},{\"name\":\"manage_vfx\",\"description\":\"Tool: manage_vfx\",\"structured_output\":true,\"requires_polling\":false,\"poll_action\":\"status\",\"max_poll_seconds\":0,\"parameters\":[]}]},\"hint\":null}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "method": "resources/read",
+      "params": {
+        "uri": "mcpforunity://instances"
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": "64637ba3-9c34-49b6-94b0-e8a674e301ca",
+        "result": {
+          "contents": [
+            {
+              "uri": "mcpforunity://instances",
+              "mimeType": "text/plain",
+              "text": "{\"success\": true, \"transport\": \"http\", \"instance_count\": 1, \"instances\": [{\"id\": \"MyTowerGame@9e28c50b510eeb91\", \"name\": \"MyTowerGame\", \"hash\": \"9e28c50b510eeb91\", \"unity_version\": \"2022.3.62f3c1\", \"connected_at\": \"2026-10-28T07:33:35.699470+00:00\", \"session_id\": \"f543c566-4d74-4801-a794-2fd3d35f50f5\"}]}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "method": "tools/call",
+      "params": {
+        "name": "set_active_instance",
+        "arguments": {
+          "instance": "MyTowerGame@9e28c50b510eeb91"
+        }
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": "4a6ed4f5-a9a1-4c68-8813-74a93f24d5d7",
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"success\":true,\"message\":\"Active instance set to MyTowerGame@9e28c50b510eeb91\",\"data\":{\"instance\":\"MyTowerGame@9e28c50b510eeb91\",\"session_id\":\"c37c60c6e8e944dbb9bb76803402c22d\"}}"
+            }
+          ],
+          "structuredContent": {
+            "success": true,
+            "message": "Active instance set to MyTowerGame@9e28c50b510eeb91",
+            "data": {
+              "instance": "MyTowerGame@9e28c50b510eeb91",
+              "session_id": "c37c60c6e8e944dbb9bb76803402c22d"
+            }
+          },
+          "isError": false
+        }
+      }
+    },
+    {
+      "method": "resources/read",
+      "params": {
+        "uri": "mcpforunity://project/info"
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": "152ddb57-ecd0-470c-baab-fa96f0adde8a",
+        "result": {
+          "contents": [
+            {
+              "uri": "mcpforunity://project/info",
+              "mimeType": "text/plain",
+              "text": "{\"success\":true,\"message\":\"Retrieved project info.\",\"error\":null,\"data\":{\"projectRoot\":\"E:/MyTowerGame\",\"projectName\":\"MyTowerGame\",\"unityVersion\":\"2022.3.62f3c1\",\"platform\":\"Android\",\"assetsPath\":\"E:/MyTowerGame/Assets\"},\"hint\":null}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "method": "tools/call",
+      "params": {
+        "name": "execute_code",
+        "arguments": {
+          "action": "execute",
+          "code": "FTProject.EditorTools.EnemyDirectionBatchReview.Start(\"Swine\",\"runtime_r01\",false);return true;"
+        }
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": "f07bc094-06fc-4f73-bb27-4207d0f7c7d6",
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"success\":true,\"message\":\"Code executed successfully.\",\"data\":{\"result\":true,\"compiler\":\"codedom\"}}"
+            }
+          ],
+          "structuredContent": {
+            "success": true,
+            "message": "Code executed successfully.",
+            "data": {
+              "result": true,
+              "compiler": "codedom"
+            }
+          },
+          "isError": false
+        }
+      }
+    }
+  ]
+}

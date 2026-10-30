@@ -1,0 +1,41 @@
+{
+  "name": "Gobbler",
+  "visual_reviewed": true,
+  "user_approved": false,
+  "note": "保留金褐斑点、细长颈和浅金端带宽扇尾，左右为原侧面，上下为正背分件。正面短翼贴合躯干、双足接在腹下；背面只有纯后脑与头顶羽冠，扇尾从后躯升起并遮住下颈，未见背面脸。上下行走汇总帧可见两足交替抬落及尾扇轻摆，转向抽样帧保持完整轮廓，地面未见阴影。攻击抽样中正面切到怒眼，受击白闪后恢复本色；Up 死亡从白闪转为侧倒收拢并逐步淡出，复用抽样恢复完整正面、满血条和正常颜色。",
+  "images_viewed": 6,
+  "viewed": [
+    "reference/source_prefab_offline.png",
+    "generation/Up/raw.png",
+    "raw_review_r01.png",
+    "offline_selection_review_r01.png",
+    "runtime_r01/four_directions.png",
+    "final_visual_review_board_r01.png"
+  ],
+  "final_board_includes": "runtime_visual_strip.png plus actual turn/hurt/reuse/pause/resume/speed checkpoint strip",
+  "gif_playback": "No GIF separately opened; final summary strips used within six-image limit.",
+  "rejected": [
+    "Up/raw.png: hollow collar and front toe spread",
+    "Up/revision_01/raw.png Body: invented collar retained; rear heel accepted",
+    "Down/raw.png Body: invented equipment; other parts accepted"
+  ],
+  "selected": "selection_r01/*.png from documented per-part revisions",
+  "program_verification": [
+    {
+      "revision": "runtime_r01",
+      "pass": 84,
+      "fail": 0,
+      "frames": 345,
+      "records_sha256": "967B77B25E5B08B18DBE849D6EDEA50869232EE80B00B5EF5217EC7BEF7AA713"
+    },
+    {
+      "revision": "runtime_updeath_r01",
+      "pass": 84,
+      "fail": 0,
+      "frames": 344,
+      "records_sha256": "7571BC51A8F3E9B78893C8577A7397EBEFE727A229E493775C84943FC1D810A0"
+    }
+  ],
+  "scope": "session_scope_comparison.json",
+  "editor_check": "final_editor_check_request_response.json"
+}

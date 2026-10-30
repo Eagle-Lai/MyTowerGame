@@ -1,0 +1,37 @@
+{
+  "name": "Watchdog",
+  "kind": "quadruped",
+  "controller_family": "Wolf",
+  "identity": "Original stocky dark olive-brown watchdog, ochre circular coat patches, broad short dog muzzle with ivory jaw fangs, two FOLDED/FLOPPY triangular ears, thick gold collar with ivory conical spikes, four broad short paws and a TINY short wedge/stub tail with an ochre patch.",
+  "parts": [
+    "HeadNormal",
+    "HeadAngry",
+    "HeadDead",
+    "Body",
+    "LegFront",
+    "LegBack",
+    "Tail"
+  ],
+  "columns": 4,
+  "rows": 2,
+  "source": "Assets/_UIAssets/Monsters/Dogs/Watchdog/Watchdog.prefab",
+  "atlas": "Assets/_UIAssets/Monsters/Dogs/Watchdog/Watchdog.png",
+  "art_dir": "Assets/_UIAssets/Monsters/Dogs/Watchdog/Directions",
+  "controller": "Assets/_UIAssets/Monsters/_Common/Animations/Wolf/Controller.controller",
+  "anatomy_observations": {
+    "ears": "Source ears are folded triangular dog ears, not erect pointed wolf ears.",
+    "head_collar": "The original Head sprite includes the thick gold spiked collar. Keep collar integrated in every head state, no duplicate collar on Body.",
+    "body": "Low stocky spotted torso, no mane, dorsal spikes, armor or fur ruff.",
+    "feet": "Exactly four short broad paws. Up feet show rear heel/hock surfaces, not front toe/claw marks. Two mirrored forelegs and two mirrored hindlegs.",
+    "tail": "Tiny pointed wedge/stub with ochre patch, not a long bushy wolf tail. Root at top of detached piece, stub extends downward from rump in rear view.",
+    "rear": "Only back of head and outer backs of folded ears; all three Up head states reuse one faceless rear head. Gold collar remains at neck base.",
+    "connections": "Opaque head/neck/collar overlap torso. Foreleg shoulder and hindleg hip roots extend under torso. Short tail root hidden under rump.",
+    "native_contract": "Wolf Ready/Walk/Attack 0.5s, Death 0.416666657s. Preserve all native curves/PPtr/events, including Attack Event at 0.333333343 and SetHead sequence."
+  },
+  "source_review": [
+    "reference/Watchdog.png",
+    "reference/source_prefab_offline.png",
+    "reference/battle_prefab_offline.png",
+    "source_contract_20261029.json"
+  ]
+}

@@ -1,0 +1,49 @@
+{
+  "observed_at": "2026-10-28T09:38:04.000676+08:00",
+  "status": "completed_pending_user_art_review",
+  "user_approved": false,
+  "note": "最终采用local_raster_revision_02与repair_proportions_r03。初版两轮虽168/0，但Up/Down体量过小已视觉否决；revision03将轴向部件与关节间距放大1.6并保留专用尾根pivot。新两轮真实Play为84/0+84/0，共679帧。实际查看四方向图、runtime_visual_strip及10张整身时序/步态/愤怒细节板，共256采样位、230张不同真实帧，并查看Down攻击及死亡原PNG。Up后脑无五官，四肢/颈尾根连续、单条分节尾；Down保留宽脸、小额晶片和单块宽顶背晶，攻击张嘴、死亡眼舌状态可辨；侧向保持原低伏长体。上下步态脚部压缩/摆动与尾摆可见，连续转向、白闪后恢复、死亡整身倾倒淡出及回收后不透明状态正常；暂停姿态及时间不变，恢复和2x/3x继续推进。抽样中尾尖完整且未碰血条，未见地面阴影。审阅为按时间排序的真实PNG抽样，未实时播放GIF、未逐张审完679帧。仅内部技术与视觉检查完成，用户美术未批准。",
+  "viewed_sheets": [
+    "runtime_final_r02_angry_detail.png",
+    "runtime_final_r02_sequence_0.png",
+    "runtime_final_r02_sequence_1.png",
+    "runtime_final_r02_sequence_2.png",
+    "runtime_final_r02_walk_cycle.png",
+    "runtime_final_updeath_r02_angry_detail.png",
+    "runtime_final_updeath_r02_sequence_0.png",
+    "runtime_final_updeath_r02_sequence_1.png",
+    "runtime_final_updeath_r02_sequence_2.png",
+    "runtime_final_updeath_r02_walk_cycle.png"
+  ],
+  "source_manifest": "sources.json",
+  "sample_slots": 256,
+  "distinct_actual_frame_samples": 230,
+  "additional_viewed": [
+    "runtime_final_r02/four_directions.png",
+    "runtime_visual_strip.png",
+    "offline_proportions_revision_03/full_rig_proof.png",
+    "runtime_final_r02/frames/Attack_00139.png",
+    "runtime_final_r02/frames/DeathAutoRecycle_00165.png"
+  ],
+  "method": "Chronological actual PNG samples, walk cycles and angry details. No live GIF playback; not every frame reviewed.",
+  "final_install_manifest": "repair_proportions_r03/manifest.json",
+  "sources_sha256": "0869361E78EF94B980AE0056928B98C3A50D99299A486859E5D0584E8E456041",
+  "viewed_sheet_sha256": {
+    "runtime_final_r02_angry_detail.png": "B3216E3C0AF4221649A898BA90E79C0DBEDEFA52C32D9A8651C705F026B7AFF8",
+    "runtime_final_r02_sequence_0.png": "D8D8086578DB6AA8839DF7395A67B7110956D880833FC23C3AD9D91E789BECA2",
+    "runtime_final_r02_sequence_1.png": "9353FF81D38F9BB484AAD88EE4525C9A627BC5D3C683E202032D6CB06AE69E5E",
+    "runtime_final_r02_sequence_2.png": "9EC899B2EC0307F7870E723DA78D3B64CE16AD4491101C94387AF9873D794ABE",
+    "runtime_final_r02_walk_cycle.png": "841FE4B462AA64E9C7F26BDEDAB7118CB9CE21EC071F19B907DFD6E889D45B40",
+    "runtime_final_updeath_r02_angry_detail.png": "3FD6461799F2F83141C5337E18C0AD1DFA517BDA5245BE844EA875875F786984",
+    "runtime_final_updeath_r02_sequence_0.png": "63EEBFC93B37896E0BF829D5D76D05DC38222778E0CA0D462CC8002FF7B1CC02",
+    "runtime_final_updeath_r02_sequence_1.png": "871BDEB09B81EE2F215E8172CFA70112773F94F72C81550C52943D0420A80BA2",
+    "runtime_final_updeath_r02_sequence_2.png": "013D7E3D918D92FE486DB0B6F719FFE4AFF85227B3DBF3302C55D64A6E03F3BC",
+    "runtime_final_updeath_r02_walk_cycle.png": "3A86650843A8A7BFBE7C94389F2612202AF6B367F64613DD5E46FAF2FEBDF243"
+  },
+  "final_version_binding": "version_binding_final_20261028.json",
+  "superseded_runtime": [
+    "runtime_r01",
+    "runtime_updeath_r01"
+  ],
+  "superseded_reason": "Up/Down too small despite technical PASS"
+}

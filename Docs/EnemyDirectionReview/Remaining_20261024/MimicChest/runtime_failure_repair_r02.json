@@ -1,0 +1,12 @@
+{
+  "revision": "runtime_r01",
+  "initial_exception": "UnassignedReferenceException: variable HeadRenderer of MonsterAnimEventReceiver has not been assigned. StaticChecks dereferenced absent side head. Later timeout overwrote exception.txt before safe return; original console retained.",
+  "source_evidence": "reference/Enemy_MimicChest.prefab: HeadRenderer fileID 0, HeadSprites empty; original Normal/Broken renderers.",
+  "repair": "MimicChest-only reviewer branch checks preserved empty receiver bindings and exact original side sprites, vertical event delivery still required. No production receiver change.",
+  "before_sha256": "74ce710a1470cae6ad1740a93c7c9f39a30db85c97302594c24311166f130674",
+  "after_sha256": "15f52ec0bc9c68139725df33cac0105c687600745393af0221f97c98486acaf6",
+  "next_revisions": [
+    "runtime_r02",
+    "runtime_updeath_r02"
+  ]
+}

@@ -1,0 +1,59 @@
+{
+  "Up": "local_raster_revision_01/Up_sheet.png",
+  "Down": "generation/Down/raw.png",
+  "transparent_parts": [
+    "Up_Body",
+    "Down_Body"
+  ],
+  "rectangles": {
+    "Up_HeadNormal": [
+      0,
+      0,
+      384,
+      512
+    ],
+    "Up_HeadAngry": [
+      384,
+      0,
+      768,
+      512
+    ],
+    "Up_HeadDead": [
+      768,
+      0,
+      1152,
+      512
+    ],
+    "Up_Body": [
+      1152,
+      0,
+      1536,
+      512
+    ],
+    "Down_HeadNormal": [
+      40,
+      100,
+      460,
+      500
+    ],
+    "Down_HeadAngry": [
+      560,
+      100,
+      980,
+      500
+    ],
+    "Down_HeadDead": [
+      1060,
+      20,
+      1480,
+      500
+    ],
+    "Down_Body": [
+      0,
+      512,
+      384,
+      1024
+    ]
+  },
+  "selection_note": "Whole Container states. Body is a transparent reference-only carrier; no second anatomical body exists. HeadAngry duplicates closed state. Up rear open state must not be replaced by closed state. Target extractor aligns bottoms and normalizes closed states to384x365 within384x480 shared state canvases; opened height relative to closed preserved, width matches closed. This corrects generated direction/state proportion variance without using original side art to fake a view."
+}

@@ -1,0 +1,38 @@
+在 E:/MyTowerGame 继续敌人四方向串行续作。本聊天唯一角色 Wasp(index 104)，用户已授权的唯一全新 local 后继，不是并行任务。
+
+唯一 dispatch token：warg-to-wasp-20261028_235853-1e651dcf-1586-4ebc-9926-3b8be7348e7d
+父线程：01a1830c-598a-7473-8ee1-01bccdd1f9be
+
+开工完整读取并同步当前磁盘：
+1. E:/MyTowerGame/AGENTS.md、ProjectSettings/ProjectVersion.txt。
+2. E:/MyTowerGame/Docs/EnemyDirectionReview/README.md。
+3. E:/MyTowerGame/Docs/EnemyDirectionReview/Remaining_20261024/REMAINING_ENEMIES_EXECUTABLE_PROMPT_20261026.md。
+4. 同目录 CONTINUATION_PROTOCOL_20261026.md、IMAGE_RELAY_RECOVERY_20261026.md、NEXT_ENEMY_TASK.md、conversation_chain.json、实时progress.json。
+5. 同目录standing_network_recovery_authorization_20261028.json、TreasureChest/standing_recovery_application_20261028.json；核对原授权证据，不改写旧uncertain/收费结果，不无限重试。
+6. E:/MyTowerGame/Docs/EnemyDirectionReview/Remaining_20261024/conversation_handoffs/20261028_235853_Warg_completed.md。
+7. E:/MyTowerGame/Docs/EnemyDirectionReview/Remaining_20261024/Wasp/successor_assessment_20261028_235853.json。
+8. Wasp/reference/source_structure.json 与完整源参考。
+
+只有chain.state=active、owner_thread_id为本新线程、current_character=Wasp、dispatch_token与上方一致后，才可操作Unity、生产或付费生成。父线程先handoff_ready；此阶段只读等待登记，不超时抢锁。父创建成功登记后停止工作区写入。开工检查新出现的请求/安装/运行文件，恢复已有阶段，避免重复prepare、付费或安装。
+
+当前92/108。Warg103已record、最终R02、completed_pending_user_art_review、user_approved=false；Wasp104 not_started，仅reference，无anatomy/generation/raw/staged/install/runtime。assessment/prompt/dispatch仅调度文档，不代表已开始美术。PossessedWarg旧blocked与结果不明的付费请求保留，不自动重发、不伪称完成。
+
+Wasp源路径：
+- Assets/Prefabs/Enemy/Enemy_Wasp.prefab
+- Assets/_UIAssets/Monsters/Insects/Wasp/Wasp.prefab
+- Assets/_UIAssets/Monsters/Insects/Wasp/Wasp.png
+metadata及reference六保护已匹配，开工仍现场核对。读完整图集、prefab层级和绑定、Controller依赖、原float/PPtr/事件/时长/loop、战斗飞行与复用生命周期。自行制定Wasp解剖、翼数、翼根、遮挡和连续振翅，不套用其他虫或四足模板。改动前建立本角色Assets/Packages/ProjectSettings/Luban全路径SHA增量基线及六保护指纹，以当前磁盘含用户改动为准，不以Git HEAD为基线。
+
+逐阶段执行原prompt：审原图/解剖→按需逐方向AIHub并实看raw→透明分件/切片/pivot/PPU/layout与离线proof审阅→六保护及Unity空闲复核→仅Wasp安装Builder/Verify→两轮真实Unity Play各84项→分批实际看PNG/时序板/GIF并准确记抽样→最终生产与运行版本哈希绑定→UTF-8 note/record→GIF归档SHA→路径并集增量和原组件语义审计。程序PASS不能替代美术检查，视觉失败必须修复重测并保留旧revision。原始请求和成功raw复用；不确定结果先查进程/落盘/返回，再决定是否有授权的新revision，不盲重发。
+
+AIHub https://aihub.dog/v1，gpt-image-2、medium、1536x1024、n1，复用现有generate_character.ps1/generate.mjs，密钥运行时读取、仅发aihub.dog、结束清理、不输出密钥/base64。遵守既有有界网络恢复授权及新intent/revision护栏；Usage本地估算不当已确认账单。
+
+保护源图集/源prefab/GUID/root、HP、碰撞、锚点、移动战斗参数与原侧面动画曲线/PPtr/事件/时长/loop。新增正背必须是真正正背，Up无正面脸，飞行结构连贯，不能漂浮断翼或地面阴影。保持原生攻击、受击/致死白闪、全身死亡淡出缩小、自动回收与同实例复用、暂停/1x2x3x。使用现有方向系统，不增逐帧材料、层级查找或另一套方向系统。不改其他角色/共享C#；若确有共享缺陷，先明确依赖及最小范围并按原prompt编译回归。禁止改配置表、Assets/ConfigJson、Assets/Gen、声音；不要Git pull/reset/clean/commit、构建部署、fork、子代理、并行角色、计时器、模型/推理覆盖或长期memory更新。
+
+正确Unity端点 http://127.0.0.1:8088/mcp，版本2022.3.62f3c1。复用Remaining_20261024/mcp_call.py，每次动态读custom-tools/instances、明确set当前MyTowerGame完整ID、project/info核E:/MyTowerGame及版本。8082当前另一工程，8080 CatchFish；根AGENTS的FreedomTower/D盘/8082为历史错配，当前任务覆盖。重连/域重载后重核。MCP离线按工程规则自主恢复，失败说明具体开启步骤，不能假称验收通过。默认Unity MCP；电脑/桌面控制须先弹对话确认，本提示不授权桌面。仅停本任务授权测试Play，不强停外来任务。
+
+本任务授权为完成角色进行两轮真实Play测试。最终Unity须单一clean Boot、非Play、全部测试/录像/手动模拟/编译/重载/更新idle、failed=false、error0、ready=true，不清日志。C#若改必须正确工程refresh/compile/state/error闭环，编译期间不继续改代码。空闲缓存stale须取新事实，不能把旧resource或端口监听当成功。
+
+前任Warg最终证据：Warg/final_validation_20261028.json及version_binding/scope/visual_review_r02/gif_archive。最终repair_proportions_r02/manifest.json有完整21路径，R01体量不足已否决，R02保持脚跟本地修补与尾根pivot并正背整体1.6。runtime_r02 302帧与runtime_updeath_r02 299帧，各84/0，共168/0、601真实PNG。实际审10板256采样位/228不同PNG、6原PNG、两轮四向/strip、12GIF各5编码帧；未实时播放或全GIF逐帧。AllGIF1498，Warg24（最终12、历史12），源/归档SHA一致。5385→5405路径并集22变化20新增、unexpected0、本角色语义与源保护/共享C#无漂移；Reporter build_info单列，历史global291 unexpected及6其他角色语义失败没有重跑或称全局通过。原HP部分遮住背头/尾尖，保护原UI位置并记录，非审阅板裁剪。不要重跑前任Build或修改前任。
+
+最终状态只能completed_pending_user_art_review、user_approved=false，不替用户批准。完成Wasp全部关卡或记录真实阻断并释放Unity后，重新评估实时队列（优先可恢复已开始，否则最低index非blocked），完整写交接、更新README/原prompt实时块/NEXT/progress。用户已授权“完成一个→总结/更新prompt→唯一全新local后继”循环，不逐角色再询问。先chain handoff_ready，再list_projects现场确认E:/MyTowerGame项目并create_thread唯一fresh local、不传model/thinking、不fork。新聊天等待active。create明确成功保存实际响应并把newowner/token active作为父最终写入；之后停止所有工作区写入，做一次有界wait_threads并报告真实created-thread。创建结果不明先查列表，不重复创建；失败保留可执行交接并如实说明。循环到108全部有效完成或只剩真实阻断，不绕过阻断付费试探。

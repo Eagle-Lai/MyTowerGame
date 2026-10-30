@@ -1,0 +1,119 @@
+{
+  "observed_at": "2026-10-28T12:42:15.910940+08:00",
+  "attempts": [
+    {
+      "path": "generation/Down",
+      "request_sha256": "65ED8F4D96738052CA277909861ED5E809F3659A37C571BD18576638D45FA1A3",
+      "result": null,
+      "uncertain": {
+        "finished": "2026-10-28T04:39:00.756Z",
+        "error": "TypeError",
+        "message": "fetch failed",
+        "note": "No automatic retry. Check for an existing server result before repeating."
+      },
+      "raw_sha256": null
+    },
+    {
+      "path": "generation/Down/revision_01",
+      "request_sha256": "24AD431CF21F9DAB7010D61C263E3C6E0493AD8B97E22D2D7CAD1CDFE858370E",
+      "result": null,
+      "uncertain": {
+        "finished": "2026-10-28T04:40:17.314Z",
+        "error": "TypeError",
+        "message": "fetch failed",
+        "note": "No automatic retry. Check for an existing server result before repeating."
+      },
+      "raw_sha256": null
+    },
+    {
+      "path": "generation/Down/revision_02",
+      "request_sha256": "E529B158C6678E3C4A36D5C32A6520438E8A4F0AEB5567620BDB9B46AC3468F8",
+      "result": null,
+      "uncertain": {
+        "finished": "2026-10-28T04:41:35.865Z",
+        "error": "TypeError",
+        "message": "fetch failed",
+        "note": "No automatic retry. Check for an existing server result before repeating."
+      },
+      "raw_sha256": null
+    },
+    {
+      "path": "generation/Up",
+      "request_sha256": "322E96BCBEF023503FC41B6EBE0CFA484DD87669F7630F572011AF27AB8DF43D",
+      "result": {
+        "finished": "2026-10-26T14:37:47.456Z",
+        "status": 402,
+        "error": {
+          "code": "insufficient_balance",
+          "message": "Upstream image account has insufficient balance",
+          "type": "upstream_error"
+        }
+      },
+      "uncertain": null,
+      "raw_sha256": null
+    },
+    {
+      "path": "generation/Up/revision_01",
+      "request_sha256": "BEFBE37BE35270B1B188A0B89A1BF8A2F5CB8C8F1A3C39D2B42B6B05D66C0021",
+      "result": null,
+      "uncertain": {
+        "finished": "2026-10-28T04:32:17.268Z",
+        "error": "TypeError",
+        "message": "fetch failed",
+        "note": "No automatic retry. Check for an existing server result before repeating."
+      },
+      "raw_sha256": null
+    },
+    {
+      "path": "generation/Up/revision_02",
+      "request_sha256": "4EC1C9EE7B36B04341CD53697583FB28FD945D10B692BD94E3B84781422D5FD8",
+      "result": null,
+      "uncertain": {
+        "finished": "2026-10-28T04:34:18.423Z",
+        "error": "TypeError",
+        "message": "fetch failed",
+        "note": "No automatic retry. Check for an existing server result before repeating."
+      },
+      "raw_sha256": null
+    },
+    {
+      "path": "generation/Up/revision_03",
+      "request_sha256": "0700A9E4E60F1F24DD5F7ADB0D2677154D7F4971847F8BCDB89239E8D52025F8",
+      "result": {
+        "finished": "2026-10-28T04:35:36.843Z",
+        "status": 200,
+        "bytes": 1411519
+      },
+      "uncertain": null,
+      "raw_sha256": "29067FE59AF239B0EAA8245649156A6692D331F743C55ABEC7E7BC57D59F24C1"
+    },
+    {
+      "path": "generation/Up/revision_04",
+      "request_sha256": "BE5C9699C489877AB14644E3BF0F5C9B0CD4ABB1513CAF49CF469BE0C3E52FAC",
+      "result": {
+        "finished": "2026-10-28T04:37:37.568Z",
+        "status": 200,
+        "bytes": 1395051
+      },
+      "uncertain": null,
+      "raw_sha256": "017869DBEF05F7C11298AB5A8F6C76B12908996E783814B3D2FBDD1F5DD3AE16"
+    }
+  ],
+  "network_recovery_limit_per_direction": 2,
+  "up_network_attempts_used": 2,
+  "down_network_attempts_used": 2,
+  "up_visual": "revision_03 rear mouth/side-body rejected; revision_04 actual raw and clean alpha probe reviewed",
+  "new_art_correction": "revision_04 uses preserved successful revision_03 as Image3; one targeted correction, same n/model/quality/size",
+  "tooling_extension": {
+    "files": [
+      "generate_character.ps1",
+      "generate.mjs"
+    ],
+    "changes": [
+      "Explicit ArtSourceRevision option with source/result hash and active-owner intent checks",
+      "Standing network recovery accepts initial parent outcome in addition to prior named revision, with identical fingerprint and bounded-request checks"
+    ],
+    "only_Docs": true
+  },
+  "source_animation": "source_animation_audit_20261028.json; shared Walk has no Body rotation and Death z reaches -180; copied own Walk reset needed before final Play"
+}

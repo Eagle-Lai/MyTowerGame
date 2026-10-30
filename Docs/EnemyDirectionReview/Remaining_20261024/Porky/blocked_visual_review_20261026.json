@@ -1,0 +1,62 @@
+{
+  "name": "Porky",
+  "index": 75,
+  "status": "blocked",
+  "at": "2026-10-26T07:54:01.001539+08:00",
+  "reason_category": "visual_failure",
+  "completed_stage": "Prepared, generated Up/Down plus revision_02, staged layout_r03, installed and Verify passed, both actual Play revisions 84/0. Final visual review failed; record NOT executed.",
+  "reason": "Final real ContinuousTurns frames show original side Body upside down after death and same-instance reuse, although both automated runs passed. Visual check therefore fails; six-image budget exhausted. Current Porky assets and all historical evidence retained.",
+  "visual_evidence": "final_visual_review_contact.png",
+  "affected_frames": [
+    {
+      "file": "runtime_r01/frames/ContinuousTurns_00261.png",
+      "frame": 4817,
+      "facing": "Right",
+      "sha256": "3B1CDDED1806C92F4EC90C23B213EE9ED9D4F02B50DA615DF1EDE602B8041A7D"
+    },
+    {
+      "file": "runtime_r01/frames/ContinuousTurns_00325.png",
+      "frame": 5985,
+      "facing": "Left",
+      "sha256": "91BAC75DF78D4411C061EA9CA8915756A215536790447098A9A5E1C32DDACE85"
+    }
+  ],
+  "runtime": [
+    {
+      "revision": "runtime_r01",
+      "pass": 84,
+      "fail": 0,
+      "frames": 340,
+      "records_sha256": "B3E7E3F4357F3418C0C6B5AA0FC43E2A442EABD4942E51A58D679FB85DB606CD"
+    },
+    {
+      "revision": "runtime_updeath_r01",
+      "pass": 84,
+      "fail": 0,
+      "frames": 340,
+      "records_sha256": "BB7FCF7A74C23815FC4460333AB0987F99D08C2F74EDF3BBCF69152CF1C24D95"
+    }
+  ],
+  "actual_frames": 680,
+  "image_views": 6,
+  "art_revision": "generation/Up/revision_02 + generation/Down/revision_02",
+  "layout_revision": "layout_r03",
+  "scope": "session_scope_delta.json: 291 prior unexpected files, 0 new unexpected; Porky prefab semantics pass, prior character semantics unchanged.",
+  "production_disposition": "Keep Porky-only installed prefab and Directions with before/ backups; no rollback, no unrelated files changed by this task. Boot scene clean and not in Play.",
+  "next_step": "New one-character session: inspect diagnostic Body rotation bindings and existing Piggy repair_reuse_r01; prepare a Porky-only pool rotation reset repair preserving original source side curves/events. Do not repeat paid image requests. Use a new repair/runtime revision and fresh visual review budget.",
+  "sha256": {
+    "final_visual_review_contact.png": "83927E83FFCD72BAA8E71ADB648F26EB01187343324753A0288E72AE6FCBCA56",
+    "runtime_r01/actual_frames.jsonl": "B3E7E3F4357F3418C0C6B5AA0FC43E2A442EABD4942E51A58D679FB85DB606CD",
+    "runtime_updeath_r01/actual_frames.jsonl": "BB7FCF7A74C23815FC4460333AB0987F99D08C2F74EDF3BBCF69152CF1C24D95",
+    "final_editor_and_rotation_diagnostic.json": "182113B1EC8C1106AA30C0E8419937438E8D06626614A6511FB7DD090248EB81",
+    "installed_manifest.json": "46F597AE1ADAA2B2C539F218E63CEC54CC04BAA81B1B03C7B21088770F3815B0"
+  },
+  "visual_note": "实际查看四向真实帧与运动汇总图：浅棕灰赭斑点、短足与卷尾保留；但死亡并复用后，ContinuousTurns 的左右侧身出现倒置，耳朝下、足朝上，视觉验收不通过。两轮程序断言各84/0不能代替视觉通过；已保留原始帧和诊断，不执行record。",
+  "visual_note_encoding": "UTF-8 file reread passed",
+  "diagnosis": "Death_Directions rotates original Body z from 0 to -180; Walk_Directions has no Body rotation curve, so pooled reuse preserves the death pose. No C# or shared animation changed.",
+  "next_commands": [
+    "Inspect Porky/final_editor_and_rotation_diagnostic.json and Piggy/repair_reuse_r01 before a Porky-only reset component repair.",
+    "python -X utf8 Docs/EnemyDirectionReview/Remaining_20261024/repair_character.py Porky repair_reuse_r01 (only after a complete Porky repair revision is prepared)",
+    "python -X utf8 Docs/EnemyDirectionReview/Remaining_20261024/runtime_runner_revision.py Porky runtime_r02 runtime_updeath_r02"
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "chain_id": "enemy-directions-20261026-acaba70c",
+  "recorded_at": "2026-10-28T12:01:51.865710+08:00",
+  "user_statement": "继续任务。后续同样的情况，不再需要我确认，可以继续静默执行",
+  "source": "Direct user reply to the prior closeout requiring a decision accepting possible duplicate charge for a bounded Down retry",
+  "accept_possible_duplicate_charge": true,
+  "scope": "This serial enemy-direction task: same transient fetch failed / ECONNRESET before secure TLS, preserving uncertain originals. A fresh revision, active owner and per-attempt intent are mandatory.",
+  "max_additional_network_retries_per_direction": 2,
+  "limit_origin": "Conservative execution limit, not a user-specified monetary budget",
+  "parameters": {
+    "endpoint": "https://aihub.dog/v1/images/edits",
+    "model": "gpt-image-2",
+    "quality": "medium",
+    "size": "1536x1024",
+    "n": 1
+  },
+  "do_not_reclassify_prior_outcomes": true,
+  "stop_conditions": [
+    "Existing successful image must be reused",
+    "In-flight request or missing outcome must be inspected",
+    "Authentication/balance failures require actual resolution, not endless retries",
+    "Two additional attempts per direction exhausted",
+    "No endpoint or quality/candidate escalation"
+  ],
+  "computer_control_policy": "New standing authorization is applied to the image-service retry described immediately before the user reply. Preserve the separate rule requiring a dialog before desktop control; use target Unity MCP by default.",
+  "not_related_to": "SabretoothTiger Down-only $0.07 special authorization remains consumed and unchanged"
+}

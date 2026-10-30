@@ -1,0 +1,28 @@
+{
+  "name": "TreasureChest",
+  "kind": "chest",
+  "controller_family": "Container",
+  "identity": "Golden ochre wooden treasure chest, rounded arched lid, two broad dull gray iron bands, thick dark outlines and simple broad cel shading. Square centered gray keyhole lock on FRONT only. Empty golden wooden cavity when opened. No face, eyes, mouth, teeth, tongue, limbs or creature anatomy.",
+  "parts": [
+    "HeadNormal",
+    "HeadAngry",
+    "HeadDead",
+    "Body"
+  ],
+  "columns": 4,
+  "rows": 2,
+  "source": "Assets/_UIAssets/Monsters/Inanimate/TreasureChest/TreasureChest.prefab",
+  "atlas": "Assets/_UIAssets/Monsters/Inanimate/TreasureChest/TreasureChest.png",
+  "art_dir": "Assets/_UIAssets/Monsters/Inanimate/TreasureChest/Directions",
+  "controller": "Assets/_UIAssets/Monsters/_Common/Animations/Container/Controller.controller",
+  "source_observations": {
+    "original_visible_art": "one whole closed chest SpriteRenderer Normal, one whole opened chest SpriteRenderer Broken; no split lid/head",
+    "receiver": "HeadRenderer null; HeadSprites empty",
+    "clips": "Idle1s no curves/events; Death1/3s toggles Normal off/Broken on and moves/wobbles Body; no source events",
+    "state_aware_rig": "HeadNormal/HeadAngry are whole closed chest, HeadDead is whole open chest. Body slice intentionally transparent compatibility carrier. Generic Head names are state slots, not animal anatomy.",
+    "actual_views": [
+      "reference/source_prefab_offline.png",
+      "reference/TreasureChest.png"
+    ]
+  }
+}

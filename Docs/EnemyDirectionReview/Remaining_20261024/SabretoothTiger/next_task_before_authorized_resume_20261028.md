@@ -1,0 +1,30 @@
+# 当前唯一敌人任务：SabretoothTiger（Down结果不明，串行链停止）
+
+2026-10-28 SabretoothTiger(index91)有界恢复停止，进度仍80/108、AllGIF=1234。Up revision_01一次HTTP200，2026-10-28T01:59:28.965Z落raw(1536x1024 RGB，1466088 bytes)，已实际审原图和两张分件预览；身体越过名义行界，后续须显式矩形提取，默认spectral去背保留，warm预览紫边已否决。Down revision_01仅发一次，2026-10-28T02:16:57.659Z记录fetch failed，实际stderr为ECONNRESET/建立TLS前断开，无HTTP状态/raw/result或可查询ID，结果不明，不推定未收费、不重发、不新revision/其他角色付费探针。未stage/install/Verify/Play/record，无运行帧。新5158文件基线并集审计changes=[]，六保护无drift；全局291历史unexpected及6个其他角色语义失败保留，不称全局PASS。Unity经8082动态核对E:/MyTowerGame /2022.3.62f3c1，Boot、非Play、全部场景非dirty、空闲、scriptCompilationFailed=false、错误0。chain=blocked，本聊天保持owner/token，不创建后继。旧Up503/Down402及所有历史保留；PossessedWarg仍结果不明、Scarab/ScarabMounted未请求恢复。阻断和完整恢复入口见Docs/EnemyDirectionReview/Remaining_20261024/SabretoothTiger/blocked_generation_recovery_20261028_102602.json、Docs/EnemyDirectionReview/Remaining_20261024/conversation_handoffs/20261028_102602_SabretoothTiger_blocked.md、NEXT_ENEMY_TASK.md。
+
+## 所有权与工程
+
+工程E:/MyTowerGame，Unity2022.3.62f3c1；根AGENTS的D:/FreedomTower_1为旧路径，不切换工程或修改AGENTS。owner_thread_id=01a18031-b524-7431-861b-b0de87d59a92，dispatch_token=shardlizard-to-sabretoothtiger-cffa9cb0c6fe47429c981a1e421b9a8e，parent_thread_id=01a178a8-fc5a-77b0-9881-0a0b40872da8。本轮chain.state=blocked，不是active；不抢锁、不超时接管、不fork、不使用子代理、不创建并发角色或重复聊天。恢复时先读根与目录链AGENTS、ProjectVersion、README/PREFAB_CHANGES_SUMMARY、原执行prompt、CONTINUATION_PROTOCOL、IMAGE_RELAY_RECOVERY、实时chain/progress及下列新证据。只有合法恢复为active且运行时CODEX_THREAD_ID等于owner，角色/token一致后才能操作Unity或生产资源。
+
+## 不允许重发的当前请求
+
+- 原Up父请求HTTP503、Down父请求HTTP402仍保留在generation/Up和generation/Down根目录，原blocked_generation_20261026.json保留。
+- Up新恢复：generation/Up/revision_01/request.json、result.json、raw.png、recovery_intent.json。HTTP200，原图SHA256=0971814c5725c65e49d81757473bd98db535e1d5487309482e72cd9b097b024b。必须复用，不重复生成。该intent哈希与request中绑定值匹配，后续执行结果不得回写intent。
+- Down新恢复：generation/Down/revision_01/request.json与uncertain_result.json。request SHA256=579a9f93c05825efa5db96a910b480d3422e14992c35f9d3eb378e5b2ae9ff00，uncertain SHA256=b40ae08bc780d291174a758a63cf91fdca0ce6afb1e543f8bc7c2423731a3f24。实际stderr与异常证据在transport_failure_evidence.json，TypeError fetch failed、ECONNRESET、TLS建立前断开；无raw/result/server查询ID。不能从本地错误推定服务端未处理或未收费。
+- 已停止所有付费动作。不得删除/覆盖request或uncertain以绕过保护、改普通revision入口、复制Up当Down，或改用其他角色试探。generate.mjs的RecoverFailed会拒绝已有uncertain，不能绕过。
+
+## 原图、分件和实际未完成阶段
+
+本聊天实际查看reference/SabretoothTiger.png、完整source_prefab_offline.png及battle_prefab_offline.png，读取序列化结构。灰白剑齿虎，棕宽纹/赭斑、长象牙犬齿、颊毛、四爪足、条纹尾；Up无脸无獠牙，不加鬃毛装备。
+Up raw已审，另实际看2张7部件去背预览，warm版本出现紫色边缘而否决；标准spectral版本保留，数据见generation/Up/revision_01/visual_review.json、up_extraction_spectral_preview.json。头部三个背面轮廓最终用HeadNormal统一。身体完整但从y约34至624跨越512名义行界，自动分行会误判；显式矩形已保存。尚须全身比例、连接、遮挡、背向爪足朝向、尾根pivot和PPU审阅；该图不等于最终美术验收。没有staged_art、installed_manifest、运行revision、runtime_summary或record；不可写成已完成。
+
+## 安全现场与恢复次序
+
+1. 先检查Down上述路径是否后来出现可恢复结果、真实在途generate进程或服务方可靠结果，不发探针。服务未返回可查询ID，本轮未猜测认证接口。可靠解决请求/计费结果前保持blocked。
+2. 两方向可用后按原prompt恢复；重新核对新生产增量基线与六保护。本轮基线SabretoothTiger/incremental_before_recovery_20261028_095734.json为5158文件，不使用旧5138基线承担其他角色新增资源。已有保护六项均无drift；本轮scope为Docs/EnemyDirectionReview/Remaining_20261024/SabretoothTiger/scope_recovery_20261028_102122.json，并集0变化。
+3. 沿用单角色stage/install/repair/record流水线。若之后有安装清单，从对应修复阶段恢复，不删除清单。仅改SabretoothTiger战斗prefab和Directions，原侧图曲线/事件/duration/loop、root/GUID/HP/血条/collider/业务、闪白/死亡淡出/复用/暂停倍速保持，无地面阴影。两轮真实Unity Play各84检查、实际媒体审阅、版本绑定和增量审计全满足后才record为completed_pending_user_art_review、user_approved=false。
+4. Unity用现有mcp_call.py Client.identity()，HTTP8082动态发现完整MyTowerGame实例并核对E:/MyTowerGame和版本。最新释放Docs/EnemyDirectionReview/Remaining_20261024/SabretoothTiger/unity_release_blocked_20261028_102122.json：Boot、非Play、全部场景非dirty、无编译/更新/录像/review/manual占用、scriptCompilationFailed=false、错误0。任何恢复后重新核对，不用8080或FishTestGame/8084，不打印Logs下私有启动记录；C#修改必须按AGENTS完成编译闭环。
+5. 保留所有dirty、旧失败/不明结果和ShardLizard最终安装/record/GIF，不pull/reset/clean/checkout/commit/push，不改配置表、ConfigJson/Gen、声音、其他角色、历史291项unexpected和6项语义失败。无生产差异不能扩称全局PASS。
+6. 当前没有可独立推进的生产/运行阶段，余下24个not_started都需要生成；按停止政策不创建后继。恢复条件解决后再按CONTINUATION_PROTOCOL读取实时items和证据，完成或真实阻断并安全交回Unity后才重新决定串行调度，不能盲用progress.current或上轮成功推定服务持续可用。
+
+完整新总结：Docs/EnemyDirectionReview/Remaining_20261024/conversation_handoffs/20261028_102602_SabretoothTiger_blocked.md；阻断记录：Docs/EnemyDirectionReview/Remaining_20261024/SabretoothTiger/blocked_generation_recovery_20261028_102602.json。本轮完成数量仍80/108，AllGIF仍1234。

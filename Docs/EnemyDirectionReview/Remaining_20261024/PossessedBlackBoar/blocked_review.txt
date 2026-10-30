@@ -1,0 +1,11 @@
+角色：PossessedBlackBoar，index 77
+阶段：blocked；runtime_complete_pending_visual_check 后视觉不通过。
+原因：Up 四足被躯干遮住，落地与交替步态不可读；Down 远侧足也被遮住。已做定点缩肢、内收及后蹄纹理修订，运行画面仍不满足视觉标准。已查看 6 张图片，不能在本轮继续看图验收新修订。
+程序：runtime_r01 84/0，339 帧；runtime_updeath_r01 84/0，340 帧。程序通过不等于视觉通过。
+证据：runtime_r01/four_directions.png；runtime_visual_strip.png；runtime_summary.json；installed_manifest.json；session_scope_review.json。
+runtime_r01 帧日志 SHA256：043D15895BE00C582C2C00A721C9CF70975AFAF36CEF43D5C3BABA3D957574AD
+runtime_updeath_r01 帧日志 SHA256：6D569F793F9D5526C0008C66595FDCA91AAE16D5BE86523A15A7BC91B71E1A7F
+看图清单：reference/source_prefab_offline.png；generation/Up/raw.png；generation/Down/raw.png；offline_rig_proof.png；runtime_r01/four_directions.png；runtime_visual_strip.png。
+生产状态：保留本角色已安装资源与失败视觉现场，未回滚；未执行 record，未标记完成或美术通过。
+下一步：新会话核对指纹与 Unity 空闲状态，保留 staged_art、layout_adjustments.json 与运行图；建立新的布局修订，Up 后足根下移并适度外移，让足端露出且腿根仍在躯干内，检查 Down 远近侧足；stage 后先看离线图，再执行 repair_character.py PossessedBlackBoar repair_visual_r01，以及 runtime_runner_revision.py PossessedBlackBoar runtime_visual_r02 runtime_updeath_visual_r02。新图与两轮断言通过后才 record。
+范围：本角色语义审计通过，源图、源 prefab、GUID、共享编辑器代码与本轮基线一致。全局旧基线审计存在既有无声版本及其他角色差异，未改写其失败结果，未修改无关文件。

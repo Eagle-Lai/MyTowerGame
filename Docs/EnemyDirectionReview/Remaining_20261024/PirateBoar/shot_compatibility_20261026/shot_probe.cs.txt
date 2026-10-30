@@ -1,0 +1,39 @@
+var review = typeof(FTProject.EditorTools.EnemyDirectionBatchReview);
+var flags = System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic;
+var stageField = review.GetField("_stage", flags);
+var enemyField = review.GetField("_enemy", flags);
+var lastFrame = -1;
+var segment = -1;
+var shotFrame = -1;
+var records = new System.Collections.Generic.List<string>();
+var checks = new System.Collections.Generic.List<string>();
+var seen = new System.Collections.Generic.HashSet<string>();
+var root = "Docs/EnemyDirectionReview/Remaining_20261024/PirateBoar/runtime_shot_r01";
+UnityEditor.EditorApplication.CallbackFunction tick = null;
+tick = () => {
+    if (!UnityEditor.EditorApplication.isPlaying || !FTProject.EditorTools.EnemyDirectionBatchReview.Running) {
+        if (records.Count > 0) {
+            System.IO.File.WriteAllLines(root + "/shot_observations.jsonl", records);
+            System.IO.File.WriteAllLines(root + "/shot_checks.txt", checks);
+            UnityEditor.EditorApplication.update -= tick;
+        }
+        return;
+    }
+    if (UnityEngine.Time.frameCount == lastFrame) return;
+    lastFrame = UnityEngine.Time.frameCount;
+    if ((int)stageField.GetValue(null) != 16) return;
+    var enemy = (FTProject.BaseEnemy)enemyField.GetValue(null);
+    var visual = enemy.GetComponent<FTProject.EnemyDirectionalVisual>();
+    var animator = enemy.GetComponent<UnityEngine.Animator>();
+    var facing = visual.Facing.ToString();
+    int next = facing == "Up" ? 0 : facing == "Right" ? 1 : facing == "Down" ? 2 : 3;
+    if (next != segment) { segment = next; animator.SetTrigger("Shot"); shotFrame = lastFrame; }
+    var state = animator.GetCurrentAnimatorStateInfo(0);
+    if (state.IsName("Shot") && seen.Add(facing)) checks.Add("PASS Real Shot state reached " + facing);
+    bool shadowless = !System.Linq.Enumerable.Any(enemy.GetComponentsInChildren<UnityEngine.Transform>(true), t => t.name == "Shadow");
+    if (!shadowless && !checks.Contains("FAIL Shot ground shadow")) checks.Add("FAIL Shot ground shadow");
+    var body = enemy.transform.Find("DirectionVisual/" + (facing == "Up" ? "Up" : "Down") + "/Motion/Body");
+    records.Add("{\"frame\":" + lastFrame + ",\"trigger_frame\":" + shotFrame + ",\"facing\":\"" + facing + "\",\"shot\":" + (state.IsName("Shot") ? "true" : "false") + ",\"normalizedTime\":" + state.normalizedTime.ToString("R",System.Globalization.CultureInfo.InvariantCulture) + ",\"bodyY\":" + body.localPosition.y.ToString("R",System.Globalization.CultureInfo.InvariantCulture) + ",\"shadowless\":" + (shadowless ? "true" : "false") + "}");
+};
+UnityEditor.EditorApplication.update += tick;
+return "Shot observation hook registered; captures only real subsequent Unity frames.";

@@ -1,0 +1,35 @@
+{
+  "name": "WinterOgre",
+  "kind": "giant",
+  "controller_family": "Giant",
+  "identity": "Stocky bald GOLDEN-OCHRE ogre with irregular dark ochre skin patches, sharply pointed ears, stern amber eyes with black pupils, broad flat nose and a closed zigzag mouth with several small ivory triangular teeth. No hair, horns, beard, necklace or earrings. Thick round bare belly. Wide brown belt with small gold diamond studs and one large cream square buckle containing a gold diamond; short ragged WHITE/CREAM FUR loincloth. Two thick short bare golden legs ending in rounded bare feet with three small front toe divisions; NO fur boots. Two thick muscular golden arms, BOTH wearing matching enormous brown leather wrist cuffs with gold diamond/square studs and WHITE/CREAM FUR rims; empty closed fists visible below cuff, NO held weapon. No tail, rider or extra limbs. Angry head opens a dark mouth with ivory teeth; dead head has large blank pale round eyes and drooping tan tongue, following original expression.",
+  "parts": [
+    "HeadNormal",
+    "HeadAngry",
+    "HeadDead",
+    "Body",
+    "ArmWeapon",
+    "ArmFree",
+    "Leg"
+  ],
+  "columns": 4,
+  "rows": 2,
+  "source": "Assets/_UIAssets/Monsters/Giants/WinterOgre/WinterOgre.prefab",
+  "atlas": "Assets/_UIAssets/Monsters/Giants/WinterOgre/WinterOgre.png",
+  "art_dir": "Assets/_UIAssets/Monsters/Giants/WinterOgre/Directions",
+  "controller": "Assets/_UIAssets/Monsters/_Common/Animations/Giant/Controller.controller",
+  "source_observations": {
+    "viewed": [
+      "reference/WinterOgre.png",
+      "reference/source_prefab_offline.png"
+    ],
+    "legs": 2,
+    "arms": 2,
+    "feet": "bare golden feet; no boots; Up smooth heels without front toe lines",
+    "weapon": "Atlas includes striped crook sprite, but source AND battle Weapon SpriteRenderer m_Enabled=0. Preserve original ArmR/FistR/Weapon hierarchy, disabled renderer and animation scale bindings. Vertical arms have empty fists, no crook.",
+    "torso": "Front cream square buckle with gold diamond; back plain belt and ivory fur skirt, no front buckle on rear.",
+    "head": "Bald spotted head; ears assigned only to head. No duplicated ears/head on body. Up plain back of head, no face or inner ear pads.",
+    "native_contract": "source_contract_20261029.json",
+    "lifecycle": "BaseEnemy.Init Rebind and ResetForSpawn; receiver normal head reset, OnRecycle alpha/spawn scale/anim speed reset; no shared code edits."
+  }
+}
