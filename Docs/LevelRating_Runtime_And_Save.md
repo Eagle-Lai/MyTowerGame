@@ -1,5 +1,11 @@
 # 五星评分、计时与存档实现
 
+> **2026-10-30 口径变更（先读这条）**：局内的塔阵 / 金币 / 生命**不再落盘**，
+> "退出后继续"与"失败续局"两条链路已整体删除。本文下方描述局内快照的段落
+> （尤其"局内快照采用完整波次检查点…"这一整段）属于**历史记录**，不再是当前实现。
+> 当前实现：只有通关（`SaveManager.RecordClear`）写星级 / 最快用时 / 最佳剩余生命；
+> 进关永远从第一波、满血、初始金币开始。详见 `Docs/SavePolicy_2026-10-30.md`。
+
 `LevelRatingEvaluator.Evaluate(profile, metrics)` 是唯一评分入口。五档条件从高到低判定；完整波数、成功出生数、击杀与漏怪守恒、逐波统计、正数战斗用时、有效标记及完整版本键均先通过完整性检查。失败和调试预览为 0 星，且不会调用正式写档。首领集合与精英/首领集合来自 LevelRating，而不是通过扣血量或所有 Type=3 推断。
 
 本局开始冻结 `LevelRatingProfile`，配置仅允许在退出活动关卡后重载。正式成绩版本键为 `profileId|balanceRevision|ratingRevision|planHash`，profileRevision 进入生成器的 planHash。配置加载还校验 `runtimeContentHash`：八张实际导出 JSON 原文（统一 LF，移除 BOM）与评级字段的 SHA256。任何实际配置与认证摘要不一致都会拒绝开局。此校验覆盖实际数据，不依赖说明文字。
