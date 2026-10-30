@@ -161,3 +161,20 @@ per-level 摘要逐字节一致**（浮点格式化、字段顺序、文化区�
 目前重封已经是 `reseal_hash.py write` 一条命令、1 秒完成，收益不足抵这个风险。
 
 若仍要做，建议的干净做法：把重封搬到**编辑器 C# 菜单**（计算与写入同一语言），Python 只读校验。
+
+---
+
+## MCP 实机验证（2026-10-30 10:12，Unity 2022.3.62f3c1 / Play Mode）
+
+| # | 验证项 | 结果 |
+|---|---|---|
+| 1 | 启动配置校验 | `[Rating] Runtime configuration SHA256 verified: 4771650a…`，控制台 0 error |
+| 2 | 建塔 / 升级 / 出售（真实 API `TryBuild/TryUpgrade/Sell`） | `build.id=1001` 金币 100→68（价 32）；`upgrade.id=1002` →40（价 28）；出售返还 42 →82（`sellPrice 42 × LevelRules.SellRefundRate 1.0`） |
+| 3 | 连续 3 波实战 | W1 31 杀 0 漏 → 自动接 W2/W3（说明 `LevelRules.autoNextRoundDelayMs=2500` 生效）；`killed=68 gold=216 towers=2`，0 error |
+| 4 | 失败续局 | `LoseHp(99)` → GameOver，写入 `关卡1｜死于第1波｜金币24｜生命10/10｜塔2座`；退出重进后仍在；`ClearSnapshot`（模拟改表）后 `可续玩=True L1 W1`；恢复出 `[0,0 id=1001][0,2 id=1004] gold=24 hp=10/10 statsValid=False debug=True` |
+| 5 | 关卡隔离 | L02：`tower.id=2001`、本关塔行数=9、画布 16×9；与 L01 数据互不串 |
+| 6 | 画面 | 截图为 L01 棋盘 13×7，两座塔正常渲染、鸡群沿路径行进，无错位/黑屏 |
+
+**设计行为提醒**：从 L1 失败后**切到别的关**会丢弃 L1 的续局点（`StartLevel` 里显式清理，避免进关被上一关残局劫持）；再回 L1 是全新局。若要改成"保留到该关再次进入为止"，改一行即可。
+
+**未做视觉验证**：塔图鉴 / 怪物图鉴的 UI 只验了数据侧（按 `ActiveLevelId` 过滤后本关 9 行），没打开界面逐项核对。
