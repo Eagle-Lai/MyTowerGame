@@ -225,3 +225,41 @@ Luban/BalanceDesign/Versions/*/Datas/
 
 # AI image-gen scratch output
 /output/
+
+# ---------------------------------------------------------------------------
+# 10. 剩余敌人四方向续作（Remaining_20261024，2026-10-30 收口）的过程证据
+#     108 个角色的生成图、真实运行帧、审阅时序板与集中 GIF 合计约 13GB，
+#     全部可由「生成图 + 角色脚本 + 两轮真实 Play」重算，属中间过程。
+#     结论级记录照常入库：README/*.md、progress.json、installed_manifest.json、
+#     final_validation_*.json、review.json、DocxFix 前后对比与各角色小体量清单。
+#     集中入口 AllGIF 只保留 index.html / manifest.json / README，动画本体不入库。
+# ---------------------------------------------------------------------------
+/Docs/EnemyDirectionReview/Remaining_20261024/*/before/
+/Docs/EnemyDirectionReview/Remaining_20261024/*/generation/
+/Docs/EnemyDirectionReview/Remaining_20261024/*/staged_art/
+/Docs/EnemyDirectionReview/Remaining_20261024/**/before/
+/Docs/EnemyDirectionReview/Remaining_20261024/**/generation/
+/Docs/EnemyDirectionReview/Remaining_20261024/**/staged_art/
+/Docs/EnemyDirectionReview/Remaining_20261024/**/runtime_*/
+/Docs/EnemyDirectionReview/Remaining_20261024/**/frames/
+/Docs/EnemyDirectionReview/Remaining_20261024/**/*.png
+/Docs/EnemyDirectionReview/Remaining_20261024/**/*.gif
+/Docs/EnemyDirectionReview/AllGIF/*.gif
+# 各角色目录里的 .anim/.prefab/.controller/.asset 是 Assets 现有资源的**副本**
+# （reference/、repair_*/before/ 等只为比对而拷贝，单角色 2MB×4 条动画，全量约 215MB），
+# 源头已在 Assets 里入库，这里不再重复存一份。
+/Docs/EnemyDirectionReview/Remaining_20261024/**/*.anim
+/Docs/EnemyDirectionReview/Remaining_20261024/**/*.prefab
+/Docs/EnemyDirectionReview/Remaining_20261024/**/*.controller
+/Docs/EnemyDirectionReview/Remaining_20261024/**/*.asset
+# 每次改动前后的 git status 全量快照、全局指纹与队列审计转储：单份 8–14MB，
+# 108 个角色累计近 120MB，且随时可再跑一次得到同样的结论。
+/Docs/EnemyDirectionReview/Remaining_20261024/**/git_status_*
+/Docs/EnemyDirectionReview/Remaining_20261024/**/*session_git_before*
+/Docs/EnemyDirectionReview/Remaining_20261024/**/unity_release_final_*
+/Docs/EnemyDirectionReview/Remaining_20261024/**/queue_completion_audit_*
+# 全量 scope 审计（每角色数千条路径逐条比对），结论已写进各角色 md 与 final_validation。
+/Docs/EnemyDirectionReview/Remaining_20261024/**/scope_*.json
+
+# 浏览器自动化（Playwright MCP）的会话配置与截图缓存，纯本机临时状态。
+/.playwright-mcp/
