@@ -13,7 +13,7 @@ DATA = ROOT / 'Luban/Config/Datas'
 
 def calculate():
     keys = ['tbenemydata', 'tbenemylist', 'tbrounddata', 'tbsceneinfo',
-            'tblevelmap', 'tbtowerinfo', 'tbbulletdata', 'tbglobal']
+            'tblevelmap', 'tbtowerinfo', 'tbbulletdata', 'tbglobal', 'tblevelrules']  # 308a339c 起含 tblevelrules
     text = []
     for key in keys:
         raw = (CFG / f'{key}.json').read_text(encoding='utf-8-sig')
