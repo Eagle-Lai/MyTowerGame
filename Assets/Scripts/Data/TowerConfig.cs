@@ -109,12 +109,13 @@ namespace FTProject
         public float EffectValue { get { return _t.EffectValue; } }
 
         /// <summary>
-        /// 范围攻击塔（火力塔，TowerType.Aoe）：弹体飞向"发射瞬间锁定的落点"，
-        /// 到达即引爆，对落点半径内的**全部**敌人造成伤害 —— 不是单体攻击。
+        /// 范围攻击塔（火力塔，TowerType.Aoe）：开火瞬间在目标位置（落点）结算，
+        /// 对落点半径内的**全部可攻击敌人**造成伤害 —— 不是单体攻击。
+        /// （2026-10-17 起不再有真实弹体飞行，落点锁定与范围结算的语义未变。）
         ///
         /// 【判定依据】用 TowerType.Aoe，与 IsSlowAura 同一口径：这是**塔型级别**
-        /// 的行为差异（发射的是"落点弹"而非"追踪弹"），不是命中效果差异。
-        /// 底层仍靠子弹的 aoeRadius&gt;0 生效，此处属性供分类/自检/未来分支使用。
+        /// 的行为差异（范围结算而非单体命中），不是命中效果差异。
+        /// 底层仍靠子弹表的 aoeRadius&gt;0 生效，此处属性供分类/自检/未来分支使用。
         /// </summary>
         public bool IsAoe { get { return Type == (int)TowerType.Aoe; } }
 
@@ -129,9 +130,13 @@ namespace FTProject
         public bool IsSlowAura { get { return Type == (int)TowerType.Slow; } }
 
         /// <summary>
-        /// 本塔是否会生成弹体。减速光环塔不会（它不索敌、不开火）。
+        /// 本塔是否会开火。减速光环塔不会（它不索敌、不开火）；
+        /// bulletId 缺失（0）也视为没有攻击配置。
+        ///
+        /// 【2026-10-31 改名】原叫 FiresBullet —— 真实子弹系统删除后，"发射弹体"已不是事实，
+        /// 这个判定的真实语义只剩"这座塔会不会攻击"，故改名并保留原条件。
         /// </summary>
-        public bool FiresBullet { get { return !IsSlowAura && _t.BulletId > 0; } }
+        public bool CanFire { get { return !IsSlowAura && _t.BulletId > 0; } }
 
         /// <summary>
         /// 是否可攻击飞行单位（TBTowerInfo.canAttackAir，1=可 / 0=不可）。

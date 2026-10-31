@@ -49,7 +49,6 @@ namespace FTProject
             { "Cell_End",     new ResAddress(ResBundle.CoreArt, "Cell_End",     "Assets/Art/Generated/Cell_End.png") },
             { "Cell_Buildable", new ResAddress(ResBundle.CoreArt, "Cell_Ground", "Assets/Art/Generated/Cell_Ground.png") },
             { "Path_Arrow",   new ResAddress(ResBundle.CoreArt, "Path_Arrow",   "Assets/Art/Generated/Path_Arrow.png") },
-            { "Bullet_Dot",   new ResAddress(ResBundle.CoreArt, "Bullet_Dot",   "Assets/Art/Generated/Bullet_Dot.png") },
             { "HP_Bar_Bg",    new ResAddress(ResBundle.CoreArt, "HP_Bar_Bg",    "Assets/Art/Generated/HP_Bar_Bg.png") },
             { "HP_Bar_Fill",  new ResAddress(ResBundle.CoreArt, "HP_Bar_Fill",  "Assets/Art/Generated/HP_Bar_Fill.png") },
             // 射程提示圈（M2-C2）。登记的是**贴图**而不是 prefab：
@@ -107,11 +106,6 @@ namespace FTProject
             { "Tower_Retard0", new ResAddress(ResBundle.TowerRetard, "Tower_Retard0", "Assets/Prefabs/Tower/Retard/Tower_Retard0.prefab") },
             { "Tower_Retard1", new ResAddress(ResBundle.TowerRetard, "Tower_Retard1", "Assets/Prefabs/Tower/Retard/Tower_Retard1.prefab") },
             { "Tower_Retard2", new ResAddress(ResBundle.TowerRetard, "Tower_Retard2", "Assets/Prefabs/Tower/Retard/Tower_Retard2.prefab") },
-
-            // ------------------------------------------------------------------
-            // 子弹
-            // ------------------------------------------------------------------
-            { "Bullet_Normal", new ResAddress(ResBundle.BulletNormal, "Bullet_Normal", "Assets/Prefabs/Bullet/Bullet_Normal.prefab") },
 
             // ------------------------------------------------------------------
             // 怪物

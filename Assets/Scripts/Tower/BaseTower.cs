@@ -129,6 +129,17 @@ namespace FTProject
 
         /// <summary>光环命中时的视觉脉冲时长（秒），每次结算触发一次。</summary>
         private const float AuraPulseSec = 0.15f;
+
+        // ---- 命中效果时长（秒）----
+        /// <summary>
+        /// 减速 / 持续伤害的持续时长。**这里是唯一权威**。
+        ///
+        /// 【为什么在这里】原先这两个常数挂在 BaseBullet 上，2026-10-31 删除废子弹系统后
+        /// 迁到塔侧 —— 即时命中（ApplyHitEffect）是如今唯一的命中结算入口，
+        /// 再留一个"子弹类"当权威只会让人以为还有另一条链路。
+        /// </summary>
+        private const float SlowDurationSec = 2f;
+        private const float DotDurationSec = 3f;
         private float _auraPulseTimer;
         private SlowAuraView _auraView;
 
@@ -688,8 +699,8 @@ namespace FTProject
             // 【2026-10-30 用户定规】关卡内只允许"怪到达终点"震屏：
             // 满级塔开火的 0.15 倍震动已移除，开火手感只保留炮管后坐与枪口焰。
 
-            // 减速光环塔走 TickSlowAura，永远不会到这里（与原 FiresBullet 口径一致的防御分支）
-            if (!Config.FiresBullet)
+            // 减速光环塔走 TickSlowAura，永远不会到这里（防御分支）
+            if (!Config.CanFire)
             {
                 return;
             }
@@ -727,7 +738,7 @@ namespace FTProject
         }
 
         /// <summary>
-        /// 对单个敌人结算一次伤害 + 命中效果（效果语义与 BaseBullet.ApplyEffect 同口径）。
+        /// 对单个敌人结算一次伤害 + 命中效果（效果语义见 ApplyHitEffect）。
         /// </summary>
         private void HurtEnemy(BaseEnemy e, float damage, BulletConfig bulletCfg)
         {
@@ -758,7 +769,7 @@ namespace FTProject
 
         /// <summary>
         /// 在落点引爆：对半径内可攻击的存活敌人造成伤害并施加效果。
-        /// 与原 BaseBullet.Explode 同口径：范围从落点算，与落点上是否站怪无关。
+        /// 范围从落点算，与落点上是否站怪无关。
         /// </summary>
         private void DetonateAt(Vector2 center, float radius, float damage, BulletConfig bulletCfg)
         {
@@ -795,16 +806,16 @@ namespace FTProject
             }
         }
 
-        /// <summary>命中效果。与 BaseBullet.ApplyEffect 共用同一组时长常数（那里是唯一权威）。</summary>
+        /// <summary>命中效果。时长取本类常量（SlowDurationSec / DotDurationSec）。</summary>
         private void ApplyHitEffect(BaseEnemy e, EffectType effect, float effectValue)
         {
             switch (effect)
             {
                 case EffectType.Slow:
-                    e.ApplySlow(effectValue, BaseBullet.SlowDurationSec);
+                    e.ApplySlow(effectValue, SlowDurationSec);
                     break;
                 case EffectType.Dot:
-                    e.ApplyDot(effectValue, BaseBullet.DotDurationSec);
+                    e.ApplyDot(effectValue, DotDurationSec);
                     break;
                 default:
                     break;

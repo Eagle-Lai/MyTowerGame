@@ -54,7 +54,6 @@ namespace FTProject
         public Transform pathRoot;
         public Transform towerRoot;
         public Transform enemyRoot;
-        public Transform bulletRoot;
 
         [Header("运行参数")]
         [Tooltip("为 0 表示使用配置表里的第一个关卡")]
@@ -323,7 +322,6 @@ namespace FTProject
 
             // ③ 管理器父节点（对象池创建的实例据此归位，保持 Hierarchy 整洁）
             EnemyManager.Instance.SetParent(enemyRoot);
-            BulletManager.Instance.SetParent(bulletRoot);
             TowerManager.Instance.SetParent(towerRoot);
             if (TowerPlacement.Instance != null)
             {
@@ -499,7 +497,6 @@ namespace FTProject
             keys.Add("Tower_Retard0");
             keys.Add("Tower_Retard1");
             keys.Add("Tower_Retard2");
-            keys.Add("Bullet_Normal");
             keys.Add(HudView.LogicalName);
             keys.Add("TipsView");
             keys.Add("TowerInfoView");
@@ -1069,7 +1066,6 @@ namespace FTProject
             // ② 战斗实体（互相引用，一起清）
             _wave.Stop();
             if (EnemyManager.Instance != null) EnemyManager.Instance.ClearAll();
-            if (BulletManager.Instance != null) BulletManager.Instance.RecycleAll();
             if (TowerManager.Instance != null) TowerManager.Instance.ClearAll();
             if (CombatSystem.Instance != null) CombatSystem.Instance.ResetStats();
 

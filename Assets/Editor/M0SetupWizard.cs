@@ -275,24 +275,7 @@ namespace FTProject.EditorTools
                 CheckOneTower(TowerPrefabConverter.TowerResNames[i], report);
             }
 
-            // 子弹
-            GameObject bullet = AssetDatabase.LoadAssetAtPath<GameObject>(BattlePrefabBuilder.BulletPath);
-            if (bullet == null)
-            {
-                report.Error("子弹预制体不存在：" + BattlePrefabBuilder.BulletPath);
-            }
-            else if (bullet.GetComponentInChildren<SpriteRenderer>(true) == null)
-            {
-                report.Error("Bullet_Normal.prefab 没有 SpriteRenderer");
-            }
-            else if (!HasScript(bullet, "BaseBullet"))
-            {
-                report.Error("Bullet_Normal.prefab 上没有挂 BaseBullet 脚本");
-            }
-            else
-            {
-                report.Ok("Bullet_Normal.prefab：SpriteRenderer + BaseBullet");
-            }
+            // 子弹：真实子弹系统已于 2026-10-31 整体删除，此处不再校验子弹预制体
 
             // 怪物：119 个逐个报太啰嗦 → 全量存在性检查 + 抽样结构检查
             int monsterTotal = MonsterCatalog.Count;
@@ -511,7 +494,7 @@ namespace FTProject.EditorTools
                 "Camera", "EventSystem", "Launcher", "UICanvas",
                 "BgPanel", "NormalPanel", "TipsPanel",
                 "BattleRoot", "Background", "BoardRoot", "PathRoot",
-                "TowerRoot", "EnemyRoot", "BulletRoot",
+                "TowerRoot", "EnemyRoot",
                 "GameFlow", "GameSceneLauncher"
             };
             int missing = 0;
