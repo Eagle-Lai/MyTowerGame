@@ -762,7 +762,9 @@ namespace FTProject
             if (e.Config.IsFlying) EvidenceAirHits++;
 #endif
             e.Hurt(damage);
-            CombatSystem.Instance.AddHitCount(1);
+            // 【2026-10-31 修双计】命中数只在 BaseEnemy.Hurt 里加一次 ——
+            // 那里是所有扣血的唯一终点（塔的即时命中、DOT 每帧伤害、将来任何来源都经过它）。
+            // 原先这里也加了一次，PerfProbe 的「命中」常年是真实值的两倍。
             ApplyHitEffect(e, bulletCfg.Effect,
                 Config.EffectValue > 0f ? Config.EffectValue : bulletCfg.EffectValue);
         }

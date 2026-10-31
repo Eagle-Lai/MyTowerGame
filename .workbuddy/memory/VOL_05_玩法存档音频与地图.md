@@ -11,7 +11,7 @@
 - ★塔攻击表现：普通/火力塔不发子弹，开火 = 即时命中 + 序列帧。
   - `TowerFireFx`：枪口焰挂到炮管 `BarrelPoint` 子节点、local 置零；落点爆炸走对象池；帧由 `gen_tower_fire_frames.py` 生成。
   - ★散帧 meta 必须 `alignment: 9`(Custom) + `spritePivot y = 0.2`；写成 `alignment: 1` = TopLeft（底中应是 7）→ 焰会被甩到炮口右下角。
-  - 时长权威 = `BaseBullet.SlowDurationSec` / `DotDurationSec`。
+  - 时长权威 = `BaseTower.SlowDurationSec` / `DotDurationSec`（2026-10-31 随子弹系统删除从 `BaseBullet` 迁入）。
 - ★建造交互 v3：点按 = 放置态；长按 0.25s 或位移 30px = 拖拽（ghost 跟手、松手校验、拖回按钮或拖出棋盘静默取消）。
 - 地图链路：棋盘 → `levelmap_export.json` → `LevelMap.xlsx` → `tblevelmap.json` → `SceneInfo.xlsx`；日志前缀 `[Place]` / `[HUD]` / `[TowerInfoView]` / `[Audit]`。
 - ★新增一关 = 四表齐全：LevelMap(id) + SceneInfo(mapId、RoundList) + RoundData + EnemyList。
@@ -94,3 +94,22 @@
     预览不改 CurrentPathWorld / 不发 RefreshPathEvent / 临时墙还原；预览逐点 == 落地路径且确实改道；
     堵死格返回 null 且回滚；RemainingPathTouches 只报未走过的格）。
     `PathArrowView` 预览层探针 = 9 个箭头、颜色 RGBA(0.55,0.95,1,0.85)、order 11、清预览后真实 9 个仍在。
+
+## 真实子弹系统已整体删除（2026-10-31）
+
+- **删除范围**：`Assets/Scripts/Bullet/BaseBullet.cs`（含 `BaseBullet`/`BulletManager`/`BulletState`）、
+  `CombatSystem` 的 `_bullets`/`RegisterBullet`/`UnregisterBullet`/`TickBullets`/`CopyBullets`/`BulletCount`、
+  `Launcher` 的 `BulletManager` 注册、`GameFlowManager`/`GameSceneLauncher` 的 `bulletRoot`、
+  `Bullet_Normal.prefab`、`Bullet_Dot.png`、`ResTable` 两条登记、`ResBundle.BulletNormal` 与 `bullet_normal` 包、
+  `Main.unity` 的 `BulletRoot` 空节点、`OutputCache` 里的旧 bundle 缓存。
+- **为什么删**：自 2026-10-17「移除真实子弹、改即时命中」起 `BulletManager.Fire` **零调用点**，
+  但 `BaseBullet.Explode` 仍无对空过滤、也不乘 `airDamageScale`，与在跑的 `DetonateAt` 规则冲突；
+  留着就是“哪天有人接回子弹，火力塔会静默溅射飞机”的雷。
+- **保留**：`tbbulletdata` 表、`TowerInfo.bulletId`、`BulletConfig`、`Configs.GetBullet` —— 火力塔的
+  AOE 半径 / 命中效果 / 效果值仍从这张表取；`BoardSorting.Bullet=400` 仍给枪口焰/爆炸用；
+  `Global.bulletPoolSize` 已成空配置（改表需手工，未动）。
+- **改名**：`TowerConfig.FiresBullet` → `CanFire`（真实语义只剩“这塔会不会开火”）。
+- **命中双计**（同日修）：删掉 `BaseTower.HurtEnemy` 里的 `AddHitCount(1)`，只在 `BaseEnemy.Hurt` 记一次；
+  `StatHitCount` 原先恒为真实值两倍，只影响 `PerfProbe`/`[Combat]` 日志。
+- **验证**：编译 0 error；`FTProject.BalanceCombat.EditModeTests` 29/29 通过；`Main.unity` diff 仅 34 行删除。
+- 记录：`Docs/BulletSystemRemoval_2026-10-31.md`。**未跑 Play Mode**；AB 包清单变化，热更需按铁律重打。
