@@ -38,6 +38,33 @@
   - UI 入口：主菜单 `ContinueBtn` 恒隐藏；`SelectView` 不再优先选"可续玩关"、格子无 `Continue`；`LevelDetailView` 按钮只判星级；`PauseView` 退出确认的兜底英文已改，但**词条 `Leave this battle?` 仍是旧说法**（配置表需人工改 + 重封）。
   - 验证工具：`BalanceCheckpointVerifier` 已改名 `BalanceSpeedComparison`（只做 ×1/×2/×3 一致性 + `finalTowerSignature`），`--kind checkpoints` 改名 `controls`；`checkpointScenario` / `checkpointWave` 参数现在无效。
   - 详见 `Docs/SavePolicy_2026-10-30.md`；`Docs/FailedRunResume_2026-10-29.md` 与 `Docs/LevelRating_Runtime_And_Save.md` 已加"被取代"横幅，里面的快照段落属历史。
+- ★★**2026-10-31 增补：局内进度落盘 = 续玩快照恢复（实质推翻上一条）**
+  - 口径（用户四轮收敛，以最后一轮为准）：**每通过一波**把 塔阵 + 金币 + 生命 + **波次游标** +
+    **整份 `LevelRunMetrics`** 存一份（`FinishRound`）；整关通关再写一次，但那次是**重玩起点**
+    （游标 0、不带统计）；重进该关**接着上一波继续**（资源覆盖、塔阵免费还原、评级统计继续累加）。
+    （演进：只有通关才存 → 实测"打一波→退→再进"丢数据 → 每波通过都存 → 加金币/生命 →
+    再加"存波次游标"，用户选"第二条"= 连进度一起存。）
+  - ★**等于恢复了 10-30 废止的续玩快照**：行为上又能"从第 N 波继续 / 失败后重打当波"。
+    差别只在形态：存 kv 单键 `layout/campaign`（密文），旧 `level_snapshot`/`snapshot_tower` **仍不写**，
+    schema 仍 4。
+  - ★**必须存整份 `LevelRunMetrics`**（不只是游标）：评级要核 `completedWaveCount`/`successfulSpawned`
+    /每波明细/计时，缺了会被判 `Incomplete waves`、`Spawn count mismatch` → 星级不落库 → 下一关锁死。
+    `_run.waves` 是 `Add` 追加，续玩后明细自然连续；`runId` 保留原值，结算不会算成两次通关。
+  - ★**通关那一笔要写游标 0 + 无统计**，否则下次进关 `_roundCursor >= 波数` 会立刻又判一次通关。
+  - ★**接管前四项校验**（`RestoreSavedLevelState`）：评级版本一致 / runId 未入档 / 0 < 游标 < 波数 /
+    记录带统计；任一不满足 → 只还原塔与资源、从第 1 波开始（改过数值表时必须丢弃进度，否则两套数值
+    混进同一份评级证据）。
+  - 老记录兼容：`resourcesSaved`（缺省 0 会"0 血 0 金开局"）与 `runSaved`（游标 0 是合法值，不能当哨兵）
+    两个开关必须保留。
+  - 存哪：`Assets/Scripts/Data/LevelLayout.cs` 的 `LevelLayoutStore`；写点 `FinishRound` +
+    `CompleteVictory`/`RetryPendingClearSave`；读点 `InitLevel` 第 ⑨.5 步（回合队列之后、HUD 刷新之前）。
+  - ★**经济防线（改这块前必读）**：免费还原＋原价卖塔＝刷金币。`BaseTower.InvestedGold` 记账（还原=0），
+    `TowerManager.RefundOf` = `min(配置售价, 实际投入) × SellRefundRate`；正常塔结果与旧实现完全一致，
+    还原塔返还 0，还原后升级只返还升级费。公式只准存在 `RefundOf` 一处，UI 三处 + `Sell` 都必须调它。
+  - 已知代价：失败后能无限重打当前波；`GameClock` 计时跨会话累加（"最快用时"含上次会话时间，
+    想让时间榜只统计一口气打完的局，需要在续局时把 `timingValid` 置 false）。
+  - 验证：`dotnet build` 四工程 0 error；**编辑器内未验证**（当时 WorkBuddy 的 unityMCP 未加载）。
+    文档：`Docs/LevelLayoutPersistence_2026-10-31.md`。
 - ★★放置规则 v4（2026-10-22 用户需求：路径预览 + 放置判定，权威代码 `Tower/TowerPlacement.cs`、`AStarWrapper/AStarManager.cs`、`Game/PathArrowView.cs`）
   - ① **预览只画不改**：悬停格变化 → `AStarManager.ComputePathWithExtraWall(row,col)` 临时置墙跑一次 A* →
     结果存 `PreviewPathWorld`，经 `EventName.PreviewPathEvent` 交给 `PathArrowView.RenderPreview`，

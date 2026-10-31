@@ -30,3 +30,12 @@
 - ★易漏的**非**管线消费者：`Assets/Editor/LevelMapEditorWindow.cs` 的「一键写入」→ `.workbuddy/tools/apply_levelmap_export.py`，脚本里硬编码 `Datas/LevelMap.xlsx` 与 `Datas/SceneInfo.xlsx`，拆表后必须按 `level_id` 改路径（C# 侧只读 `ConfigJson/tblevelmap.json`，不用改）。
 - 历史脚本（`add_levels_9_15/16_20_*.py`、`apply_m2_*.py`、`gen_wave_data.py`、`gen_m3_waves_rounds.py`、`gen_challenge_data.py`）直写聚合表，拆表后失效 → 标 LEGACY，不修。
 - 拆表验收口径：**纯物理拆分必须做到 `Assets/ConfigJson/tb*.json` 语义等价**，按 id 排序逐字段比对。
+
+## 改配置表的标准动作与三个坑（2026-10-31 实测）
+
+- **流程**（AGENTS.md 口径）：改 `Levels/Lxx/*.xlsx` → 跑 Luban（`DOTNET_ROLL_FORWARD=LatestMajor Luban/Tools/Luban.ClientServer/Luban.ClientServer.exe -j cfg -c Luban/.cache.meta -- -d Luban/Config/Defines/__root__.xml --input_data_dir Luban/Config/Datas --output_code_dir Assets/Gen --output_data_dir Assets/ConfigJson --gen_types code_cs_unity_json,data_json -s all`，别用 `gen_code_json.bat`，末尾 `pause` 会卡住非交互会话）→ **重封 `runtimeContentHash`**。
+- ★★**Luban 导出会删掉 `Assets/Gen/FTProject.Gen.asmdef`**（日志 `[remove] file: ...FTProject.Gen.asmdef`）。每导一次就要 `git checkout -- Assets/Gen/FTProject.Gen.asmdef`，否则 Gen 代码掉进别的程序集。同一次导出里 `Assets/Gen/*.cs` 只是行尾变化（git diff 为空），不用管。
+- ★★**`runtimeContentHash` 是全局哈希，同一个值写进全部 30 张 `Levels/Lxx/LevelRating.xlsx`**（不是每关一份）。算法权威是 `Configs.CalculateRuntimeContentHash`：9 张 json（多一个 `tblevelrules`，比 `balance_pipeline.py` 里那个 Python 版本多）按 `key\n内容\n` 拼接（去 BOM、CRLF→LF），再接 30 行评级字段（17 个，`runtimeContentHash` 自身不参与），SHA256 小写十六进制。
+  - 实操校验法：先用该算法复算**改动前**的哈希，若等于表里现值（= Unity 日志 `[Rating] Runtime configuration SHA256 verified` 的那个），说明实现正确，再算改动后的值写回、重跑一次 Luban 让 `tblevelrating.json` 带上新值。
+- ★★**`EnemyList.desc` 里的 EHP 口径 = Σ hp ÷ (1−armor)**（含护甲），不是 Σhp。写调参记录时算错会留下假数据；先拿上一条记录的 EHP 反推验证口径再写。
+- ★`Levels/L01/EnemyData.xlsx` 的敌人变体是**每波一个独立 id**（如 W20=5000195、W21=5000205），`EnemyList.EnemyIndexs` 里只被该波引用 → 改某波血量不会外溢；改前确认 `isFlying` 与引用波次，避免改错行。
