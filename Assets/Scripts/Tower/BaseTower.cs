@@ -44,6 +44,27 @@ namespace FTProject
         public CellData Cell { get; private set; }
         public bool IsBuilt { get; private set; }
 
+        /// <summary>
+        /// 这座塔**实际花了多少钱**（建造 + 历次升级，不含任何赠送/还原）。
+        ///
+        /// 【为什么需要它】2026-10-31 起"已通关关卡重进时免费还原阵型"：
+        ///   还原出来的塔没花过一分钱，如果出售仍按配置的 `sellPrice` 返还，
+        ///   就等于"通关一次 → 反复重进 → 卖免费塔刷金币"。
+        ///   出售返还因此改成 `min(配置售价, 本值) × 返还比例`（见 `TowerManager.RefundOf`）：
+        ///   · 正常建的塔：投入 ≥ 售价（售价本就是累计投入的约七成）→ 返还额不变；
+        ///   · 还原塔：投入 0 → 返还 0；
+        ///   · 还原后又升级的塔：只返还升级花掉的那部分，永远不超过投入。
+        /// 【为什么由 TowerManager 写】金额只应该在"扣钱/收钱"的那一处记账，
+        ///   塔自己算不出来（它看不到 PlayerDataManager 的扣费结果）。
+        /// </summary>
+        public int InvestedGold { get; private set; }
+
+        /// <summary>建造/升级成功后由 TowerManager 记账（charge=false 的还原路径传 0）。</summary>
+        public void SetInvestedGold(int amount)
+        {
+            InvestedGold = Mathf.Max(0, amount);
+        }
+
         /// <summary>自检计数（CombatSystem 汇总，用于验证"空放为 0"）</summary>
         public int SearchCount { get; set; }
         public int FireCount { get; set; }
@@ -875,7 +896,7 @@ namespace FTProject
         /// </summary>
         public BaseTower TryBuild(int type, int level, int row, int col)
         {
-            return TryBuildInternal(type, level, row, col, true);
+            return TryBuildInternal(type, level, row, col, true, false);
         }
 
         /// <summary>
@@ -885,13 +906,17 @@ namespace FTProject
         /// 【为什么复用 TryBuildInternal 而不是另写一份】
         /// "建塔"这件事牵扯格子占用、A* 墙标记、战斗注册、对象池取出，
         /// 复制一份出来迟早会分叉 —— 而分叉点往往在某个不常走的分支上，很难发现。
+        ///
+        /// 【2026-10-31 起这条路径也服务于"通关阵型免费还原"】
+        ///   并因此改成**静默**（quiet=true）：还原是进关时的批量动作，
+        ///   格位摆不下（地图改过）属于脏数据，不该在玩家面前连弹 N 条"该位置不可建造"。
         /// </summary>
         public BaseTower RestoreTower(int type, int level, int row, int col)
         {
-            return TryBuildInternal(type, level, row, col, false);
+            return TryBuildInternal(type, level, row, col, false, true);
         }
 
-        private BaseTower TryBuildInternal(int type, int level, int row, int col, bool charge)
+        private BaseTower TryBuildInternal(int type, int level, int row, int col, bool charge, bool quiet)
         {
             BoardView board = BoardView.Instance;
             if (board == null)
@@ -903,18 +928,18 @@ namespace FTProject
             CellData cell = board.GetCell(row, col);
             if (cell == null)
             {
-                Tips(Localization.Get("No Tile Here") ?? "该位置无法建造");
+                if (!quiet) Tips(Localization.Get("No Tile Here") ?? "该位置无法建造");
                 return null;
             }
             if (!cell.IsBuildable)
             {
-                board.SetHighlight(row, col, CellHighlight.Blocked);
-                Tips(Localization.Get("Not Buildable Here") ?? "该位置不可建造");
+                if (!quiet) board.SetHighlight(row, col, CellHighlight.Blocked);
+                if (!quiet) Tips(Localization.Get("Not Buildable Here") ?? "该位置不可建造");
                 return null;
             }
             if (cell.HasTower)
             {
-                Tips(Localization.Get("Tower already there") ?? "该位置已有防御塔");
+                if (!quiet) Tips(Localization.Get("Tower already there") ?? "该位置已有防御塔");
                 return null;
             }
 
@@ -943,8 +968,8 @@ namespace FTProject
                 {
                     point.IsWall = oldWall;
                 }
-                board.SetHighlight(row, col, CellHighlight.Blocked);
-                Tips(Localization.Get("Cannot fully block the path") ?? "不能完全阻断怪物路径");
+                if (!quiet) board.SetHighlight(row, col, CellHighlight.Blocked);
+                if (!quiet) Tips(Localization.Get("Cannot fully block the path") ?? "不能完全阻断怪物路径");
                 return null;
             }
 
@@ -956,7 +981,7 @@ namespace FTProject
                 {
                     point.IsWall = oldWall;
                 }
-                Tips(Localization.Get("Not enough gold") ?? "金币不足");
+                if (!quiet) Tips(Localization.Get("Not enough gold") ?? "金币不足");
                 return null;
             }
 
@@ -972,7 +997,7 @@ namespace FTProject
                 {
                     PlayerDataManager.Instance.AddGold(cfg.Prices);   // 退还（恢复路径没扣过，自然也不用退）
                 }
-                Tips(Localization.Get("Failed to load tower asset") ?? "防御塔资源加载失败");
+                if (!quiet) Tips(Localization.Get("Failed to load tower asset") ?? "防御塔资源加载失败");
                 Debug.LogError("[Tower] 建塔失败：无法加载 " + cfg.ResName);
                 return null;
             }
@@ -985,11 +1010,24 @@ namespace FTProject
             tower.Init(cfg, cell);
             tower.SnapToCell(cell);
 
+            // 记账：这座塔实际花了多少钱（归还/还原路径 = 0）。出售返还额以它为上限，
+            // 否则"免费还原的塔按配置售价卖出"就是一条刷金币的漏洞（详见 BaseTower.InvestedGold）。
+            tower.SetInvestedGold(charge ? cfg.Prices : 0);
+
             cell.Tower = tower;
             cell.Point = point;
             _towers.Add(tower);
 
             CombatSystem.Instance.RegisterTower(tower);
+
+            // 【批量还原期间静默】一次进关可能要还原几十座塔：
+            //   逐座发 BuildTowerSuccess 会让 HUD 反复退出放置态、逐座重算路径则把 A* 打满。
+            //   批量结束由 EndRestoreBatch 统一补一次 RequestRefresh。
+            if (_restoreBatchDepth > 0)
+            {
+                return tower;
+            }
+
             if (charge) GameAudio.Play(cfg.IsSlowAura ? SoundCue.FrostActivate : SoundCue.TowerBuild);
             EventDispatcher.TriggerEvent<BaseTower>(EventName.BuildTowerSuccess, tower);
             astar.RequestRefresh();      // 节流重算，敌人改道
@@ -1007,6 +1045,56 @@ namespace FTProject
             }
 
             return tower;
+        }
+
+        // ------------------------------------------------------------------
+        // 阵型还原（2026-10-31）
+        // ------------------------------------------------------------------
+
+        /// <summary>正在批量还原阵型的嵌套层数（>0 时建塔不发事件、不逐座重算路径）。</summary>
+        private int _restoreBatchDepth;
+
+        /// <summary>进入批量还原。必须与 <see cref="EndRestoreBatch"/> 成对出现（Restore 里用 try/finally 保证）。</summary>
+        public void BeginRestoreBatch()
+        {
+            _restoreBatchDepth++;
+        }
+
+        /// <summary>结束批量还原：整批摆完后统一请求一次路径重算（箭头与怪物改道都靠它）。</summary>
+        public void EndRestoreBatch()
+        {
+            if (_restoreBatchDepth <= 0)
+            {
+                _restoreBatchDepth = 0;
+                return;
+            }
+            _restoreBatchDepth--;
+            if (_restoreBatchDepth == 0 && AStarManager.Instance != null)
+            {
+                AStarManager.Instance.RequestRefresh();
+            }
+        }
+
+        /// <summary>
+        /// 出售返还金额的**唯一口径**：`min(配置售价, 实际投入) × 返还比例`。
+        ///
+        /// 【为什么不是直接 cfg.SellPrice × 比例】
+        ///   2026-10-31 起"重进已通关关卡"会免费还原阵型。若还原塔也能按配置售价卖出，
+        ///   玩家只要通关一次，就能反复"重进 → 卖光 → 退出"刷金币。
+        ///   以"实际投入"为上限后：正常塔的投入 ≥ 售价（售价就是累计投入的约七成），返还额不变；
+        ///   还原塔投入 0 → 返还 0；还原后升级的塔只返还升级花掉的钱。
+        /// 【为什么是静态方法】UI（TowerActionMenu / TowerInfoView / SellConfirmView）
+        ///   与执行层（Sell）必须显示/结算同一个数字，公式只允许存在这一处。
+        /// </summary>
+        public static int RefundOf(BaseTower tower)
+        {
+            if (tower == null || tower.Config == null)
+            {
+                return 0;
+            }
+            float rate = Configs.Global != null ? Configs.Global.SellRefundRate : 1f;
+            int cap = Mathf.Min(tower.Config.SellPrice, Mathf.Max(0, tower.InvestedGold));
+            return Mathf.Max(0, Mathf.RoundToInt(cap * rate));
         }
 
         /// <summary>
@@ -1121,6 +1209,9 @@ namespace FTProject
             CombatSystem.Instance.UnregisterTower(old);
 
             tower.Init(nextCfg, cell);
+            // 记账：新实例继承旧塔的投入，再加上这次升级费。
+            // 换实例会丢掉旧的 InvestedGold，不补这一步的话"还原塔升级后卖掉"会把本金当利润。
+            tower.SetInvestedGold(old.InvestedGold + nextCfg.Prices);
 #if UNITY_EDITOR
             tower.EvidenceDamage = old.EvidenceDamage; tower.EvidenceOverkill = old.EvidenceOverkill;
             tower.EvidenceHits = old.EvidenceHits; tower.EvidenceSlowApplications = old.EvidenceSlowApplications;
@@ -1159,10 +1250,9 @@ namespace FTProject
             {
                 return false;
             }
-            // 返还金额 = 配置的 sellPrice × 常数表的返还比例
-            // （比例做成常数是为了以后能加"卖塔折损"的经济压力，而不用改代码）
-            float rate = Configs.Global != null ? Configs.Global.SellRefundRate : 1f;
-            int refund = Mathf.Max(0, Mathf.RoundToInt(tower.Config.SellPrice * rate));
+            // 返还金额的唯一口径在 RefundOf（= min(配置售价, 实际投入) × 返还比例）：
+            // 结算与 UI 显示必须是同一个公式，否则"面板写 +42、到账 +0"这类错位极难排查。
+            int refund = RefundOf(tower);
             string resName = tower.Config.ResName;
 
             if (tower.Cell != null)
@@ -1225,6 +1315,9 @@ namespace FTProject
             }
             _towers.Clear();
             _clearBuf.Clear();
+            // 批量还原的计数也归零：万一上一次还原在中途被打断（异常/强制切关），
+            // 残留的 >0 会让下一关所有建塔都"静默"（不发事件、不重算路径）。
+            _restoreBatchDepth = 0;
             // 落点爆炸序列帧的池与帧缓存随关卡一起清（枪口焰随塔销毁，无需处理）
             TowerFireFx.ClearPool();
         }

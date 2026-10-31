@@ -40,6 +40,12 @@ namespace FTProject
         //   免费重试，构成漏洞。现在这些状态只活在内存里：退出 / 杀进程 = 本局作废，从第一波重打。
         //   只有**通关**会落盘（星级、最快时间、最佳剩余生命，见 SaveManager.RecordClear）。
         //   因此这里不再提供"是否有可续玩存档"的查询，选关 / 主菜单的"继续"入口也一并下线。
+        //
+        // 【2026-10-31 增补：布阵与资源落盘】按用户口径，**每通过一波**就把该关的
+        //   布阵（格位/塔型/等级）与**金币/生命**一起存一份（`LevelLayoutStore`），
+        //   重进这一关时：资源直接覆盖、塔阵免费还原；整关通关时再存一次（带 runId）。
+        //   ★它**不存波次游标**，所以重进一定从第 1 波开始 —— 10-30 "不准跳波 / 不准失败续局"
+        //     的核心禁令仍然成立。把它当成"带资源重打"的便利，而不是续玩存档。
 
         [Header("场景引用（由 SceneMainBuilder 自动填充）")]
         public BoardView boardView;
@@ -241,7 +247,7 @@ namespace FTProject
         // 建关
         // ==================================================================
 
-        public void InitLevel(int levelId)
+        public void InitLevel(int levelId, bool restoreSavedState = true)
         {
             GameAudio.BeginLevel();
             State = GameFlowState.Loading;
@@ -350,9 +356,17 @@ namespace FTProject
             _roundIds = Level.RoundIds != null ? new List<int>(Level.RoundIds) : new List<int>();
             _roundCursor = 0;
 
-            // ⑩ 【2026-10-30】本关不再从存档恢复任何局内状态（塔阵 / 金币 / 生命 / 波次游标）。
-            //    每次进关都是全新一局：InitFromLevel 给出的初始金币与满血，棋盘上没有任何塔。
-            //    这样"退出再进来接着打"的免费重试路径彻底消失，玩家想改打法只能从头打。
+            // ⑨.5 【2026-10-31】把上一次的记录还原回来（波次游标 + 运行统计 + 金币生命 + 塔阵）。
+            //   · 放在回合队列之后：游标要跟 `_roundIds.Count` 对得上才不会越界。
+            //   · 顺序：先校验并接管运行统计（决定 killed/leaked）→ 覆盖资源 → 免费摆塔 → 恢复游标与计时。
+            //   · 没有记录 / 记录损坏 / 版本不符 / 该 runId 已入档：逐项跳过，等于全新一局。
+            //   · `restoreSavedState=false`（"重新开始"）时整段跳过：空盘、初始金币、第 1 波。
+            if (restoreSavedState)
+            {
+                RestoreSavedLevelState(levelId);
+            }
+
+            // ⑩ 状态机就位（HUD 在下一行统一刷新，保证显示的是"还原之后"的金币/生命/波次）
             State = GameFlowState.Preparing;
             if (hud != null) hud.RefreshAll();
             if (_roundIds.Count == 0)
@@ -382,6 +396,75 @@ namespace FTProject
                 _autoNextTipAcc = 0f;
                 Debug.Log(string.Format("[Flow] {0:F0} 秒后自动开始第一回合", firstDelay));
             }
+        }
+
+        /// <summary>
+        /// 把该关上一次落盘的局内记录接管到本局（2026-10-31 第二轮：连波次游标一起续）。
+        ///
+        /// 【接管顺序不能乱】
+        ///   ① 先判断"运行统计能不能接管"（版本 / 已入档 / 游标越界），
+        ///      因为金币恢复时要顺带写回击杀/漏怪数，这个数来自统计；
+        ///   ② 再覆盖金币/生命（`PlayerDataManager.RestoreState`，会广播 HUD 刷新）；
+        ///   ③ 然后免费摆塔（`LevelLayoutStore.RestoreTowers`，批量静默）；
+        ///   ④ 最后才赋 `_roundCursor` 与 `GameClock` 计时 —— 游标必须在 `_roundIds` 建好之后。
+        ///
+        /// 【什么情况下不接管进度】任何一条不满足就只还原塔与资源、从第 1 波重打：
+        ///   · 记录里没带运行统计（例如这是"通关后重玩起点"那一笔，或更早的老记录）；
+        ///   · 评级版本变了（改过数值表）——接着打会把两套数值混进同一份评级证据；
+        ///   · 该 runId 已经入档（同一局不可能通关两次）；
+        ///   · 游标 ≤ 0 或 ≥ 本关波数（脏数据 / 配表改少了波次）。
+        /// 【为什么"通关后的记录"不接管】`CompleteVictory` 写的是 `roundCursor = 0 + 无统计`，
+        ///   进关时 `_roundCursor = 0` 就是重玩，不会一进门又判一次通关。
+        /// </summary>
+        private void RestoreSavedLevelState(int levelId)
+        {
+            LevelLayout saved;
+            if (!LevelLayoutStore.TryGet(levelId, out saved))
+            {
+                return;
+            }
+
+            LevelRunMetrics metrics = null;
+            if (saved.runSaved && saved.runMetrics != null)
+            {
+                string reject = null;
+                if (_ratingProfile == null) reject = "评级配置缺失";
+                else if (saved.runMetrics.versionKey != _ratingProfile.versionKey) reject = "评级版本已变（改过数值表）";
+                else if (SaveManager.Instance.IsRunCommitted(levelId, saved.runMetrics.runId)) reject = "该局已入档";
+                else if (saved.roundCursor <= 0 || saved.roundCursor >= _roundIds.Count) reject = "波次游标越界";
+
+                if (reject != null)
+                {
+                    Debug.LogWarning(string.Format(
+                        "[Layout] 第 {0} 关不接管局内进度（{1}）：塔与资源照常还原，波次从第 1 波开始",
+                        levelId, reject));
+                }
+                else
+                {
+                    metrics = saved.runMetrics;
+                }
+            }
+
+            LevelLayoutStore.RestoreResources(saved,
+                metrics != null ? metrics.killed : 0,
+                metrics != null ? metrics.leaked : 0);
+            LevelLayoutStore.RestoreTowers(saved);
+
+            if (metrics == null)
+            {
+                return;
+            }
+
+            // 统计接着累加：expectedWaveCount / expectedEnemyCount / 每波明细 / 累计击杀漏怪全在 metrics 里，
+            // 只把 runId 保留成原来那一局 —— 这样结算时 RecordClear 的 runId 仍是同一局，不会重复入档。
+            _run = metrics.Clone();
+            _roundCursor = Mathf.Clamp(saved.roundCursor, 0, _roundIds.Count);
+            GameClock.RestoreTimers(_run.combatElapsedSeconds, _run.levelElapsedSeconds, saved.levelTimerStarted);
+            Debug.Log(string.Format(
+                "[Layout] 第 {0} 关已续局：下一波 {1}/{2}，金币 {3}，生命 {4}/{5}，计时 {6:F1}s/{7:F1}s",
+                levelId, Mathf.Min(_roundCursor + 1, _roundIds.Count), _roundIds.Count,
+                saved.gold, saved.hp, saved.maxHp,
+                _run.combatElapsedSeconds, _run.levelElapsedSeconds));
         }
 
         private void SetupCamera(LevelMapConfig map, float cellSize, Vector2 center)
@@ -633,6 +716,16 @@ namespace FTProject
             }
             State = GameFlowState.RoundComplete;
 
+            // 【2026-10-31 用户口径】**每通过一波就把当前局面落盘**（不是等整关通关）：
+            //   塔阵 + 金币/生命 + 波次游标 + 整份运行统计（含每波明细）。
+            //   用户实测场景：打一波 → 回选关 → 再进同一关，期望"接着上一波继续"。
+            //   最后一波也会在这里存一次；随后 CompleteVictory 会再存一次——
+            //   但那次传的是 `roundCursor = 0, metrics = null`（通关后重进属于重玩，从第 1 波开始）。
+            if (Level != null)
+            {
+                LevelLayoutStore.SaveCurrentLevel(Level.Id, _roundCursor, _run, null);
+            }
+
             // Save the next-wave wait in the same coherent boundary as tower phases.
             float delay = _roundCursor < _roundIds.Count && Configs.Global != null ? Configs.Global.AutoNextRoundDelaySec : 0f;
             _autoNextTimer = Mathf.Max(0f, delay); _autoNextTipAcc = 0f;
@@ -750,6 +843,16 @@ namespace FTProject
             var result = EvaluateRun(true);
             int previousBest = SaveManager.Instance.GetStars(Level.Id);
             bool saved = result.valid && SaveManager.Instance.RecordClear(Level.Id, result);
+            // 【2026-10-31】通关即落盘本关阵型（同一关再次通关 = 清旧写新，整条替换）。
+            //   只在成绩真的写进存档之后记阵型：记录失败的局（debugOverride / 统计失效）
+            //   本来就不算"通关"，跟着记会污染阵型记录。
+            if (saved)
+            {
+                // 通关这一笔传空统计 + 游标 0：下次再进这一关属于"重玩"，从第 1 波、全新评级开始；
+                // 否则一进关就 `_roundCursor >= _roundIds.Count`，会立刻再判一次通关。
+                LevelLayoutStore.SaveCurrentLevel(Level.Id, 0, null,
+                    result.metrics != null ? result.metrics.runId : null);
+            }
             _pendingSaveResult = result.valid && !saved ? result : null;
             _pendingResult = BuildClearInfo(true, result.stars, previousBest);
             _pendingResult.ratingResult = result;
@@ -768,6 +871,11 @@ namespace FTProject
         {
             if (_pendingSaveResult == null || _pendingResult == null || Level == null) return false;
             if (!SaveManager.Instance.RecordClear(Level.Id, _pendingSaveResult)) return false;
+            // 补写成绩成功时，阵型要跟着补记一次：第一次进 CompleteVictory 时 saved=false，
+            // 那条分支没写阵型；玩家这一局打完的布阵不该因为"存档晚了一步"就丢掉。
+            // 同样按"重玩起点"写（游标 0、不带运行统计）。
+            LevelLayoutStore.SaveCurrentLevel(Level.Id, 0, null,
+                _pendingSaveResult.metrics != null ? _pendingSaveResult.metrics.runId : null);
             _pendingResult.progressSaved = true; _pendingResult.savePending = false;
             _pendingResult.newRecord = _pendingResult.stars > _pendingResult.previousBest;
             _pendingResult.ratingResult = LevelRatingEvaluator.Evaluate(_pendingSaveResult.profile, _pendingSaveResult.metrics);
@@ -996,17 +1104,26 @@ namespace FTProject
         /// <summary>切到指定关卡（或重开同一关）。</summary>
         public void StartLevel(int levelId)
         {
+            StartLevel(levelId, true);
+        }
+
+        /// <summary>
+        /// 进关。<paramref name="restoreSavedState"/>=false 表示**故意不要续局**
+        /// （暂停菜单的"重新开始"走这条：从第 1 波、空棋盘、初始金币重打）。
+        /// </summary>
+        public void StartLevel(int levelId, bool restoreSavedState)
+        {
             if (levelId <= 0)
             {
                 return;
             }
             // 【2026-10-30】这里曾经要先清"别的关的失败续局点"和"不兼容的快照"才敢进关；
-            // 局内不再落盘之后没有这类残局可清，进关只剩"拆干净 + 重建"。
+            // 现在进关只剩"拆干净 + 重建"。
             TeardownLevel();
             // 进关时一并关闭主菜单，避免背景遮住棋盘。
             UIManager.Instance.Close(MainMenuView.LogicalName);
             UIManager.Instance.Close(SelectView.LogicalName);
-            BeginLevelWithMask(levelId);
+            BeginLevelWithMask(levelId, restoreSavedState);
         }
 
         /// <summary>
@@ -1014,17 +1131,17 @@ namespace FTProject
         /// 【为什么必须"延迟一帧"】`InitLevel` 全程同步 —— 同帧里 Show 完立刻 Hide，
         /// 遮罩一帧都不会被渲染，等于没做。这里先让遮罩拿到一帧，再干重活。
         /// </summary>
-        private void BeginLevelWithMask(int levelId)
+        private void BeginLevelWithMask(int levelId, bool restoreSavedState)
         {
             LevelLoadingMask.Show(Localization.Get("Entering level {0}...", levelId)
                 ?? string.Format("正在进入第 {0} 关...", levelId));
-            StartCoroutine(InitLevelDeferred(levelId));
+            StartCoroutine(InitLevelDeferred(levelId, restoreSavedState));
         }
 
-        private System.Collections.IEnumerator InitLevelDeferred(int levelId)
+        private System.Collections.IEnumerator InitLevelDeferred(int levelId, bool restoreSavedState)
         {
             yield return null;          // 让遮罩先渲染一帧
-            InitLevel(levelId);         // 同步重建（棋盘/路径/实体/界面）
+            InitLevel(levelId, restoreSavedState);   // 同步重建（棋盘/路径/实体/界面）
             LevelLoadingMask.Hide();    // 就绪后淡出（unscaled 时间，约 0.18s）
         }
 
@@ -1035,9 +1152,9 @@ namespace FTProject
                 return;
             }
             if (_pendingSaveResult != null && !RetryPendingClearSave()) return;
-            // 【2026-10-30】重开不再需要清续局存档：局内状态本来就没落盘，
-            // StartLevel → TeardownLevel → InitLevel 会把塔阵 / 金币 / 生命全部重置。
-            StartLevel(Level.Id);
+            // 【2026-10-31】"重新开始"= 不要续局：从第 1 波、空棋盘、初始金币重打。
+            //   注意这不删除已落盘的记录 —— 退出到选关再进，仍然会续到那条记录上。
+            StartLevel(Level.Id, false);
         }
 
         /// <summary>退出当前对局，回到关卡选择。</summary>

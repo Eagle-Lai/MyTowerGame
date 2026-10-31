@@ -179,8 +179,8 @@ namespace FTProject
             upgradePrice.color=next!=null && PlayerDataManager.Instance.Gold<next.Prices
                 ? new Color(1f,.48f,.38f) : new Color(.89f,.95f,1f);
             sellLabel.text=Localization.Get("Sell")??"出售";
-            float rate=Configs.Global!=null?Configs.Global.SellRefundRate:1f;
-            sellPrice.text="+"+Mathf.Max(0,Mathf.RoundToInt(cfg.SellPrice*rate));
+            // 返还额走统一口径（TowerManager.RefundOf）：还原塔投入为 0，这里会如实显示 +0
+            sellPrice.text="+"+TowerManager.RefundOf(_tower);
             moreLabel.text=Localization.Get("More")??"More";
         }
 

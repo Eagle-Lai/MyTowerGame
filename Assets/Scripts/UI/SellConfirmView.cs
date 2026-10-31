@@ -86,14 +86,8 @@ namespace FTProject
             if (_refundLabel != null) _refundLabel.color = TextSecondary;
             if (_refundValue != null) _refundValue.color = Gold;
             if (_topBar != null) _topBar.color = Fire;
-
-            // 警告文案里的比例**跟随配置**，不写死 70%：数值一改文案就跟着对
-            float rate = Configs.Global != null ? Configs.Global.SellRefundRate : 1f;
-            if (_warnText != null)
-            {
-                _warnText.text = Localization.Get("Refund {0}% of total investment.\nThis cannot be undone.", Mathf.RoundToInt(rate * 100f))
-                    ?? string.Format("出售后将退回 {0}% 的累计投入\n且无法撤销", Mathf.RoundToInt(rate * 100f));
-            }
+            // 警告文案里的比例依赖"这一座塔"的实际投入，改到 Setup(tower) 里写 ——
+            // 在 Awake 里只能拿到全局比例，遇到 0 投入的还原塔会写成"退回 70%"却到账 0。
         }
 
         private void Setup(BaseTower tower)
@@ -112,11 +106,21 @@ namespace FTProject
                 _towerName.text = cfg.DisplayName + "  Lv." + cfg.Level;
             }
 
-            float rate = Configs.Global != null ? Configs.Global.SellRefundRate : 1f;
-            int refund = Mathf.Max(0, Mathf.RoundToInt(cfg.SellPrice * rate));
+            // 返还额走统一口径（TowerManager.RefundOf）：与真正到账的数字只允许有这一处公式
+            int refund = TowerManager.RefundOf(tower);
             if (_refundValue != null)
             {
                 _refundValue.text = refund.ToString();
+            }
+            // 警告文案里的比例按"这一座塔"实算：返还额 ÷ 实际投入。
+            // 正常塔 ≈ 70%（售价本就是累计投入的七成）；免费还原的塔投入 0 → 显示 0%，
+            // 与"到账 0"一致，不会出现"写着退回 70%、结果一分没有"的错位。
+            if (_warnText != null)
+            {
+                int invested = Mathf.Max(0, tower.InvestedGold);
+                int percent = invested > 0 ? Mathf.RoundToInt(refund * 100f / invested) : 0;
+                _warnText.text = Localization.Get("Refund {0}% of total investment.\nThis cannot be undone.", percent)
+                    ?? string.Format("出售后将退回 {0}% 的累计投入\n且无法撤销", percent);
             }
             if (_towerIcon != null)
             {

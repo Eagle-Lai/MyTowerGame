@@ -317,8 +317,8 @@ namespace FTProject
             // ---- 出售 ----
             if (_sellBtn != null)
             {
-                float rate = Configs.Global != null ? Configs.Global.SellRefundRate : 1f;
-                int refund = Mathf.Max(0, Mathf.RoundToInt(cfg.SellPrice * rate));
+                // 返还额走统一口径（TowerManager.RefundOf）：还原塔投入为 0，这里显示 +0
+                int refund = TowerManager.RefundOf(_tower);
                 _sellBtn.interactable = true;
                 // 文案常驻（不再有"确认态"，所以不需要"别把它刷回去"的保护）
                 SetText(_sellLabel, Localization.Get("Sell (+{0})", refund)
