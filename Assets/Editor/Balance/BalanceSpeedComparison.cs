@@ -57,12 +57,13 @@ namespace FTProject.EditorTools
 
         private static string ComparisonSignature(JSONNode entry)
         {
-            LevelRatingResult result = JsonUtility.FromJson<LevelRatingResult>(entry.ToString());
-            if (result == null || result.metrics == null) return "missing evidence";
-            result.metrics.runId = "same replay";
+            // 【2026-11-01】评级结果删除：签名改用本局账目（runId 同一化后比较）。
+            if (entry == null || !entry["metrics"].IsObject) return "missing evidence";
+            LevelRunMetrics metrics = JsonUtility.FromJson<LevelRunMetrics>(entry["metrics"].ToString());
+            if (metrics == null) return "missing evidence";
+            metrics.runId = "same replay";
             // End times and economy in every wave remain in the comparison.
-            return result.stars + "|" + result.valid + "|" + JsonUtility.ToJson(result.metrics) + "|"
-                + entry["finalGold"].Value + "|" + entry["finalTowerSignature"].Value;
+            return JsonUtility.ToJson(metrics) + "|" + entry["finalGold"].Value + "|" + entry["finalTowerSignature"].Value;
         }
     }
 }

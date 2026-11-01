@@ -290,9 +290,10 @@ namespace FTProject.EditorTools
                         if (!Configs.LoadTestCandidate(directory)) throw new InvalidOperationException("Candidate rejected: " + directory);
                         _loadedCandidate = directory;
                     }
-                    string profile = run["profileId"].Value;
-                    var rating = Configs.GetLevelRating(run["levelId"].AsInt);
-                    if (rating == null || rating.profileId != profile) throw new InvalidOperationException("Requested profile differs from loaded candidate.");
+                    // 【2026-11-01】评级表删除：不再有 profile 可比对，波数直接取关卡配置。
+                    int plannedLevelId = run["levelId"].AsInt;
+                    var plannedLevel = Configs.GetLevel(plannedLevelId);
+                    int plannedWaves = plannedLevel != null && plannedLevel.RoundIds != null ? plannedLevel.RoundIds.Count : 0;
                     // 【2026-10-30】每次试跑不再需要先清"上一轮的续局快照"：
                     // 局内状态根本不落盘，InitLevel 一定从第一波、满血、初始金币开始。
                     UIManager.Instance.Close(MainMenuView.LogicalName);
@@ -323,7 +324,7 @@ namespace FTProject.EditorTools
                         foreach (var pair in _plannedOperations)
                         {
                             int wave = pair.Value["waveOrdinal"].AsInt; long time = pair.Value["timeMs"].AsLong;
-                            if (wave < 1 || wave > rating.expectedWaveCount || time < 0 || wave < previousWave || wave == previousWave && time < previousTime)
+                            if (wave < 1 || wave > plannedWaves || time < 0 || wave < previousWave || wave == previousWave && time < previousTime)
                                 throw new InvalidDataException("Replay operations must be ordered by wave and earliest time.");
                             previousWave = wave; previousTime = time;
                         }
@@ -745,10 +746,11 @@ namespace FTProject.EditorTools
         private static void RecordResult(GameFlowManager flow, JSONNode run, string state)
         {
             LevelRunMetrics metrics = flow.RunMetrics;
-            var profile = flow.RatingProfile;
-            var result = LevelRatingEvaluator.Evaluate(profile, metrics);
-            JSONNode entry = JSON.Parse(JsonUtility.ToJson(result));
-            entry["profile"] = JSON.Parse(JsonUtility.ToJson(profile));
+            // 【2026-11-01】评级结果删除：条目直接以本局账目为载荷，星级按"通关即满星"的临时口径给出。
+            JSONNode entry = new JSONObject();
+            if (metrics != null) entry["metrics"] = JSON.Parse(JsonUtility.ToJson(metrics));
+            entry["stars"] = metrics != null && metrics.victory ? SaveManager.MaxStars : 0;
+            entry["valid"] = metrics != null && metrics.victory;
             entry["levelId"] = run["levelId"].AsInt; entry["profileId"] = run["profileId"].Value;
             entry["strategy"] = run["strategy"].Value; entry["speed"] = run["speed"].AsFloat;
             entry["speedComparisonGroup"] = run["speedComparisonGroup"].Value;
@@ -762,7 +764,7 @@ namespace FTProject.EditorTools
                     if (!ReplayedOperations.Contains(++pendingIndex)) entry["pendingOperations"].Add(JSON.Parse(pair.Value.ToString()));
                 if (state == "finished" && entry["pendingOperations"].Count > 0) entry["state"] = "operation_incomplete";
             }
-            entry["coverage"] = "Unity PlayMode fixed-step: real scene/pools/4-way A*/tower targeting/AOE/slow/economy/WaveManager/GameClock/sole evaluator; presentation animation uses rendered frames";
+            entry["coverage"] = "Unity PlayMode fixed-step: real scene/pools/4-way A*/tower targeting/AOE/slow/economy/WaveManager/GameClock; presentation animation uses rendered frames";
             entry["wallSeconds"] = EditorApplication.timeSinceStartup - _runWall;
             entry["operations"] = new JSONArray(); foreach (var op in Operations) entry["operations"].Add(op);
             entry["finalGold"] = PlayerDataManager.Instance.Gold;

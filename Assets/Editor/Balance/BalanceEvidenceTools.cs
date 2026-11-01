@@ -9,38 +9,6 @@ namespace FTProject.EditorTools
 {
     public static class BalanceEvidenceTools
     {
-        /// <summary>Offline predictions use precisely the same evaluator as actual settlement.</summary>
-        public static string EvaluateOfflineReports(string directory)
-        {
-            int evaluated = 0, failures = 0;
-            var summary = new JSONArray();
-            foreach (string path in Directory.GetFiles(directory, "result.json", SearchOption.AllDirectories))
-            {
-                JSONNode node = JSON.Parse(File.ReadAllText(path));
-                if (!node["metrics"].IsObject || !node["ratingProfile"].IsObject) continue;
-                var metrics = JsonUtility.FromJson<LevelRunMetrics>(node["metrics"].ToString());
-                var profile = JsonUtility.FromJson<LevelRatingProfile>(node["ratingProfile"].ToString());
-                LevelRatingResult rating = LevelRatingEvaluator.Evaluate(profile, metrics);
-                node["predictionStars"] = rating.stars;
-                node["ratingStatus"] = "C# LevelRatingEvaluator; offline prediction, not Unity reachability certification";
-                node["ratingResult"] = JSON.Parse(JsonUtility.ToJson(rating));
-                File.WriteAllText(path, node.ToString(2), new System.Text.UTF8Encoding(false));
-                JSONNode s = new JSONObject(); s["profileId"] = node["profileId"].Value;
-                s["levelId"] = node["levelId"].AsInt; s["strategyId"] = node["strategyId"].Value;
-                s["stars"] = rating.stars; s["valid"] = rating.valid;
-                s["combatMs"] = metrics.combatElapsedMs; s["parMs"] = profile.parCombatTimeMs;
-                s["hp"] = metrics.hp; s["leaked"] = metrics.leaked; s["gold"] = node["balance"].AsInt;
-                s["planHash"] = profile.planHash; s["path"] = path;
-                s["reasons"] = JSON.Parse(JsonUtility.ToJson(rating))["reasons"];
-                summary.Add(s); evaluated++; if (!rating.valid) failures++;
-            }
-            JSONNode output = new JSONObject(); output["evaluated"] = evaluated; output["invalidResults"] = failures;
-            output["evaluator"] = "FTProject.LevelRatingEvaluator"; output["coverage"] = "offline_prediction_only";
-            output["results"] = summary;
-            File.WriteAllText(Path.Combine(directory, "rated-matrix.json"), output.ToString(2), new System.Text.UTF8Encoding(false));
-            return output.ToString();
-        }
-
         public static string ValidatePrefabContract()
         {
             var results = new JSONArray();

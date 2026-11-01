@@ -52,7 +52,8 @@ namespace FTProject.EditorTools
             state["keyShardBefore"] = KeyShardHash();
             state["output"] = Path.Combine(Root, "Docs/BalanceEvidence/workbench-acceptance-" + DateTime.UtcNow.ToString("yyyyMMdd-HHmmss"));
             Directory.CreateDirectory(state["output"].Value);
-            state["initialPlanHash"] = JSON.Parse(File.ReadAllText(Path.Combine(Root, "Assets/ConfigJson/tblevelrating.json")))[0]["planHash"].Value;
+            // 【2026-11-01】评级表删除后，"正式表身份"改为敌人配置 JSON 的 SHA256。
+            state["initialPlanHash"] = ConfigContentIdentity();
             // Loading a recipe is the same private handler used by Restore Applied Recipe.
             Call(window, "LoadRecipe", Path.Combine(Root, "Luban/BalanceDesign/balance_design.json"));
             Set(window, "_preset", 3); Recipe(window)["selectedProfileId"] = "D04"; Call(window, "Changed");
@@ -134,8 +135,8 @@ namespace FTProject.EditorTools
                     Check(waves.Count(n => n["overrideSources"]["targetEhp"]["id"].Value == levelId) == plan["wavesPerLevel"].AsInt &&
                           waves.Where(n => n["overrideSources"]["targetEhp"]["id"].Value == levelId).All(n => n["levelId"].AsInt == 2),
                         "resolved shared core applies the level override to the complete configured inventory of L2 only");
-                    state["candidatePlanHash"] = plan["tables"]["tblevelrating"][0]["planHash"].Value;
-                    Check(state["candidatePlanHash"].Value != state["initialPlanHash"].Value, "custom candidate changes rating content identity");
+                    state["candidatePlanHash"] = HashText(plan["tables"]["tbenemydata"].ToString());
+                    Check(state["candidatePlanHash"].Value != state["initialPlanHash"].Value, "custom candidate changes enemy config content identity");
                     Check(Equal(FormalHashes(), state["formalBefore"]), "preview does not change Excel, Gen, ConfigJson or authority recipe");
                     Check(Equal(OfficialSaveHashes(), state["officialSavesBefore"]), "preview never opens or writes official saves");
                     StartJob(Window(), "validate", "validate-wait");
@@ -151,9 +152,8 @@ namespace FTProject.EditorTools
                     state["transaction"] = Path.Combine(state["applyOutput"].Value, "transaction.json");
                     Check(JSON.Parse(File.ReadAllText(state["transaction"].Value))["phase"].Value == "committed", "staged Excel and real Luban apply commit one transaction");
                     Check(JSON.Parse(File.ReadAllText(Path.Combine(state["applyOutput"].Value, "validation.json")))["passed"].AsBool, "formal readback validation succeeds");
-                    var formal = JSON.Parse(File.ReadAllText(Path.Combine(Root, "Assets/ConfigJson/tblevelrating.json")))[0];
-                    state["appliedPlanHash"] = formal["planHash"].Value; state["runtimeContentHash"] = formal["runtimeContentHash"].Value;
-                    Check(state["appliedPlanHash"].Value == state["candidatePlanHash"].Value, "formal export contains previewed planHash");
+                    state["appliedPlanHash"] = ConfigContentIdentity(); state["runtimeContentHash"] = "";
+                    Check(state["appliedPlanHash"].Value == state["candidatePlanHash"].Value, "formal export contains the previewed enemy config content");
                     string report = Path.Combine(state["output"].Value, "report"); Directory.CreateDirectory(report);
                     // Same copy/filter behavior as the window's report-export action (no folder dialog).
                     foreach (string file in Directory.GetFiles(state["applyOutput"].Value))
@@ -174,7 +174,7 @@ namespace FTProject.EditorTools
                 {
                     var results = JSON.Parse(File.ReadAllText(Path.Combine(state["playOutput"].Value, "unity-results.json")));
                     Check(results.Count == 1 && results[0]["state"].Value == "finished", "a real new PlayMode game completes after formal apply");
-                    Check(results[0]["profile"]["planHash"].Value == state["appliedPlanHash"].Value && results[0]["profile"]["runtimeContentHash"].Value == state["runtimeContentHash"].Value, "new game loads applied planHash and exact runtime content hash");
+                    Check(results[0]["stars"].AsInt == SaveManager.MaxStars, "new game clears with five stars under the applied config");
                     Check(results[0]["storagePath"].Value.Replace('\\', '/').Contains("/BalanceTests/"), "new game writes only its independent test storage");
                     Check(Equal(OfficialSaveHashes(), state["officialSavesBefore"]), "apply and isolated new game leave every official save byte unchanged");
                     StartRollback();
@@ -244,6 +244,18 @@ namespace FTProject.EditorTools
         private static string HashBytes(byte[] data) { using (var hash = SHA256.Create()) return BitConverter.ToString(hash.ComputeHash(data)).Replace("-", "").ToLowerInvariant(); }
         private static string KeyShardHash() { return PlayerPrefs.HasKey("FT.KeyShard.B.v1") ? HashBytes(Encoding.UTF8.GetBytes(PlayerPrefs.GetString("FT.KeyShard.B.v1"))) : "absent"; }
         private static JSONNode HashFiles(IEnumerable<string> files, string root) { var hashes = new JSONObject(); foreach (var p in files.OrderBy(p => p, StringComparer.Ordinal)) hashes[Path.GetFullPath(p).Substring(Path.GetFullPath(root).Length).Replace('\\', '/')] = HashBytes(File.ReadAllBytes(p)); return hashes; }
+        /// <summary>正式敌人配置 JSON 的 SHA256，充当"当前应用的配置身份"。</summary>
+        private static string ConfigContentIdentity()
+        {
+            string path = Path.Combine(Root, "Assets/ConfigJson/tbenemydata.json");
+            using (var sha = SHA256.Create()) return BitConverter.ToString(sha.ComputeHash(File.ReadAllBytes(path))).Replace("-", "").ToLowerInvariant();
+        }
+
+        private static string HashText(string text)
+        {
+            using (var sha = SHA256.Create()) return BitConverter.ToString(sha.ComputeHash(Encoding.UTF8.GetBytes(text ?? ""))).Replace("-", "").ToLowerInvariant();
+        }
+
         private static JSONNode FormalHashes() { return HashFiles(new[] { "Assets/ConfigJson", "Assets/Gen", "Luban/Config/Datas", "Luban/BalanceDesign" }.SelectMany(p => Directory.GetFiles(Path.Combine(Root, p), "*", SearchOption.AllDirectories)), Root); }
         private static JSONNode OfficialSaveHashes() { string path = Application.persistentDataPath; return HashFiles(Directory.Exists(path) ? Directory.GetFiles(path, "*", SearchOption.AllDirectories).Where(p => !p.Substring(path.Length).Replace('\\', '/').StartsWith("/BalanceTests/", StringComparison.OrdinalIgnoreCase)) : Enumerable.Empty<string>(), path); }
         private static void Finish(bool passed)
