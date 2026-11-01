@@ -45,21 +45,22 @@ namespace FTProject
         public bool IsBuilt { get; private set; }
 
         /// <summary>
-        /// 这座塔**实际花了多少钱**（建造 + 历次升级，不含任何赠送/还原）。
+        /// 这座塔**累计花了多少钱**（建造 + 历次升级）。
         ///
-        /// 【为什么需要它】2026-10-31 起"已通关关卡重进时免费还原阵型"：
-        ///   还原出来的塔没花过一分钱，如果出售仍按配置的 `sellPrice` 返还，
-        ///   就等于"通关一次 → 反复重进 → 卖免费塔刷金币"。
-        ///   出售返还因此改成 `min(配置售价, 本值) × 返还比例`（见 `TowerManager.RefundOf`）：
+        /// 【为什么需要它】出售返还要以"投入"为上限。没有上限的话，2026-10-31 起的
+        ///   "重进关卡免费还原阵型"就能变成"重进 → 按配置售价卖光 → 退出"的刷钱路径。
+        ///   返还口径因此是 `min(配置售价, 本值) × 返还比例`（见 `TowerManager.RefundOf`）：
         ///   · 正常建的塔：投入 ≥ 售价（售价本就是累计投入的约七成）→ 返还额不变；
-        ///   · 还原塔：投入 0 → 返还 0；
-        ///   · 还原后又升级的塔：只返还升级花掉的那部分，永远不超过投入。
+        ///   · 还原塔：**投入随阵型记录一并还原**（2026-11-01 起，取自
+        ///     `TowerLayoutEntry.investedGold`），不再是 0 —— 否则同一座塔
+        ///     "退出前卖 22、重进后卖 0"，玩家会认为返还丢了；
+        ///   · 还原后又升级的塔：投入 = 存档投入 + 升级费用，返还永远不超过投入。
         /// 【为什么由 TowerManager 写】金额只应该在"扣钱/收钱"的那一处记账，
         ///   塔自己算不出来（它看不到 PlayerDataManager 的扣费结果）。
         /// </summary>
         public int InvestedGold { get; private set; }
 
-        /// <summary>建造/升级成功后由 TowerManager 记账（charge=false 的还原路径传 0）。</summary>
+        /// <summary>建造/升级成功后由 TowerManager 记账（还原路径传存档里的投入额，老档为 0）。</summary>
         public void SetInvestedGold(int amount)
         {
             InvestedGold = Mathf.Max(0, amount);
@@ -916,6 +917,13 @@ namespace FTProject
         /// 按快照恢复一座塔（M3-5）：与 TryBuild 走**同一套**实例化/注册流程，
         /// 唯一区别是**不扣钱**（钱已经在上次游戏时扣过了）。
         ///
+        /// 【investedGold 是干什么的（2026-11-01）】
+        ///   还原出来的塔虽然进场免费，但"它当年花了多少钱"必须跟着记录回来：
+        ///   出售返还 = `min(售价, 投入) × 比例`，投入若一律写 0，卖塔就是 +0
+        ///   —— 同一座塔在"退出前"和"重进后"能卖出的钱不一样。
+        ///   调用方传存档里的 `TowerLayoutEntry.investedGold`；老存档没这个字段，
+        ///   读出来是 0，行为与改动前一致。
+        ///
         /// 【为什么复用 TryBuildInternal 而不是另写一份】
         /// "建塔"这件事牵扯格子占用、A* 墙标记、战斗注册、对象池取出，
         /// 复制一份出来迟早会分叉 —— 而分叉点往往在某个不常走的分支上，很难发现。
@@ -924,12 +932,13 @@ namespace FTProject
         ///   并因此改成**静默**（quiet=true）：还原是进关时的批量动作，
         ///   格位摆不下（地图改过）属于脏数据，不该在玩家面前连弹 N 条"该位置不可建造"。
         /// </summary>
-        public BaseTower RestoreTower(int type, int level, int row, int col)
+        public BaseTower RestoreTower(int type, int level, int row, int col, int investedGold)
         {
-            return TryBuildInternal(type, level, row, col, false, true);
+            return TryBuildInternal(type, level, row, col, false, true, investedGold);
         }
 
-        private BaseTower TryBuildInternal(int type, int level, int row, int col, bool charge, bool quiet)
+        private BaseTower TryBuildInternal(int type, int level, int row, int col, bool charge, bool quiet,
+            int investedGold = 0)
         {
             BoardView board = BoardView.Instance;
             if (board == null)
@@ -1023,9 +1032,11 @@ namespace FTProject
             tower.Init(cfg, cell);
             tower.SnapToCell(cell);
 
-            // 记账：这座塔实际花了多少钱（归还/还原路径 = 0）。出售返还额以它为上限，
+            // 记账：这座塔累计花了多少钱。出售返还额以它为上限，
             // 否则"免费还原的塔按配置售价卖出"就是一条刷金币的漏洞（详见 BaseTower.InvestedGold）。
-            tower.SetInvestedGold(charge ? cfg.Prices : 0);
+            //   · charge=true（玩家真花钱）：记本次配置价，升级时由 TryUpgrade 继续累加；
+            //   · charge=false（还原）：记存档带回来的投入额；老存档没有该字段，读出来是 0。
+            tower.SetInvestedGold(charge ? cfg.Prices : Mathf.Max(0, investedGold));
 
             cell.Tower = tower;
             cell.Point = point;
@@ -1094,8 +1105,13 @@ namespace FTProject
         /// 【为什么不是直接 cfg.SellPrice × 比例】
         ///   2026-10-31 起"重进已通关关卡"会免费还原阵型。若还原塔也能按配置售价卖出，
         ///   玩家只要通关一次，就能反复"重进 → 卖光 → 退出"刷金币。
-        ///   以"实际投入"为上限后：正常塔的投入 ≥ 售价（售价就是累计投入的约七成），返还额不变；
-        ///   还原塔投入 0 → 返还 0；还原后升级的塔只返还升级花掉的钱。
+        ///   以"实际投入"为上限后，卖塔永远不可能增殖：
+        ///   · 正常塔：投入 ≥ 售价（售价本就是累计投入的约七成）→ 返还额不变；
+        ///   · 还原塔：投入取自阵型记录（2026-11-01 起随 `investedGold` 一起存），
+        ///     与它退出前能卖的钱完全一致，既不会变成 0、也不会放宽到满售价；
+        ///   · 还原后又升级：投入 = 存档投入 + 升级费用。
+        ///   上限只保证"卖不出超过投入的钱"，**不保证交易被持久化**——
+        ///   后者靠"卖塔立刻落盘"（`GameFlowManager.OnTowerSold`），两件事缺一不可。
         /// 【为什么是静态方法】UI（TowerActionMenu / TowerInfoView / SellConfirmView）
         ///   与执行层（Sell）必须显示/结算同一个数字，公式只允许存在这一处。
         /// </summary>
@@ -1283,6 +1299,14 @@ namespace FTProject
             PlayerDataManager.Instance.AddGold(refund);
             GameAudio.Play(SoundCue.TowerSell);
             EventDispatcher.TriggerEvent<BaseTower>(EventName.DestroyTower, tower);
+
+            // 【2026-11-01】出售要立刻落盘，否则这笔交易不成立：
+            //   阵型记录里带着每座塔的累计投入，不写这一笔，"卖塔 → 退出 → 重进"
+            //   会让塔带着投入额原样复活 —— 玩家白卖了，反复这么干还能重复拿返还。
+            // 发送点故意放在 ReleaseInstance **之前**：监听方（GameFlowManager）
+            //   需要在塔对象仍有效时读取它的状态，之后再发就是一堆已销毁的假 null。
+            EventDispatcher.TriggerEvent<BaseTower>(EventName.TowerSoldEvent, tower);
+
             ResLoader.Instance.ReleaseInstance(resName, tower.gameObject);
             AStarManager.Instance.RequestRefresh();
             Tips(Localization.Get("Tower sold, refunded {0} gold", refund)

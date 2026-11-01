@@ -179,7 +179,8 @@ namespace FTProject
             upgradePrice.color=next!=null && PlayerDataManager.Instance.Gold<next.Prices
                 ? new Color(1f,.48f,.38f) : new Color(.89f,.95f,1f);
             sellLabel.text=Localization.Get("Sell")??"出售";
-            // 返还额走统一口径（TowerManager.RefundOf）：还原塔投入为 0，这里会如实显示 +0
+            // 返还额走统一口径（TowerManager.RefundOf）：还原塔按阵型记录里的累计投入算，
+            // 与它退出前能卖的钱一致（2026-11-01 起；老存档没有投入字段时仍为 +0）
             sellPrice.text="+"+TowerManager.RefundOf(_tower);
             moreLabel.text=Localization.Get("More")??"More";
         }

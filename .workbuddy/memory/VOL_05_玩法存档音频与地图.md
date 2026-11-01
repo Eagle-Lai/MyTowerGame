@@ -113,3 +113,49 @@
   `StatHitCount` 原先恒为真实值两倍，只影响 `PerfProbe`/`[Combat]` 日志。
 - **验证**：编译 0 error；`FTProject.BalanceCombat.EditModeTests` 29/29 通过；`Main.unity` diff 仅 34 行删除。
 - 记录：`Docs/BulletSystemRemoval_2026-10-31.md`。**未跑 Play Mode**；AB 包清单变化，热更需按铁律重打。
+
+## 出售返还改成"还原塔带投入入库"（2026-11-01，用户选方案 2）
+
+**起因**：用户问"为什么现在出售防御塔没有返还了"。定位结论——不是 bug，是 `ed4fa097d`（2026-10-31 09:19
+「每波落盘 + 续局还原」）把 `refund = round(cfg.SellPrice × rate)` 改成了
+`min(cfg.SellPrice, InvestedGold) × rate`，而免费还原路径 `SetInvestedGold(0)`，于是还原塔卖出恒为 0。
+配置侧已排除：`tbtowerinfo` 270 行 `sellPrice` 全 >0（普通 22/42/70、火力 30/58/97、减速 21/49/91），
+30 关 `tblevelrules.sellRefundRate` 全 = 1。
+
+**用户选择**：把 `InvestedGold` 随阵型一起存盘，卖还原塔也按投入返还（方案 2），不接受"还原塔卖 0"。
+
+**改动（4 处代码契约 + 3 处注释口径）**：
+- `LevelLayout.TowerLayoutEntry.investedGold`（新增 int）——"这座塔累计花了多少钱"。
+  `SaveCurrentLevel` 采集 `tower.InvestedGold`；`RestoreTowers` 传 `Mathf.Max(0, entry.investedGold)`。
+- `TowerManager.RestoreTower(type, level, row, col, investedGold)` →
+  `TryBuildInternal(..., bool charge, bool quiet, int investedGold = 0)`；
+  记账行改为 `SetInvestedGold(charge ? cfg.Prices : Mathf.Max(0, investedGold))`。
+  `TryBuild`/`TryUpgrade` 的记账语义没变（升级仍是 `old.InvestedGold + nextCfg.Prices`）。
+- `EventName.TowerSoldEvent`（新事件，参数 BaseTower）；`BaseTower.Sell` 在 `ReleaseInstance`
+  **之前**触发（监听方要读塔字段，之后就是假 null）。
+- `GameFlowManager.OnTowerSold` → 立即 `SaveCurrentLevel(Level.Id, _roundCursor, snapshot, null)`。
+  三条守卫：① `State` 只允许 Preparing/RoundRunning/RoundComplete（结算后写会把"重玩起点"改成"续局"，
+  下次进关立刻再判通关）；② `_roundCursor <= 0` 时 `snapshot = null`（没可续的进度，写 runSaved 只会被
+  判"游标越界"刷警告）；③ RoundRunning 时把 `_run.waves` 末尾"未结算的那波"裁掉再存
+  （否则续局 `StartRound` 会再 push 一条同序号记录，`completedWaveCount` 与 waves.Count 对不上）。
+  `snapshot.Clone()` 是 JSON 深拷贝，改副本不污染本局统计。
+- UI 注释同步：`SellConfirmView` / `TowerActionMenu` / `TowerInfoView` 里"还原塔投入 0 → 显示 +0/0%"
+  的说法已不成立，改成"按阵型记录里的累计投入算"。
+
+**★ FormatVersion 故意保持 1**：`investedGold` 是"缺省值即旧行为"的纯增量字段（老档读成 0 → 还原塔卖 0，
+与改动前一致）。升到 2 会让 `LoadBook` 把老玩家阵型整本作废。判断标准：只有"老档字段值会被新代码误读成
+另一个意思"时才必须升版本。
+
+**防刷金币论证（为什么这样不开口子）**：
+1. 返还额 = `min(售价, 投入) × 比例`，永远 ≤ 投入 → 卖塔本身不可能增殖；
+2. 还原塔的投入来自它自己的记录，卖它等于"退出前卖它"，不是白送钱；
+3. 关键是"卖塔立刻落盘"：塔从记录里消失 + 金币进记录，成对持久化；不写这一笔，
+   "卖完 → 退出 → 重进"会让塔带着投入额复活，同一座塔可反复卖 —— 那才是真漏洞。
+4. 若卖完立刻崩溃/杀进程：金币和塔一起回滚，等于没卖，无收益。
+
+**验证**：`refresh_unity(force/all/compile)` 后 `isCompiling=False`、`scriptCompilationFailed=False`、
+`read_console(filter="error CS")` 0 条。`execute_code` 验 JSON 往返：
+`{...,"investedGold":32}` 序列化正常，读回 32；老记录 `{"row","col","type","level"}` 读出 0。
+**未跑 Play Mode 实测**（没做"建塔→过一波→退出→重进→卖塔看金币"的完整链路）。
+Console 里残留的 3 条错误与本改动无关：`Unity Remote requirements check failed`（Android Remote）、
+`EventController.cs:112/140` 的 `RemoveEventListener<T,U>` 类型不匹配（既有双参数退订 bug，本次只用了单参数事件）。

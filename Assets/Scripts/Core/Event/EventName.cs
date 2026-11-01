@@ -55,6 +55,19 @@ namespace FTProject
         /// <summary>塔被销毁，参数：BaseTower</summary>
         public const string DestroyTower = "DestroyTower";
 
+        /// <summary>
+        /// 出售成交（金币已返还、格子已释放、塔已从塔列表移除），参数：BaseTower。
+        ///
+        /// 【为什么要单独一个事件，不复用 DestroyTower】
+        ///   阵型存档里现在带每座塔的累计投入（`TowerLayoutEntry.investedGold`），
+        ///   卖塔必须**立刻把新的塔阵与金币写盘**，否则"卖完 → 退出 → 重进"
+        ///   会让塔带着投入额复活，同一座塔可以被反复卖。
+        ///   `DestroyTower` 只表达"塔没了"（切关、清场也可能发），拿它触发落盘会误写；
+        ///   本事件只在 `TowerManager.Sell` 完成结算后发一次，语义是"这笔交易已经成立"。
+        ///   监听方必须能在塔对象仍有效时读取字段（发送点位于归还对象池之前）。
+        /// </summary>
+        public const string TowerSoldEvent = "TowerSoldEvent";
+
         /// <summary>选中一座已建造的塔（用于打开塔信息面板），参数：BaseTower</summary>
         public const string TowerSelectedEvent = "TowerSelectedEvent";
 

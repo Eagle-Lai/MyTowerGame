@@ -14,7 +14,8 @@ namespace FTProject
     ///     ③ 文案"确认出售？"顶掉"出售 (+46)"之后，玩家不知道自己点的是哪座塔。
     ///   独立弹窗能一次讲清：塔名 + 退回多少 + 不可撤销。
     ///
-    /// 【退回额怎么算】与 `TowerInfoView` 用同一口径（`Configs.Global.SellRefundRate × cfg.SellPrice`），
+    /// 【退回额怎么算】与 `TowerInfoView` / `TowerActionMenu` 走同一口径
+    ///   （`TowerManager.RefundOf` = `min(配置售价, 累计投入) × 返还比例`），
     ///   不在这里另算一套 —— 两处算法分叉是"按钮写退 46、实际退 30"这类 bug 的根源。
     /// </summary>
     public class SellConfirmView : MonoBehaviour
@@ -112,9 +113,9 @@ namespace FTProject
             {
                 _refundValue.text = refund.ToString();
             }
-            // 警告文案里的比例按"这一座塔"实算：返还额 ÷ 实际投入。
-            // 正常塔 ≈ 70%（售价本就是累计投入的七成）；免费还原的塔投入 0 → 显示 0%，
-            // 与"到账 0"一致，不会出现"写着退回 70%、结果一分没有"的错位。
+            // 警告文案里的比例按"这一座塔"实算：返还额 ÷ 累计投入。
+            // 正常塔 ≈ 70%（售价本就是累计投入的七成）；还原塔的投入取自阵型记录
+            //（2026-11-01 起随存档带回来），所以"退出前"和"重进后"显示同一个比例。
             if (_warnText != null)
             {
                 int invested = Mathf.Max(0, tower.InvestedGold);

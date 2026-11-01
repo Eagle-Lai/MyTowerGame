@@ -114,6 +114,8 @@ namespace FTProject
             EventDispatcher.AddEventListener<BaseTower>(EventName.TowerSellRequestEvent, OnTowerSellRequest);
             // UI 补全 C1：出售必须经确认弹窗后才真正执行（只监听"确认"事件）
             EventDispatcher.AddEventListener<BaseTower>(EventName.TowerSellConfirmEvent, OnTowerSellConfirm);
+            // 2026-11-01：出售成交 → 立刻落盘（记录里带每座塔的投入额，不写会让塔"复活"）
+            EventDispatcher.AddEventListener<BaseTower>(EventName.TowerSoldEvent, OnTowerSold);
             // M3：关卡选择 / 暂停 / 设置
             EventDispatcher.AddEventListener<int>(EventName.SelectLevelRequestEvent, OnSelectLevelRequest);
             EventDispatcher.AddEventListener(EventName.CloseSelectRequestEvent, OnCloseSelectRequest);
@@ -154,6 +156,7 @@ namespace FTProject
             EventDispatcher.RemoveEventListener(EventName.CloseSettingsRequestEvent, OnCloseSettingsRequest);
             EventDispatcher.RemoveEventListener<float>(EventName.GameSpeedChangeRequestEvent, OnGameSpeedChangeRequest);
             EventDispatcher.RemoveEventListener<BaseTower>(EventName.TowerSellConfirmEvent, OnTowerSellConfirm);
+            EventDispatcher.RemoveEventListener<BaseTower>(EventName.TowerSoldEvent, OnTowerSold);
             EventDispatcher.RemoveEventListener(EventName.StartGameRequestEvent, OnStartGameRequest);
             EventDispatcher.RemoveEventListener<bool>(EventName.OpenCodexRequestEvent, OnOpenCodexRequest);
         }
@@ -1365,6 +1368,62 @@ namespace FTProject
                 return;
             }
             TowerManager.Instance.Sell(tower);
+        }
+
+        /// <summary>
+        /// 出售成交后立刻落盘（2026-11-01）。
+        ///
+        /// 【为什么卖塔必须单独写一次】
+        ///   阵型记录里带每座塔的累计投入（`TowerLayoutEntry.investedGold`），
+        ///   还原塔卖出去能拿回投入的一部分。不写这一笔，"卖塔 → 退出 → 重进"
+        ///   会让塔带着投入额复活：玩家白卖一次，反复操作还能重复拿返还。
+        ///   "每波落盘"救不了它 —— 卖塔通常发生在两波之间，那一波可能永远不来。
+        /// 【为什么战斗中要裁掉半截波次】
+        ///   `_run.waves` 的最后一条是"正在打、还没结算"的那波。原样存下去，
+        ///   续局时 `StartRound` 会再 push 一条同序号的记录：波次明细重复，
+        ///   `completedWaveCount` 与 waves.Count 也会对不上。
+        ///   裁掉它不影响进度语义 —— 续局仍然从这一波重新开始（游标没有前进）。
+        /// 【为什么"还没通过任何一波"时不带进度】
+        ///   游标为 0 时没有可续的东西，写 `runSaved` 只会在下次进关被
+        ///   `RestoreSavedLevelState` 判成"波次游标越界"并刷一条警告。
+        ///   这时只存塔阵 + 金币/生命，记录形态与旧版一致。
+        /// 【为什么胜负已定时不写】
+        ///   `CompleteVictory` 写的是"重玩起点"（游标 0、无统计、带 runId）。
+        ///   结算后若还能卖塔，这一写会把那份记录改成"续局"，
+        ///   下次进关一落地就 `_roundCursor >= 波数`，又判一次通关。
+        /// </summary>
+        private void OnTowerSold(BaseTower tower)
+        {
+            if (Level == null || _run == null)
+            {
+                return;
+            }
+            if (State != GameFlowState.Preparing
+                && State != GameFlowState.RoundRunning
+                && State != GameFlowState.RoundComplete)
+            {
+                return;
+            }
+
+            LevelRunMetrics snapshot = _roundCursor > 0 ? _run : null;
+            if (snapshot != null && State == GameFlowState.RoundRunning
+                && snapshot.waves != null && snapshot.waves.Count > 0)
+            {
+                WaveRunMetrics tail = snapshot.waves[snapshot.waves.Count - 1];
+                if (tail != null && tail.ordinal == _roundCursor + 1)
+                {
+                    // Clone 是 JSON 深拷贝：改这份副本不会污染本局正在累加的统计
+                    snapshot = snapshot.Clone();
+                    snapshot.waves.RemoveAt(snapshot.waves.Count - 1);
+                }
+            }
+
+            // runId 传 null：卖塔不是通关，把某次通关的 runId 写到续局记录上
+            // 会让 `IsRunCommitted` 把这一局误判成已入档，结算时反而写不进星级。
+            LevelLayoutStore.SaveCurrentLevel(Level.Id, _roundCursor, snapshot, null);
+            Debug.Log(string.Format(
+                "[Layout] 第 {0} 关出售防御塔（{1}），塔阵已立即落盘",
+                Level.Id, tower != null ? tower.name : "已销毁"));
         }
 
         private static void Tips(string msg)
