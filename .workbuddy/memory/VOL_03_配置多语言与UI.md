@@ -33,9 +33,27 @@
 
 ## 改配置表的标准动作与三个坑（2026-10-31 实测）
 
+> ★★★**2026-11-01 重大变更：星级评分体系整体删除。** `tblevelrating` 表、30 张 `Levels/Lxx/LevelRating.xlsx`、
+> `LevelRatingEvaluator/Profile/Result`、`RatingPresentation`、`SaveProgressMigration`、`Configs.VerifyRatingContent/
+> CalculateRuntimeContentHash/ValidateRatingPlan/RatingContentVerified`、编辑器 `LevelRatingTests` 全部移除；
+> 通关一律记 `SaveManager.MaxStars`（5 星）。**本节下面关于 `runtimeContentHash` 重封的内容全部成为历史记录**，
+> 现在改表只需「改 xlsx → 跑 Luban 导出 → 进 Unity 看 `[Config]` 无失败表」。
+> 顺带：`.workbuddy/tools/_rating_hash.py` 已删除（没有哈希可重封了）。评分待 30 关数值定稿后重做。
+
 - **流程**（AGENTS.md 口径）：改 `Levels/Lxx/*.xlsx` → 跑 Luban（`DOTNET_ROLL_FORWARD=LatestMajor Luban/Tools/Luban.ClientServer/Luban.ClientServer.exe -j cfg -c Luban/.cache.meta -- -d Luban/Config/Defines/__root__.xml --input_data_dir Luban/Config/Datas --output_code_dir Assets/Gen --output_data_dir Assets/ConfigJson --gen_types code_cs_unity_json,data_json -s all`，别用 `gen_code_json.bat`，末尾 `pause` 会卡住非交互会话）→ **重封 `runtimeContentHash`**。
 - ★★**Luban 导出会删掉 `Assets/Gen/FTProject.Gen.asmdef`**（日志 `[remove] file: ...FTProject.Gen.asmdef`）。每导一次就要 `git checkout -- Assets/Gen/FTProject.Gen.asmdef`，否则 Gen 代码掉进别的程序集。同一次导出里 `Assets/Gen/*.cs` 只是行尾变化（git diff 为空），不用管。
 - ★★**`runtimeContentHash` 是全局哈希，同一个值写进全部 30 张 `Levels/Lxx/LevelRating.xlsx`**（不是每关一份）。算法权威是 `Configs.CalculateRuntimeContentHash`：9 张 json（多一个 `tblevelrules`，比 `balance_pipeline.py` 里那个 Python 版本多）按 `key\n内容\n` 拼接（去 BOM、CRLF→LF），再接 30 行评级字段（17 个，`runtimeContentHash` 自身不参与），SHA256 小写十六进制。
   - 实操校验法：先用该算法复算**改动前**的哈希，若等于表里现值（= Unity 日志 `[Rating] Runtime configuration SHA256 verified` 的那个），说明实现正确，再算改动后的值写回、重跑一次 Luban 让 `tblevelrating.json` 带上新值。
 - ★★**`EnemyList.desc` 里的 EHP 口径 = Σ hp ÷ (1−armor)**（含护甲），不是 Σhp。写调参记录时算错会留下假数据；先拿上一条记录的 EHP 反推验证口径再写。
-- ★`Levels/L01/EnemyData.xlsx` 的敌人变体是**每波一个独立 id**（如 W20=5000195、W21=5000205），`EnemyList.EnemyIndexs` 里只被该波引用 → 改某波血量不会外溢；改前确认 `isFlying` 与引用波次，避免改错行。
+- ★`Levels/L01/EnemyData.xlsx` 的敌人变体是**每波一个独立 id**（如 W20=5000195、W21=5000205、W22=5000215），`EnemyList.EnemyIndexs` 里只被该波引用 → 改某波血量不会外溢；改前确认 `isFlying` 与引用波次，避免改错行。
+- ★**现成重封脚本**：`.workbuddy/tools/_rating_hash.py`（2026-11-01 新建）。无参＝按 C# 算法复算并逐关打印 `OK/DIFF`；`--seal`＝写回 30 张 LevelRating 并回读校验。用法固定为「先无参复算改动前值 == 表内值，再改表导出，再 `--seal`」，`--seal` 之后必须**再跑一次 Luban** 让 `tblevelrating.json` 带上新值（哈希不含 `runtimeContentHash` 字段，重导不会改变哈希值）。
+- ★`Assets/ConfigJson/tbenemydata.json` 的 `hp` 被 Luban 序列化成 **6 位有效数字**（`546.033103` → `546.0331`、`491.429793` → `491.42978`）。游戏读的是 JSON 值，表里保留 6 位小数；误差 1e-5 量级，属既有行为，但**别拿 JSON 值反算百分比**（会算出 −10.0002% 之类）。
+
+## 改关卡数值的范围铁律与执行话术（2026-11-01 用户定规）
+
+- ★★★用户提出"改关卡数值"时：**先问再改**，不是先改再汇报。四问固定：①哪几关（`L01`…`L30` 具体编号）②粒度（表 / `roundId` / 怪种 / 字段）③数值与口径（目标值或倍率、基准是配置现值还是实测值）④本轮是否"全部关卡应用"。
+- 默认范围 = 用户点名的那一部分。禁止：顺手把其他关改成一致、把同类行一起对齐、做"顺便调平"、因导出产物看起来不一致而回改其他关的表。
+- 跨关授权只在**当次请求**有效；"上次你说过全部关卡"不能复用。
+- 交接口径：报告 `文件 / 关卡 / 波次 / 字段 / 旧值 → 新值`，并给出"其余关卡未改动"的可复核证据（`git diff --stat`、导出 json 行数比对）。
+- 常见误判排查：`runtimeContentHash` 要在 30 张 `LevelRating.xlsx` 写同一个值（全局哈希），这是流程要求、**不算**扩展到其他关；拆分不清时先看 `Assets/ConfigJson/tblevelrating.json` 是否 30 行同值。
+- 定位前先确认"这个 id 只被目标波次引用"（如 `EnemyList.EnemyIndexs` 只在 W22 引 `5000215`），确认后再动手；不确定就回到第①问向用户确认，不要自己扩大范围找"更合适"的行。
