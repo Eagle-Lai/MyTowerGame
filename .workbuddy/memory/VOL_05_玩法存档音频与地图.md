@@ -13,6 +13,11 @@
   - ★散帧 meta 必须 `alignment: 9`(Custom) + `spritePivot y = 0.2`；写成 `alignment: 1` = TopLeft（底中应是 7）→ 焰会被甩到炮口右下角。
   - 时长权威 = `BaseTower.SlowDurationSec` / `DotDurationSec`（2026-10-31 随子弹系统删除从 `BaseBullet` 迁入）。
 - ★建造交互 v3：点按 = 放置态；长按 0.25s 或位移 30px = 拖拽（ghost 跟手、松手校验、拖回按钮或拖出棋盘静默取消）。
+- ★★建造交互 v4（2026-11-01，**第三条建造入口 + 圆盘即射程**，旧两路原样保留）：
+  - 点**可建造空格**（非放置态）→ 弹建造圆盘（Kingdom Rush 式先选格子再选塔型）：事件 `BuildCellChosenEvent(row,col)`（`TowerPlacement.HandleSelectClick` 发，条件 = 空 + `IsBuildable` + `CellKeepsPathOpen`（只判定不画预览：`ComputePathWithExtraWall` 后立刻 ClearPreviewPath；A* 未就绪放行））→ `TowerBuildMenu`（HUD prefab 内，`TacticalForgePrefabBuilder.BuildTowerBuildMenu` 生成 Backdrop+三塔图标钮 BuildBtn_Normal/Power/Retard）。
+  - 同格再点一次=收起；点图标=轻复查格子后 `TowerManager.TryBuild(type,1,row,col)`（成功收起、失败留盘换塔型）；买不起置灰价格变红；塔名/价格运行时按表填。
+  - **塔动作菜单（TowerActionMenu）的暗色圆盘直径 = 选中塔的 `Config.RadiusWorld`**（UpdateRangeBackdrop：塔心与塔心+radius×相机右向量投 HUD 本地取距×2；减速塔即光环半径；取不到保持 388 默认）——用户定规"点已建塔时圆圈大小应与攻击/减速范围一致"。
+  - 坑：退订 onClick 必须具名方法（匿名 delegate 匹配不上）；Backdrop 必须在 Configure **之前**建（Configure 按名抓引用序列化）；ApplyContentSurfaces 会重刷按钮皮肤、TowerBuildMenu 子树要排除；重建走专项菜单「更新 HUD 建造圆盘（2026-11-01）」避开全量重建三副作用。
 - 地图链路：棋盘 → `levelmap_export.json` → `LevelMap.xlsx` → `tblevelmap.json` → `SceneInfo.xlsx`；日志前缀 `[Place]` / `[HUD]` / `[TowerInfoView]` / `[Audit]`。
 - ★新增一关 = 四表齐全：LevelMap(id) + SceneInfo(mapId、RoundList) + RoundData + EnemyList。
 - ★编辑器全解锁 = `SaveManager.UnlockAllLevelsInEditor`（真机仍逐关解锁）。

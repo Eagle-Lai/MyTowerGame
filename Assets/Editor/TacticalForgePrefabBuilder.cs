@@ -56,6 +56,17 @@ namespace FTProject.EditorTools
             AssetDatabase.SaveAssets();
             Debug.Log("[UIIssueFix20261028] Updated six views and the shared tower card, preserving prefab GUIDs and audio controls.");
         }
+        [MenuItem("Tools/塔防/Tactical Forge/更新 HUD 建造圆盘（2026-11-01）", false, 93)]
+        public static void ApplyTowerBuildMenu()
+        {
+            if(EditorApplication.isPlayingOrWillChangePlaymode)throw new InvalidOperationException("Edit Mode required.");
+            GenerateArt();
+            CreateTowerActionArt();
+            TacticalForgeAssets.CreatePortraits();
+            UpdateExisting(PathOf("HudView"));
+            AssetDatabase.SaveAssets();
+            Debug.Log("[TacticalForge] HudView.prefab 已写入建造圆盘（TowerBuildMenu：Backdrop + 三塔图标按钮，运行时行为见 TowerBuildMenu.cs）。");
+        }
         public static bool UpdateExisting(string path)
         {
             if (!Applies(System.IO.Path.GetFileNameWithoutExtension(path))) return false;
@@ -162,6 +173,7 @@ namespace FTProject.EditorTools
                 foreach(string band in new[]{"TopBar","BottomBar"})
                 {var tr=root.transform.Find(band);if(tr!=null)tr.gameObject.SetActive(false);}
                 BuildTowerActions(root);
+                BuildTowerBuildMenu(root);
             }
             else if(name=="TowerInfoView")
             {
@@ -267,7 +279,9 @@ namespace FTProject.EditorTools
             foreach(var button in root.GetComponentsInChildren<Button>(true))
             {
                 var actions=root.transform.Find("TowerActions");
-                if(button.name=="Bg" || (actions!=null && button.transform.IsChildOf(actions)))continue;
+                var buildMenu=root.transform.Find("TowerBuildMenu");
+                if(button.name=="Bg" || (actions!=null && button.transform.IsChildOf(actions))
+                    || (buildMenu!=null && button.transform.IsChildOf(buildMenu)))continue;
                 var image=button.GetComponent<Image>();if(image==null)continue;
                 bool primary=button.name=="ResumeBtn" || button.name=="PlayBtn" || button.name=="NextBtn" || button.name=="UpgradeBtn"
                     || (name=="MainMenuView" && (button.name=="StartBtn" || button.name=="ContinueBtn"))
@@ -372,11 +386,68 @@ namespace FTProject.EditorTools
             Button upgrade=RoundAction(root,"UpgradeBtn","Upgrade","upgrade",Cyan,new Vector2(0,146),"−90");
             Button sell=RoundAction(root,"SellBtn","Sell","sell",Hex("FFC94D"),new Vector2(-126,-72),"+22");
             Button more=RoundAction(root,"MoreBtn","More","more",Text,new Vector2(126,-72),null);
-            Ensure<TowerActionMenu>(root).Configure(actions,upgrade,sell,more);
             // The plate is decorative: clicks between the three actions still reach the board.
+            // 【顺序】Backdrop 必须先建、Configure 后调 —— Configure 里按名抓取并序列化引用。
             var plate=ImageAt(root.transform,"TowerActions/Backdrop");plate.sprite=AssetDatabase.LoadAssetAtPath<Sprite>(Art+"/Buttons/action-disc.png");plate.type=Image.Type.Simple;plate.color=new Color(.035f,.075f,.12f,.78f);plate.raycastTarget=false;
             plate.rectTransform.anchorMin=plate.rectTransform.anchorMax=plate.rectTransform.pivot=new Vector2(.5f,.5f);plate.rectTransform.sizeDelta=new Vector2(388,388);plate.rectTransform.anchoredPosition=Vector2.zero;plate.transform.SetAsFirstSibling();
+            Ensure<TowerActionMenu>(root).Configure(actions,upgrade,sell,more);
             actions.gameObject.SetActive(false);
+        }
+        /// <summary>
+        /// 建造圆盘（2026-11-01）：点击可建造空格时弹出的径向菜单 —— 装饰圆盘 + 三个塔图标按钮。
+        /// 与 TowerActions 同一套视觉语言（同一张 action-disc / action-circle 贴图与 124px 圆钮）；
+        /// 运行时行为见 TowerBuildMenu.cs（塔名/价格/可负担性由运行时按配置写入，prefab 里留空）。
+        /// 【幂等】节点与组件都是 Ensure 语义，重跑不会重复创建；Backdrop 必须在 Configure 之后
+        /// 再 SetAsFirstSibling 压到按钮底下（装饰、不挡射线）。
+        /// </summary>
+        private static void BuildTowerBuildMenu(GameObject root)
+        {
+            CreateTowerActionArt();
+            var actions=Node(root.transform,"TowerBuildMenu");
+            actions.anchorMin=actions.anchorMax=actions.pivot=new Vector2(.5f,.5f);
+            actions.sizeDelta=Vector2.zero;actions.anchoredPosition=Vector2.zero;actions.SetAsLastSibling();
+            // 布局口径与 TowerActions 一致：上(0,146) / 左下(-126,-72) / 右下(126,-72)，运行时还会按屏幕边缘内收
+            Button normal=IconAction(root,"BuildBtn_Normal",LoadTowerPortrait("normal"),Text,new Vector2(0,146));
+            Button power=IconAction(root,"BuildBtn_Power",LoadTowerPortrait("power"),Hex("FFC94D"),new Vector2(-126,-72));
+            Button retard=IconAction(root,"BuildBtn_Retard",LoadTowerPortrait("retard"),Cyan,new Vector2(126,-72));
+            // 【顺序】同 BuildTowerActions：Backdrop 先建、Configure 后调（序列化引用）。
+            var plate=ImageAt(root.transform,"TowerBuildMenu/Backdrop");
+            plate.sprite=AssetDatabase.LoadAssetAtPath<Sprite>(Art+"/Buttons/action-disc.png");plate.type=Image.Type.Simple;plate.color=new Color(.035f,.075f,.12f,.78f);plate.raycastTarget=false;
+            plate.rectTransform.anchorMin=plate.rectTransform.anchorMax=plate.rectTransform.pivot=new Vector2(.5f,.5f);plate.rectTransform.sizeDelta=new Vector2(388,388);plate.rectTransform.anchoredPosition=Vector2.zero;plate.transform.SetAsFirstSibling();
+            Ensure<TowerBuildMenu>(root).Configure(actions,normal,power,retard);
+            actions.gameObject.SetActive(false);
+        }
+        private static Sprite LoadTowerPortrait(string kind)
+        {
+            return AssetDatabase.LoadAssetAtPath<Sprite>(Art+"/TowerPortraits/tower-"+kind+".png");
+        }
+        /// <summary>
+        /// 建造圆盘的塔图标按钮：圆形底 + 塔头像 + 塔名 + 价格。
+        /// 结构对齐 RoundAction（Icon/Label/PriceText 同名子节点，TowerBuildMenu.Configure 按名查找）；
+        /// 区别是 Icon 直接用塔头像（无 accent 字形），Label/Price 运行时填充。
+        /// </summary>
+        private static Button IconAction(GameObject root,string name,Sprite portrait,Color accent,Vector2 position)
+        {
+            string path="TowerBuildMenu/"+name;
+            var button=ButtonAt(root.transform,path,"",false);
+            var rect=(RectTransform)button.transform;rect.anchorMin=rect.anchorMax=rect.pivot=new Vector2(.5f,.5f);
+            rect.anchoredPosition=position;rect.sizeDelta=new Vector2(124,124);
+            var image=button.GetComponent<Image>();image.sprite=AssetDatabase.LoadAssetAtPath<Sprite>(Art+"/Buttons/action-circle.png");image.type=Image.Type.Simple;image.color=Panel;
+            Ensure<CircularRaycastFilter>(button.gameObject);
+            var outline=Ensure<Outline>(image.gameObject);outline.effectColor=new Color(accent.r,accent.g,accent.b,.6f);outline.effectDistance=new Vector2(1,-1);
+            var icon=ImageAt(root.transform,path+"/Icon");icon.sprite=portrait;icon.color=Color.white;icon.raycastTarget=false;icon.preserveAspect=true;
+            icon.rectTransform.anchorMin=icon.rectTransform.anchorMax=icon.rectTransform.pivot=new Vector2(.5f,.5f);
+            icon.rectTransform.anchoredPosition=new Vector2(0,26);icon.rectTransform.sizeDelta=new Vector2(44,44);
+            var label=TextAt(root.transform,path+"/Label","",21);label.enableAutoSizing=true;label.fontSizeMin=15;label.margin=Vector4.zero;
+            label.rectTransform.anchorMin=label.rectTransform.anchorMax=label.rectTransform.pivot=new Vector2(.5f,.5f);
+            label.rectTransform.anchoredPosition=new Vector2(0,-8);label.rectTransform.sizeDelta=new Vector2(108,28);
+            label.enableWordWrapping=false;label.overflowMode=TextOverflowModes.Ellipsis;
+            var localizer=label.GetComponent<TextLocalizer>();if(localizer!=null)UnityEngine.Object.DestroyImmediate(localizer);
+            var value=TextAt(root.transform,path+"/PriceText","",21);value.alignment=TextAlignmentOptions.Center;value.margin=Vector4.zero;
+            value.rectTransform.anchorMin=value.rectTransform.anchorMax=value.rectTransform.pivot=new Vector2(.5f,.5f);
+            value.rectTransform.anchoredPosition=new Vector2(0,-38);value.rectTransform.sizeDelta=new Vector2(82,26);
+            value.enableWordWrapping=false;value.overflowMode=TextOverflowModes.Ellipsis;value.fontSizeMin=15;
+            return button;
         }
         private static Button RoundAction(GameObject root,string name,string key,string icon,Color accent,Vector2 position,string price)
         {

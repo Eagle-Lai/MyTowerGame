@@ -12,6 +12,8 @@ namespace FTProject
         [SerializeField] private Button upgradeButton;
         [SerializeField] private Button sellButton;
         [SerializeField] private Button moreButton;
+        /// <summary>背景装饰圆盘（TowerActions/Backdrop）。2026-11-01 起直径 = 选中塔的攻击/减速范围。</summary>
+        [SerializeField] private RectTransform backdrop;
         [SerializeField] private TMP_Text upgradeLabel;
         [SerializeField] private TMP_Text upgradePrice;
         [SerializeField] private TMP_Text sellLabel;
@@ -34,6 +36,8 @@ namespace FTProject
             sellLabel=sell.transform.Find("Label").GetComponent<TMP_Text>();
             sellPrice=sell.transform.Find("PriceText").GetComponent<TMP_Text>();
             moreLabel=more.transform.Find("Label").GetComponent<TMP_Text>();
+            // 背景圆盘（生成器已在 Configure 前建好节点）；prefab 里直接序列化引用，运行时免 Find
+            backdrop=actions.Find("Backdrop") as RectTransform;
         }
 
         private void Awake()
@@ -49,6 +53,11 @@ namespace FTProject
             upgradeButton.onClick.AddListener(Upgrade);
             sellButton.onClick.AddListener(Sell);
             moreButton.onClick.AddListener(More);
+            // Backdrop 在生成器里晚于 Configure 创建，这里兜底补引用（此后不再变化）
+            if (backdrop == null && menu != null)
+            {
+                backdrop = menu.Find("Backdrop") as RectTransform;
+            }
             SetVisible(false);
         }
 
@@ -116,7 +125,43 @@ namespace FTProject
                 ((RectTransform)moreButton.transform).anchoredPosition = more - local;
                 _lastAnchor = local; _lastBounds = _root.rect; _hasPlacement = true;
             }
+            UpdateRangeBackdrop(uiCamera);
             SetVisible(true);
+        }
+
+        /// <summary>
+        /// 背景圆盘直径 = 选中塔的攻击/减速范围（2026-11-01 需求：点已建造塔时，
+        /// 圆圈大小应与该塔的攻击/减速范围一致 —— 减速塔即光环半径，口径同为 Config.RadiusWorld）。
+        /// 换算方式：把"塔心"与"塔心 + radius × 相机右方向"两个世界点分别投到 HUD 本地坐标取距离，
+        /// 自动吸收相机正交尺寸与 CanvasScaler 的缩放，与按钮定位用同一套坐标。
+        /// 拿不到配置/半径时保持 prefab 里的默认尺寸（388），不把圆盘清掉。
+        /// </summary>
+        private void UpdateRangeBackdrop(Camera uiCamera)
+        {
+            if (backdrop == null || _root == null || _worldCamera == null || _tower == null) return;
+            float radius = _tower.Config != null ? _tower.Config.RadiusWorld : 0f;
+            if (radius <= 0f) return;
+            Vector3 center = _tower.Position;
+            Vector3 edge = center + (Vector3)(_worldCamera.transform.right * radius);
+            Vector2 a, b;
+            if (!ScreenToLocal(center, uiCamera, out a) || !ScreenToLocal(edge, uiCamera, out b)) return;
+            float diameter = (a - b).magnitude * 2f;
+            if (diameter <= 1f) return;
+            if (Mathf.Abs(backdrop.sizeDelta.x - diameter) > 0.5f)
+            {
+                backdrop.sizeDelta = new Vector2(diameter, diameter);
+            }
+        }
+
+        private bool ScreenToLocal(Vector3 world, Camera uiCamera, out Vector2 local)
+        {
+            Vector3 screen = _worldCamera.WorldToScreenPoint(world);
+            if (screen.z <= 0f)
+            {
+                local = Vector2.zero;
+                return false;
+            }
+            return RectTransformUtility.ScreenPointToLocalPointInRectangle(_root, screen, uiCamera, out local);
         }
 
         /// <summary>Button centers in HUD-local space; the tower anchor is never clamped.</summary>

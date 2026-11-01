@@ -174,6 +174,16 @@ namespace FTProject
         /// </summary>
         public const string TowerDragBeginEvent = "TowerDragBeginEvent";
 
+        /// <summary>
+        /// 玩家点击了"可建造的空格"，请求在该格弹出建造圆盘（2026-11-01），参数：(int row, int col)。
+        /// 【与 BuildTowerRequestEvent 的区别】后者 = 点 HUD 塔按钮**先选塔型再选格子**（ghost 放置态）；
+        /// 本事件 = **先选格子再选塔型**（圆盘径向菜单，对标 Kingdom Rush）。
+        /// TowerBuildMenu 消费本事件：打开/平移圆盘，同一格再点一次 = 收起。
+        /// 【发送点】TowerPlacement.HandleSelectClick 命中"空且可建、且不会堵死路径"的格子时发出；
+        /// 不可建/已占用的格子不发，A* 未就绪时降级放行（落地仍有 TryBuild 全套校验兜底）。
+        /// </summary>
+        public const string BuildCellChosenEvent = "BuildCellChosenEvent";
+
         // ------------------------------------------------------------------
         // 波次与流程
         // ------------------------------------------------------------------
