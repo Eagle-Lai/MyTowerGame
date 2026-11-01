@@ -333,11 +333,10 @@ namespace FTProject
                 body.GetComponent<Outline>().effectColor = levelId == id ? new Color(.208f,.878f,1f) : new Color(.325f,.404f,.498f);
                 TMP_Text label = body.Find("Label").GetComponent<TMP_Text>();
                 // 【2026-10-30】去掉了"Continue"这一档：局内不落盘，没有可续玩的局。
+                // 【2026-11-01】评级下线后只有两种状态：未解锁 / 已通关（恒 5 星）。
                 string status = !unlocked ? Localization.Get("Locked") ?? "Locked"
-                    : stars > 0 ? new string('★', stars) + new string('☆', LevelRatingEvaluator.MaxStars - stars)
-                    : save != null && save.GetLegacyStars(levelId) > 0
-                        ? Localization.Get("Legacy clear; current version unrated") ?? "Legacy clear; current version unrated"
-                        : Localization.Get("Current version unrated") ?? "Current version unrated";
+                    : stars > 0 ? new string('★', stars) + new string('☆', SaveManager.MaxStars - stars)
+                    : Localization.Get("Not cleared") ?? "未通关";
                 label.text = FormatGridLabel(levelId, levelId == id, status);
                 label.color = unlocked ? Color.white : new Color(.624f,.702f,.784f);
                 LanguageManager.ApplyFont(label);
@@ -750,27 +749,27 @@ namespace FTProject
             int cleared = SaveManager.Instance.ClearedCount;
             int stars = SaveManager.Instance.TotalStars;
             // 数字提亮、星级用金色（效果图 01 的 Summary 配色）
-            SetText(_summary, Localization.Get("Cleared <color=#E8F0FA>{0}/{1}</color>　<color=#FFC94D>★ {2}/{3}</color>", cleared, levelCount, stars, levelCount * LevelRatingEvaluator.MaxStars)
+            SetText(_summary, Localization.Get("Cleared <color=#E8F0FA>{0}/{1}</color>　<color=#FFC94D>★ {2}/{3}</color>", cleared, levelCount, stars, levelCount * SaveManager.MaxStars)
                 ?? string.Format(
                     "已通关 <color=#E8F0FA>{0}/{1}</color>　<color=#FFC94D>★ {2}/{3}</color>",
-                    cleared, levelCount, stars, levelCount * LevelRatingEvaluator.MaxStars));
+                    cleared, levelCount, stars, levelCount * SaveManager.MaxStars));
             SetText(_title, Localization.Get("Select Level") ?? "选择关卡");
         }
 
         /// <summary>星级字符串。用实心/空心星而不是数字，一眼能扫完所有关卡。</summary>
         public static string Stars(int n)
         {
-            n = Mathf.Clamp(n, 0, LevelRatingEvaluator.MaxStars);
-            return new string('★', n) + new string('☆', LevelRatingEvaluator.MaxStars - n);
+            n = Mathf.Clamp(n, 0, SaveManager.MaxStars);
+            return new string('★', n) + new string('☆', SaveManager.MaxStars - n);
         }
 
         /// <summary>星级富文本：已得星金色、未得星暗蓝灰（效果图 01）。**公开**给结算界面复用，
         /// 否则"同一个星级在两处长得不一样"（与 Stars() 同样的理由）。</summary>
         public static string StarRichText(int n)
         {
-            n = Mathf.Clamp(n, 0, LevelRatingEvaluator.MaxStars);
+            n = Mathf.Clamp(n, 0, SaveManager.MaxStars);
             return "<color=#FFC94D>" + new string('★', n) + "</color>" +
-                   "<color=#3F4E63>" + new string('☆', LevelRatingEvaluator.MaxStars - n) + "</color>";
+                   "<color=#3F4E63>" + new string('☆', SaveManager.MaxStars - n) + "</color>";
         }
 
         public static string Difficulty(int d)
