@@ -22,7 +22,7 @@ namespace FTProject
         public int level;
 
         /// <summary>
-        /// 这座塔**累计花了多少钱**（建造 + 历次升级）。0 = 没花过钱。
+        /// 这座塔**累计花了多少钱**（建造 + 历次升级）。
         ///
         /// 【为什么阵型里必须带钱（2026-11-01 追加）】
         ///   还原塔的出售返还走 `min(配置售价, 实际投入) × 比例`（见 `TowerManager.RefundOf`）。
@@ -31,10 +31,24 @@ namespace FTProject
         ///   带上它，还原塔的投入与它离开时的真值一致，买卖口径跨会话闭合。
         /// 【为什么存"投入"而不是"售价"】售价是配置常数，投入才随升级累加；
         ///   若把售价存进来当上限，等于每次还原都把上限放宽到满售价，返还就不再受投入约束。
-        /// 【老记录怎么读】JsonUtility 对缺失字段填 0，正好等于旧行为（还原塔卖 0），
-        ///   所以本次不需要升 FormatVersion —— 升版本会把老玩家的阵型整本作废。
+        /// 【老记录怎么读】JsonUtility 对缺失字段填 0；是否真的"存过"由
+        ///   <see cref="hasInvested"/> 判断，不能拿 0 当哨兵（见下）。
+        ///   本次不需要升 FormatVersion —— 升版本会把老玩家的阵型整本作废。
         /// </summary>
         public int investedGold;
+
+        /// <summary>
+        /// 这条记录是否带 <see cref="investedGold"/>。2026-11-01 之后写的一律为 true。
+        ///
+        /// 【为什么不用 investedGold == 0 当哨兵】"0 投入"和"不知道投入"是两件事：
+        ///   前者理论上不存在（建塔必然花钱），但把语义压在一个数值上，
+        ///   以后一旦出现合法 0（赠送塔、活动塔），"老档兜底"就会悄悄把赠送塔算成有投入。
+        ///   显式开关与 `resourcesSaved` / `runSaved` 的老档兼容策略保持一致。
+        /// 【false 时怎么算】老档没有投入信息，还原时用"本等级配置售价"兜底：
+        ///   `min(售价, 售价) × 比例` = 售价 × 比例，与正常塔的返还额完全一致，
+        ///   不会因为升级过而多发，也不会像写死 0 那样让返还凭空消失。
+        /// </summary>
+        public bool hasInvested;
     }
 
     /// <summary>单关的布阵与资源记录（一关只保留一份，后写整条覆盖前写）。</summary>
@@ -284,6 +298,9 @@ namespace FTProject
                     // 投入额一起存：还原时写回 InvestedGold，出售返还才不会因为
                     // "退出 → 重进"从"按投入算"退化成"+0"。
                     investedGold = tower.InvestedGold,
+                    // 显式声明"这条记录带投入"：老档没有这个字段、读出来是 false，
+                    // 还原时才知道该走"按配置售价兜底"而不是把 0 当真。
+                    hasInvested = true,
                 });
             }
             entries.Sort(CompareEntry);   // 固定顺序：同一套阵型每次序列化出来的字节一致，便于比对
@@ -411,11 +428,15 @@ namespace FTProject
                     {
                         continue;
                     }
-                    // invest 传记录里的投入额：老记录没这个字段时是 0，等于旧行为。
+                    // 投入额：新记录直接用存档值；老记录（hasInvested=false）没有这项信息，
+                    // 走"本等级配置售价"兜底 —— 算出来的返还额与正常塔完全一致
+                    //（min(售价, 售价) × 比例），既不因为升级过而多发，也不是写死 0。
                     // Mathf.Max 兜底脏数据，别让负数把 RefundOf 的 min 拉成负值。
+                    int invested = entry.hasInvested
+                        ? Mathf.Max(0, entry.investedGold)
+                        : FallbackInvested(entry.type, entry.level);
                     BaseTower tower = manager.RestoreTower(
-                        entry.type, entry.level, entry.row, entry.col,
-                        Mathf.Max(0, entry.investedGold));
+                        entry.type, entry.level, entry.row, entry.col, invested);
                     if (tower != null)
                     {
                         restored++;
@@ -435,6 +456,20 @@ namespace FTProject
                 "[Layout] 第 {0} 关阵型已免费还原：{1} 座（跳过 {2} 座，来源 runId={3}）",
                 layout.levelId, restored, skipped, string.IsNullOrEmpty(layout.runId) ? "-" : layout.runId));
             return restored;
+        }
+
+        /// <summary>
+        /// 老记录（没有 `investedGold`）的投入兜底：取本等级的配置售价。
+        ///
+        /// 【为什么是售价】售价在数值设计上就是"累计投入的约七成"，
+        ///   以它为上限算出来的返还额，与新记录里"投入 ≥ 售价"的正常塔完全一致 ——
+        ///   老档玩家不会因为这次改动而少拿或多拿。
+        /// 【配置缺失怎么办】改表删了行 / 类型越界时返回 0：宁可少给，不可凭空造钱。
+        /// </summary>
+        private static int FallbackInvested(int type, int level)
+        {
+            TowerConfig cfg = Configs.GetTowerByTypeAndLevel(type, level);
+            return cfg != null ? Mathf.Max(0, cfg.SellPrice) : 0;
         }
 
         // ------------------------------------------------------------------

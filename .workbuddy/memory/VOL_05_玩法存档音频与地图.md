@@ -125,8 +125,15 @@
 **用户选择**：把 `InvestedGold` 随阵型一起存盘，卖还原塔也按投入返还（方案 2），不接受"还原塔卖 0"。
 
 **改动（4 处代码契约 + 3 处注释口径）**：
-- `LevelLayout.TowerLayoutEntry.investedGold`（新增 int）——"这座塔累计花了多少钱"。
-  `SaveCurrentLevel` 采集 `tower.InvestedGold`；`RestoreTowers` 传 `Mathf.Max(0, entry.investedGold)`。
+- `LevelLayout.TowerLayoutEntry.investedGold`（新增 int）+ `hasInvested`（新增 bool）——
+  "这座塔累计花了多少钱"与"这条记录到底存没存过这笔钱"。
+  `SaveCurrentLevel` 采集 `tower.InvestedGold` 并置 `hasInvested = true`；
+  `RestoreTowers` 按 `hasInvested ? Mathf.Max(0, entry.investedGold) : FallbackInvested(type, level)` 传值。
+  **老档兜底**：`hasInvested=false` 时取 `Configs.GetTowerByTypeAndLevel(type,level).SellPrice`
+  ——`min(售价, 售价) × 比例` 与正常塔返还额完全一致，老玩家不会少拿也不会多发；
+  配置缺失返回 0（宁可少给，不可凭空造钱）。
+  **为什么不用 `investedGold == 0` 当哨兵**：把"0 投入"和"不知道投入"压在一个数值上，
+  将来出现合法 0（赠送塔/活动塔）时兜底会算错；显式开关与 `resourcesSaved`/`runSaved` 策略一致。
 - `TowerManager.RestoreTower(type, level, row, col, investedGold)` →
   `TryBuildInternal(..., bool charge, bool quiet, int investedGold = 0)`；
   记账行改为 `SetInvestedGold(charge ? cfg.Prices : Mathf.Max(0, investedGold))`。
@@ -142,9 +149,9 @@
 - UI 注释同步：`SellConfirmView` / `TowerActionMenu` / `TowerInfoView` 里"还原塔投入 0 → 显示 +0/0%"
   的说法已不成立，改成"按阵型记录里的累计投入算"。
 
-**★ FormatVersion 故意保持 1**：`investedGold` 是"缺省值即旧行为"的纯增量字段（老档读成 0 → 还原塔卖 0，
-与改动前一致）。升到 2 会让 `LoadBook` 把老玩家阵型整本作废。判断标准：只有"老档字段值会被新代码误读成
-另一个意思"时才必须升版本。
+**★ FormatVersion 故意保持 1**：`investedGold` / `hasInvested` 都是增量字段，老档读成 `0 / false`，
+配合开关可以精确走"按配置售价兜底"，语义没有歧义。升到 2 会让 `LoadBook` 把老玩家阵型整本作废。
+判断标准：只有"老档字段值会被新代码误读成另一个意思"时才必须升版本。
 
 **防刷金币论证（为什么这样不开口子）**：
 1. 返还额 = `min(售价, 投入) × 比例`，永远 ≤ 投入 → 卖塔本身不可能增殖；
@@ -154,8 +161,10 @@
 4. 若卖完立刻崩溃/杀进程：金币和塔一起回滚，等于没卖，无收益。
 
 **验证**：`refresh_unity(force/all/compile)` 后 `isCompiling=False`、`scriptCompilationFailed=False`、
-`read_console(filter="error CS")` 0 条。`execute_code` 验 JSON 往返：
-`{...,"investedGold":32}` 序列化正常，读回 32；老记录 `{"row","col","type","level"}` 读出 0。
+`read_console(filter="error CS")` 0 条。`execute_code` 验 JSON 往返：新记录序列化为
+`{"row":1,"col":2,"type":1,"level":1,"investedGold":32,"hasInvested":true}`，读回 `32/True`；
+老记录 `{"row","col","type","level"}` 读出 `0/False`（走兜底）。数值口径已用 `tbtowerinfo` 静态核对：
+type1 Lv1 `prices=32`、`sellPrice=22` → 新塔返还 `min(22,32)=22`，老档兜底 `min(22,22)=22`，两者相等。
 **未跑 Play Mode 实测**（没做"建塔→过一波→退出→重进→卖塔看金币"的完整链路）。
 Console 里残留的 3 条错误与本改动无关：`Unity Remote requirements check failed`（Android Remote）、
 `EventController.cs:112/140` 的 `RemoveEventListener<T,U>` 类型不匹配（既有双参数退订 bug，本次只用了单参数事件）。
