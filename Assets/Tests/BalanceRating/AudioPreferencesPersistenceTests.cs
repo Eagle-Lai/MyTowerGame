@@ -42,7 +42,8 @@ namespace FTProject.Tests
             {
                 storage.Initialize(); var settings = storage.LoadSettings();
                 Assert.That(settings.audio.master, Is.Zero); Assert.That(settings.audio.music, Is.EqualTo(.25f)); Assert.That(settings.audio.sfx, Is.Zero); Assert.That(settings.audio.muted, Is.True);
-                if (legacy) { Assert.That(settings.language, Is.EqualTo("zh-Hant")); Assert.That(storage.LoadLevels()[0].ratingVersionKey, Is.EqualTo("keep")); Assert.That(storage.LoadSnapshot().roundCursor, Is.EqualTo(3)); }
+                // 旧存档里的 ratingVersionKey 已随评级系统删除：这里改为验证该未知字段被安全忽略、星级仍然读回。
+                if (legacy) { Assert.That(settings.language, Is.EqualTo("zh-Hant")); Assert.That(storage.LoadLevels()[0].stars, Is.EqualTo(4)); Assert.That(storage.LoadSnapshot().roundCursor, Is.EqualTo(3)); }
                 storage.SaveSettings(settings); Assert.That(storage.LastError, Is.Null.Or.Empty);
             }
         }
