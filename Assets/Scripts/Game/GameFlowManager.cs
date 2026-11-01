@@ -83,13 +83,11 @@ namespace FTProject
         ///   "本局**之前**的历史星级"就已经被 RecordClear 覆盖了，再也拿不回来。
         /// </summary>
         private LevelClearInfo _pendingResult;
-        private LevelRatingProfile _ratingProfile;
         private LevelRunMetrics _run;
         private readonly HashSet<BaseEnemy> _unresolvedEnemies = new HashSet<BaseEnemy>();
         private bool _settled;
-        private LevelRatingResult _pendingSaveResult;
+        private LevelRunMetrics _pendingSaveResult;
         public LevelRunMetrics RunMetrics { get { return _run != null ? _run.Clone() : null; } }
-        public LevelRatingProfile RatingProfile { get { return _ratingProfile != null ? _ratingProfile.Clone() : null; } }
 
 
         /// <summary>当前回合序号（从 1 计，0 = 尚未开始）</summary>
@@ -279,25 +277,9 @@ namespace FTProject
             // 【为什么放在这里而不是方法最开头】上面的关卡/棋盘校验失败会提前 return，
             // 那次不算"进了一关"；放在校验之后，计时只在真正开始建关时启动。
             GameClock.ResetLevelTimer();
-            _ratingProfile = Configs.GetLevelRating(levelId);
-            _ratingProfile = _ratingProfile != null ? _ratingProfile.Clone() : null;
-            string ratingError;
-            if (!Configs.RatingContentVerified || !Configs.ValidateRatingPlan(_ratingProfile, out ratingError))
-            {
-                Debug.LogError("[Rating] Level cannot start: rating config missing, invalid, or content hash mismatch");
-                State = GameFlowState.None;
-                GameAudio.EndLevel();
-                return;
-            }
-            _run = new LevelRunMetrics { runId = System.Guid.NewGuid().ToString("N"), statisticsValid = true, timingValid = true };
-            if (_ratingProfile != null)
-            {
-                _run.profileId = _ratingProfile.profileId; _run.profileRevision = _ratingProfile.profileRevision;
-                _run.balanceRevision = _ratingProfile.balanceRevision; _run.ratingRevision = _ratingProfile.ratingRevision; _run.planHash = _ratingProfile.planHash;
-                _run.expectedWaveCount = _ratingProfile.expectedWaveCount; _run.expectedEnemyCount = _ratingProfile.expectedEnemyCount;
-            }
+            // 2026-11-01：评级体系下线，进关不再需要"评级配置齐全 + 内容哈希一致"，也不会因此拦停。
+            _run = new LevelRunMetrics { runId = System.Guid.NewGuid().ToString("N") };
             _settled = false; _pendingResult = null; _pendingSaveResult = null; _unresolvedEnemies.Clear();
-            SaveManager.Instance.EnsureRatingVersion(levelId);
 
             float cellSize = Configs.Global.CellSize;
             // 棋盘左上角原点：让棋盘几何中心正好落在世界原点
@@ -353,6 +335,9 @@ namespace FTProject
             // ⑨ 回合队列
             _roundIds = Level.RoundIds != null ? new List<int>(Level.RoundIds) : new List<int>();
             _roundCursor = 0;
+            // 计划量取自关卡配置本身（回合 → 波次 → 怪物列表），不再依赖评级表。
+            _run.expectedWaveCount = _roundIds.Count;
+            _run.expectedEnemyCount = CountPlannedEnemies();
 
             // ⑨.5 【2026-10-31】把上一次的记录还原回来（波次游标 + 运行统计 + 金币生命 + 塔阵）。
             //   · 放在回合队列之后：游标要跟 `_roundIds.Count` 对得上才不会越界。
@@ -426,9 +411,7 @@ namespace FTProject
             if (saved.runSaved && saved.runMetrics != null)
             {
                 string reject = null;
-                if (_ratingProfile == null) reject = "评级配置缺失";
-                else if (saved.runMetrics.versionKey != _ratingProfile.versionKey) reject = "评级版本已变（改过数值表）";
-                else if (SaveManager.Instance.IsRunCommitted(levelId, saved.runMetrics.runId)) reject = "该局已入档";
+                if (SaveManager.Instance.IsRunCommitted(levelId, saved.runMetrics.runId)) reject = "该局已入档";
                 else if (saved.roundCursor <= 0 || saved.roundCursor >= _roundIds.Count) reject = "波次游标越界";
 
                 if (reject != null)
@@ -821,15 +804,15 @@ namespace FTProject
 
             ShowClearPopup(victory);
         }
-        private LevelRatingResult EvaluateRun(bool victory)
+        private LevelRunMetrics EvaluateRun(bool victory)
         {
-            if (_run == null) return LevelRatingEvaluator.Evaluate(_ratingProfile, null);
+            if (_run == null) return null;
             _run.victory = victory;
             var pd = PlayerDataManager.Instance;
             _run.hp = pd != null ? pd.Hp : 0; _run.maxHp = pd != null ? pd.MaxHp : 0;
             _run.combatElapsedSeconds = GameClock.CombatElapsedSeconds;
             _run.levelElapsedSeconds = GameClock.LevelElapsedSeconds;
-            return LevelRatingEvaluator.Evaluate(_ratingProfile, _run);
+            return _run;
         }
         private void CompleteVictory()
         {
@@ -837,31 +820,26 @@ namespace FTProject
             _settled = true;
             GameClock.StopLevelTimer();
             State = GameFlowState.GameOver;
-            var result = EvaluateRun(true);
+            var metrics = EvaluateRun(true);
             int previousBest = SaveManager.Instance.GetStars(Level.Id);
-            bool saved = result.valid && SaveManager.Instance.RecordClear(Level.Id, result);
+            // 2026-11-01：通关即 5 星（评级系统重建前的临时口径），不再有任何条件判定。
+            bool saved = metrics != null && SaveManager.Instance.RecordClear(Level.Id, metrics);
             // 【2026-10-31】通关即落盘本关阵型（同一关再次通关 = 清旧写新，整条替换）。
-            //   只在成绩真的写进存档之后记阵型：记录失败的局（debugOverride / 统计失效）
+            //   只在成绩真的写进存档之后记阵型：记录失败的局（debugOverride）
             //   本来就不算"通关"，跟着记会污染阵型记录。
             if (saved)
             {
-                // 通关这一笔传空统计 + 游标 0：下次再进这一关属于"重玩"，从第 1 波、全新评级开始；
+                // 通关这一笔传空统计 + 游标 0：下次再进这一关属于"重玩"，从第 1 波开始；
                 // 否则一进关就 `_roundCursor >= _roundIds.Count`，会立刻再判一次通关。
-                LevelLayoutStore.SaveCurrentLevel(Level.Id, 0, null,
-                    result.metrics != null ? result.metrics.runId : null);
+                LevelLayoutStore.SaveCurrentLevel(Level.Id, 0, null, metrics.runId);
             }
-            _pendingSaveResult = result.valid && !saved ? result : null;
-            _pendingResult = BuildClearInfo(true, result.stars, previousBest);
-            _pendingResult.ratingResult = result;
+            _pendingSaveResult = metrics != null && !saved ? metrics : null;
+            _pendingResult = BuildClearInfo(true, SaveManager.MaxStars, previousBest);
             _pendingResult.progressSaved = saved;
-            _pendingResult.savePending = result.valid && !saved;
-            _pendingResult.newRecord = saved && result.stars > previousBest;
-            if (_pendingResult.savePending)
-            {
-                var reasons = new List<string>(result.reasons); reasons.Add("Record could not be saved; retry save"); result.reasons = reasons.ToArray();
-                Debug.LogWarning("[Save] Record not yet saved; retry saving before leaving.");
-            }
-            EventDispatcher.TriggerEvent<int, int, int>(EventName.LevelClearEvent, Level.Id, result.stars, PlayerDataManager.Instance.Hp);
+            _pendingResult.savePending = metrics != null && !saved;
+            _pendingResult.newRecord = saved && SaveManager.MaxStars > previousBest;
+            if (_pendingResult.savePending) Debug.LogWarning("[Save] Record not yet saved; retry saving before leaving.");
+            EventDispatcher.TriggerEvent<int, int, int>(EventName.LevelClearEvent, Level.Id, SaveManager.MaxStars, PlayerDataManager.Instance.Hp);
             PlayerDataManager.Instance.Win();
         }
         public bool RetryPendingClearSave()
@@ -871,11 +849,9 @@ namespace FTProject
             // 补写成绩成功时，阵型要跟着补记一次：第一次进 CompleteVictory 时 saved=false，
             // 那条分支没写阵型；玩家这一局打完的布阵不该因为"存档晚了一步"就丢掉。
             // 同样按"重玩起点"写（游标 0、不带运行统计）。
-            LevelLayoutStore.SaveCurrentLevel(Level.Id, 0, null,
-                _pendingSaveResult.metrics != null ? _pendingSaveResult.metrics.runId : null);
+            LevelLayoutStore.SaveCurrentLevel(Level.Id, 0, null, _pendingSaveResult.runId);
             _pendingResult.progressSaved = true; _pendingResult.savePending = false;
             _pendingResult.newRecord = _pendingResult.stars > _pendingResult.previousBest;
-            _pendingResult.ratingResult = LevelRatingEvaluator.Evaluate(_pendingSaveResult.profile, _pendingSaveResult.metrics);
             _pendingSaveResult = null;
             var view = UIManager.Instance.Open<LevelClearView>(LevelClearView.LogicalName, UILayout.NormalPanel);
             if (view != null) view.Show(_pendingResult);
@@ -884,16 +860,15 @@ namespace FTProject
         public void MarkDebugRun() { if (_run != null) _run.debugOverride = true; }
         public void InvalidateRun(string reason)
         {
-            if (_run != null) _run.statisticsValid = false;
             GameClock.StopLevelTimer(); _wave.Stop();
-            Debug.LogError("[Rating] Formal run invalidated: " + reason);
+            Debug.LogError("[Flow] Run invalidated: " + reason);
             State = GameFlowState.GameOver;
             ShowClearPopup(false);
         }
         public void NotifyEnemySpawned(BaseEnemy enemy)
         {
             if (_run == null || State != GameFlowState.RoundRunning || enemy == null) return;
-            if (!_unresolvedEnemies.Add(enemy)) { _run.statisticsValid = false; return; }
+            if (!_unresolvedEnemies.Add(enemy)) return;
             _run.successfulSpawned++;
             GameClock.SetCombatRunning(true);
             if (_run.waves.Count > 0)
@@ -908,15 +883,13 @@ namespace FTProject
         {
             if (_run == null || enemy == null || !_unresolvedEnemies.Remove(enemy)) return;
             // Read identity before ReachedEnd recycles the object; HP is read only at final settlement.
-            int id = enemy.Config != null ? enemy.Config.Id : 0;
-            bool boss = _ratingProfile != null && _ratingProfile.bossVariantIds.Contains(id);
-            bool critical = _ratingProfile != null && _ratingProfile.criticalVariantIds.Contains(id);
-            if (leaked) { _run.leaked++; if (boss) _run.bossLeaked++; if (critical) _run.criticalLeaked++; }
+            bool boss = enemy.Config != null && enemy.Config.Type == EnemyType.Boss;
+            if (leaked) { _run.leaked++; if (boss) _run.bossLeaked++; }
             else _run.killed++;
             if (_run.waves.Count > 0)
             {
                 var wave = _run.waves[_run.waves.Count - 1];
-                if (leaked) { wave.leaked++; if (boss) wave.bossLeaked++; if (critical) wave.criticalLeaked++; }
+                if (leaked) { wave.leaked++; if (boss) wave.bossLeaked++; }
                 else { wave.killed++; wave.killGold += reward; }
                 // The last planned entity has settled; death animation recycling does not count.
                 if (wave.successfulSpawned == wave.expected && wave.killed + wave.leaked == wave.expected) GameClock.SetCombatRunning(false);
@@ -948,11 +921,10 @@ namespace FTProject
             }
             else
             {
-                // Failure and debug previews use the same evaluator without persisting progress.
+                // 失败与调试预览：只补全本局账目，不写档；星级一律 0。
                 int previousBest = Level != null ? SaveManager.Instance.GetStars(Level.Id) : 0;
-                LevelRatingResult result = EvaluateRun(victory);
-                info = BuildClearInfo(victory, result.stars, previousBest);
-                info.ratingResult = result;
+                EvaluateRun(victory);
+                info = BuildClearInfo(victory, 0, previousBest);
             }
             // Keep the same frozen result if a duplicate event reopens the popup.
             _pendingResult = info;
@@ -967,6 +939,25 @@ namespace FTProject
             view.Show(info);
         }
 
+        /// <summary>
+        /// 本关"计划敌人数" = 各回合对应波次的怪物列表长度之和。
+        /// 【为什么还要它】续局快照与结算统计需要"应出多少怪"这个基准；以前从评级表读，
+        ///   评级表删掉后改为直接从回合/波次配置算，口径与 ValidateRatingPlan 当年一致。
+        /// </summary>
+        private int CountPlannedEnemies()
+        {
+            if (_roundIds == null || Configs.RoundTable == null) return 0;
+            int total = 0;
+            for (int i = 0; i < _roundIds.Count; i++)
+            {
+                var round = Configs.RoundTable.GetOrDefault(_roundIds[i]);
+                if (round == null || round.EnemyIndexs == null || round.EnemyIndexs.Count != 1) continue;
+                var wave = Configs.WaveTable != null ? Configs.WaveTable.GetOrDefault(round.EnemyIndexs[0]) : null;
+                if (wave != null && wave.EnemyIndexs != null) total += wave.EnemyIndexs.Count;
+            }
+            return total;
+        }
+
         /// <summary>把"这一局的结果"组装成结算界面需要的数据。</summary>
         private LevelClearInfo BuildClearInfo(bool victory, int stars, int previousBest)
         {
@@ -975,14 +966,18 @@ namespace FTProject
             info.victory = victory;
             info.levelId = Level != null ? Level.Id : 0;
             info.levelName = Level != null ? Localization.LevelName(Level.Id, Level.Name) : null;
-            info.stars = Mathf.Clamp(stars, 0, LevelRatingEvaluator.MaxStars);
-            info.previousBest = Mathf.Clamp(previousBest, 0, LevelRatingEvaluator.MaxStars);
+            info.stars = Mathf.Clamp(stars, 0, SaveManager.MaxStars);
+            info.previousBest = Mathf.Clamp(previousBest, 0, SaveManager.MaxStars);
             // 只有"打得比历史最好还好"才算刷新记录；平了不算
             info.newRecord = victory && info.stars > info.previousBest;
             info.hp = pd != null ? pd.Hp : 0;
             info.maxHp = pd != null ? pd.MaxHp : 0;
             info.killed = pd != null ? pd.TotalKilled : 0;
             info.leaked = pd != null ? pd.TotalLeaked : 0;
+            // 用时与首领漏怪直接取本局账目：结算界面不再有"五星上限用时"的对比项
+            info.bossLeaked = _run != null ? _run.bossLeaked : 0;
+            info.combatTimeMs = _run != null ? (int)Mathf.Max(0f, (float)_run.combatElapsedMs) : 0;
+            info.levelTimeMs = _run != null ? (int)Mathf.Max(0f, (float)_run.levelElapsedMs) : 0;
             FindNextLevel(info);
             return info;
         }

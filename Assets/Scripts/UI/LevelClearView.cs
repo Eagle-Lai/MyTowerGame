@@ -167,38 +167,31 @@ namespace FTProject
                 ?? string.Format("剩余生命 {0}/{1}　　击杀 {2}　　漏怪 {3}",
                     info.hp, info.maxHp, info.killed, info.leaked));
 
-            LevelRatingResult result = info.ratingResult;
-            LevelRunMetrics metrics = result != null ? result.metrics : null;
-            LevelRatingProfile profile = result != null ? result.profile : null;
-            string combatTime = RatingPresentation.Time(metrics != null ? metrics.combatElapsedMs : 0);
-            string parTime = RatingPresentation.Time(profile != null ? profile.parCombatTimeMs : 0);
-            string levelTime = RatingPresentation.Time(metrics != null ? metrics.levelElapsedMs : 0);
-            SetText(_ratingTimes, Localization.Get("Combat {0} / Par {1} · Level {2}", combatTime, parTime, levelTime)
-                ?? string.Format("战斗 {0} / 五星上限 {1} · 整局 {2}", combatTime, parTime, levelTime));
-            string context = profile == null ? string.Empty
-                : SelectView.Difficulty(profile.difficultyTier) + " · "
-                    + (Localization.Get("Balance preset: {0}", RatingPresentation.ProfileName(profile.profileId))
-                        ?? ("调参预设：" + RatingPresentation.ProfileName(profile.profileId)));
-            if (metrics != null)
-            {
-                context += "\n" + (Localization.Get("Boss leaks {0} · Critical leaks {1}", metrics.bossLeaked, metrics.criticalLeaked)
-                    ?? string.Format("首领漏怪 {0} · 精英及首领漏怪 {1}", metrics.bossLeaked, metrics.criticalLeaked));
-            }
-            SetText(_ratingContext, context);
-            SetText(_ratingReasons, RatingPresentation.Reasons(result));
+            // ---- 用时与首领漏怪 ----
+            // 【2026-11-01】星级评分体系下线后这里只剩纯统计：
+            //   原来的「评分原因 / 五星上限用时 / 调参预设 / 精英漏怪」全部删除，
+            //   `RatingReasons` 节点保留在预制体里但强制隐藏，避免旧布局留一块空白。
+            string combatTime = SaveManager.FormatPreciseTime(info.combatTimeMs);
+            string levelTime = SaveManager.FormatPreciseTime(info.levelTimeMs);
+            SetText(_ratingTimes, Localization.Get("Combat {0} · Level {1}", combatTime, levelTime)
+                ?? string.Format("战斗 {0} · 整局 {1}", combatTime, levelTime));
+            SetText(_ratingContext, info.bossLeaked > 0
+                ? (Localization.Get("Boss leaks {0}", info.bossLeaked) ?? string.Format("首领漏怪 {0}", info.bossLeaked))
+                : string.Empty);
+            if (_ratingReasons != null && _ratingReasons.gameObject.activeSelf) _ratingReasons.gameObject.SetActive(false);
 
             // ---- 按钮 ----
             // 三种情况分开处理，避免"最后一关却显示一个可点的下一关"或
             // "失败时显示已是最后一关"这类自相矛盾的文案。
             if (_nextBtn != null)
             {
-                if (!info.victory || !info.progressSaved || info.savePending || result == null || !result.valid)
+                if (!info.victory || !info.progressSaved || info.savePending)
                 {
                     _nextBtn.gameObject.SetActive(false);          // 失败没有下一关可言
                 }
                 else
                 {
-                    bool canGo = info.hasNext && info.nextLevelId > 0 && result != null && result.valid;
+                    bool canGo = info.hasNext && info.nextLevelId > 0;
                     _nextBtn.gameObject.SetActive(canGo);
                     _nextBtn.interactable = canGo;
                     if (!canGo)
@@ -233,7 +226,6 @@ namespace FTProject
         private void OnClickNext()
         {
             if (_info == null || !_info.victory || !_info.progressSaved || _info.savePending
-                || _info.ratingResult == null || !_info.ratingResult.valid
                 || !_info.hasNext || _info.nextLevelId <= 0)
             {
                 return;
