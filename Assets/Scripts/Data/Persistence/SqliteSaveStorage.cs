@@ -169,7 +169,9 @@ namespace FTProject
                     // 星级非法（>3）说明密文被换过或历史脏数据 —— 夹紧而不是丢弃整条记录，
                     // 丢掉会让玩家平白少一关进度。
                     if (p.stars < 0) p.stars = 0;
-                    if (p.stars > LevelRatingEvaluator.MaxStars) p.stars = LevelRatingEvaluator.MaxStars;
+                    if (p.stars > SaveManager.MaxStars) p.stars = SaveManager.MaxStars;
+                    // 【2026-11-01】评级下线：已通关但星数为 0 的老档补成满星（新口径：通关即 5 星）。
+                    if (p.stars <= 0 && p.Cleared) p.stars = SaveManager.MaxStars;
                     if (p.levelId > 0)
                     {
                         list.Add(p);
@@ -201,7 +203,7 @@ namespace FTProject
         private void WriteLevel(LevelProgress progress)
         {
             long now = SaveSchema.Now();
-            _db.Execute("INSERT OR REPLACE INTO level_progress (level_id, stars, best_hp_left, clear_count, best_time_ms, last_play_at, updated_at, rating_payload) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)", progress.levelId, ProtectInt(Mathf.Clamp(progress.stars, 0, LevelRatingEvaluator.MaxStars)), ProtectInt(progress.bestHpLeft), ProtectInt(progress.clearCount), ProtectInt(progress.bestTimeMs), now, now, Protect(JsonUtility.ToJson(progress)));
+            _db.Execute("INSERT OR REPLACE INTO level_progress (level_id, stars, best_hp_left, clear_count, best_time_ms, last_play_at, updated_at, rating_payload) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)", progress.levelId, ProtectInt(Mathf.Clamp(progress.stars, 0, SaveManager.MaxStars)), ProtectInt(progress.bestHpLeft), ProtectInt(progress.clearCount), ProtectInt(progress.bestTimeMs), now, now, Protect(JsonUtility.ToJson(progress)));
         }
         public bool CommitClear(LevelProgress progress)
         {

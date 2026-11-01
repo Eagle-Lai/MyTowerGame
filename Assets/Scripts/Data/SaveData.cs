@@ -12,7 +12,11 @@ namespace FTProject
     public class LevelProgress
     {
         public int levelId;
-        /// <summary>当前完整评级版本的星级 0~5；0 表示本版尚未评定。</summary>
+        /// <summary>
+        /// 本关星级 0~5。
+        /// 【2026-11-01】星级评分体系下线，通关一律记 `SaveManager.MaxStars`（5）；
+        /// 保留该字段而不是删除，是为了老存档里的记录与选关界面的汇总星数继续成立。
+        /// </summary>
         public int stars;
         /// <summary>历史最好成绩（剩余生命），仅用于展示</summary>
         public int bestHpLeft;
@@ -25,8 +29,10 @@ namespace FTProject
         /// </summary>
         public int bestTimeMs;
         public int bestCombatTimeMs;
-        public string ratingVersionKey;
-        public LevelRatingResult bestRating;
+        /// <summary>
+        /// 【只读兼容字段】旧版按"评级版本"归档的历史成绩。
+        /// 2026-11-01 评级系统下线后不再写入，只保留解析，避免老存档里已归档的通关记录被当成"没通关"。
+        /// </summary>
         public List<LegacyLevelProgress> legacy = new List<LegacyLevelProgress>();
         public List<string> committedRunIds = new List<string>();
         public bool Cleared { get { return stars > 0 || clearCount > 0 || (legacy != null && legacy.Exists(p => p.stars > 0 || p.clearCount > 0)); } }
@@ -37,7 +43,6 @@ namespace FTProject
     {
         public string versionKey;
         public int stars, bestTimeMs, bestCombatTimeMs, bestHpLeft, clearCount;
-        public LevelRatingResult bestRating;
     }
 
     /// <summary>玩家设置：语言。</summary>
@@ -105,7 +110,6 @@ namespace FTProject
         public int maxHp;
         public List<TowerSnapshot> towers = new List<TowerSnapshot>();
         public int formatVersion;
-        public LevelRatingProfile ratingProfile;
         public LevelRunMetrics metrics;
         public bool levelTimerStarted;
         public float autoNextRemainingSeconds;
