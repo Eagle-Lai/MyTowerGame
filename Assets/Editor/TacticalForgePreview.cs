@@ -70,6 +70,26 @@ namespace FTProject.EditorTools
             var level=new LevelConfig(levels[0]);
             var map=maps.FirstOrDefault(x=>x.LevelId==level.Id);
             Action<string,string> textAt=(path,value)=>{var node=root.transform.Find(path);if(node!=null)node.GetComponent<TMP_Text>().text=value;};
+            if(name=="HotUpdateView")
+            {
+                var lang=LanguageUtil.FromCode(language);
+                textAt("Panel/HotTitle",AOT.BootLocalization.Get("Title",lang));
+                textAt("Panel/Subtitle",AOT.BootLocalization.Get("Slogan",lang));
+                textAt("Panel/PhaseText",AOT.BootLocalization.Get(state.Contains("failed")?"Failed":"Checking",lang));
+                textAt("Panel/PercentText","37%");
+                var fill=(RectTransform)root.transform.Find("Panel/ProgressBar/Fill");fill.sizeDelta=new Vector2(HotUpdateView.FillMaxWidth*.37f,fill.sizeDelta.y);
+            }
+            if(name=="LoadingView")
+            {
+                bool failed=state.Contains("failed");
+                textAt("Panel/StatusText",tr(failed?"Config load failed, retrying...":state.Contains("complete")?"Starting...":"Loading config..."));
+                if(failed)root.transform.Find("Panel/StatusText").GetComponent<TMP_Text>().color=new Color(1f,.302f,.369f);
+                textAt("Panel/PercentText",state.Contains("complete")?"100%":"37%");
+                textAt("Panel/TipText",tr("You can build on any open ground; paths recompute in real time."));
+                if(failed)root.transform.Find("Panel/PercentText").GetComponent<TMP_Text>().color=new Color(1f,.302f,.369f);
+                foreach(string button in new[]{"RetryBtn","ReturnBtn"})root.transform.Find("Panel/"+button).gameObject.SetActive(failed);
+                var fill=(RectTransform)root.transform.Find("Panel/ProgressBar/Fill");fill.sizeDelta=new Vector2(LoadingView.FillMaxWidth*(state.Contains("complete")?1f:.37f),fill.sizeDelta.y);
+            }
             if(name=="ConfirmView")
             {
                 bool danger=state.Contains("danger"), info=state.Contains("info"), success=state.Contains("success");

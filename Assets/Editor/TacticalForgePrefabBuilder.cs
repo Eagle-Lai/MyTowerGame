@@ -56,6 +56,15 @@ namespace FTProject.EditorTools
             AssetDatabase.SaveAssets();
             Debug.Log("[UIIssueFix20261028] Updated six views and the shared tower card, preserving prefab GUIDs and audio controls.");
         }
+        [MenuItem("Tools/塔防/Tactical Forge/同步问题文档修正（2026-11-02）", false, 94)]
+        public static void ApplyNovember2DocumentFixes()
+        {
+            if(EditorApplication.isPlayingOrWillChangePlaymode)throw new InvalidOperationException("Edit Mode required.");
+            foreach(string name in new[]{"HotUpdateView","LoadingView","SellConfirmView","SplashView","MainMenuView"})
+                if(!UpdateExisting(PathOf(name)))throw new InvalidOperationException("Missing UI prefab: "+name);
+            AssetDatabase.SaveAssets();
+            Debug.Log("[UIIssueFix20261102] Updated five document views, preserving prefab GUIDs.");
+        }
         [MenuItem("Tools/塔防/Tactical Forge/更新 HUD 建造圆盘（2026-11-01）", false, 93)]
         public static void ApplyTowerBuildMenu()
         {
@@ -137,8 +146,8 @@ namespace FTProject.EditorTools
                 Image bg=ImageAt(root.transform,"Bg");bg.sprite=AssetDatabase.LoadAssetAtPath<Sprite>(Art+"/Backgrounds/keyart.png");bg.color=Color.white;bg.raycastTarget=false;Stretch(bg.rectTransform);
                 Image shade=ImageAt(root.transform,"MenuShade");shade.sprite=AssetDatabase.LoadAssetAtPath<Sprite>(Art+"/Backgrounds/menu-shade.png");shade.color=Color.white;shade.raycastTarget=false;Stretch(shade.rectTransform);shade.transform.SetSiblingIndex(1);
                 Image logo=ImageAt(root.transform,"Panel/Logo");logo.sprite=AssetDatabase.LoadAssetAtPath<Sprite>(LogoPath);logo.color=Color.white;logo.preserveAspect=true;
-                var title=TextAt(root.transform,"Panel/GameTitle","FREEDOM\nTOWER",78);title.alignment=TextAlignmentOptions.TopLeft;title.enableWordWrapping=true;
-                var sub=TextAt(root.transform,"Panel/Subtitle","自由人塔防  /  TACTICAL FORGE",27);sub.gameObject.SetActive(true);sub.alignment=TextAlignmentOptions.Left;
+                var title=BrandText(root,"Panel/GameTitle",AOT.BootLocalization.BrandTitleKey,96);title.alignment=TextAlignmentOptions.TopLeft;title.color=Cyan;
+                var sub=BrandText(root,"Panel/Subtitle",AOT.BootLocalization.BrandSloganKey,40);sub.alignment=TextAlignmentOptions.Left;
                 ButtonAt(root.transform,"Panel/ContinueBtn","Continue",true);ButtonAt(root.transform,"Panel/MonsterCodexBtn","Monster Codex",false);
                 foreach(string p in new[]{"Panel/StatBg/StarText","Panel/StatBg/ClearText"}) root.transform.Find(p).GetComponent<TMP_Text>().alignment=TextAlignmentOptions.Left;
             }
@@ -216,14 +225,37 @@ namespace FTProject.EditorTools
             }
             else if(name=="LoadingView")
             {
-                ButtonAt(root.transform,"Panel/RetryBtn","Retry",true);Place(root,"Panel/RetryBtn",-160,-280,280,80);
-                ButtonAt(root.transform,"Panel/ReturnBtn","Quit",false);Place(root,"Panel/ReturnBtn",160,-280,280,80);
+                var logo=ImageAt(root.transform,"Panel/Logo");logo.sprite=AssetDatabase.LoadAssetAtPath<Sprite>(LogoPath);logo.color=Color.white;logo.preserveAspect=true;logo.raycastTarget=false;
+                Place(root,"Panel/Logo",0,340,176,176);
+                BrandText(root,"Panel/GameTitle",AOT.BootLocalization.BrandTitleKey,104);Place(root,"Panel/GameTitle",0,150,1320,136);
+                BrandText(root,"Panel/Subtitle",AOT.BootLocalization.BrandSloganKey,40);Place(root,"Panel/Subtitle",0,32,1320,76);
+                var status=root.transform.Find("Panel/StatusText").GetComponent<TMP_Text>();
+                var localizer=status.GetComponent<TextLocalizer>();if(localizer!=null)UnityEngine.Object.DestroyImmediate(localizer);
+                status.text="";status.margin=new Vector4(16,8,16,8);status.enableWordWrapping=true;
+                Place(root,"Panel/StatusText",0,-70,1200,64);Place(root,"Panel/ProgressBar",0,-145,900,20);
+                Place(root,"Panel/PercentText",0,-190,400,40);Place(root,"Panel/TipText",0,-263,1400,60);
+                ButtonAt(root.transform,"Panel/RetryBtn","Retry",true);Place(root,"Panel/RetryBtn",-160,-380,280,72);
+                ButtonAt(root.transform,"Panel/ReturnBtn","Quit",false);Place(root,"Panel/ReturnBtn",160,-380,280,72);
             }
             else if(name=="SplashView" || boot)
             {
                 var logo=ImageAt(root.transform,"Panel/Logo");logo.sprite=AssetDatabase.LoadAssetAtPath<Sprite>(LogoPath);logo.color=Color.white;logo.preserveAspect=true;logo.raycastTarget=false;
-                if(boot){Place(root,"Panel/Logo",0,380,176,176);Place(root,"Panel/HotTitle",0,230,900,80);}
-                else Place(root,"Panel/Logo",0,130,400,400);
+                if(boot)
+                {
+                    Place(root,"Panel/Logo",0,390,156,156);
+                    BrandText(root,"Panel/HotTitle",AOT.BootLocalization.BrandTitleKey,104,false);Place(root,"Panel/HotTitle",0,220,1320,136);
+                    BrandText(root,"Panel/Subtitle",AOT.BootLocalization.BrandSloganKey,40,false);Place(root,"Panel/Subtitle",0,105,1320,76);
+                    Place(root,"Panel/PhaseText",0,35,1200,44);Place(root,"Panel/ProgressBar",0,-35,900,24);
+                    Place(root,"Panel/PercentText",0,-80,900,40);Place(root,"Panel/SizeText",0,-132,1200,32);
+                    Place(root,"Panel/SpeedText",0,-168,1200,32);Place(root,"Panel/DetailText",0,-204,1200,32);
+                    Place(root,"Panel/BtnGroup",0,-280,900,72);Place(root,"Panel/FailText",0,-380,1400,100);
+                }
+                else
+                {
+                    Place(root,"Panel/Logo",0,150,360,360);
+                    BrandText(root,"Panel/GameTitle",AOT.BootLocalization.BrandTitleKey,112).color=Cyan;Place(root,"Panel/GameTitle",0,-120,1320,148);
+                    BrandText(root,"Panel/Subtitle",AOT.BootLocalization.BrandSloganKey,40);Place(root,"Panel/Subtitle",0,-252,1320,76);
+                }
             }
             if(full || name=="HudView" || name=="TowerInfoView" || name=="TowerCodexView")
             {
@@ -270,7 +302,35 @@ namespace FTProject.EditorTools
             {var node=root.transform.Find(path);if(node!=null){var localizer=node.GetComponent<TextLocalizer>();if(localizer!=null)UnityEngine.Object.DestroyImmediate(localizer);}}
             if(name=="SettingView") AudioSettingsPrefabBuilder.Apply(root);
             if(!boot) ApplyContentSurfaces(root,name);
+            ApplyBrandTypography(root,name);
             EditorUtility.SetDirty(root);
+        }
+        private static void ApplyBrandTypography(GameObject root,string name)
+        {
+            if(name=="HotUpdateView")
+            {
+                foreach(string row in new[]{"PhaseText","PercentText","FailText"})FontSize(root,"Panel/"+row,22);
+                foreach(string row in new[]{"SizeText","SpeedText","DetailText"})FontSize(root,"Panel/"+row,20);
+                foreach(string button in new[]{"PauseBtn","ResumeBtn","RetryBtn"})FontSize(root,"Panel/BtnGroup/"+button+"/Label",24);
+            }
+            else if(name=="LoadingView")
+            {
+                FontSize(root,"Panel/StatusText",22);FontSize(root,"Panel/PercentText",24);FontSize(root,"Panel/TipText",20);
+                foreach(string button in new[]{"RetryBtn","ReturnBtn"})FontSize(root,"Panel/"+button+"/Label",24);
+            }
+            else if(name=="SplashView")
+            {FontSize(root,"Panel/LoadingDots",22);FontSize(root,"Panel/Version",18);}
+            else if(name=="MainMenuView")
+            {
+                FontSize(root,"Panel/StatBg/ClearText",24);FontSize(root,"Panel/StatBg/StarText",24);FontSize(root,"Panel/Version",18);
+                foreach(string button in new[]{"StartBtn","ContinueBtn","CodexBtn","MonsterCodexBtn","SettingBtn","QuitBtn"})
+                    FontSize(root,"Panel/"+button+"/Label",button=="StartBtn"||button=="ContinueBtn"?28:24);
+            }
+        }
+        private static void FontSize(GameObject root,string path,int size)
+        {
+            var node=root.transform.Find(path);if(node==null)return;var text=node.GetComponent<TMP_Text>();if(text==null)return;
+            text.fontSize=text.fontSizeMax=size;text.fontSizeMin=Mathf.Min(18,size);text.enableAutoSizing=true;text.overflowMode=TextOverflowModes.Ellipsis;
         }
         private static void ApplyContentSurfaces(GameObject root,string name)
         {
@@ -322,10 +382,12 @@ namespace FTProject.EditorTools
                     Place(root,"Panel/TowerName",0,98,888,60);Place(root,"Panel/WarnText",0,-4,888,116);
                     Place(root,"Panel/RefundLabel",-190,-120,500,64);Place(root,"Panel/RefundValue",262,-120,320,64);
                     Place(root,"Panel/ConfirmBtn",-232,-272,424,88);Place(root,"Panel/CancelBtn",232,-272,424,88);
-                    paths=new[]{"Panel/TowerName","Panel/WarnText","Panel/RefundLabel","Panel/RefundValue"};break;
+                    SharedContentPlate(root,surfaces,"Panel/ContentBacking",0,24,936,440,new[]{"Panel/TowerIcon","Panel/TowerName","Panel/WarnText","Panel/RefundLabel","Panel/RefundValue"});
+                    foreach(string row in new[]{"TowerName","WarnText","RefundLabel","RefundValue"})
+                    {var text=root.transform.Find("Panel/"+row).GetComponent<TMP_Text>();text.margin=new Vector4(18,8,18,8);}
+                    paths=Array.Empty<string>();break;
                 case "ConfirmView":
-                    var icon=ImageAt(root.transform,"Panel/DangerIcon");Skin(icon,"panel",Cyan);
-                    var glyph=TextAt(root.transform,"Panel/DangerIcon/StatusGlyph","!",48);Stretch(glyph.rectTransform);glyph.alignment=TextAlignmentOptions.Center;glyph.color=Ink;
+                    var icon=root.transform.Find("Panel/DangerIcon");if(icon!=null)UnityEngine.Object.DestroyImmediate(icon.gameObject);
                     paths=new[]{"Panel/BodyText"};break;
                 case "SelectView":paths=new[]{"Panel/Summary","Panel/Preview/Name","Panel/Preview/Stats"};break;
                 case "LevelDetailView":paths=new[]{"Panel/BestStarText","Panel/RatingTarget","Panel/Info1","Panel/Info2","Panel/Info3","Panel/Info4","Panel/Info5","Panel/Info6","Panel/EnemyLabel","Panel/LockReason"};
@@ -407,13 +469,13 @@ namespace FTProject.EditorTools
             actions.anchorMin=actions.anchorMax=actions.pivot=new Vector2(.5f,.5f);
             actions.sizeDelta=Vector2.zero;actions.anchoredPosition=Vector2.zero;actions.SetAsLastSibling();
             // 布局口径与 TowerActions 一致：上(0,146) / 左下(-126,-72) / 右下(126,-72)，运行时还会按屏幕边缘内收
-            Button normal=IconAction(root,"BuildBtn_Normal",LoadTowerPortrait("normal"),Text,new Vector2(0,146));
-            Button power=IconAction(root,"BuildBtn_Power",LoadTowerPortrait("power"),Hex("FFC94D"),new Vector2(-126,-72));
-            Button retard=IconAction(root,"BuildBtn_Retard",LoadTowerPortrait("retard"),Cyan,new Vector2(126,-72));
+            Button normal=IconAction(root,"BuildBtn_Normal",LoadTowerPortrait("normal"),new Vector2(0,146));
+            Button power=IconAction(root,"BuildBtn_Power",LoadTowerPortrait("power"),new Vector2(-126,-72));
+            Button retard=IconAction(root,"BuildBtn_Retard",LoadTowerPortrait("retard"),new Vector2(126,-72));
             // 【顺序】同 BuildTowerActions：Backdrop 先建、Configure 后调（序列化引用）。
             var plate=ImageAt(root.transform,"TowerBuildMenu/Backdrop");
-            plate.sprite=AssetDatabase.LoadAssetAtPath<Sprite>(Art+"/Buttons/action-disc.png");plate.type=Image.Type.Simple;plate.color=new Color(.035f,.075f,.12f,.78f);plate.raycastTarget=false;
-            plate.rectTransform.anchorMin=plate.rectTransform.anchorMax=plate.rectTransform.pivot=new Vector2(.5f,.5f);plate.rectTransform.sizeDelta=new Vector2(388,388);plate.rectTransform.anchoredPosition=Vector2.zero;plate.transform.SetAsFirstSibling();
+            plate.sprite=AssetDatabase.LoadAssetAtPath<Sprite>(Art+"/Buttons/action-disc.png");plate.type=Image.Type.Simple;plate.color=new Color(.12f,.22f,.31f,.28f);plate.raycastTarget=false;
+            plate.rectTransform.anchorMin=plate.rectTransform.anchorMax=plate.rectTransform.pivot=new Vector2(.5f,.5f);plate.rectTransform.sizeDelta=new Vector2(340,340);plate.rectTransform.anchoredPosition=Vector2.zero;plate.transform.SetAsFirstSibling();
             Ensure<TowerBuildMenu>(root).Configure(actions,normal,power,retard);
             actions.gameObject.SetActive(false);
         }
@@ -422,31 +484,30 @@ namespace FTProject.EditorTools
             return AssetDatabase.LoadAssetAtPath<Sprite>(Art+"/TowerPortraits/tower-"+kind+".png");
         }
         /// <summary>
-        /// 建造圆盘的塔图标按钮：圆形底 + 塔头像 + 塔名 + 价格。
-        /// 结构对齐 RoundAction（Icon/Label/PriceText 同名子节点，TowerBuildMenu.Configure 按名查找）；
-        /// 区别是 Icon 直接用塔头像（无 accent 字形），Label/Price 运行时填充。
+        /// 建造圆盘的塔按钮：透明圆形点击区 + 塔头像 + 塔名 + 价格。
+        /// TowerBuildMenu.Configure 会同步透明状态与价签样式，也会修复旧 prefab。
         /// </summary>
-        private static Button IconAction(GameObject root,string name,Sprite portrait,Color accent,Vector2 position)
+        private static Button IconAction(GameObject root,string name,Sprite portrait,Vector2 position)
         {
             string path="TowerBuildMenu/"+name;
             var button=ButtonAt(root.transform,path,"",false);
             var rect=(RectTransform)button.transform;rect.anchorMin=rect.anchorMax=rect.pivot=new Vector2(.5f,.5f);
             rect.anchoredPosition=position;rect.sizeDelta=new Vector2(124,124);
-            var image=button.GetComponent<Image>();image.sprite=AssetDatabase.LoadAssetAtPath<Sprite>(Art+"/Buttons/action-circle.png");image.type=Image.Type.Simple;image.color=Panel;
+            var image=button.GetComponent<Image>();image.sprite=AssetDatabase.LoadAssetAtPath<Sprite>(Art+"/Buttons/action-circle.png");image.type=Image.Type.Simple;image.color=Color.clear;
             Ensure<CircularRaycastFilter>(button.gameObject);
-            var outline=Ensure<Outline>(image.gameObject);outline.effectColor=new Color(accent.r,accent.g,accent.b,.6f);outline.effectDistance=new Vector2(1,-1);
+            var outline=Ensure<Outline>(image.gameObject);outline.enabled=false;
             var icon=ImageAt(root.transform,path+"/Icon");icon.sprite=portrait;icon.color=Color.white;icon.raycastTarget=false;icon.preserveAspect=true;
             icon.rectTransform.anchorMin=icon.rectTransform.anchorMax=icon.rectTransform.pivot=new Vector2(.5f,.5f);
-            icon.rectTransform.anchoredPosition=new Vector2(0,26);icon.rectTransform.sizeDelta=new Vector2(44,44);
-            var label=TextAt(root.transform,path+"/Label","",21);label.enableAutoSizing=true;label.fontSizeMin=15;label.margin=Vector4.zero;
+            icon.rectTransform.anchoredPosition=new Vector2(0,22);icon.rectTransform.sizeDelta=new Vector2(68,68);
+            var label=TextAt(root.transform,path+"/Label","",19);label.enableAutoSizing=true;label.fontSizeMin=14;label.fontSizeMax=19;label.fontWeight=FontWeight.SemiBold;label.margin=Vector4.zero;
             label.rectTransform.anchorMin=label.rectTransform.anchorMax=label.rectTransform.pivot=new Vector2(.5f,.5f);
-            label.rectTransform.anchoredPosition=new Vector2(0,-8);label.rectTransform.sizeDelta=new Vector2(108,28);
+            label.rectTransform.anchoredPosition=new Vector2(0,-25);label.rectTransform.sizeDelta=new Vector2(108,22);
             label.enableWordWrapping=false;label.overflowMode=TextOverflowModes.Ellipsis;
             var localizer=label.GetComponent<TextLocalizer>();if(localizer!=null)UnityEngine.Object.DestroyImmediate(localizer);
-            var value=TextAt(root.transform,path+"/PriceText","",21);value.alignment=TextAlignmentOptions.Center;value.margin=Vector4.zero;
+            var value=TextAt(root.transform,path+"/PriceText","",18);value.alignment=TextAlignmentOptions.Center;value.fontSizeMin=13;value.fontSizeMax=18;value.fontWeight=FontWeight.Bold;value.margin=Vector4.zero;
             value.rectTransform.anchorMin=value.rectTransform.anchorMax=value.rectTransform.pivot=new Vector2(.5f,.5f);
-            value.rectTransform.anchoredPosition=new Vector2(0,-38);value.rectTransform.sizeDelta=new Vector2(82,26);
-            value.enableWordWrapping=false;value.overflowMode=TextOverflowModes.Ellipsis;value.fontSizeMin=15;
+            value.rectTransform.anchoredPosition=new Vector2(7,-48);value.rectTransform.sizeDelta=new Vector2(40,20);
+            value.enableWordWrapping=false;value.overflowMode=TextOverflowModes.Ellipsis;
             return button;
         }
         private static Button RoundAction(GameObject root,string name,string key,string icon,Color accent,Vector2 position,string price)
@@ -611,6 +672,27 @@ namespace FTProject.EditorTools
         {
             var t=Ensure<TextMeshProUGUI>(Node(root,path).gameObject);if(_font!=null){t.font=_font;t.fontSharedMaterial=_font.material;}
             t.text=text;t.fontSize=size;t.fontSizeMax=size;t.fontSizeMin=Mathf.Min(22,size);t.enableAutoSizing=true;t.enableWordWrapping=true;t.overflowMode=TextOverflowModes.Ellipsis;t.color=Text;t.raycastTarget=false;return t;
+        }
+        private static TMP_Text BrandText(GameObject root,string path,string key,int size,bool localized=true)
+        {
+            // The Resources boot page needs the new CJK slogan glyphs before hot-update code is loaded.
+            if(_font!=null)
+            {
+                foreach(var language in new[]{Language.English,Language.ChineseSimplified,Language.ChineseTraditional})
+                {
+                    string value=AOT.BootLocalization.Get(key,language);uint[] absent;
+                    if(_font.HasCharacters(value,out absent,true,false))continue;
+                    string missing;_font.TryAddCharacters(value,out missing);
+                    if(!string.IsNullOrEmpty(missing))throw new InvalidOperationException("Brand font is missing characters: "+missing);
+                    EditorUtility.SetDirty(_font);
+                }
+            }
+            var text=TextAt(root.transform,path,AOT.BootLocalization.Get(key,Language.English),size);
+            text.fontSizeMin=key==AOT.BootLocalization.BrandTitleKey?72:32;
+            text.gameObject.SetActive(true);text.alignment=TextAlignmentOptions.Center;text.enableWordWrapping=false;text.margin=new Vector4(12,6,12,6);
+            if(key==AOT.BootLocalization.BrandSloganKey)text.color=Hex("9FB3C8");
+            if(localized)Ensure<TextLocalizer>(text.gameObject).Key=key;
+            return text;
         }
         private static Button ButtonAt(Transform root,string path,string key,bool primary)
         {
