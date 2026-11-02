@@ -24,7 +24,6 @@ namespace FTProject
             AudioManager.Instance,
             PlayerDataManager.Instance,
             EnemyManager.Instance,
-            BulletManager.Instance,
             TowerManager.Instance,
             CombatSystem.Instance,
             UIManager.Instance,

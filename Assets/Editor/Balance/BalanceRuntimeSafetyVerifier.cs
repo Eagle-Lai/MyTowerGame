@@ -26,8 +26,8 @@ namespace FTProject.EditorTools
         public static string Run(string outputPath)
         {
             if (!EditorApplication.isPlaying || !SaveManager.IsTestStorage || BalancePlayModeVerifier.Running
-                || GameClock.IsManualSimulation || GameFlowManager.Instance == null || !Configs.RatingContentVerified)
-                throw new InvalidOperationException("Requires initialized isolated main-scene PlayMode, verified configs, and no active replay/manual clock");
+                || GameClock.IsManualSimulation || GameFlowManager.Instance == null)
+                throw new InvalidOperationException("Requires initialized isolated main-scene PlayMode, loaded configs, and no active replay/manual clock");
             var root = new JSONObject(); var results = new JSONArray(); _logs = new JSONArray();
             root["startedUtc"] = DateTime.UtcNow.ToString("o");
             root["resourceLoader"] = ResLoader.ImplName;
@@ -43,7 +43,6 @@ namespace FTProject.EditorTools
                 Scenario(results, "f2_debug_victory_cannot_save", DebugVictory);
                 Scenario(results, "incomplete_wave_cannot_reward_or_save", IncompleteWave);
                 Scenario(results, "skipped_waves_cannot_save", SkippedWaves);
-                Scenario(results, "legacy_unlock_and_version_star_isolation", Migration);
                 Scenario(results, "sqlite_complete_victory_pending_retry", () => PendingSave(false));
                 Scenario(results, "json_complete_victory_pending_retry", () => PendingSave(true));
             }
@@ -213,7 +212,7 @@ namespace FTProject.EditorTools
                 _scenarioResult["injectedLocation"] = _resourceFaultLocation ?? "ResTable entry temporarily absent";
                 StartWave(); Step(FirstSpawnTime() + .0625f);
                 Check(EnemyManager.Instance.LastSpawnFailure == EnemyManager.SpawnFailure.Resource, "Real resource loader reports missing prefab");
-                Check(GameFlowManager.Instance.State == GameFlowState.GameOver && !GameFlowManager.Instance.RunMetrics.statisticsValid, "Resource fault invalidates actual run");
+                Check(GameFlowManager.Instance.State == GameFlowState.GameOver, "Resource fault ends the run without clearing");
                 Check(Wave.SpawnedCount == 0 && GameClock.CombatElapsedSeconds == 0d, "Failed spawn cannot count or start timer");
                 Check(PlayerDataManager.Instance.Gold == gold, "No reward for resource fault"); NoClear("Missing resource");
             }
@@ -240,7 +239,7 @@ namespace FTProject.EditorTools
             // This is exactly the F2 handler's two calls, including the real Win -> GameOver UI chain.
             GameFlowManager.Instance.MarkDebugRun(); PlayerDataManager.Instance.Win();
             Check(GameFlowManager.Instance.State == GameFlowState.GameOver && GameFlowManager.Instance.RunMetrics.debugOverride, "F2 marks and ends run");
-            var info = PopupInfo(); Check(!info.ratingResult.valid && info.stars == 0 && !info.progressSaved && !info.savePending, "F2 popup is unscored");
+            var info = PopupInfo(); Check(info.stars == 0 && !info.progressSaved && !info.savePending, "F2 popup is unscored and unsaved");
             NoClear("F2 debug victory");
         }
 
@@ -249,17 +248,17 @@ namespace FTProject.EditorTools
             StartWave(); int gold = PlayerDataManager.Instance.Gold;
             // Exercise the real private finalization entrance with an unfinished outcome ledger.
             Call(GameFlowManager.Instance, "FinishRound");
-            Check(GameFlowManager.Instance.State == GameFlowState.GameOver && !GameFlowManager.Instance.RunMetrics.statisticsValid, "Incomplete accounting is rejected");
+            Check(GameFlowManager.Instance.State == GameFlowState.GameOver, "Incomplete wave ends the run without clearing");
             Check(PlayerDataManager.Instance.Gold == gold && GameFlowManager.Instance.RunMetrics.completedWaveCount == 0, "No round reward or cursor credit");
             NoClear("Incomplete wave");
         }
 
         private static void SkippedWaves()
         {
-            Set(GameFlowManager.Instance, "_roundCursor", GameFlowManager.Instance.RatingProfile.expectedWaveCount);
+            Set(GameFlowManager.Instance, "_roundCursor", GameFlowManager.Instance.RunMetrics.expectedWaveCount);
             StartWave();
             var info = PopupInfo();
-            Check(GameFlowManager.Instance.State == GameFlowState.GameOver && !info.ratingResult.valid && !info.progressSaved, "Jumping final cursor cannot fabricate formal evidence");
+            Check(GameFlowManager.Instance.State == GameFlowState.GameOver && info.stars == 0 && !info.progressSaved, "Jumping final cursor cannot fabricate a clear");
             NoClear("Skipped waves");
         }
 
@@ -269,41 +268,24 @@ namespace FTProject.EditorTools
         }
         private static LevelClearInfo PopupInfo() { var info = (LevelClearInfo)Field(Popup(), "_info"); Check(info != null, "Popup has result data"); return info; }
 
-        private static void Migration()
-        {
-            var save = SaveManager.Instance;
-            Check(save.IsUnlocked(1) && !save.IsUnlocked(2), "Player unlock baseline executes despite editor all-unlock default");
-            save.Data.levels.Add(new LevelProgress { levelId = 1, stars = 3, clearCount = 7, bestTimeMs = 123456, bestHpLeft = 20 }); save.Save();
-            Check(save.IsUnlocked(2), "Historical clear unlocks next level before migration");
-            Check(save.GetStars(1) == 0 && save.TotalStars == 0 && save.GetLegacyStars(1) == 3, "Legacy three-star record is archived, not multiplied into current five-star total");
-            var p = save.Data.Find(1);
-            Check(p.clearCount == 7 && p.legacy.Count == 1 && p.legacy[0].bestTimeMs == 123456 && save.IsUnlocked(2), "Migration preserves historical count/time/unlock");
-            string backup; Check(Storage.TryGetValue("rating-backup/1/legacy-v1-three-stars", out backup) && backup.Contains("123456"), "Durable original legacy backup");
-            save.EnsureRatingVersion(1); Check(save.Data.Find(1).legacy.Count == 1, "Repeated migration is idempotent");
-            var metrics = TerminalFixture();
-            Check(save.RecordClear(1, LevelRatingEvaluator.Evaluate(GameFlowManager.Instance.RatingProfile, metrics)), "Current-version fixture can settle after migration");
-            Check(save.TotalStars == 5 && save.Data.Find(1).clearCount == 8 && save.GetLegacyStars(1) == 3, "Current total excludes archived stars");
-            p = save.Data.Find(1); p.ratingVersionKey += "-obsolete"; save.Save();
-            Check(save.GetStars(1) == 0 && save.TotalStars == 0 && save.IsUnlocked(2) && save.Data.Find(1).legacy.Count == 2, "New rating identity archives current stars while retaining unlock");
-        }
-
         private static LevelRunMetrics TerminalFixture()
         {
-            var flow = GameFlowManager.Instance; var profile = flow.RatingProfile; var m = flow.RunMetrics;
+            // 【2026-11-01】评级表删除后，计划量与用时都取自本局账目/关卡配置，不再有 profile。
+            var flow = GameFlowManager.Instance; var m = flow.RunMetrics;
             m.runId = "safety-fixture-" + Guid.NewGuid().ToString("N");
-            m.completedWaveCount = profile.expectedWaveCount; m.successfulSpawned = profile.expectedEnemyCount; m.killed = profile.expectedEnemyCount;
-            m.leaked = m.bossLeaked = m.criticalLeaked = 0; m.victory = true; m.debugOverride = false; m.statisticsValid = m.timingValid = true;
-            m.hp = m.maxHp = PlayerDataManager.Instance.MaxHp; m.combatElapsedSeconds = profile.parCombatTimeMs / 1000d - .0625d;
-            m.levelElapsedSeconds = m.combatElapsedSeconds + 95d; m.waves.Clear();
+            int waves = Math.Max(1, m.expectedWaveCount > 0 ? m.expectedWaveCount : flow.Level.RoundIds.Count);
+            m.completedWaveCount = waves; m.successfulSpawned = m.expectedEnemyCount; m.killed = m.expectedEnemyCount;
+            m.leaked = m.bossLeaked = 0; m.victory = true; m.debugOverride = false;
+            m.hp = m.maxHp = PlayerDataManager.Instance.MaxHp;
+            m.combatElapsedSeconds = 100d; m.levelElapsedSeconds = 195d; m.waves.Clear();
             for (int i = 0; i < flow.Level.RoundIds.Count; i++)
             {
                 var round = Configs.GetRound(flow.Level.RoundIds[i]); int expected = 0;
                 foreach (int group in round.WaveIds) expected += Configs.GetWaveGroup(group).EnemyCount;
                 m.waves.Add(new WaveRunMetrics { ordinal = i + 1, expected = expected, successfulSpawned = expected, killed = expected,
-                    hp = m.hp, gold = 137, clearGold = round.RewardGold, combatStartSeconds = m.combatElapsedSeconds * i / profile.expectedWaveCount,
-                    combatEndSeconds = m.combatElapsedSeconds * (i + 1) / profile.expectedWaveCount, levelEndSeconds = m.levelElapsedSeconds * (i + 1) / profile.expectedWaveCount });
+                    hp = m.hp, gold = 137, clearGold = round.RewardGold, combatStartSeconds = m.combatElapsedSeconds * i / waves,
+                    combatEndSeconds = m.combatElapsedSeconds * (i + 1) / waves, levelEndSeconds = m.levelElapsedSeconds * (i + 1) / waves });
             }
-            Check(LevelRatingEvaluator.Evaluate(profile, m).valid, "Constructed safety fixture matches current actual plan counts/version");
             return m;
         }
 
@@ -327,9 +309,8 @@ namespace FTProject.EditorTools
             }
             try
             {
-                var profile = flow.RatingProfile;
-                save.Data.levels.Add(new LevelProgress { levelId = 1, stars = 4, clearCount = 2, ratingVersionKey = profile.versionKey }); save.Save();
-                var fixture = TerminalFixture(); Set(flow, "_run", fixture); Set(flow, "_roundCursor", profile.expectedWaveCount);
+                save.Data.levels.Add(new LevelProgress { levelId = 1, stars = 4, clearCount = 2 }); save.Save();
+                var fixture = TerminalFixture(); Set(flow, "_run", fixture); Set(flow, "_roundCursor", fixture.expectedWaveCount);
                 PlayerDataManager.Instance.RestoreState(1, 137, fixture.hp, fixture.maxHp, fixture.killed, 0);
                 GameClock.RestoreTimers(fixture.combatElapsedSeconds, fixture.levelElapsedSeconds, true);
                 // 【2026-10-30】局内不再写快照：这里原来先落一份"终局检查点"再注入写盘故障，
@@ -340,8 +321,8 @@ namespace FTProject.EditorTools
                 blocked = true;
                 Call(flow, "CompleteVictory");
                 var info = PopupInfo();
-                Check(info.savePending && !info.progressSaved && !info.newRecord && info.ratingResult.valid, "Real CompleteVictory -> Win -> popup enters pending state");
-                Check(info.ratingResult.metrics.runId == fixture.runId, "Pending result freezes the original runId");
+                Check(info.savePending && !info.progressSaved && !info.newRecord && info.stars == SaveManager.MaxStars, "Real CompleteVictory -> Win -> popup enters pending state");
+                Check(flow.RunMetrics.runId == fixture.runId, "Pending result freezes the original runId");
                 Check(JsonUtility.ToJson(save.Data.Find(1)) == before, "Failed commit publishes no progress change");
                 Check(JsonUtility.ToJson(backend.LoadLevels()[0]) == before, "Failed backend remains at prior best/count");
                 var view = Popup(); var next = (Button)Field(view, "_nextBtn"); Check(next != null && (!next.gameObject.activeInHierarchy || !next.interactable), "Actual Next button unavailable while pending");
@@ -352,10 +333,10 @@ namespace FTProject.EditorTools
                 Call(view, "OnClickRetry"); Check(PopupInfo().savePending && save.Data.Find(1).clearCount == 2, "Retry during fault remains pending without double count");
                 if (json) Directory.Delete(blockedPath); else ExecuteDatabase(database, "PRAGMA query_only=OFF"); blocked = false;
                 Call(Popup(), "OnClickRetry"); info = PopupInfo();
-                Check(info.progressSaved && !info.savePending && info.newRecord && info.ratingResult.metrics.runId == fixture.runId, "Actual retry button saves same runId and refreshes popup");
+                Check(info.progressSaved && !info.savePending && info.newRecord && flow.RunMetrics.runId == fixture.runId, "Actual retry button saves same runId and refreshes popup");
                 Check(save.Data.Find(1).clearCount == 3 && save.GetStars(1) == 5, "Exactly one clear commits");
                 Check(((Button)Field(Popup(), "_nextBtn")).interactable, "Next becomes available after durable success");
-                Check(save.RecordClear(1, LevelRatingEvaluator.Evaluate(profile, fixture)), "Duplicate same-run result is accepted idempotently");
+                Check(save.RecordClear(1, fixture), "Duplicate same-run result is accepted idempotently");
                 Call(flow, "CompleteVictory"); PlayerDataManager.Instance.Win();
                 Check(save.Data.Find(1).clearCount == 3 && backend.LoadLevels()[0].committedRunIds.Count == 1, "Duplicate terminal callbacks cannot count again");
                 if (json)

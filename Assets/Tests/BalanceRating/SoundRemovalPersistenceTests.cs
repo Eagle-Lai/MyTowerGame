@@ -44,7 +44,7 @@ namespace FTProject.Tests
                 storage.Initialize();
                 Assert.That(storage.LoadSettings().language, Is.EqualTo("zh-Hant"));
                 Assert.That(storage.LoadLevels()[0].clearCount, Is.EqualTo(7));
-                Assert.That(storage.LoadLevels()[0].ratingVersionKey, Is.EqualTo("original"));
+                Assert.That(storage.LoadLevels()[0].stars, Is.EqualTo(4));
                 Assert.That(storage.LoadSnapshot().valid, Is.True);
             }
         }

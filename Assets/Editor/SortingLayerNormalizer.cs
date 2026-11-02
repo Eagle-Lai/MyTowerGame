@@ -19,7 +19,8 @@ namespace FTProject.EditorTools
     ///
     /// 【约定（与 BoardSorting 一一对应）】
     ///   排序层：Bg < Main < Pop（层优先级高于层内 sortingOrder）
-    ///   Main 层：Cell 0 → PathArrow 10 → RangeIndicator 100 → Tower 200 → Enemy 300 → Bullet 400
+    ///   Main 层：Cell 0 → PathArrow 10 → RangeIndicator 100 → Tower 200 → Enemy 300 → FireFx 400
+    ///   （400 槽位沿用 BoardSorting.Bullet，现由枪口焰/爆炸使用；真实子弹已于 2026-10-31 删除）
     ///   塔：根 SortingGroup = 200；组内 barbette 0 / Img_gun 1 / 枪口焰 2
     ///   怪：根 SortingGroup = 300；组内血条 Bg 500 / Fill 501（必须压过美术部件，最大 99）
     ///   背景：Bg 层，序 0
@@ -33,7 +34,6 @@ namespace FTProject.EditorTools
         private const string EnemyDir = "Assets/Prefabs/Enemy";
         private const string TowerDir = "Assets/Prefabs/Tower";
         private const string TowerBackupDir = "Assets/Prefabs/Tower/_UI_Source";
-        private const string BulletPath = "Assets/Prefabs/Bullet/Bullet_Normal.prefab";
         private const string MainScenePath = "Assets/Scenes/Main.unity";
         private const string BackgroundName = "Background";
 
@@ -58,15 +58,14 @@ namespace FTProject.EditorTools
             var log = new StringBuilder();
             int enemies = NormalizeEnemies(log);
             int towers = NormalizeTowers(log);
-            bool bullet = NormalizeBullet(log);
             bool scene = NormalizeScene(log);
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
 
             Debug.Log(string.Format(
-                "[Sorting] 标准化完成：敌人 {0} 个 / 塔 {1} 个 / 子弹 {2} / 场景背景 {3}\n{4}",
-                enemies, towers, bullet ? "已改" : "无需改", scene ? "已改" : "无需改", log));
+                "[Sorting] 标准化完成：敌人 {0} 个 / 塔 {1} 个 / 场景背景 {2}\n{3}",
+                enemies, towers, scene ? "已改" : "无需改", log));
         }
 
         private static int NormalizeEnemies(StringBuilder log)
@@ -171,36 +170,6 @@ namespace FTProject.EditorTools
                 }
             }
             return count;
-        }
-
-        private static bool NormalizeBullet(StringBuilder log)
-        {
-            if (AssetDatabase.LoadAssetAtPath<GameObject>(BulletPath) == null)
-            {
-                log.AppendLine("  ! 子弹预制体不存在：" + BulletPath);
-                return false;
-            }
-
-            GameObject root = PrefabUtility.LoadPrefabContents(BulletPath);
-            try
-            {
-                SpriteRenderer sr = root.GetComponent<SpriteRenderer>();
-                if (sr == null)
-                {
-                    log.AppendLine("  ! 子弹根节点没有 SpriteRenderer：" + BulletPath);
-                    return false;
-                }
-                bool changed = sr.sortingLayerName != BoardSorting.LayerMain
-                               || sr.sortingOrder != BoardSorting.Bullet;
-                sr.sortingLayerName = BoardSorting.LayerMain;
-                sr.sortingOrder = BoardSorting.Bullet;
-                if (changed) PrefabUtility.SaveAsPrefabAsset(root, BulletPath);
-                return changed;
-            }
-            finally
-            {
-                PrefabUtility.UnloadPrefabContents(root);
-            }
         }
 
         /// <summary>
@@ -341,19 +310,6 @@ namespace FTProject.EditorTools
             }
             if (badTower > 0) issue += badTower;
             sb.AppendLine(string.Format("  塔：{0} 个，有问题 {1}", towerCount, badTower));
-
-            // 子弹
-            GameObject bullet = AssetDatabase.LoadAssetAtPath<GameObject>(BulletPath);
-            if (bullet != null)
-            {
-                SpriteRenderer sr = bullet.GetComponent<SpriteRenderer>();
-                if (sr == null || sr.sortingOrder != BoardSorting.Bullet
-                    || sr.sortingLayerName != BoardSorting.LayerMain)
-                {
-                    issue++;
-                    sb.AppendLine("  ! 子弹层级不对：" + Describe(sr));
-                }
-            }
 
             // 场景背景（仅当 Main 已加载）
             Scene scene = SceneManager.GetSceneByPath(MainScenePath);

@@ -129,7 +129,7 @@ namespace FTProject
             if (cs != null)
             {
                 sb.Append("\n  战斗：怪 ").Append(cs.EnemyCount).Append("（存活 ").Append(cs.AliveEnemyCount)
-                  .Append("） 塔 ").Append(cs.TowerCount).Append(" 弹 ").Append(cs.BulletCount);
+                  .Append("） 塔 ").Append(cs.TowerCount);
                 sb.Append("\n  自检：索敌 ").Append(cs.StatSearchCount).Append(" 开火 ").Append(cs.StatFireCount)
                   .Append(" 命中 ").Append(cs.StatHitCount).Append(" 空放 ").Append(cs.StatIdleFireAttempt)
                   .Append("（空放必须为 0）");

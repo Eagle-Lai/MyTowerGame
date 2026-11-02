@@ -27,10 +27,26 @@
 - **禁止任何脚本批量改写关卡配置表**：`Luban/Config/Datas/Levels/L01..L30/**`、`Luban/Config/Datas/EnemyData.xlsx`、`Luban/Config/Datas/__tables__.xlsx`。
 - `Assets/ConfigJson/**` 与 `Assets/Gen/**` 是 Luban 的**导出产物**，只由「改表 → 跑 Luban 导出」这条链产生，不允许第三方脚本直接写。
 - `.workbuddy/tools/balance_pipeline.py` 的 `apply` / `rollback` 及事务提交层**已整体移除**（`apply_plan` / `commit_files` / `job_lock` / `restore_transaction` / `check_managed_conflicts` / `assert_sources`）。不要为了"方便"把它们加回来；只允许用它的只读能力：`inspect` / `generate` / `preview` / `validate` / `simulate` / `verify-layout` / `stage`（`stage` 只写 `--out`，且禁止指向 `Luban/`、`Assets/`）。
-- 手工改表后的标准流程：改 `Levels/Lxx/*.xlsx` → 跑 Luban 导出到 `Assets/ConfigJson` → **重算并重封 `runtimeContentHash`**（每关 LevelRating 行）→ Unity 里确认日志 `[Rating] Runtime configuration SHA256 verified`。
+- 手工改表后的标准流程：改 `Levels/Lxx/*.xlsx` → 跑 Luban 导出到 `Assets/ConfigJson` → 进 Unity 确认 `[Config]` 汇总无失败表。
+  **2026-11-01 起不再有 `runtimeContentHash` 重封这一步**：星级评分体系（`tblevelrating` / 30 张 `Levels/Lxx/LevelRating.xlsx` / `LevelRatingEvaluator`）已按用户要求整体删除，通关一律记 5 星，改表不再需要动任何评级表，也不会再出现 `content hash mismatch` 拦关。评分规则待 30 关数值定稿后重做。
 - 已被删除的写表脚本（需要时从 git 历史取）：`migrate_split_level_tables.py`、`migrate_config.py`、`gen_m3_levelmaps.py`、`gen_m3_waves_rounds.py`、`apply_m2_monsters.py`、`add_levels_9_15/16_20_*.py`。
 - 仍然保留的两个人工工具：`apply_levelmap_export.py`（地图编辑器「一键写入」只写当前关的 `LevelMap.xlsx`）、`_manual_l1_tune.py`（第一关数值手工调整，按倍率写入）。
 
+## 关卡数值改动的范围与确认（2026-11-01 用户定规，最高优先级，与上节并行生效）
+
+适用于用户提出「改关卡数值 / 调难度 / 调血量 / 调金币产出 / 调出怪」等任何涉及关卡数值的请求。
+
+- **默认最小范围**：只改本次请求中明确点名的那一部分（指定关卡 / 指定波次 / 指定怪种 / 指定字段 / 指定行）。**禁止任何形式的外扩**：不"顺手"统一其他关、不为对齐而连带改同类行、不做未被要求的批量调平、不因"看起来不一致"而改其他关。拿不准就问，不拿不准就默认不动。
+- **必须先提问确认，得到答复才动手**：每次收到关卡数值修改请求，改表之前必须先向用户提问，至少确认以下四项：
+  1. **关卡范围**：哪几关（`L01`…`L30` 具体编号），是否只改其中一关；
+  2. **粒度**：哪张表 / 哪个波次（`roundId`）/ 哪一类怪或塔 / 哪个字段；
+  3. **数值与口径**：改成多少，或按倍率/百分比改；基准值是配置现值还是实测值；
+  4. **是否本轮为"全部关卡应用"**。
+  用户未明确范围时，**不得**自行挑一个"最合理"的范围开工，必须等确认。
+- **跨关卡只有一种合法情形**：用户在**当次请求**里明确写出「全部关卡应用」（或等价表述：所有关卡都改、L01–L30 全改）。历史会话说过一次**不构成长期授权**，跨请求不复用。即使授权全部关卡，仍要先确认字段与数值，并在动手前列出受影响关卡清单。
+- **改完必须交代边界**：报告实际改动的文件 / 关卡 / 波次 / 字段、旧值 → 新值，并给出"其余关卡未改动"的核对结论（`git diff --stat`、导出 json 行数比对等可复核证据），不要只说"改好了"。
+- **适用范围**：`Levels/Lxx/*.xlsx`（含 `EnemyData` / `EnemyList` / `RoundData` / `LevelMap` / `LevelRules` / `SceneInfo`）、关卡级代码常量与生成器参数，一律按本条执行。
+- **不是扩展的例外**：（2026-11-01 起该条仅作历史说明）原 `runtimeContentHash` 是全局哈希，30 张 `LevelRating.xlsx` 写同一个值属正常重封流程，不算"改到其他关卡"。评级表删除后已无此项，存档语义本身仍不得因本条而改动。
 
 ## 原创声音维护（2026-10-27）
 

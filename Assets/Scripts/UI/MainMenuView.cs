@@ -128,13 +128,13 @@ namespace FTProject
             SaveManager sm = SaveManager.Instance;
             if (sm != null)
             {
-                SetText(_starText, string.Format("{0}/{1}", sm.TotalStars, totalLevels * LevelRatingEvaluator.MaxStars));
+                SetText(_starText, string.Format("{0}/{1}", sm.TotalStars, totalLevels * SaveManager.MaxStars));
                 SetText(_clearText, Localization.Get("Cleared {0}/{1}", sm.ClearedCount, totalLevels)
                     ?? string.Format("已通关 {0}/{1}", sm.ClearedCount, totalLevels));
             }
             else
             {
-                SetText(_starText, string.Format("0/{0}", totalLevels * LevelRatingEvaluator.MaxStars));
+                SetText(_starText, string.Format("0/{0}", totalLevels * SaveManager.MaxStars));
                 SetText(_clearText, Localization.Get("Cleared {0}/{1}", 0, totalLevels)
                     ?? string.Format("已通关 0/{0}", totalLevels));
             }

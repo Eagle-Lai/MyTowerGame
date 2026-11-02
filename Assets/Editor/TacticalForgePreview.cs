@@ -110,7 +110,7 @@ namespace FTProject.EditorTools
             {
                 root.transform.Find("Panel/ContinueBtn").gameObject.SetActive(false);
                 textAt("Panel/StatBg/ClearText",string.Format(tr("Cleared {0}/{1}"),0,levels.Count));
-                textAt("Panel/StatBg/StarText","0/"+(levels.Count*LevelRatingEvaluator.MaxStars));
+                textAt("Panel/StatBg/StarText","0/"+(levels.Count*SaveManager.MaxStars));
             }
             if(name=="SelectView")
             {
@@ -133,18 +133,14 @@ namespace FTProject.EditorTools
                 textAt("Panel/LevelName",string.Format(tr("Level {0}"),level.Id));
                 textAt("Panel/BestStarText",tr(state.Contains("legacy")?"Legacy clear; current version unrated":"Current version unrated"));
                 for(int i=1;i<=5;i++)root.transform.Find("Panel/Star"+i).GetComponent<Image>().color=new Color(.28f,.35f,.44f);
-                var rating=SimpleJSON.JSONNode.Parse(File.ReadAllText("Assets/ConfigJson/tblevelrating.json")).Children.FirstOrDefault(x=>x["id"].AsInt==level.Id);
-                string[] profileKeys={"Very Easy","Easy","Below Medium","Medium","Above Medium","Hard","Very Hard","Extreme"};
-                string profileId=rating!=null?(string)rating["profileId"]:"";int profileTier;
-                string profileName=profileId.Length>1 && int.TryParse(profileId.Substring(1),out profileTier) && profileTier>=1 && profileTier<=profileKeys.Length?tr(profileKeys[profileTier-1]):profileId;
+                // 【2026-11-01】评级表删除：Info2 改显示最佳整关用时（与运行时口径一致）。
                 textAt("Panel/Info1",string.Format(tr("Waves     {0}"),level.RoundCount));
-                textAt("Panel/Info2",string.Format(tr("Balance preset: {0}"),profileName));
+                textAt("Panel/Info2",string.Format(tr("Best clear: {0}"),SaveManager.FormatTime(0)));
                 textAt("Panel/Info3",string.Format(tr("Start Gold {0}"),level.InitialGold));
                 textAt("Panel/Info4",string.Format(tr("Start HP   {0}"),level.InitialHp));
                 textAt("Panel/Info5",tr(new[]{"Campaign Stage I","Campaign Stage II","Campaign Stage III","Campaign Stage IV","Campaign Stage V"}[Mathf.Clamp(level.Difficulty,1,5)-1]));
-                textAt("Panel/Info6",string.Format(tr("Best combat: {0}"),RatingPresentation.Time(0)));
-                string target=rating!=null?string.Format(tr("Five-star target: full HP, no leaks, all enemies defeated; combat ≤ {0}"),RatingPresentation.Time(rating["parCombatTimeMs"].AsLong)):tr("Rating config missing or invalid");
-                textAt("Panel/RatingTarget",target+"\n"+tr("Combat time excludes preparation, inter-wave waits and pauses")+(rating!=null && (string)rating["calibrationStatus"]=="verified_unity_reference"?"":"\n"+tr("Time baseline pending verification")));
+                textAt("Panel/Info6",string.Format(tr("Best combat: {0}"),SaveManager.FormatPreciseTime(0)));
+                textAt("Panel/RatingTarget",tr("Clearing a level awards five stars until the rating rules are rebuilt")+"\n"+tr("Combat time excludes preparation, inter-wave waits and pauses"));
                 bool locked=state.Contains("locked");
                 textAt("Panel/LockReason",locked?tr("Clear the previous level first"):"");
                 root.transform.Find("Panel/LockReason").gameObject.SetActive(locked);
@@ -178,9 +174,9 @@ namespace FTProject.EditorTools
                 root.transform.Find("Panel/RecordTip").gameObject.SetActive(pending||!failed);
                 textAt("Panel/RecordTip",pending?tr("Record could not be saved; retry save"):tr("★ New Record! Best stars improved"));
                 textAt("Panel/Stats",string.Format(tr("HP {0}/{1}    Kills {2}    Leaks {3}"),8,10,120,2));
-                textAt("Panel/RatingTimes",string.Format(tr("Combat {0} / Par {1} · Level {2}"),"02:15.000","02:00.000","03:10.000"));
-                textAt("Panel/RatingContext",tr("Very Easy")+" · "+string.Format(tr("Balance preset: {0}"),tr("Very Easy"))+"\n"+string.Format(tr("Boss leaks {0} · Critical leaks {1}"),1,2));
-                textAt("Panel/RatingReasons",state.Contains("stress")?tr("Defense failed")+" · "+tr("Invalid combat timer")+" · "+tr("Incomplete waves")+" · "+tr("Spawn count mismatch")+" · "+tr("Enemy accounting mismatch"):failed?tr("Defense failed"):"");
+                textAt("Panel/RatingTimes",string.Format(tr("Combat {0} · Level {1}"),"02:15.000","03:10.000"));
+                textAt("Panel/RatingContext",string.Format(tr("Boss leaks {0}"),1));
+                textAt("Panel/RatingReasons","");
                 root.transform.Find("Panel/NextBtn").gameObject.SetActive(!pending&&!failed);
                 textAt("Panel/RetryBtn/Label",tr(pending?"Retry Save":failed?"Try Again":"Replay"));
                 textAt("Panel/NextBtn/Label",tr("Next Level"));

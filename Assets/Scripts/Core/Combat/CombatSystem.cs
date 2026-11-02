@@ -23,7 +23,6 @@ namespace FTProject
     {
         private readonly List<BaseEnemy> _enemies = new List<BaseEnemy>(256);
         private readonly List<BaseTower> _towers = new List<BaseTower>(64);
-        private readonly List<BaseBullet> _bullets = new List<BaseBullet>(256);
         /// <summary>TickEnemies 的遍历快照：避免 Tick 期间列表被回调修改导致索引失效</summary>
         private readonly List<BaseEnemy> _tickSnapshot = new List<BaseEnemy>(256);
 
@@ -236,27 +235,10 @@ namespace FTProject
             }
         }
 
-        public void RegisterBullet(BaseBullet b)
-        {
-            if (b != null && !_bullets.Contains(b))
-            {
-                _bullets.Add(b);
-            }
-        }
-
-        public void UnregisterBullet(BaseBullet b)
-        {
-            if (b != null)
-            {
-                _bullets.Remove(b);
-            }
-        }
-
         private void UnregisterAll()
         {
             _enemies.Clear();
             _towers.Clear();
-            _bullets.Clear();
         }
 
         // ------------------------------------------------------------------
@@ -273,10 +255,7 @@ namespace FTProject
             // ② 塔索敌与开火
             TickTowers(dt);
 
-            // ③ 子弹推进与命中判定
-            TickBullets(dt);
-
-            // ④ 路径重算节流（建塔/拆塔后置脏标记，这里统一处理）
+            // ③ 路径重算节流（建塔/拆塔后置脏标记，这里统一处理）
             AStarManager.Instance.ProcessRefresh();
 
             TickStats(dt);
@@ -344,20 +323,6 @@ namespace FTProject
             }
         }
 
-        private void TickBullets(float dt)
-        {
-            for (int i = _bullets.Count - 1; i >= 0; i--)
-            {
-                BaseBullet b = _bullets[i];
-                if (b == null)
-                {
-                    _bullets.RemoveAt(i);
-                    continue;
-                }
-                b.Tick(dt);
-            }
-        }
-
         private void TickStats(float dt)
         {
             // ① 「无目标开火」是**正确性不变量**，与调试开关无关：一旦发生就必须报出来。
@@ -384,7 +349,7 @@ namespace FTProject
 
             // 场上什么都没有就不打 —— 否则空闲期每 5 秒一条，会把 Console 刷满
             // （日志被刷屏会掩盖真正的错误，这是实际踩过的坑）
-            if (_enemies.Count == 0 && _towers.Count == 0 && _bullets.Count == 0)
+            if (_enemies.Count == 0 && _towers.Count == 0)
             {
                 return;
             }
@@ -401,8 +366,8 @@ namespace FTProject
             }
 
             Debug.Log(string.Format(
-                "[Combat] 怪={0}(存活{1}) 塔={2} 弹={3} | 索敌次数={4} 开火次数={5} 命中={6} 空放尝试={7} | {8}",
-                _enemies.Count, AliveEnemyCount, _towers.Count, _bullets.Count,
+                "[Combat] 怪={0}(存活{1}) 塔={2} | 索敌次数={3} 开火次数={4} 命中={5} 空放尝试={6} | {7}",
+                _enemies.Count, AliveEnemyCount, _towers.Count,
                 statSearch, statFire, StatHitCount, StatIdleFireAttempt,
                 Grid.DumpDebugInfo()));
             // （空放检查已移到本方法开头，且与调试开关无关，不在这里重复）
@@ -436,21 +401,13 @@ namespace FTProject
             dst.AddRange(_towers);
         }
 
-        /// <summary>把在场子弹复制到 dst（切关时统一回收用）</summary>
-        public void CopyBullets(List<BaseBullet> dst)
-        {
-            dst.Clear();
-            dst.AddRange(_bullets);
-        }
-
         public int TowerCount { get { return _towers.Count; } }
-        public int BulletCount { get { return _bullets.Count; } }
         public int EnemyCount { get { return _enemies.Count; } }
 
         public string DumpDebugInfo()
         {
-            return string.Format("[Combat] 怪 {0}（存活 {1}）/ 塔 {2} / 弹 {3}\n{4}",
-                _enemies.Count, AliveEnemyCount, _towers.Count, _bullets.Count,
+            return string.Format("[Combat] 怪 {0}（存活 {1}）/ 塔 {2}\n{3}",
+                _enemies.Count, AliveEnemyCount, _towers.Count,
                 Grid != null ? Grid.DumpDebugInfo() : "(Grid 未初始化)");
         }
     }

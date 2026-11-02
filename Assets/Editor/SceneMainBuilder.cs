@@ -31,8 +31,7 @@ namespace FTProject.EditorTools
     ///     ├── BoardRoot    (BoardView)      格子
     ///     ├── PathRoot     (PathArrowView)  路径箭头
     ///     ├── TowerRoot    (TowerPlacement) 塔 + 放置预览
-    ///     ├── EnemyRoot                     怪物
-    ///     └── BulletRoot                    子弹
+    ///     └── EnemyRoot                     怪物
     ///   GameFlow          (GameFlowManager)     关卡流程总控
     ///   GameSceneLauncher (GameSceneLauncher)   组合根：校验并注入引用
     ///
@@ -314,14 +313,13 @@ namespace FTProject.EditorTools
             towerGo.transform.SetParent(root.transform, false);
             placement = towerGo.AddComponent<TowerPlacement>();
 
-            // 怪物 / 子弹（纯容器，实例由对象池创建并挂进来）
+            // 怪物（纯容器，实例由对象池创建并挂进来）
+            // 2026-10-31：BulletRoot 随真实子弹系统一并删除（塔改为即时命中）
             GameObject enemyGo = new GameObject("EnemyRoot");
             enemyGo.transform.SetParent(root.transform, false);
-            GameObject bulletGo = new GameObject("BulletRoot");
-            bulletGo.transform.SetParent(root.transform, false);
 
             report.Ok("BattleRoot → Background / BoardRoot(BoardView) / PathRoot(PathArrowView) " +
-                      "/ TowerRoot(TowerPlacement) / EnemyRoot / BulletRoot");
+                      "/ TowerRoot(TowerPlacement) / EnemyRoot");
             return root.transform;
         }
 
@@ -352,7 +350,6 @@ namespace FTProject.EditorTools
             launcher.pathRoot = battleRoot.Find("PathRoot");
             launcher.towerRoot = battleRoot.Find("TowerRoot");
             launcher.enemyRoot = battleRoot.Find("EnemyRoot");
-            launcher.bulletRoot = battleRoot.Find("BulletRoot");
 
             // placement 与 towerRoot 是同一个对象，GameSceneLauncher 不持有它的引用：
             // TowerPlacement 自己从 Inspector 取父节点即可，少一处可漏连的引用

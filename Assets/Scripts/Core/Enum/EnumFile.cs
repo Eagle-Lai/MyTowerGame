@@ -9,7 +9,7 @@ namespace FTProject
     ///
     /// 原来的 PointType / BulletType / EnemyState / TowerBuildState / BulletState 已移除：
     ///   - PointType/TowerBuildState 属于已废弃的 Node/Obstacle 3D 节点体系
-    ///   - BulletState 定义在 BaseBullet.cs（与使用处相邻，便于维护）
+    ///   - BulletState 随 2026-10-31 删除真实子弹系统一并消失（塔改为即时命中）
     ///   - EnemyState 与新的 EnemyAnimState（Animator 的 int 参数 State）语义重复
     /// </summary>
     public enum EnemyType

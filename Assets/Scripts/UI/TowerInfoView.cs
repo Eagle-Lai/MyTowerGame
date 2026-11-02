@@ -317,7 +317,8 @@ namespace FTProject
             // ---- 出售 ----
             if (_sellBtn != null)
             {
-                // 返还额走统一口径（TowerManager.RefundOf）：还原塔投入为 0，这里显示 +0
+                // 返还额走统一口径（TowerManager.RefundOf）：还原塔按阵型记录里的累计投入算，
+                // 与它退出前能卖的钱一致（2026-11-01 起；老存档没有投入字段时仍为 +0）
                 int refund = TowerManager.RefundOf(_tower);
                 _sellBtn.interactable = true;
                 // 文案常驻（不再有"确认态"，所以不需要"别把它刷回去"的保护）

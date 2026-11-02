@@ -27,7 +27,6 @@ namespace FTProject
         public Transform pathRoot;
         public Transform towerRoot;
         public Transform enemyRoot;
-        public Transform bulletRoot;
 
         private void Awake()
         {
@@ -44,7 +43,6 @@ namespace FTProject
             flowManager.pathRoot = pathRoot;
             flowManager.towerRoot = towerRoot;
             flowManager.enemyRoot = enemyRoot;
-            flowManager.bulletRoot = bulletRoot;
 
             StartCoroutine(EnsureReporterWhenResourcesReady());
         }
@@ -139,7 +137,6 @@ namespace FTProject
             ok &= Check(pathRoot, "pathRoot");
             ok &= Check(towerRoot, "towerRoot");
             ok &= Check(enemyRoot, "enemyRoot");
-            ok &= Check(bulletRoot, "bulletRoot");
 
             if (!ok)
             {

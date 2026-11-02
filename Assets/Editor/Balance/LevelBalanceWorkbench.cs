@@ -176,16 +176,12 @@ namespace FTProject.EditorTools
                 _level = EditorGUILayout.IntSlider("关卡", _level, 1, CampaignLevels);
                 _wave = EditorGUILayout.IntSlider("波", _wave, 1, CampaignWaves);
             }
+            // 【2026-11-01】评级表删除：这一栏改显示"当前导出的配置时间"，用于确认正式表是哪一份。
             string formal = "尚未读取正式版本";
-            string ratings = Path.Combine(Root, "Assets/ConfigJson/tblevelrating.json");
-            if (File.Exists(ratings))
+            string enemies = Path.Combine(Root, "Assets/ConfigJson/tbenemydata.json");
+            if (File.Exists(enemies))
             {
-                try
-                {
-                    var n = JSON.Parse(File.ReadAllText(ratings))[0];
-                    formal = n["profileId"].Value + " / balance " + n["balanceRevision"].Value + " / rating " + n["ratingRevision"].Value;
-                }
-                catch (Exception ex) { formal = "正式评级读取失败: " + ex.Message; }
+                formal = "配置已导出 · " + File.GetLastWriteTime(enemies).ToString("yyyy-MM-dd HH:mm");
             }
             EditorGUILayout.LabelField("正式已应用", formal);
             EditorGUILayout.LabelField("草稿", DraftPath + (_recipe?["overrides"].Count > 0 ? "  · 已自定义" : ""), EditorStyles.miniLabel);
@@ -219,10 +215,10 @@ namespace FTProject.EditorTools
             EditorGUILayout.LabelField("精确覆盖 · 后设置的更细作用域优先", EditorStyles.boldLabel);
             _scope = EditorGUILayout.Popup("作用域", _scope, new[] { "单波", "本关连续波段", "整关", "全战役" });
             if (_scope == 1) _lastWave = EditorGUILayout.IntSlider("至第几波", _lastWave, _wave, CampaignWaves);
-            _target = EditorGUILayout.Popup("对象", _target, new[] { "波次 wave", "关卡经济 level", "评级 rating", "塔 tower" });
-            if (_target == 3) _towerId = EditorGUILayout.IntSlider("塔配置 ID", _towerId, 1, 9);
+            _target = EditorGUILayout.Popup("对象", _target, new[] { "波次 wave", "关卡经济 level", "塔 tower" });
+            if (_target == 2) _towerId = EditorGUILayout.IntSlider("塔配置 ID", _towerId, 1, 9);
             _field = EditorGUILayout.TextField("字段", _field);
-            EditorGUILayout.LabelField(_target == 0 ? "count / targetEhp / spawnIntervalMs / speedMultiplier / rewardGold" : _target == 1 ? "initialGold / initialHp" : _target == 2 ? "parCombatTimeMs / maxFourStarLeaks / fourStarTimePermille" : "power / CD / radius / prices / effectValue / canAttackAir", EditorStyles.wordWrappedMiniLabel);
+            EditorGUILayout.LabelField(_target == 0 ? "count / targetEhp / spawnIntervalMs / speedMultiplier / rewardGold" : _target == 1 ? "initialGold / initialHp" : "power / CD / radius / prices / effectValue / canAttackAir", EditorStyles.wordWrappedMiniLabel);
             EditorGUILayout.LabelField("支持字段由配方/core定义；数量和间隔必须是整数。塔与地图请在各自页编辑。", EditorStyles.wordWrappedMiniLabel);
             _operation = EditorGUILayout.Popup("操作", _operation, new[] { "最终值 set", "增量倍率 multiply" });
             _value = EditorGUILayout.TextField("值（按字段单位）", _value);
@@ -262,14 +258,14 @@ namespace FTProject.EditorTools
             BeforeEdit("添加范围覆盖");
             if (!_recipe["overrides"].IsArray) _recipe["overrides"] = new JSONArray();
             JSONNode n = new JSONObject(); n["id"] = "edit-" + Guid.NewGuid().ToString("N").Substring(0, 12);
-            n["target"] = new[] { "wave", "level", "rating", "tower" }[_target];
+            n["target"] = new[] { "wave", "level", "tower" }[_target];
             n["profileId"] = ProfileId;
             n["field"] = _field; n["mode"] = _operation == 0 ? "replace" : "multiply"; n["value"] = value;
             n["scope"] = new[] { "wave", "range", "level", "global" }[_scope];
             n["levelId"] = _level;
             if (_scope == 0) n["waveOrdinal"] = _wave;
             if (_scope == 1) { n["waveStart"] = _wave; n["waveEnd"] = _lastWave; }
-            if (_target == 3) n["targetId"] = _towerId;
+            if (_target == 2) n["targetId"] = _towerId;
             _recipe["overrides"].Add(n); Changed();
         }
 

@@ -36,9 +36,6 @@ namespace FTProject
         /// <summary>防御塔：减速（type=3）</summary>
         public const string TowerRetard = "tower_retard";
 
-        /// <summary>子弹</summary>
-        public const string BulletNormal = "bullet_normal";
-
         /// <summary>战斗 HUD 与提示</summary>
         public const string UiHud = "ui_hud";
 
@@ -76,7 +73,7 @@ namespace FTProject
         /// <summary>不随怪物清单变化的固定包</summary>
         public static readonly string[] Fixed =
         {
-            Config, CoreArt, Font, TowerNormal, TowerPower, TowerRetard, BulletNormal, UiHud, BootUi, Reporter, AudioRuntime, AudioMusic, AudioUI, AudioCombat
+            Config, CoreArt, Font, TowerNormal, TowerPower, TowerRetard, UiHud, BootUi, Reporter, AudioRuntime, AudioMusic, AudioUI, AudioCombat
         };
 
         /// <summary>常驻包：初始化后不参与卸载</summary>

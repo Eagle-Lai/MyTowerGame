@@ -35,34 +35,27 @@ namespace FTProject
             var globals = new TBGlobal(JSONNode.Parse(json["tbglobal"]));
             var rules = new TBLevelRules(JSONNode.Parse(json["tblevelrules"]));
             var localization = new TBLocalization(JSONNode.Parse(json["tblocalization"]));
-            JSONNode ratingJson = JSONNode.Parse(json["tblevelrating"]);
-            foreach (JSONNode node in ratingJson.Children) node["runtimeContentHash"] = "";
-            var rating = new TBLevelRating(ratingJson);
-            string hash = CalculateRuntimeContentHash(json, rating.DataList);
-            foreach (JSONNode node in ratingJson.Children) node["runtimeContentHash"] = hash;
-            rating = new TBLevelRating(ratingJson);
             var global = globals.GetOrDefault(1);
             if (global == null) throw new InvalidDataException("Candidate global config is missing");
 
-            var oldEnemies = EnemyTable; var oldTowers = TowerTable; var oldBullets = BulletTable; var oldGroups = WaveTable; var oldRounds = RoundTable; var oldLevels = LevelTable; var oldMaps = LevelMapTable; var oldGlobals = GlobalTable; var oldRules = RulesTable; var oldLocalization = LocalizationTable; var oldRating = RatingTable; var oldGlobal = Global; var oldGlobalRow = _globalRow;
-            var oldJson = new Dictionary<string, string>(LoadedJson); bool oldVerified = RatingContentVerified; bool oldLoaded = IsLoaded;
+            var oldEnemies = EnemyTable; var oldTowers = TowerTable; var oldBullets = BulletTable; var oldGroups = WaveTable; var oldRounds = RoundTable; var oldLevels = LevelTable; var oldMaps = LevelMapTable; var oldGlobals = GlobalTable; var oldRules = RulesTable; var oldLocalization = LocalizationTable; var oldGlobal = Global; var oldGlobalRow = _globalRow;
+            var oldJson = new Dictionary<string, string>(LoadedJson); bool oldLoaded = IsLoaded;
             try
             {
-                EnemyTable = enemies; TowerTable = towers; BulletTable = bullets; WaveTable = groups; RoundTable = rounds; LevelTable = levels; LevelMapTable = maps; GlobalTable = globals; RulesTable = rules; LocalizationTable = localization; RatingTable = rating;
+                EnemyTable = enemies; TowerTable = towers; BulletTable = bullets; WaveTable = groups; RoundTable = rounds; LevelTable = levels; LevelMapTable = maps; GlobalTable = globals; RulesTable = rules; LocalizationTable = localization;
                 BuildLevelIndexes();
                 RulesByLevel.Clear(); foreach (LevelRules lr in rules.DataList) RulesByLevel[lr.Id] = lr;
                 _globalRow = global; RebuildGlobalConfig();
                 LoadedJson.Clear(); foreach (var pair in json) LoadedJson[pair.Key] = pair.Value;
-                if (!VerifyRatingContent()) throw new InvalidDataException("Candidate rating/content self-check failed");
-                RatingContentVerified = true; IsLoaded = true;
-                Debug.Log("[Rating] Isolated editor candidate loaded: " + Path.GetFullPath(directory) + " hash=" + hash);
+                IsLoaded = true;
+                Debug.Log("[Config] Isolated editor candidate loaded: " + Path.GetFullPath(directory));
                 return true;
             }
             catch
             {
-                EnemyTable = oldEnemies; TowerTable = oldTowers; BulletTable = oldBullets; WaveTable = oldGroups; RoundTable = oldRounds; LevelTable = oldLevels; LevelMapTable = oldMaps; GlobalTable = oldGlobals; RulesTable = oldRules; LocalizationTable = oldLocalization; RatingTable = oldRating; _globalRow = oldGlobalRow; BuildLevelIndexes(); Global = oldGlobal;
+                EnemyTable = oldEnemies; TowerTable = oldTowers; BulletTable = oldBullets; WaveTable = oldGroups; RoundTable = oldRounds; LevelTable = oldLevels; LevelMapTable = oldMaps; GlobalTable = oldGlobals; RulesTable = oldRules; LocalizationTable = oldLocalization; _globalRow = oldGlobalRow; BuildLevelIndexes(); Global = oldGlobal;
                 LoadedJson.Clear(); foreach (var pair in oldJson) LoadedJson[pair.Key] = pair.Value;
-                RatingContentVerified = oldVerified; IsLoaded = oldLoaded;
+                IsLoaded = oldLoaded;
                 throw;
             }
         }

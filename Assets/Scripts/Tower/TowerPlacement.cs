@@ -330,9 +330,35 @@ namespace FTProject
             if (hit == null)
             {
                 Deselect();
+                // 【2026-11-01 建造圆盘】点到"可建造的空格"→ 在该格弹出三塔图标圆盘（先选格子再选塔型）。
+                //   不可建的空格（障碍/装饰/空洞/已有塔）维持原行为：只取消选中。
+                //   堵死路径的格子也不发（圆盘上三个塔型全会被 TryBuild 拒，开了等于骗点）；
+                //   A* 未就绪时降级放行，落地仍有 TryBuild 全套校验兜底。
+                if (cell != null && cell.IsBuildable && CellKeepsPathOpen(row, col))
+                {
+                    EventDispatcher.TriggerEvent<int, int>(EventName.BuildCellChosenEvent, row, col);
+                }
                 return;
             }
             Select(hit);
+        }
+
+        /// <summary>
+        /// 该格建塔是否至少不会把路堵死（2026-11-01，供建造圆盘的开启判定）。
+        /// 【与 PreviewPathThrough 的区别】同一个 A* 推演，但**只判定、不画预览箭头** ——
+        /// 推演结果出来后立刻 ClearPreviewPath，既不留 PreviewPathWorld 残留，也不发预览事件。
+        /// A* 未就绪时返回 true（与 EvaluateCell 同一套降级：悬停高亮不因 A* 缺数据整片变红）。
+        /// </summary>
+        public static bool CellKeepsPathOpen(int row, int col)
+        {
+            AStarManager astar = AStarManager.Instance;
+            if (astar == null || !astar.IsGridReady)
+            {
+                return true;
+            }
+            Vector3[] preview = astar.ComputePathWithExtraWall(row, col);
+            astar.ClearPreviewPath();
+            return preview != null;
         }
 
         /// <summary>选中一座塔：广播事件（UI 据此打开面板）。重复点同一座不重复广播。</summary>

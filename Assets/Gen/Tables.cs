@@ -23,7 +23,6 @@ public sealed partial class Tables
     public TBLevelMap TBLevelMap {get; }
     public TBGlobal TBGlobal {get; }
     public TBLocalization TBLocalization {get; }
-    public TBLevelRating TBLevelRating {get; }
     public TBLevelRules TBLevelRules {get; }
 
     public Tables(System.Func<string, JSONNode> loader)
@@ -47,8 +46,6 @@ public sealed partial class Tables
         tables.Add("TBGlobal", TBGlobal);
         TBLocalization = new TBLocalization(loader("tblocalization"));
         tables.Add("TBLocalization", TBLocalization);
-        TBLevelRating = new TBLevelRating(loader("tblevelrating"));
-        tables.Add("TBLevelRating", TBLevelRating);
         TBLevelRules = new TBLevelRules(loader("tblevelrules"));
         tables.Add("TBLevelRules", TBLevelRules);
         PostInit();
@@ -62,7 +59,6 @@ public sealed partial class Tables
         TBLevelMap.Resolve(tables);
         TBGlobal.Resolve(tables);
         TBLocalization.Resolve(tables);
-        TBLevelRating.Resolve(tables);
         TBLevelRules.Resolve(tables);
         PostResolve();
     }
@@ -78,7 +74,6 @@ public sealed partial class Tables
         TBLevelMap.TranslateText(translator);
         TBGlobal.TranslateText(translator);
         TBLocalization.TranslateText(translator);
-        TBLevelRating.TranslateText(translator);
         TBLevelRules.TranslateText(translator);
     }
 

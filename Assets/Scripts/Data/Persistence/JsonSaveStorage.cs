@@ -156,7 +156,10 @@ namespace FTProject
             foreach (LevelProgress p in d.levels)
             {
                 if (p == null) continue;
-                p.stars = Mathf.Clamp(p.stars, 0, LevelRatingEvaluator.MaxStars);
+                p.stars = Mathf.Clamp(p.stars, 0, SaveManager.MaxStars);
+                // 【2026-11-01】评级下线：已通关(含旧评级归档的 legacy 记录)但星数为 0 的老档，
+                // 统一补成满星 —— 新口径是"通关即 5 星"，不该再显示"已通关但 0 星 / 未通关"。
+                if (p.stars <= 0 && p.Cleared) p.stars = SaveManager.MaxStars;
                 if (p.legacy == null) p.legacy = new List<LegacyLevelProgress>();
                 if (p.committedRunIds == null) p.committedRunIds = new List<string>();
             }
@@ -295,7 +298,7 @@ namespace FTProject
             SaveData candidate = Clone(_data);
             int index = candidate.levels.FindIndex(p => p != null && p.levelId == progress.levelId);
             LevelProgress copy = Clone(progress);
-            copy.stars = Mathf.Clamp(copy.stars, 0, LevelRatingEvaluator.MaxStars);
+            copy.stars = Mathf.Clamp(copy.stars, 0, SaveManager.MaxStars);
             if (index < 0) candidate.levels.Add(copy); else candidate.levels[index] = copy;
             if (WriteSaveFile(candidate)) _data = candidate;
         }

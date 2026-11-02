@@ -126,38 +126,51 @@ namespace FTProject.EditorTools
 
         private static LevelClearInfo CreateClearFixture(string scenario)
         {
+            // 【2026-11-01】评级表删除：结算 fixture 直接按"通关即 5 星"的当前口径构造，
+            //   计划波数/敌人数从关卡配置算，不再读任何 profile。
             int lastLevel = Configs.LevelTable.DataList.Max(l => l.Id);
-            var profile = Configs.GetLevelRating(lastLevel);
-            if (profile == null) throw new InvalidOperationException("Final level rating is missing");
             bool low = scenario == "clear-low", pending = scenario == "clear-save-pending";
+            LevelConfig planned = Configs.GetLevel(lastLevel);
+            int waves = 0, enemies = 0;
+            if (planned != null && planned.RoundIds != null)
+                foreach (int roundId in planned.RoundIds)
+                {
+                    RoundConfig round = Configs.GetRound(roundId);
+                    if (round == null || round.WaveIds == null) continue;
+                    waves++;
+                    foreach (int waveId in round.WaveIds)
+                    {
+                        WaveGroupConfig group = Configs.GetWaveGroup(waveId);
+                        if (group != null) enemies += group.EnemyCount;
+                    }
+                }
+            if (waves <= 0) waves = 1;
+            int leaks = low ? 3 : 0;
             var metrics = new LevelRunMetrics
             {
-                runId = "ui-fixture-" + scenario, profileId = profile.profileId, profileRevision = profile.profileRevision,
-                balanceRevision = profile.balanceRevision, ratingRevision = profile.ratingRevision, planHash = profile.planHash,
-                expectedWaveCount = profile.expectedWaveCount, completedWaveCount = profile.expectedWaveCount,
-                expectedEnemyCount = profile.expectedEnemyCount, successfulSpawned = profile.expectedEnemyCount,
-                leaked = low ? 3 : 0, bossLeaked = low ? 1 : 0, criticalLeaked = low ? 2 : 0,
-                killed = profile.expectedEnemyCount - (low ? 3 : 0), hp = low ? 1 : 20, maxHp = 20,
-                victory = true, statisticsValid = true, timingValid = true,
-                combatElapsedSeconds = profile.parCombatTimeMs / 1000d * (low ? 1.5d : 1d)
+                runId = "ui-fixture-" + scenario,
+                expectedWaveCount = waves, completedWaveCount = waves,
+                expectedEnemyCount = enemies, successfulSpawned = enemies,
+                leaked = leaks, bossLeaked = low ? 1 : 0,
+                killed = enemies - leaks, hp = low ? 1 : 20, maxHp = 20,
+                victory = true, debugOverride = false,
+                combatElapsedSeconds = 120d
             };
             metrics.levelElapsedSeconds = metrics.combatElapsedSeconds + 95d;
-            int remaining = profile.expectedEnemyCount;
-            for (int i = 0; i < profile.expectedWaveCount; i++)
+            int remaining = enemies;
+            for (int i = 0; i < waves; i++)
             {
-                int expected = remaining / (profile.expectedWaveCount - i); remaining -= expected;
-                int leaks = low && i == 0 ? 3 : 0;
+                int expected = remaining / (waves - i); remaining -= expected;
+                int waveLeaks = low && i == 0 ? leaks : 0;
                 metrics.waves.Add(new WaveRunMetrics { ordinal = i + 1, expected = expected, successfulSpawned = expected,
-                    killed = expected - leaks, leaked = leaks, bossLeaked = low && i == 0 ? 1 : 0,
-                    criticalLeaked = low && i == 0 ? 2 : 0 });
+                    killed = expected - waveLeaks, leaked = waveLeaks, bossLeaked = low && i == 0 ? 1 : 0 });
             }
-            var rating = LevelRatingEvaluator.Evaluate(profile, metrics);
-            if (!rating.valid) throw new InvalidOperationException("UI fixture is invalid: " + string.Join(", ", rating.reasons));
-            if (pending) rating.reasons = new[] { "Record could not be saved; retry save" };
             return new LevelClearInfo { victory = true, levelId = lastLevel, levelName = Localization.LevelName(lastLevel, "Level " + lastLevel),
-                stars = rating.stars, previousBest = low ? 5 : 3, newRecord = !low && !pending,
+                stars = SaveManager.MaxStars, previousBest = low ? 5 : 3, newRecord = !low && !pending,
                 hp = metrics.hp, maxHp = metrics.maxHp, killed = metrics.killed, leaked = metrics.leaked,
-                ratingResult = rating, progressSaved = !pending, savePending = pending,
+                bossLeaked = metrics.bossLeaked,
+                combatTimeMs = (int)metrics.combatElapsedMs, levelTimeMs = (int)metrics.levelElapsedMs,
+                progressSaved = !pending, savePending = pending,
                 hasNext = false, nextLevelId = 0 };
         }
 

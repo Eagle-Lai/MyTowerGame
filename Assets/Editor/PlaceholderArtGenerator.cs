@@ -85,14 +85,6 @@ namespace FTProject.EditorTools
                 report.Ok("Path_Arrow.png  (64×64 朝上三角)");
             }
 
-            // ---- 子弹点 ----
-            {
-                Texture2D tex = EditorUtil.NewTexture(24, 24);
-                EditorUtil.FillCircle(tex, 12f, 12f, 9f, Color.white);
-                EditorUtil.WriteSprite(Dir + "/Bullet_Dot.png", tex);
-                report.Ok("Bullet_Dot.png  (24×24 圆点)");
-            }
-
             // ---- 血条 ----
             // 100×20 px → PPU100 下原生 1.0 × 0.2 世界单位，
             // 血条 prefab 里把 scale 设成 0.6 即得 0.6 × 0.12 的条

@@ -11,8 +11,13 @@
 - ★塔攻击表现：普通/火力塔不发子弹，开火 = 即时命中 + 序列帧。
   - `TowerFireFx`：枪口焰挂到炮管 `BarrelPoint` 子节点、local 置零；落点爆炸走对象池；帧由 `gen_tower_fire_frames.py` 生成。
   - ★散帧 meta 必须 `alignment: 9`(Custom) + `spritePivot y = 0.2`；写成 `alignment: 1` = TopLeft（底中应是 7）→ 焰会被甩到炮口右下角。
-  - 时长权威 = `BaseBullet.SlowDurationSec` / `DotDurationSec`。
+  - 时长权威 = `BaseTower.SlowDurationSec` / `DotDurationSec`（2026-10-31 随子弹系统删除从 `BaseBullet` 迁入）。
 - ★建造交互 v3：点按 = 放置态；长按 0.25s 或位移 30px = 拖拽（ghost 跟手、松手校验、拖回按钮或拖出棋盘静默取消）。
+- ★★建造交互 v4（2026-11-01，**第三条建造入口 + 圆盘即射程**，旧两路原样保留）：
+  - 点**可建造空格**（非放置态）→ 弹建造圆盘（Kingdom Rush 式先选格子再选塔型）：事件 `BuildCellChosenEvent(row,col)`（`TowerPlacement.HandleSelectClick` 发，条件 = 空 + `IsBuildable` + `CellKeepsPathOpen`（只判定不画预览：`ComputePathWithExtraWall` 后立刻 ClearPreviewPath；A* 未就绪放行））→ `TowerBuildMenu`（HUD prefab 内，`TacticalForgePrefabBuilder.BuildTowerBuildMenu` 生成 Backdrop+三塔图标钮 BuildBtn_Normal/Power/Retard）。
+  - 同格再点一次=收起；点图标=轻复查格子后 `TowerManager.TryBuild(type,1,row,col)`（成功收起、失败留盘换塔型）；买不起置灰价格变红；塔名/价格运行时按表填。
+  - **塔动作菜单（TowerActionMenu）的暗色圆盘直径 = 选中塔的 `Config.RadiusWorld`**（UpdateRangeBackdrop：塔心与塔心+radius×相机右向量投 HUD 本地取距×2；减速塔即光环半径；取不到保持 388 默认）——用户定规"点已建塔时圆圈大小应与攻击/减速范围一致"。
+  - 坑：退订 onClick 必须具名方法（匿名 delegate 匹配不上）；Backdrop 必须在 Configure **之前**建（Configure 按名抓引用序列化）；ApplyContentSurfaces 会重刷按钮皮肤、TowerBuildMenu 子树要排除；重建走专项菜单「更新 HUD 建造圆盘（2026-11-01）」避开全量重建三副作用。
 - 地图链路：棋盘 → `levelmap_export.json` → `LevelMap.xlsx` → `tblevelmap.json` → `SceneInfo.xlsx`；日志前缀 `[Place]` / `[HUD]` / `[TowerInfoView]` / `[Audit]`。
 - ★新增一关 = 四表齐全：LevelMap(id) + SceneInfo(mapId、RoundList) + RoundData + EnemyList。
 - ★编辑器全解锁 = `SaveManager.UnlockAllLevelsInEditor`（真机仍逐关解锁）。
@@ -94,3 +99,77 @@
     预览不改 CurrentPathWorld / 不发 RefreshPathEvent / 临时墙还原；预览逐点 == 落地路径且确实改道；
     堵死格返回 null 且回滚；RemainingPathTouches 只报未走过的格）。
     `PathArrowView` 预览层探针 = 9 个箭头、颜色 RGBA(0.55,0.95,1,0.85)、order 11、清预览后真实 9 个仍在。
+
+## 真实子弹系统已整体删除（2026-10-31）
+
+- **删除范围**：`Assets/Scripts/Bullet/BaseBullet.cs`（含 `BaseBullet`/`BulletManager`/`BulletState`）、
+  `CombatSystem` 的 `_bullets`/`RegisterBullet`/`UnregisterBullet`/`TickBullets`/`CopyBullets`/`BulletCount`、
+  `Launcher` 的 `BulletManager` 注册、`GameFlowManager`/`GameSceneLauncher` 的 `bulletRoot`、
+  `Bullet_Normal.prefab`、`Bullet_Dot.png`、`ResTable` 两条登记、`ResBundle.BulletNormal` 与 `bullet_normal` 包、
+  `Main.unity` 的 `BulletRoot` 空节点、`OutputCache` 里的旧 bundle 缓存。
+- **为什么删**：自 2026-10-17「移除真实子弹、改即时命中」起 `BulletManager.Fire` **零调用点**，
+  但 `BaseBullet.Explode` 仍无对空过滤、也不乘 `airDamageScale`，与在跑的 `DetonateAt` 规则冲突；
+  留着就是“哪天有人接回子弹，火力塔会静默溅射飞机”的雷。
+- **保留**：`tbbulletdata` 表、`TowerInfo.bulletId`、`BulletConfig`、`Configs.GetBullet` —— 火力塔的
+  AOE 半径 / 命中效果 / 效果值仍从这张表取；`BoardSorting.Bullet=400` 仍给枪口焰/爆炸用；
+  `Global.bulletPoolSize` 已成空配置（改表需手工，未动）。
+- **改名**：`TowerConfig.FiresBullet` → `CanFire`（真实语义只剩“这塔会不会开火”）。
+- **命中双计**（同日修）：删掉 `BaseTower.HurtEnemy` 里的 `AddHitCount(1)`，只在 `BaseEnemy.Hurt` 记一次；
+  `StatHitCount` 原先恒为真实值两倍，只影响 `PerfProbe`/`[Combat]` 日志。
+- **验证**：编译 0 error；`FTProject.BalanceCombat.EditModeTests` 29/29 通过；`Main.unity` diff 仅 34 行删除。
+- 记录：`Docs/BulletSystemRemoval_2026-10-31.md`。**未跑 Play Mode**；AB 包清单变化，热更需按铁律重打。
+
+## 出售返还改成"还原塔带投入入库"（2026-11-01，用户选方案 2）
+
+**起因**：用户问"为什么现在出售防御塔没有返还了"。定位结论——不是 bug，是 `ed4fa097d`（2026-10-31 09:19
+「每波落盘 + 续局还原」）把 `refund = round(cfg.SellPrice × rate)` 改成了
+`min(cfg.SellPrice, InvestedGold) × rate`，而免费还原路径 `SetInvestedGold(0)`，于是还原塔卖出恒为 0。
+配置侧已排除：`tbtowerinfo` 270 行 `sellPrice` 全 >0（普通 22/42/70、火力 30/58/97、减速 21/49/91），
+30 关 `tblevelrules.sellRefundRate` 全 = 1。
+
+**用户选择**：把 `InvestedGold` 随阵型一起存盘，卖还原塔也按投入返还（方案 2），不接受"还原塔卖 0"。
+
+**改动（4 处代码契约 + 3 处注释口径）**：
+- `LevelLayout.TowerLayoutEntry.investedGold`（新增 int）+ `hasInvested`（新增 bool）——
+  "这座塔累计花了多少钱"与"这条记录到底存没存过这笔钱"。
+  `SaveCurrentLevel` 采集 `tower.InvestedGold` 并置 `hasInvested = true`；
+  `RestoreTowers` 按 `hasInvested ? Mathf.Max(0, entry.investedGold) : FallbackInvested(type, level)` 传值。
+  **老档兜底**：`hasInvested=false` 时取 `Configs.GetTowerByTypeAndLevel(type,level).SellPrice`
+  ——`min(售价, 售价) × 比例` 与正常塔返还额完全一致，老玩家不会少拿也不会多发；
+  配置缺失返回 0（宁可少给，不可凭空造钱）。
+  **为什么不用 `investedGold == 0` 当哨兵**：把"0 投入"和"不知道投入"压在一个数值上，
+  将来出现合法 0（赠送塔/活动塔）时兜底会算错；显式开关与 `resourcesSaved`/`runSaved` 策略一致。
+- `TowerManager.RestoreTower(type, level, row, col, investedGold)` →
+  `TryBuildInternal(..., bool charge, bool quiet, int investedGold = 0)`；
+  记账行改为 `SetInvestedGold(charge ? cfg.Prices : Mathf.Max(0, investedGold))`。
+  `TryBuild`/`TryUpgrade` 的记账语义没变（升级仍是 `old.InvestedGold + nextCfg.Prices`）。
+- `EventName.TowerSoldEvent`（新事件，参数 BaseTower）；`BaseTower.Sell` 在 `ReleaseInstance`
+  **之前**触发（监听方要读塔字段，之后就是假 null）。
+- `GameFlowManager.OnTowerSold` → 立即 `SaveCurrentLevel(Level.Id, _roundCursor, snapshot, null)`。
+  三条守卫：① `State` 只允许 Preparing/RoundRunning/RoundComplete（结算后写会把"重玩起点"改成"续局"，
+  下次进关立刻再判通关）；② `_roundCursor <= 0` 时 `snapshot = null`（没可续的进度，写 runSaved 只会被
+  判"游标越界"刷警告）；③ RoundRunning 时把 `_run.waves` 末尾"未结算的那波"裁掉再存
+  （否则续局 `StartRound` 会再 push 一条同序号记录，`completedWaveCount` 与 waves.Count 对不上）。
+  `snapshot.Clone()` 是 JSON 深拷贝，改副本不污染本局统计。
+- UI 注释同步：`SellConfirmView` / `TowerActionMenu` / `TowerInfoView` 里"还原塔投入 0 → 显示 +0/0%"
+  的说法已不成立，改成"按阵型记录里的累计投入算"。
+
+**★ FormatVersion 故意保持 1**：`investedGold` / `hasInvested` 都是增量字段，老档读成 `0 / false`，
+配合开关可以精确走"按配置售价兜底"，语义没有歧义。升到 2 会让 `LoadBook` 把老玩家阵型整本作废。
+判断标准：只有"老档字段值会被新代码误读成另一个意思"时才必须升版本。
+
+**防刷金币论证（为什么这样不开口子）**：
+1. 返还额 = `min(售价, 投入) × 比例`，永远 ≤ 投入 → 卖塔本身不可能增殖；
+2. 还原塔的投入来自它自己的记录，卖它等于"退出前卖它"，不是白送钱；
+3. 关键是"卖塔立刻落盘"：塔从记录里消失 + 金币进记录，成对持久化；不写这一笔，
+   "卖完 → 退出 → 重进"会让塔带着投入额复活，同一座塔可反复卖 —— 那才是真漏洞。
+4. 若卖完立刻崩溃/杀进程：金币和塔一起回滚，等于没卖，无收益。
+
+**验证**：`refresh_unity(force/all/compile)` 后 `isCompiling=False`、`scriptCompilationFailed=False`、
+`read_console(filter="error CS")` 0 条。`execute_code` 验 JSON 往返：新记录序列化为
+`{"row":1,"col":2,"type":1,"level":1,"investedGold":32,"hasInvested":true}`，读回 `32/True`；
+老记录 `{"row","col","type","level"}` 读出 `0/False`（走兜底）。数值口径已用 `tbtowerinfo` 静态核对：
+type1 Lv1 `prices=32`、`sellPrice=22` → 新塔返还 `min(22,32)=22`，老档兜底 `min(22,22)=22`，两者相等。
+**未跑 Play Mode 实测**（没做"建塔→过一波→退出→重进→卖塔看金币"的完整链路）。
+Console 里残留的 3 条错误与本改动无关：`Unity Remote requirements check failed`（Android Remote）、
+`EventController.cs:112/140` 的 `RemoveEventListener<T,U>` 类型不匹配（既有双参数退订 bug，本次只用了单参数事件）。

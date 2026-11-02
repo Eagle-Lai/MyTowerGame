@@ -51,7 +51,11 @@ namespace FTProject
         private ISaveStorage _storage;
         private SaveData _data;
         private bool _loaded;
-        public const int MaxStars = LevelRatingEvaluator.MaxStars;
+        /// <summary>
+        /// 星级上限。2026-11-01 评级系统下线后**通关恒记满星**，这里是唯一来源
+        /// （UI、存档、编辑器校验都读它，不要再各处写死 5）。
+        /// </summary>
+        public const int MaxStars = 5;
         /// <summary>
         /// v1 的"失败续局点"存储键。**新版本只读来清理、不再写入** ——
         /// 保留常量是为了让旧库里的这条 kv 能在启动时被精确删掉（见 PurgeLegacyRunState）。
@@ -393,9 +397,8 @@ namespace FTProject
         public int GetStars(int levelId)
         {
             EnsureLoaded();
-            EnsureRatingVersion(levelId);
             LevelProgress p = _data.Find(levelId);
-            return IsCurrentRating(p, levelId) ? p.stars : 0;
+            return p != null ? Mathf.Clamp(p.stars, 0, MaxStars) : 0;
         }
 
         /// <summary>
@@ -406,84 +409,47 @@ namespace FTProject
         public int GetBestTimeMs(int levelId)
         {
             EnsureLoaded();
-            EnsureRatingVersion(levelId);
             LevelProgress p = _data.Find(levelId);
-            return IsCurrentRating(p, levelId) ? p.bestTimeMs : 0;
+            return p != null ? p.bestTimeMs : 0;
         }
 
         /// <summary>历史最好成绩（剩余生命），仅用于展示。0 = 无记录。</summary>
         public int GetBestHpLeft(int levelId)
         {
             EnsureLoaded();
-            EnsureRatingVersion(levelId);
             LevelProgress p = _data.Find(levelId);
-            return IsCurrentRating(p, levelId) ? p.bestHpLeft : 0;
+            return p != null ? p.bestHpLeft : 0;
         }
-        private static bool IsCurrentRating(LevelProgress progress, int levelId)
-        {
-            var profile = Configs.GetLevelRating(levelId);
-            return progress != null && Configs.RatingContentVerified && profile != null && profile.IsValid && progress.ratingVersionKey == profile.versionKey;
-        }
-        public int GetBestCombatTimeMs(int levelId) { EnsureLoaded(); EnsureRatingVersion(levelId); var p = _data.Find(levelId); return IsCurrentRating(p, levelId) ? p.bestCombatTimeMs : 0; }
-        public int GetLegacyStars(int levelId)
-        {
-            EnsureLoaded(); EnsureRatingVersion(levelId); var p = _data.Find(levelId); int result = 0;
-            if (p != null && !IsCurrentRating(p, levelId)) result = p.stars;
-            if (p != null && p.legacy != null) foreach (var old in p.legacy) result = Math.Max(result, old.stars);
-            return result;
-        }
-        public bool IsCurrentVersionRated(int levelId) { return GetStars(levelId) > 0; }
+        public int GetBestCombatTimeMs(int levelId) { EnsureLoaded(); var p = _data.Find(levelId); return p != null ? p.bestCombatTimeMs : 0; }
+        /// <summary>本关是否已有通关星级（= 解锁下一关的判据）。</summary>
+        public bool IsCleared(int levelId) { return GetStars(levelId) > 0; }
         public bool IsRunCommitted(int levelId, string runId)
         {
             EnsureLoaded(); var p = _data.Find(levelId);
             return p != null && p.committedRunIds != null && p.committedRunIds.Contains(runId);
         }
-        /// <summary>Back up first, then archive and change the current content identity. Re-entry is idempotent.</summary>
-        public void EnsureRatingVersion(int levelId)
+        /// <summary>
+        /// 记录一次**通关**。
+        ///
+        /// 【2026-11-01 口径】星级评分体系下线：通关即 `MaxStars`（5 星），不再做任何条件判定，
+        ///   也不再比对"评级版本"（那套 versionKey/EnsureRatingVersion 迁移一并删除）。
+        ///   失败局与调试局（`debugOverride`）不得调用本方法 —— 它们本来就不算通关。
+        /// </summary>
+        public bool RecordClear(int levelId, LevelRunMetrics metrics)
         {
             EnsureLoaded();
-            LevelRatingProfile profile = Configs.GetLevelRating(levelId);
-            if (!Configs.RatingContentVerified || profile == null || !profile.IsValid) return;
-            LevelProgress p = _data.Find(levelId);
-            if (p == null || p.ratingVersionKey == profile.versionKey) return;
-            if (_storage == null) return;
-            string oldKey = string.IsNullOrEmpty(p.ratingVersionKey) ? "legacy-v1-three-stars" : p.ratingVersionKey;
-            string backupKey = "rating-backup/" + levelId + "/" + oldKey;
-            string backup;
-            string originalJson = JsonUtility.ToJson(p);
-            if (_storage != null)
-            {
-                if (!_storage.TryGetValue(backupKey, out backup)) { _storage.SetValue(backupKey, originalJson, true); _storage.Flush(); }
-                if (!_storage.TryGetValue(backupKey, out backup) || string.IsNullOrEmpty(backup)) { Debug.LogWarning("[Save] Rating migration deferred: legacy backup could not be persisted"); return; }
-            }
-            var candidate = JsonUtility.FromJson<LevelProgress>(originalJson);
-            SaveProgressMigration.ArchiveForVersion(candidate, profile.versionKey);
-            if (_storage != null && !_storage.CommitClear(candidate)) { Debug.LogWarning("[Save] Rating migration deferred: archive could not be persisted"); return; }
-            _data.levels[_data.levels.IndexOf(p)] = candidate;
-            if (_storage != null) { _storage.SetValue("rating-migrated/" + levelId, profile.versionKey, true); _storage.Flush(); }
-        }
-        public bool RecordClear(int levelId, LevelRatingResult result)
-        {
-            EnsureLoaded();
-            if (_storage == null || result == null || !result.valid || !result.victory || result.stars <= 0 || result.metrics == null || result.metrics.debugOverride) return false;
-            var current = Configs.GetLevelRating(levelId);
-            if (current == null || current.versionKey != result.versionKey) return false;
-            result = LevelRatingEvaluator.Evaluate(current, result.metrics);
-            if (!result.valid || !result.victory || result.stars <= 0) return false;
-            EnsureRatingVersion(levelId);
+            if (_storage == null || metrics == null || metrics.debugOverride) return false;
             var existing = _data.Find(levelId);
-            if (existing != null && existing.ratingVersionKey != current.versionKey) return false;
-            LevelProgress original = existing ?? new LevelProgress { levelId = levelId, ratingVersionKey = current.versionKey };
-            if (IsRunCommitted(levelId, result.metrics.runId)) return true;
+            if (IsRunCommitted(levelId, metrics.runId)) return true;
+            LevelProgress original = existing ?? new LevelProgress { levelId = levelId };
             LevelProgress p = JsonUtility.FromJson<LevelProgress>(JsonUtility.ToJson(original));
             if (p.committedRunIds == null) p.committedRunIds = new List<string>();
-            p.ratingVersionKey = result.versionKey;
-            if (result.stars > p.stars) { p.stars = Mathf.Clamp(result.stars, 0, MaxStars); p.bestRating = result; }
-            p.bestHpLeft = Math.Max(p.bestHpLeft, result.metrics.hp);
-            int levelMs = (int)Math.Min(int.MaxValue, result.metrics.levelElapsedMs), combatMs = (int)Math.Min(int.MaxValue, result.metrics.combatElapsedMs);
-            if (p.bestTimeMs <= 0 || levelMs < p.bestTimeMs) p.bestTimeMs = levelMs;
-            if (p.bestCombatTimeMs <= 0 || combatMs < p.bestCombatTimeMs) p.bestCombatTimeMs = combatMs;
-            p.clearCount++; p.committedRunIds.Add(result.metrics.runId);
+            p.stars = MaxStars;
+            p.bestHpLeft = Math.Max(p.bestHpLeft, metrics.hp);
+            int levelMs = (int)Math.Min(int.MaxValue, metrics.levelElapsedMs), combatMs = (int)Math.Min(int.MaxValue, metrics.combatElapsedMs);
+            if (levelMs > 0 && (p.bestTimeMs <= 0 || levelMs < p.bestTimeMs)) p.bestTimeMs = levelMs;
+            if (combatMs > 0 && (p.bestCombatTimeMs <= 0 || combatMs < p.bestCombatTimeMs)) p.bestCombatTimeMs = combatMs;
+            p.clearCount++; p.committedRunIds.Add(metrics.runId);
             int index = _data.levels.IndexOf(original);
             if (_storage != null && !_storage.CommitClear(p)) return false;
             if (index < 0) _data.levels.Add(p); else _data.levels[index] = p;
@@ -500,6 +466,16 @@ namespace FTProject
             }
             int totalSec = timeMs / 1000;
             return string.Format("{0}:{1:00}", totalSec / 60, totalSec % 60);
+        }
+
+        /// <summary>
+        /// 把毫秒格式化成 `mm:ss.mmm`（0 或负数显示 `--:--.---`）。
+        /// 结算与详情页共用一处口径 —— 原来在 `RatingPresentation.Time`，该类随评级一起删除后搬到这里。
+        /// </summary>
+        public static string FormatPreciseTime(long timeMs)
+        {
+            if (timeMs <= 0) return "--:--.---";
+            return string.Format("{0:00}:{1:00}.{2:000}", timeMs / 60000, timeMs / 1000 % 60, timeMs % 1000);
         }
 
         /// <summary>已通关的关卡数（关卡选择界面顶部汇总用）</summary>

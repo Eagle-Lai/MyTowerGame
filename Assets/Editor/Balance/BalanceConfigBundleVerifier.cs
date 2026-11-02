@@ -3,7 +3,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using SimpleJSON;
 using UnityEditor;
 using UnityEngine;
@@ -65,16 +64,14 @@ namespace FTProject.EditorTools
                     var row = new JSONObject(); row["logicalName"] = pair.Key; row["asset"] = pair.Value.Asset; row["matchesFormalSource"] = true;
                     state["tables"].Add(row);
                 }
-                var rating = new cfg.TBLevelRating(JSON.Parse(json["tblevelrating"]));
-                var calculate = typeof(Configs).GetMethod("CalculateRuntimeContentHash", BindingFlags.Static | BindingFlags.NonPublic);
-                string hash = (string)calculate.Invoke(null, new object[] { json, rating.DataList });
+                // 【2026-11-01】评级表与 runtimeContentHash 已删除：这里只校验关卡库存完整性。
                 var scenes = new cfg.TBSceneInfo(JSON.Parse(json["tbsceneinfo"]));
-                if (rating.DataList.Count != scenes.DataList.Count || rating.DataList.Any(r => r.RuntimeContentHash != hash ||
-                    !scenes.DataList.Any(level => level.Id == r.Id && level.RoundList.Count == r.ExpectedWaveCount)))
-                    throw new InvalidDataException("Loaded bundle ratings, level wave inventories, and content identity differ.");
-                state["runtimeContentHash"] = hash; state["ratingRows"] = rating.DataList.Count;
+                if (scenes.DataList == null || scenes.DataList.Count == 0 ||
+                    scenes.DataList.Any(level => level.RoundList == null || level.RoundList.Count == 0))
+                    throw new InvalidDataException("Loaded bundle level inventory is empty or contains a level without rounds.");
+                state["levelCount"] = scenes.DataList.Count;
                 state["tableCount"] = json.Count; state["phase"] = "complete"; state["passed"] = true;
-                state["coverage"] = "Real active-target config AssetBundle build, runtime address lookup, every TextAsset compared with formal JSON, runtime hash calculated by the production Configs method. This does not certify a full Android player/device run.";
+                state["coverage"] = "Real active-target config AssetBundle build, runtime address lookup, and every TextAsset compared byte-for-byte with the formal JSON. This does not certify a full Android player/device run.";
             }
             catch (Exception error) { state["phase"] = "failed"; state["error"] = error.ToString(); }
             finally

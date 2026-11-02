@@ -28,8 +28,14 @@ namespace FTProject
         /// <summary>本次获得的星级 0~5（失败恒为 0）</summary>
         public int stars;
 
-        /// <summary>唯一评分器产生的本局证据与原因。界面只展示，不重新评星。</summary>
-        public LevelRatingResult ratingResult;
+        /// <summary>本局战斗用时（毫秒，0 = 无数据）。界面只展示，不再参与任何判定。</summary>
+        public int combatTimeMs;
+
+        /// <summary>本局整关用时（毫秒，0 = 无数据）。</summary>
+        public int levelTimeMs;
+
+        /// <summary>本局首领漏怪数。</summary>
+        public int bossLeaked;
 
         /// <summary>正式成绩已成功写入存储后才允许展示新纪录或前往下一关。</summary>
         public bool progressSaved;

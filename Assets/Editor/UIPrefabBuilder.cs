@@ -2448,7 +2448,7 @@ namespace FTProject.EditorTools
                 }
                 if (detail)
                 {
-                    for (int i = 1; i <= LevelRatingEvaluator.MaxStars; i++)
+                    for (int i = 1; i <= SaveManager.MaxStars; i++)
                     {
                         string name = "Star" + i;
                         Transform star = panel.Find(name);

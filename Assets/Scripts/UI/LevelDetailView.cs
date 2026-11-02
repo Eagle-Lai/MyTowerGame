@@ -33,7 +33,7 @@ namespace FTProject
         private TMP_Text _enemyLabel;
         private TMP_Text _enemyIcons;
         private TMP_Text _ratingTarget;
-        private readonly Image[] _stars = new Image[LevelRatingEvaluator.MaxStars];
+        private readonly Image[] _stars = new Image[SaveManager.MaxStars];
         private readonly TMP_Text[] _info = new TMP_Text[6];
         private Button _playBtn;
         private Button _replayBtn;
@@ -163,10 +163,8 @@ namespace FTProject
             // 【为什么先算出字符串再赋值】把三元表达式拆成独立语句：
             // 多行调用会让参数个数的静态校验脚本误判（它按行解析）。
             string bestText = stars > 0
-                ? (Localization.Get("Current version best: {0}/5", stars) ?? string.Format("本版历史最佳：{0}/5", stars))
-                : (sm != null && sm.GetLegacyStars(levelId) > 0
-                    ? (Localization.Get("Legacy clear; current version unrated") ?? "旧版已通关，本版待评定")
-                    : (Localization.Get("Current version unrated") ?? "本版待评定"));
+                ? (Localization.Get("Best stars: {0}/5", stars) ?? string.Format("历史最佳：{0}/5", stars))
+                : (Localization.Get("Not cleared") ?? "未通关");
             SetText(_bestStarText, bestText);
 
             // 波次总数 = 各回合的 WaveCount 之和（回合数 ≠ 波数，分开显示）
@@ -202,27 +200,25 @@ namespace FTProject
                 }
             }
 
-            LevelRatingProfile rating = Configs.GetLevelRating(levelId);
             long bestTimeMs = sm != null ? sm.GetBestCombatTimeMs(levelId) : 0;
+            string bestClear = SaveManager.FormatTime(sm != null ? sm.GetBestTimeMs(levelId) : 0);
 
             SetText(_info[0], Localization.Get("Waves     {0}", lv.RoundCount) ?? string.Format("波次　　{0}", lv.RoundCount));
-            string profileName = rating != null ? RatingPresentation.ProfileName(rating.profileId) : "—";
-            SetText(_info[1], Localization.Get("Balance preset: {0}", profileName) ?? ("调参预设：" + profileName));
+            // 【2026-11-01】原"调参预设（D04 等评级 profile）"随评级表删除，这一格改显示最佳整关用时。
+            SetText(_info[1], Localization.Get("Best clear: {0}", bestClear) ?? ("最佳整关用时：" + bestClear));
             SetText(_info[2], Localization.Get("Start Gold {0}", lv.InitialGold) ?? string.Format("初始金币　{0}", lv.InitialGold));
             SetText(_info[3], Localization.Get("Start HP   {0}", lv.InitialHp) ?? string.Format("初始生命　{0}", lv.InitialHp));
             SetText(_info[4], SelectView.Difficulty(lv.Difficulty));
             // 【最佳用时】0 显示成 --:--（SaveManager.FormatTime 统一口径）——
             // "没有记录"与"0 秒通关"必须一眼分得开
-            SetText(_info[5], Localization.Get("Best combat: {0}", RatingPresentation.Time(bestTimeMs))
-                ?? ("最佳战斗用时：" + RatingPresentation.Time(bestTimeMs)));
-            string target = rating == null
-                ? (Localization.Get("Rating config missing or invalid") ?? "评分配置缺失或无效")
-                : (Localization.Get("Five-star target: full HP, no leaks, all enemies defeated; combat ≤ {0}", RatingPresentation.Time(rating.parCombatTimeMs))
-                    ?? ("五星目标：满血、无漏怪、全部击杀；战斗用时 ≤ " + RatingPresentation.Time(rating.parCombatTimeMs)));
-            string calibrationNotice = rating != null && rating.calibrationStatus == "verified_unity_reference"
-                ? "" : "\n" + (Localization.Get("Time baseline pending verification") ?? "时间基准待验证");
-            SetText(_ratingTarget, target + "\n" + (Localization.Get("Combat time excludes preparation, inter-wave waits and pauses") ?? "战斗用时不含开场准备、波间等待与暂停")
-                + calibrationNotice);
+            SetText(_info[5], Localization.Get("Best combat: {0}", SaveManager.FormatPreciseTime(bestTimeMs))
+                ?? ("最佳战斗用时：" + SaveManager.FormatPreciseTime(bestTimeMs)));
+            // 【2026-11-01】星级评分下线：不再有"五星目标 / 时间基准校准"，只保留当前口径与计时说明。
+            string target = Localization.Get("Clearing a level awards five stars until the rating rules are rebuilt")
+                ?? "评分规则重建前，通关即记 5 星";
+            string timeNote = Localization.Get("Combat time excludes preparation, inter-wave waits and pauses")
+                ?? "战斗用时不含开场准备、波间等待与暂停";
+            SetText(_ratingTarget, target + "\n" + timeNote);
 
             SetText(_enemyLabel, Localization.Get("Enemies in this level") ?? "本关出现怪物");
             SetText(_enemyIcons, BuildEnemySummary(enemyIds));

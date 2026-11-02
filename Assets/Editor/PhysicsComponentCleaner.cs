@@ -25,7 +25,6 @@ namespace FTProject.EditorTools
         private static readonly string[] BattlePrefabFolders =
         {
             "Assets/Prefabs/Tower",
-            "Assets/Prefabs/Bullet",
             "Assets/Prefabs/Enemy",
         };
 
