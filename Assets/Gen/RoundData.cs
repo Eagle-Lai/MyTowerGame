@@ -23,16 +23,18 @@ public sealed partial class RoundData :  Bright.Config.BeanBase
         { if(!_json["interval"].IsNumber) { throw new SerializationException(); }  Interval = _json["interval"]; }
         { if(!_json["name"].IsString) { throw new SerializationException(); }  Name = _json["name"]; }
         { if(!_json["rewardGold"].IsNumber) { throw new SerializationException(); }  RewardGold = _json["rewardGold"]; }
+        { if(!_json["waveType"].IsNumber) { throw new SerializationException(); }  WaveType = _json["waveType"]; }
         PostInit();
     }
 
-    public RoundData(int id, System.Collections.Generic.List<int> EnemyIndexs, int interval, string name, int rewardGold ) 
+    public RoundData(int id, System.Collections.Generic.List<int> EnemyIndexs, int interval, string name, int rewardGold, int waveType ) 
     {
         this.Id = id;
         this.EnemyIndexs = EnemyIndexs;
         this.Interval = interval;
         this.Name = name;
         this.RewardGold = rewardGold;
+        this.WaveType = waveType;
         PostInit();
     }
 
@@ -58,6 +60,10 @@ public sealed partial class RoundData :  Bright.Config.BeanBase
     /// 本回合通关奖励金币
     /// </summary>
     public int RewardGold { get; private set; }
+    /// <summary>
+    /// 波型 1=普通 2=困难（工具统一填写，禁止留空/填0）
+    /// </summary>
+    public int WaveType { get; private set; }
 
     public const int __ID__ = 1998437944;
     public override int GetTypeId() => __ID__;
@@ -79,6 +85,7 @@ public sealed partial class RoundData :  Bright.Config.BeanBase
         + "Interval:" + Interval + ","
         + "Name:" + Name + ","
         + "RewardGold:" + RewardGold + ","
+        + "WaveType:" + WaveType + ","
         + "}";
     }
     

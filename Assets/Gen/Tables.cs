@@ -24,6 +24,10 @@ public sealed partial class Tables
     public TBGlobal TBGlobal {get; }
     public TBLocalization TBLocalization {get; }
     public TBLevelRules TBLevelRules {get; }
+    /// <summary>
+    /// 普通/困难波次的属性倍率与金币加成；主键 id，代码按 levelId+waveType 建索引
+    /// </summary>
+    public TBWaveTuning TBWaveTuning {get; }
 
     public Tables(System.Func<string, JSONNode> loader)
     {
@@ -48,6 +52,8 @@ public sealed partial class Tables
         tables.Add("TBLocalization", TBLocalization);
         TBLevelRules = new TBLevelRules(loader("tblevelrules"));
         tables.Add("TBLevelRules", TBLevelRules);
+        TBWaveTuning = new TBWaveTuning(loader("tbwavetuning"));
+        tables.Add("TBWaveTuning", TBWaveTuning);
         PostInit();
 
         TBEnemyData.Resolve(tables);
@@ -60,6 +66,7 @@ public sealed partial class Tables
         TBGlobal.Resolve(tables);
         TBLocalization.Resolve(tables);
         TBLevelRules.Resolve(tables);
+        TBWaveTuning.Resolve(tables);
         PostResolve();
     }
 
@@ -75,6 +82,7 @@ public sealed partial class Tables
         TBGlobal.TranslateText(translator);
         TBLocalization.TranslateText(translator);
         TBLevelRules.TranslateText(translator);
+        TBWaveTuning.TranslateText(translator);
     }
 
     partial void PostInit();
