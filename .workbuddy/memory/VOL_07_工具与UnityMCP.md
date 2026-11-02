@@ -55,3 +55,9 @@
 - API 路线：Standalone 用旧版 `PlayerSettings.SetIconsForTargetGroup(BuildTargetGroup.Standalone, Texture2D[])`（数组按 GetIconSizesForTargetGroup 顺序 1024..16）；Android 用 `GetSupportedIconKindsForPlatform(Android)` 得 Legacy/Round/Adaptive 三个 Kind，`GetPlatformIcons` 取槽、`slot.SetTextures(texs)`、`SetPlatformIcons` 写回；**Adaptive 槽 SetTextures 顺序 = [Background, Foreground]**（来自 `PlatformIconKind.customLayerLabels` 反射）。`BuildTargetGroup.iPhone` 已废弃，要用 `iOS`。
 - execute_code 是 CodeDom（C#6）：无 out var/本地函数/模式匹配；复杂片段写临时 .cs 文件再读入执行，避免 shell 转义地狱。
 - 改完必须 `EditorApplication.ExecuteMenuItem("File/Save Project")`（2022.3 存在，返回 true）才落盘；磁盘核验直接 grep ProjectSettings.asset 的 guid 引用数（本工程图标节应为 8+50=58 处）。
+
+## 真机调试面板 Reporter 的调出方式（2026-11-02 改动）
+
+- **双击调出已停用**：`Assets/Reporter/Reporter.cs` 的 `Update` 里 `if (!show && (isGestureDone() /* || isDoubleClickDone() */))`，只保留**画圈**调出。`DoubleClickInterval = 0.35f` 与 `RegisterClickForDoubleClick()` 检测逻辑**原样保留**，要恢复就取消那段注释（别删方法，否则要重写点击计时）。
+- 同步改了 `Assets/Scripts/GameSceneLauncher.cs` 的两处说明与挂载日志（「画圈或双击调出」→「画圈调出」），改面板调出方式时**这两处文案要一起改**，否则日志会误导真机排查。
+- Reporter 仍由 `GameSceneLauncher` 运行时 `AddComponent<Reporter>()` 动态挂载（它是热更程序集 `FTProject.ThirdParty.Reporter`，挂进 Build Settings 场景会在打包时被剥离）。
