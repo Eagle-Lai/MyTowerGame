@@ -3,15 +3,16 @@
 ## 工程与 MCP
 
 - 工程根目录：`D:\FishTestGame`；Unity `2022.3.62f3c1`，实际版本以 `ProjectSettings/ProjectVersion.txt` 为准。
-- MCP 插件：`com.coplaydev.unity-mcp`；Codex 服务名 `unityMCP`，工具前缀 `mcp__unityMCP__*`，HTTP 地址 `http://127.0.0.1:8084/mcp`。
-- 插件使用 HTTP Local `http://127.0.0.1:8084` 并启用 Auto-Start on Editor Load。8080 是另一个 Unity 2020 工程 CatchFish_Android 的桥接端口；本项目验证使用 8084（2026-10-28 用户确认，实测旧值 8082 已失效）。
-- 操作前先读取 `mcpforunity://custom-tools`、`mcpforunity://instances`（`server="unityMCP"`），选择当前列表中 FishTestGame 的完整 ID，调用 `set_active_instance`；再读 `mcpforunity://project/info`，确认 `data.projectRoot=D:/FishTestGame` 与 Unity 版本正确。新会话、重连、域重载后重新选定并核对，不依赖窗口焦点或上个会话的实例 ID。
+- MCP 插件：`com.coplaydev.unity-mcp`；HTTP 地址 `http://127.0.0.1:8088/mcp`。服务名按客户端区分、大小写敏感：Claude Code 为 `UnityMCP`（工具前缀 `mcp__UnityMCP__*`），Codex 为 `unityMCP`（工具前缀 `mcp__unityMCP__*`）。
+- 插件使用 HTTP Local `http://127.0.0.1:8088` 并启用 Auto-Start on Editor Load（端口以编辑器 EditorPrefs `MCPForUnity.HttpUrl` 为准）。8080 是另一个 Unity 2020 工程 CatchFish_Android 的桥接端口；本项目使用 8088（2026-11-02 实测，旧值 8082/8084 均已失效）。
+- 操作前先读取 `mcpforunity://custom-tools`、`mcpforunity://instances`（`server` 用当前客户端对应的服务名，如 `UnityMCP`），选择当前列表中 FishTestGame 的完整 ID，调用 `set_active_instance`；再读 `mcpforunity://project/info`，确认 `data.projectRoot=D:/FishTestGame` 与 Unity 版本正确。新会话、重连、域重载后重新选定并核对，不依赖窗口焦点或上个会话的实例 ID。
+- Unity 操作一律通过 MCP 工具调用；禁止用 Bash/curl/python 直连 `http://127.0.0.1:8088/mcp`。该端点是 streamable HTTP，需要 MCP 会话与 `Accept: application/json, text/event-stream`，手工请求只会得到 400 / Not Acceptable，不能据此判定「MCP 不可用」。
 
 ## MCP 未开启时
 
-- 用户允许为本项目开发与验证自主启动/重连已有 MCP，无需逐次询问。先检查 8084 服务和本工程桥接实例；复用在线服务，优先使用插件 HTTP Local 自动启动或 MCP 窗口的启动/连接功能。服务离线时可通过可用的本机进程/编辑器界面操作恢复；不要依赖已离线的 MCP 工具启动自身。
+- 用户允许为本项目开发与验证自主启动/重连已有 MCP，无需逐次询问。先检查 8088 服务和本工程桥接实例；复用在线服务，优先使用插件 HTTP Local 自动启动或 MCP 窗口的启动/连接功能。服务离线时可通过可用的本机进程/编辑器界面操作恢复；不要依赖已离线的 MCP 工具启动自身。
 - 编译重载短暂断线先等约 5 秒再重试；无进展则限次尝试，不重复启动服务、抢占端口或连接另一个工程。
-- 无法自主恢复时，及时提示用户打开 `D:\FishTestGame` 的 Unity 2022.3.62f3c1，在 MCP 窗口开启 HTTP Local `http://127.0.0.1:8084` 服务并连接，并在 Codex 启用/重连 `unityMCP`；说明实际失败环节。恢复后重新选定实例、核对工程身份并补做验证；最终未连接则明确说明编辑器验证未完成。
+- 无法自主恢复时，及时提示用户打开 `D:\FishTestGame` 的 Unity 2022.3.62f3c1，在 MCP 窗口开启 HTTP Local `http://127.0.0.1:8088` 服务并连接，并在当前客户端启用/重连 `UnityMCP`（Codex 为 `unityMCP`）；说明实际失败环节。恢复后重新选定实例、核对工程身份并补做验证；最终未连接则明确说明编辑器验证未完成。
 
 ## 代码修改后的强制验证
 
