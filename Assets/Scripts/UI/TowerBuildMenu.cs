@@ -40,9 +40,19 @@ namespace FTProject
         /// <summary>三颗按钮对应的塔型（下标与 _buttons 对齐）。</summary>
         private static readonly int[] ButtonTypes = { 1, 2, 3 };
 
-        /// <summary>价格文字颜色：可负担 = 暖白，买不起 = 红（与 TowerActionMenu 的价格配色一致）。</summary>
-        private static readonly Color PriceColor = new Color(0.89f, 0.95f, 1f, 1f);
+        /// <summary>价格文字颜色：可负担 = 金色，买不起 = 红。</summary>
+        private static readonly Color PriceColor = new Color(1f, 0.8f, 0.34f, 1f);
         private static readonly Color PriceBlockedColor = new Color(1f, 0.48f, 0.38f, 1f);
+        private static readonly Color ButtonFaceColor = Color.clear;
+        private static readonly Color PriceBadgeColor = new Color(0.29f, 0.205f, 0.075f, 1f);
+        private static readonly Color CoinColor = new Color(1f, 0.76f, 0.24f, 1f);
+        private static readonly Color BackdropColor = new Color(0.12f, 0.22f, 0.31f, 0.28f);
+        private static readonly Color[] ButtonAccents =
+        {
+            new Color(1f, 0.43f, 0.32f, 1f),
+            new Color(1f, 0.77f, 0.28f, 1f),
+            new Color(0.34f, 0.82f, 1f, 1f)
+        };
 
         private readonly Button[] _buttons = new Button[3];
         private readonly TMP_Text[] _nameLabels = new TMP_Text[3];
@@ -67,6 +77,18 @@ namespace FTProject
             _buttons[0] = normalButton = normal;
             _buttons[1] = powerButton = power;
             _buttons[2] = retardButton = retard;
+            CacheButtons();
+            _backdrop = actions != null ? actions.Find("Backdrop") as RectTransform : null;
+            // The editor generator also calls Configure before saving the prefab.
+            // Creating these children here keeps rebuilt prefabs and old prefabs visually aligned.
+            ApplyButtonVisuals();
+        }
+
+        private void CacheButtons()
+        {
+            _buttons[0] = normalButton;
+            _buttons[1] = powerButton;
+            _buttons[2] = retardButton;
             for (int i = 0; i < 3; i++)
             {
                 if (_buttons[i] == null)
@@ -78,8 +100,151 @@ namespace FTProject
                 _nameLabels[i] = label != null ? label.GetComponent<TMP_Text>() : null;
                 _priceTexts[i] = price != null ? price.GetComponent<TMP_Text>() : null;
             }
-            // 背景圆盘（生成器已在 Configure 前建好节点）；prefab 里直接序列化引用，运行时免 Find
-            _backdrop = actions.Find("Backdrop") as RectTransform;
+        }
+
+        private void ApplyButtonVisuals()
+        {
+            if (_backdrop != null)
+            {
+                _backdrop.sizeDelta = new Vector2(340f, 340f);
+                Image backdropImage = _backdrop.GetComponent<Image>();
+                if (backdropImage != null)
+                {
+                    backdropImage.color = BackdropColor;
+                    backdropImage.raycastTarget = false;
+                }
+            }
+
+            for (int i = 0; i < _buttons.Length; i++)
+            {
+                Button button = _buttons[i];
+                if (button == null)
+                {
+                    continue;
+                }
+
+                Image face = button.GetComponent<Image>();
+                if (face == null)
+                {
+                    continue;
+                }
+
+                Color accent = ButtonAccents[i];
+                face.color = ButtonFaceColor;
+                ColorBlock buttonColors = button.colors;
+                buttonColors.normalColor = ButtonFaceColor;
+                buttonColors.highlightedColor = new Color(accent.r, accent.g, accent.b, 0.1f);
+                buttonColors.pressedColor = new Color(accent.r, accent.g, accent.b, 0.22f);
+                buttonColors.selectedColor = new Color(accent.r, accent.g, accent.b, 0.14f);
+                buttonColors.disabledColor = Color.clear;
+                button.colors = buttonColors;
+                Outline rim = button.GetComponent<Outline>();
+                if (rim != null)
+                {
+                    rim.enabled = false;
+                }
+
+                Image well = EnsureChildImage(button.transform, "IconWell", face.sprite);
+                SetChildRect(well.rectTransform, new Vector2(0f, 22f), new Vector2(84f, 84f));
+                well.color = Color.clear;
+                well.raycastTarget = false;
+                well.transform.SetAsFirstSibling();
+
+                Image priceBadge = EnsureChildImage(button.transform, "PriceBadge", face.sprite);
+                SetChildRect(priceBadge.rectTransform, new Vector2(0f, -48f), new Vector2(76f, 20f));
+                priceBadge.color = PriceBadgeColor;
+                priceBadge.raycastTarget = false;
+                priceBadge.transform.SetSiblingIndex(1);
+                Outline badgeRim = priceBadge.GetComponent<Outline>();
+                if (badgeRim == null)
+                {
+                    badgeRim = priceBadge.gameObject.AddComponent<Outline>();
+                }
+                badgeRim.effectColor = new Color(accent.r, accent.g, accent.b, 0.82f);
+                badgeRim.effectDistance = new Vector2(1f, -1f);
+
+                Image coin = EnsureChildImage(button.transform, "PriceMark", face.sprite);
+                SetChildRect(coin.rectTransform, new Vector2(-20f, -48f), new Vector2(10f, 10f));
+                coin.color = CoinColor;
+                coin.raycastTarget = false;
+                coin.transform.SetSiblingIndex(2);
+
+                Transform iconTransform = button.transform.Find("Icon");
+                Image icon = iconTransform != null ? iconTransform.GetComponent<Image>() : null;
+                if (icon != null)
+                {
+                    SetChildRect(icon.rectTransform, new Vector2(0f, 22f), new Vector2(68f, 68f));
+                    icon.preserveAspect = true;
+                    icon.raycastTarget = false;
+                    Shadow shadow = icon.GetComponent<Shadow>();
+                    if (shadow == null)
+                    {
+                        shadow = icon.gameObject.AddComponent<Shadow>();
+                    }
+                    shadow.effectColor = new Color(0f, 0f, 0f, 0.35f);
+                    shadow.effectDistance = new Vector2(0f, -1f);
+                }
+
+                TMP_Text label = _nameLabels[i];
+                if (label != null)
+                {
+                    SetChildRect(label.rectTransform, new Vector2(0f, -25f), new Vector2(108f, 22f));
+                    label.fontSize = 19f;
+                    label.fontSizeMin = 14f;
+                    label.fontSizeMax = 19f;
+                    label.fontWeight = FontWeight.SemiBold;
+                    label.enableAutoSizing = true;
+                    label.enableWordWrapping = false;
+                    label.overflowMode = TextOverflowModes.Ellipsis;
+                    label.alignment = TextAlignmentOptions.Center;
+                    label.color = new Color(0.93f, 0.96f, 1f, 1f);
+                    label.margin = Vector4.zero;
+                }
+
+                TMP_Text price = _priceTexts[i];
+                if (price != null)
+                {
+                    SetChildRect(price.rectTransform, new Vector2(7f, -48f), new Vector2(40f, 20f));
+                    price.fontSize = 18f;
+                    price.fontSizeMin = 13f;
+                    price.fontSizeMax = 18f;
+                    price.fontWeight = FontWeight.Bold;
+                    price.enableAutoSizing = true;
+                    price.enableWordWrapping = false;
+                    price.overflowMode = TextOverflowModes.Ellipsis;
+                    price.alignment = TextAlignmentOptions.Center;
+                    price.margin = Vector4.zero;
+                }
+            }
+        }
+
+        private static Image EnsureChildImage(Transform parent, string childName, Sprite sprite)
+        {
+            Transform child = parent.Find(childName);
+            if (child == null)
+            {
+                GameObject imageObject = new GameObject(childName, typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+                child = imageObject.transform;
+                child.SetParent(parent, false);
+            }
+
+            Image image = child.GetComponent<Image>();
+            if (image == null)
+            {
+                image = child.gameObject.AddComponent<Image>();
+            }
+            image.sprite = sprite;
+            image.type = Image.Type.Simple;
+            return image;
+        }
+
+        private static void SetChildRect(RectTransform rect, Vector2 position, Vector2 size)
+        {
+            rect.anchorMin = new Vector2(0.5f, 0.5f);
+            rect.anchorMax = new Vector2(0.5f, 0.5f);
+            rect.pivot = new Vector2(0.5f, 0.5f);
+            rect.anchoredPosition = position;
+            rect.sizeDelta = size;
         }
 
         private void Awake()
@@ -92,11 +257,13 @@ namespace FTProject
                 enabled = false;
                 return;
             }
+            CacheButtons();
             // 旧 prefab 没序列化 backdrop 时兜底补一次 Find（新生成的 prefab 已带引用）
             if (_backdrop == null)
             {
                 _backdrop = menu.Find("Backdrop") as RectTransform;
             }
+            ApplyButtonVisuals();
             normalButton.onClick.AddListener(BuildNormal);
             powerButton.onClick.AddListener(BuildPower);
             retardButton.onClick.AddListener(BuildRetard);
