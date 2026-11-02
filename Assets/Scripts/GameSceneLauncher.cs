@@ -65,7 +65,7 @@ namespace FTProject
         }
 
         /// <summary>
-        /// 挂上 Reporter 调试控制台（真机上**画圈或双击**调出，看日志/内存/FPS）。
+        /// 挂上 Reporter 调试控制台（真机上**画圈**调出，看日志/内存/FPS）。
         ///
         /// 【为什么动态挂而不是进场景】Reporter 脚本在热更程序集
         /// （FTProject.ThirdParty.Reporter）里 —— 挂进 Build Settings 场景会在打包时
@@ -112,7 +112,7 @@ namespace FTProject
             }
             // Reporter.Awake synchronously sends OnPreStart; its receiver must already exist.
             gameObject.AddComponent<Reporter>();
-            Debug.Log("[Scene] Reporter 调试控制台已挂载（画圈或双击调出）");
+            Debug.Log("[Scene] Reporter 调试控制台已挂载（画圈调出）");
         }
 
         /// <summary>Reporter 图标（逻辑名见 ResTable 的 Reporter_* 段；失败返回 null，由 Reporter 兜底占位）</summary>
