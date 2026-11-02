@@ -39,6 +39,16 @@
 - `read_console` 参数：`{"action":"get","types":["error"],"count":"50","format":"json"}`；`refresh_unity` 参数：`{"mode":"force","scope":"all","compile":"request","wait_for_ready":true}`（域重载会断连，返回 `recovered_from_disconnect` 属正常）。
 - ★**外部编辑器改 .cs 后 Unity 不会在后台重编译**：`Library/ScriptAssemblies/*.dll` 停在旧时间戳 ≠ 编译失败，是压根没触发。判定"编没编"看 dll mtime；判定"是否失败"用 `execute_code` 取 `UnityEditor.EditorUtility.scriptCompilationFailed`。
 
+## ★多个 AI 客户端可同时连同一个 Unity MCP（2026-11-02 实测）
+
+- **结论：可以**。同一 `http://127.0.0.1:8088/mcp` 连续 `initialize` 出两个独立 `Mcp-Session-Id`，各自 `notifications/initialized` → `tools/list` 都拿到 49 个工具；A 会话在 B 建立后仍有效；两会话**并发** `tools/call read_console` 均成功（406ms / 535ms），无互踢。
+- 架构：Unity 侧 `WebSocketTransportClient` 是**客户端**（单条 ws 连 hub），Python `mcpforunityserver` 用 FastMCP + `StreamableHTTPSessionManager`（mcp 1.30.0，`DEFAULT_MAX_SESSIONS=10000`，空闲 30 分钟回收）对外提供 HTTP。客户端只连 URL，不参与 Unity 注册。
+- ★**红线：所有客户端必须指向同一个 URL，禁止让各客户端用 uvx/command 自己拉一个 server 进程**。`PluginRegistry.register` 按 `project_hash` 注册，同工程重复注册会 **evict 旧 session**（`plugin_hub._handle_register` 打 "superseded"），后起的会把先起的顶掉，结果是所有客户端一起失联。
+- **全局共享（会互相影响）**：`manage_tools` 的工具启用/禁用是 Unity 工程级状态；场景/资产/Play Mode 是同一份工程；`TransportCommandDispatcher` 默认 30s 超时，`refresh_unity(wait_for_ready)`/打包/`ExecuteMenuItem` 这类长任务串行排队 → 同一时刻只让一个客户端跑编译或构建。
+- **会话级隔离（互不影响）**：`set_active_instance` 存在 `UnityInstanceMiddleware` 的 per-`session_id` state（session_id = HTTP 的 `Mcp-Session-Id`），各客户端可各选各的 Unity 实例；客户端重启后 session 丢失需重新 set。
+- **传输不能混**：`TransportManager` 的 HTTP Local / stdio 只实际用一套；切到 stdio 会让所有 HTTP 客户端瞬间全断。多客户端统一走 HTTP。
+- 已接的客户端：Codex `[mcp_servers.unityMCP] url=http://127.0.0.1:8088/mcp`；WorkBuddy `~/.workbuddy/mcp.json` 暂无本工程条目（只有 disabled 的 8082 旧配置），要双开就加同 URL 的 `"type":"http"` 条目。
+
 ## MCP 改 PlayerSettings 图标（2026-10-29 实测技巧，可复用）
 - **PlayerSettings 是 `UnityEngine.Object` 派生类**（UnityCsReference `Editor/Mono/PlatformSupport/PlayerSettingsPlatformIcons.bindings.cs`）：`Resources.FindObjectsOfTypeAll(typeof(UnityEditor.PlayerSettings))` 拿到原生单例后可直接 `new SerializedObject(...)` 改序列化数据（本项目 instanceID 命中 1 个）。iOS/tvOS 等无 Kind API 的平台就靠这条路。
 - `m_BuildTargetPlatformIcons` 的 `m_BuildTarget` 是**字符串**（"Android"/"tvOS"/"iPhone"），读 `intValue` 会抛 "type is not a supported int value" 并刷控制台 error；每槽 `m_Icons` 元素含 m_Textures/m_Width/m_Height/m_Kind/m_SubKind，赋值 = `m_Textures.arraySize=1` + `objectReferenceValue=Texture2D`。

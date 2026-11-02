@@ -57,3 +57,13 @@
 - 交接口径：报告 `文件 / 关卡 / 波次 / 字段 / 旧值 → 新值`，并给出"其余关卡未改动"的可复核证据（`git diff --stat`、导出 json 行数比对）。
 - 常见误判排查：`runtimeContentHash` 要在 30 张 `LevelRating.xlsx` 写同一个值（全局哈希），这是流程要求、**不算**扩展到其他关；拆分不清时先看 `Assets/ConfigJson/tblevelrating.json` 是否 30 行同值。
 - 定位前先确认"这个 id 只被目标波次引用"（如 `EnemyList.EnemyIndexs` 只在 W22 引 `5000215`），确认后再动手；不确定就回到第①问向用户确认，不要自己扩大范围找"更合适"的行。
+
+
+## ★用脚本生成关卡表的三组必查断言（2026-11-02 踩坑）
+
+- 背景：`Tools/generate_l02_final.py` 以 L01 为模板生成 L02 四张表，编译与 Luban 导出都成功，但数据是坏的。**「导出成功 + 编译通过」不能证明表对**。
+- ★断言一「`levelId` 分布」：导出后按 `levelId` 分组统计 `tbenemydata.json`，**目标关必须有自己的 levelId 且条数等于本关 xlsx 行数**。本次 L02 新写的 106 条全部落在 `levelId=1`，导致 `levelId=2` 记录归零、L01 分组条数翻倍。
+- ★断言二「`SceneInfo` 关键字段」：逐字比 `name / mapId / MapName / CameraPosition / initialGold / initialHp / desc`。本次 L02 的 SceneInfo **整行是 L01 的**（`mapId=1`、`MapModel1`、`initialHp=10`、desc 也是 L01），且 `initialGold` 被写成 **2**（脚本参数是 100）。这类错不会报错，只会让目标关加载别的地图、开局 2 金。
+- ★断言三「首末波 hp + 总数」：取目标关 W1/W5/W25 的地面与空中各一条，和 L01 同波同怪比比值；再比 hp 总和。本次比值恒为 1.05，把此前手工调过的 0.75 覆盖掉了都能从这两组数看出来。
+- 生成器写「基于 L01 模板」时，**SceneInfo / LevelMap / LevelRules 这类「一关一行」的表必须从目标关原表读，不能从模板抄**；`EnemyData` 的 id 段与 `levelId` 要在同一处赋值，别一个用 `id_base` 一个用源表列。
+- 提交这类产物前先问自己：这份表能不能在不看文档的情况下自证？不能就别标「完成」，标 WIP。
