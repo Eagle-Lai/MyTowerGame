@@ -45,8 +45,8 @@ namespace FTProject
                 case "MainMenuView":
                     float column = Mathf.Min(720f, w * .49f);
                     Put("Panel/Logo",70,48,144,144);
-                    Put("Panel/GameTitle",70,205,column,130);
-                    Put("Panel/Subtitle",76,350,column,58);
+                    Put("Panel/GameTitle",70,205,column,144);
+                    Put("Panel/Subtitle",76,365,column,88);
                     Put("Panel/StatBg",76,h*.51f,column,120);
                     Put("Panel/StatBg/ClearText",20,10,column-40,48);
                     Put("Panel/StatBg/StarText",20,62,column-40,48);

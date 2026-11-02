@@ -1887,14 +1887,14 @@ namespace FTProject.EditorTools
             }
             logoImg.raycastTarget = false;
 
-            TextMeshProUGUI gameTitle = CreateText(panel.transform, "GameTitle", "FREEDOM TOWER",
+            TextMeshProUGUI gameTitle = CreateText(panel.transform, "GameTitle", "Freedom Tower",
                 new Vector2(0.5f, 0.5f), new Vector2(0f, -160f), new Vector2(900f, 120f),
-                TextAnchor.MiddleCenter, 96);
+                TextAnchor.MiddleCenter, 112);
             gameTitle.color = Cyan;
 
-            TextMeshProUGUI sub = CreateText(panel.transform, "Subtitle", "FREEDOM TOWER",
+            TextMeshProUGUI sub = CreateText(panel.transform, "Subtitle", AOT.BootLocalization.BrandSloganKey,
                 new Vector2(0.5f, 0.5f), new Vector2(0f, -260f), new Vector2(900f, 48f),
-                TextAnchor.MiddleCenter, 28);
+                TextAnchor.MiddleCenter, 40);
             sub.color = TextSecondary;
 
             // 版本号右下角；anchor(1,0)+pivot(1,0) → anchoredPosition 是"距右下角"的偏移
@@ -2040,9 +2040,9 @@ namespace FTProject.EditorTools
             GameObject root = CreateDialogShell("HotUpdateView", "", Vector2.zero, report, out panel, 0f);
             root.AddComponent<HotUpdateView>();
 
-            TextMeshProUGUI title = CreateText(panel.transform, "HotTitle", "Resource Update",
+            TextMeshProUGUI title = CreateText(panel.transform, "HotTitle", "Freedom Tower",
                 new Vector2(0.5f, 0.5f), new Vector2(0f, 220f), new Vector2(900f, 80f),
-                TextAnchor.MiddleCenter, 56);
+                TextAnchor.MiddleCenter, 104);
             title.color = TextPrimary;
 
             TextMeshProUGUI phase = CreateText(panel.transform, "PhaseText", "Checking for updates...",
@@ -2267,20 +2267,18 @@ namespace FTProject.EditorTools
                 new Vector2(380f, 380f), null, new Color(0.208f, 0.878f, 1f, 0.12f), false, LoadLogoSprite());
 
             // 标题基线 y_svg 488 → Y=+52；88 号字的盒中心 ≈ +52−31 = +21
-            TextMeshProUGUI title = CreateText(panel.transform, "GameTitle", "FREEDOM TOWER",
+            TextMeshProUGUI title = CreateText(panel.transform, "GameTitle", "Freedom Tower",
                 new Vector2(0.5f, 0.5f), new Vector2(0f, 83f), new Vector2(1000f, 130f),
-                TextAnchor.MiddleCenter, 88);
+                TextAnchor.MiddleCenter, 96);
             title.color = Cyan;
 
             // 副标题基线 y_svg 540 → Y=0；26 号 → 盒中心 ≈ −9
-            // ★ 手工版把副标题**隐藏**了（与 GameTitle 内容重复，版面更干净）。
-            //   用 SetActive(false) 而不是删节点：将来想恢复只需在 prefab 里勾回来，
-            //   代码引用（MainMenuView.cs 的 _subtitle）也仍然成立。
-            TextMeshProUGUI sub = CreateText(panel.transform, "Subtitle", "FREEDOM TOWER · Tower Defense",
+            // Shared production styling binds the localized slogan and its current layout at save time.
+            TextMeshProUGUI sub = CreateText(panel.transform, "Subtitle", AOT.BootLocalization.BrandSloganKey,
                 new Vector2(0.5f, 0.5f), new Vector2(0f, 9f), new Vector2(1000f, 44f),
-                TextAnchor.MiddleCenter, 26);
+                TextAnchor.MiddleCenter, 40);
             sub.color = TextSecondary;
-            sub.gameObject.SetActive(false);
+            sub.gameObject.SetActive(true);
 
             // 玩家总览（左上）：底衬先建，文字**挂在底衬之下**（随底一起动）
             Transform statBg = CreateImageAt(panel.transform, "StatBg", new Vector2(0f, 1f), new Vector2(91f, -120f),
@@ -2637,16 +2635,13 @@ namespace FTProject.EditorTools
             body.color = TextSecondary;
             body.enableWordWrapping = true;   // 正文必须能换行，否则长文案会横着穿出面板
 
-            CreateImageAt(panel.transform, "DangerIcon", new Vector2(0.5f, 0.5f), new Vector2(0f, -16f),
-                new Vector2(96f, 96f), "UI_Panel_Red", DangerRed);
-
             CreatePanelButton(panel.transform, "ConfirmBtn", "OK", new Vector2(-220f, -168f), 240f, true, 88f, 32);
             CreatePanelButton(panel.transform, "CancelBtn", "Cancel", new Vector2(220f, -168f), 240f, false, 88f, 32);
 
             EditorUtility.SetDirty(root);
             SaveUiPrefab(root, ConfirmPath);
             Object.DestroyImmediate(root);
-            report.Ok("ConfirmView.prefab（TopBar+BodyTitle / BodyText / DangerIcon / Confirm+Cancel）");
+            report.Ok("ConfirmView.prefab（TopBar+BodyTitle / full-width BodyText / Confirm+Cancel）");
         }
 
         // ==================================================================
