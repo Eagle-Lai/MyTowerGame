@@ -40,7 +40,6 @@ namespace FTProject
         private TMP_Text _title;
         private TMP_Text _body;
         private Image _topBar;
-        private Image _dangerIcon;
         private Button _confirmBtn;
         private Button _cancelBtn;
         private TMP_Text _confirmLabel;
@@ -75,9 +74,6 @@ namespace FTProject
             _cancelLabel = FindText("Panel/CancelBtn/Label");
             Transform bar = transform.Find("Panel/TopBar");
             _topBar = bar != null ? bar.GetComponent<Image>() : null;
-            Transform icon = transform.Find("Panel/DangerIcon");
-            _dangerIcon = icon != null ? icon.GetComponent<Image>() : null;
-
             if (_confirmBtn != null) _confirmBtn.onClick.AddListener(OnClickConfirm);
             if (_cancelBtn != null) _cancelBtn.onClick.AddListener(OnClickCancel);
             // 点背景 = 取消（与"点右上角关闭"同义；不做成"确定"，避免误触致不可撤销）
@@ -102,7 +98,6 @@ namespace FTProject
 
             Color accent = ColorFor(type);
             if (_topBar != null) _topBar.color = accent;
-            if (_dangerIcon != null) _dangerIcon.color = accent;
 
             ArrangeContent(type);
         }
@@ -124,15 +119,10 @@ namespace FTProject
             panel.anchoredPosition = Vector2.zero;
             panel.sizeDelta = new Vector2(960, height);
             Place(panel.Find("TopBar") as RectTransform, 32, 28, 896, 80);
-            Place(body.rectTransform, 160, 140, 752, bodyHeight);
-            Place(panel.Find("DangerIcon") as RectTransform, 48, 140 + (bodyHeight - 84) * .5f, 84, 84);
+            Place(body.rectTransform, 48, 140, 864, bodyHeight);
             Place(panel.Find("ConfirmBtn") as RectTransform, 48, height - 120, 416, 88);
             Place(panel.Find("CancelBtn") as RectTransform, 496, height - 120, 416, 88);
-            var icon = panel.Find("DangerIcon").GetComponent<Image>();
             Color accent = ColorFor(type);
-            icon.color = accent;
-            var glyph = icon.transform.Find("StatusGlyph");
-            if (glyph != null) glyph.GetComponent<TMP_Text>().text = type == ConfirmType.Success ? "✓" : type == ConfirmType.Info ? "i" : "!";
             panel.Find("TopBar").GetComponent<Image>().color = accent;
             panel.Find("ConfirmBtn").GetComponent<Image>().color = accent;
             panel.Find("ConfirmBtn/Label").GetComponent<TMP_Text>().color = new Color(.03f, .04f, .07f);
