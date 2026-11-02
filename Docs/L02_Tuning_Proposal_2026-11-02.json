@@ -1,0 +1,113 @@
+{
+  "metadata": {
+    "generated_at": "2026-11-02",
+    "source_level": "L01",
+    "target_level": "L02",
+    "difficulty_preset": "D04",
+    "tuning_philosophy": "参考L01模板，相同难度，地图适配"
+  },
+  "map_analysis": {
+    "l01": {
+      "size": "13x7 = 91 cells",
+      "buildable_cells": 89,
+      "estimated_path": "14.8 grids",
+      "initial_gold": 100,
+      "initial_hp": 10
+    },
+    "l02": {
+      "size": "16x9 = 144 cells",
+      "buildable_cells": 142,
+      "estimated_path": "18.4 grids",
+      "initial_gold": 100,
+      "initial_hp": 12
+    },
+    "scaling_factors": {
+      "map_size_ratio": 1.582,
+      "buildable_ratio": 1.596,
+      "path_ratio": 1.243,
+      "hp_adjustment_factor": 0.95,
+      "reasoning": "L02地图更大，路径更长(+24.3%)，可建造格更多(+59.6%)。怪物在路径上受伤时间更长，因此HP可略微降低5%以保持相同难度。更多塔位意味着玩家有更多防御选择，但不直接影响单波HP。"
+    }
+  },
+  "wave_structure": {
+    "total_waves": 25,
+    "pressure_waves": [5, 10, 15, 20, 25],
+    "wave_type_pattern": "W1-4: type=1, W5: type=2, W6-9: type=1, W10: type=2, ...",
+    "flying_start_wave": 5,
+    "flying_increment_rule": "W5-25每波飞行怪数量严格递增"
+  },
+  "economy_model": {
+    "initial_gold": 100,
+    "target_total_wave_rewards": 1305,
+    "estimated_kill_gold": 300,
+    "total_budget": 1705,
+    "wave_rewards": [36, 36, 36, 36, 84, 43, 43, 43, 43, 87, 45, 45, 45, 45, 90, 47, 47, 47, 47, 93, 49, 49, 49, 49, 71],
+    "reward_reasoning": "与L01完全相同，保持经济节奏一致"
+  },
+  "enemy_hp_curve": {
+    "design_principle": "参考L01的HP增长曲线，应用0.95倍缩放因子",
+    "wave_1_hp": 7.85,
+    "wave_5_hp": 72.78,
+    "wave_10_hp": 145.99,
+    "wave_15_hp": 197.73,
+    "wave_20_hp": 262.75,
+    "wave_25_hp": 2260.31,
+    "growth_pattern": "指数增长 + W10降压(-15%) + W15-19软化(-5~10%) + W20软化(-22.6%) + W25终局强化",
+    "softening_points": {
+      "w10": "HP × 0.85",
+      "w15_19": "HP × 0.90~0.95",
+      "w20": "HP × 0.7736"
+    }
+  },
+  "role_distribution": {
+    "normal": {
+      "description": "基准单位，数量主力",
+      "hp_ratio": 1.0,
+      "proportion": "45%"
+    },
+    "swarm": {
+      "description": "群怪，血量较低但数量多",
+      "hp_ratio": 0.65,
+      "proportion": "30%"
+    },
+    "medium": {
+      "description": "中型单位",
+      "hp_ratio": 1.84,
+      "proportion": "15%"
+    },
+    "heavy": {
+      "description": "重装单位，压力波核心",
+      "hp_ratio": 3.38,
+      "proportion": "7%"
+    },
+    "elite": {
+      "description": "精英单位，仅W25出现",
+      "hp_ratio": 11.05,
+      "proportion": "2% (仅W25)"
+    },
+    "air": {
+      "description": "飞行单位，W5开始逐波递增",
+      "hp_ratio": 1.21,
+      "proportion": "20% (W5-25)"
+    }
+  },
+  "spawn_timing": {
+    "wave_1_interval_ms": 280,
+    "wave_25_interval_ms": 126,
+    "decay_pattern": "线性递减，保持紧凑节奏",
+    "count_progression": "W1: 31只 → W25: 730只（相比L01略增1%）"
+  },
+  "validation_requirements": {
+    "must_pass": [
+      "W5-25每波飞行怪数量严格递增",
+      "W25包含地面+空中单位",
+      "初始金币=100",
+      "总波次奖励=1305",
+      "零编译错误"
+    ],
+    "recommended": [
+      "实际进入Play Mode测试W1/W5/W10/W15/W20/W25",
+      "验证击杀位置≤2格（需完整仿真）"
+    ]
+  }
+}
