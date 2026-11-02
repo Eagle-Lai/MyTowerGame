@@ -30,6 +30,9 @@ namespace FTProject
         /// <summary>本回合通关奖励金币</summary>
         public int RewardGold { get { return _r.RewardGold; } }
 
+        /// <summary>波型：1=普通 / 2=困难（数据显式填写；0 视为普通，仅作防御）</summary>
+        public int WaveType { get { return _r.WaveType; } }
+
         public int WaveCount { get { return _r.EnemyIndexs != null ? _r.EnemyIndexs.Count : 0; } }
 
         public override string ToString()

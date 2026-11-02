@@ -525,6 +525,12 @@ namespace FTProject
         // 回合推进
         // ==================================================================
 
+        /// <summary>困难波判定：只认数据里的 waveType=2；0/1 一律按普通波。</summary>
+        private static bool IsHardWave(RoundConfig round)
+        {
+            return round != null && round.WaveType == 2;
+        }
+
         private void OnStartRequest()
         {
             // 玩家手动推进 → 取消自动倒计时（避免"点了按钮又自动开一回合"）
@@ -565,7 +571,7 @@ namespace FTProject
             int expected = 0;
             if (round.WaveIds != null) foreach (int waveId in round.WaveIds) { var group = Configs.GetWaveGroup(waveId); if (group != null) expected += group.EnemyCount; }
             _run.waves.Add(new WaveRunMetrics { ordinal = _roundCursor + 1, expected = expected, combatStartSeconds = GameClock.CombatElapsedSeconds });
-            _wave.BeginRound(round);
+            _wave.BeginRound(round, IsHardWave(round));
             State = GameFlowState.RoundRunning;
             EventDispatcher.TriggerEvent<int>(EventName.RoundStartEvent, _roundCursor + 1);
             Tips(Localization.Get("Wave {0}/{1}", _roundCursor + 1, _roundIds.Count)
@@ -673,15 +679,23 @@ namespace FTProject
             GameClock.SetCombatRunning(false);
             int finishedIndex = _roundCursor + 1;
 
-            // 回合奖励
+            // 回合奖励（配置值 + 本关本波型的额外金币；【口径】加法，不覆盖原值）
             if (_roundCursor < _roundIds.Count)
             {
                 RoundConfig rc = Configs.GetRound(_roundIds[_roundCursor]);
-                if (rc != null && rc.RewardGold > 0)
+                if (rc != null)
                 {
-                    PlayerDataManager.Instance.AddGold(rc.RewardGold);
-                    Tips(Localization.Get("Wave reward +{0} gold", rc.RewardGold)
-                        ?? string.Format("波次奖励 +{0} 金币", rc.RewardGold));
+                    int levelId = Level != null ? Level.Id : Configs.ActiveLevelId;
+                    bool isHard = IsHardWave(rc);
+                    cfg.WaveTuning tuning = Configs.GetWaveTuning(levelId, isHard);
+                    int bonus = tuning != null ? tuning.WaveGoldBonus : 0;
+                    int reward = rc.RewardGold + bonus;
+                    if (reward > 0)
+                    {
+                        PlayerDataManager.Instance.AddGold(reward);
+                        Tips(Localization.Get("Wave reward +{0} gold", reward)
+                            ?? string.Format("波次奖励 +{0} 金币", reward));
+                    }
                 }
             }
 
@@ -695,7 +709,12 @@ namespace FTProject
                 completed.levelEndSeconds = GameClock.LevelElapsedSeconds;
                 completed.gold = PlayerDataManager.Instance.Gold; completed.hp = PlayerDataManager.Instance.Hp;
                 RoundConfig finishedRound = Configs.GetRound(_roundIds[_roundCursor - 1]);
-                completed.clearGold = finishedRound != null ? finishedRound.RewardGold : 0;
+                // 统计要记**实际到账**（含波型额外金币），否则结算面板的"本波金币"与钱包对不上
+                int finishedLevelId = Level != null ? Level.Id : Configs.ActiveLevelId;
+                int finishedBonus = finishedRound != null
+                    ? (Configs.GetWaveTuning(finishedLevelId, IsHardWave(finishedRound))?.WaveGoldBonus ?? 0)
+                    : 0;
+                completed.clearGold = finishedRound != null ? finishedRound.RewardGold + finishedBonus : 0;
             }
             State = GameFlowState.RoundComplete;
 

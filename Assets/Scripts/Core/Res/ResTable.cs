@@ -38,6 +38,7 @@ namespace FTProject
             { "tbglobal",     new ResAddress(ResBundle.Config, "tbglobal",     "Assets/ConfigJson/tbglobal.json") },
             { "tblevelrules", new ResAddress(ResBundle.Config, "tblevelrules", "Assets/ConfigJson/tblevelrules.json") },
             { "tblocalization", new ResAddress(ResBundle.Config, "tblocalization", "Assets/ConfigJson/tblocalization.json") },
+            { "tbwavetuning", new ResAddress(ResBundle.Config, "tbwavetuning", "Assets/ConfigJson/tbwavetuning.json") },
 
             // ------------------------------------------------------------------
             // 程序生成的占位美术（Editor/PlaceholderArtGenerator.cs 产出）

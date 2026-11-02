@@ -830,6 +830,9 @@ namespace FTProject
         {
             IsAlive = false;
             int dmg = Config.DamageToPlayer;
+            // 震幅只认「基础伤害」：leakDamageBonus 是经济/难度旋钮，
+            // 调它不该连带改变屏幕抖动强度（震屏口径仍受"只有漏怪震"约束）。
+            int baseDmg = Config.BaseDamageToPlayer;
 
             EventDispatcher.TriggerEvent<BaseEnemy, int>(EventName.EnemyReachedEndEvent, this, dmg);
             PlayerDataManager.Instance.LoseHp(dmg);
@@ -839,7 +842,7 @@ namespace FTProject
             // 【2026-10-30 用户定规】这是关卡内唯一允许震动的事件，其它反馈一律不震。
             if (CameraController.Instance != null && Configs.Global != null)
             {
-                float amp = Configs.Global.ShakeAmplitude * (1f + 0.35f * Mathf.Max(0, dmg - 1));
+                float amp = Configs.Global.ShakeAmplitude * (1f + 0.35f * Mathf.Max(0, baseDmg - 1));
                 CameraController.Instance.ShakeOnEnemyLeak(amp, Configs.Global.ShakeDurationSec);
             }
 

@@ -184,7 +184,8 @@ namespace FTProject.EditorTools
             // 产物自检：各表必须都在，且能被当作 TextAsset 读到
             int ok = 0;
             string[] tables = { "tbenemydata", "tbtowerinfo", "tbenemylist", "tbrounddata",
-                                "tbsceneinfo", "tbbulletdata", "tblevelmap", "tbglobal", "tblevelrules", "tblocalization" };
+                                "tbsceneinfo", "tbbulletdata", "tblevelmap", "tbglobal",
+                                "tblevelrules", "tblocalization", "tbwavetuning" };
             for (int i = 0; i < tables.Length; i++)
             {
                 string path = OutDataDir + "/" + tables[i] + ".json";

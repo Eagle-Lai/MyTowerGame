@@ -38,6 +38,9 @@ namespace FTProject
         private bool _running;
         private bool _allSpawned;
 
+        /// <summary>本回合是否困难波（waveType=2）。整回合内恒定，在 BeginRound 时定下。</summary>
+        private bool _isHardWave;
+
         public bool IsRunning { get { return _running; } }
         public bool AllSpawned { get { return _allSpawned; } }
         public int SpawnedCount { get { return _cursor; } }
@@ -63,9 +66,14 @@ namespace FTProject
         /// 若配置有缺失（例如某波次 id 不存在），跳过该组并告警，不阻塞其余内容 ——
         /// 符合"功能缺失不应阻塞实现"的要求。
         /// </summary>
-        public void BeginRound(RoundConfig round)
+        /// <param name="isHardWave">
+        /// 本回合是否为困难波。只影响生成时套用的属性倍率，
+        /// 不改变出怪数量/顺序/间隔（那些在配置表里）。
+        /// </param>
+        public void BeginRound(RoundConfig round, bool isHardWave = false)
         {
             _round = round;
+            _isHardWave = isHardWave;
             _timeline.Clear();
             _groupStartTime.Clear();
             _groupCleared.Clear();
@@ -171,7 +179,7 @@ namespace FTProject
                     EventDispatcher.TriggerEvent<int>(EventName.WaveStartEvent, CurrentGroupIndex + 1);
                 }
 
-                BaseEnemy spawned = EnemyManager.Instance.Spawn(e.EnemyId);
+                BaseEnemy spawned = EnemyManager.Instance.Spawn(e.EnemyId, _isHardWave);
                 if (spawned == null)
                 {
                     // Capacity is transient. Keep this exact timeline item for a later frame.

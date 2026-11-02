@@ -56,11 +56,15 @@ namespace FTProject
         /// 生成一只怪物。
         /// </summary>
         /// <param name="enemyId">TBEnemyData 的 id</param>
+        /// <param name="isHardWave">
+        /// 本波是否为困难波（waveType=2）。true 时套用本关困难行的属性倍率/加成；
+        /// 默认 false = 普通波，保证不传参的调用点（编辑器验证工具）行为不变。
+        /// </param>
         /// <returns>生成失败返回 null</returns>
-        public BaseEnemy Spawn(int enemyId)
+        public BaseEnemy Spawn(int enemyId, bool isHardWave = false)
         {
             LastSpawnFailure = SpawnFailure.None;
-            EnemyConfig cfg = Configs.GetEnemy(enemyId);
+            EnemyConfig cfg = Configs.GetEnemy(enemyId, isHardWave);
             if (cfg == null)
             {
                 LastSpawnFailure = SpawnFailure.Configuration;

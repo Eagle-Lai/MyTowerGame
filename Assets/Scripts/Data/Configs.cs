@@ -38,6 +38,7 @@ namespace FTProject
         public static TBGlobal GlobalTable { get; private set; }
         public static TBLevelRules RulesTable { get; private set; }
         public static TBLocalization LocalizationTable { get; private set; }
+        public static TBWaveTuning WaveTuningTable { get; private set; }
 
         /// <summary>全局参数（单行）</summary>
         public static GlobalConfig Global { get; private set; }
@@ -65,6 +66,13 @@ namespace FTProject
         private static Global _globalRow;
         private static readonly Dictionary<int, LevelRules> RulesByLevel = new Dictionary<int, LevelRules>();
 
+        /// <summary>
+        /// 波型调节索引：key = levelId * 10 + waveType（1=普通 / 2=困难）。
+        /// 【为什么不用 Luban 的联合主键】表里主键是自增的 `id`，这里按业务键重建索引，
+        /// 不依赖 Luban 多主键 API 的版本差异；缺行时 TryGetValue 直接落到 null。
+        /// </summary>
+        private static readonly Dictionary<int, WaveTuning> WaveTuningByKey = new Dictionary<int, WaveTuning>();
+
         /// <summary>按当前关卡重新绑定 Global 门面（引擎常量来自 Global 行，玩法常量来自本关 Rules 行）</summary>
         private static void RebuildGlobalConfig()
         {
@@ -76,6 +84,21 @@ namespace FTProject
             LevelRules rules;
             RulesByLevel.TryGetValue(ActiveLevelId, out rules);
             Global = new GlobalConfig(_globalRow, rules);
+        }
+
+        /// <summary>
+        /// 重建「关卡 × 波型」索引。
+        /// 【为什么抽成方法】`LoadAsync`（正常加载）与 `LoadTestCandidate`（平衡测试换表）都要用；
+        /// 两处各写一遍必然会漏掉一处，届时测试跑的是旧倍率而看不出任何报错。
+        /// </summary>
+        private static void RebuildWaveTuningIndex()
+        {
+            WaveTuningByKey.Clear();
+            if (WaveTuningTable == null || WaveTuningTable.DataList == null) return;
+            foreach (WaveTuning t in WaveTuningTable.DataList)
+            {
+                WaveTuningByKey[t.LevelId * 10 + t.WaveType] = t;
+            }
         }
 
         private static readonly Dictionary<int, Dictionary<int, TowerInfo>> TowerIndexByLevel =
@@ -128,7 +151,7 @@ namespace FTProject
         {
             "tbenemydata", "tbtowerinfo", "tbbulletdata", "tbenemylist",
             "tbrounddata", "tbsceneinfo", "tblevelmap", "tbglobal",
-            "tblevelrules", "tblocalization"
+            "tblevelrules", "tblocalization", "tbwavetuning"
         };
 
         // ------------------------------------------------------------------
@@ -185,6 +208,7 @@ namespace FTProject
                 GlobalTable = LoadTable("tbglobal", n => new TBGlobal(n));
                 RulesTable = LoadTable("tblevelrules", n => new TBLevelRules(n));
                 LocalizationTable = LoadTable("tblocalization", n => new TBLocalization(n));
+                WaveTuningTable = LoadTable("tbwavetuning", n => new TBWaveTuning(n));
 
                 // 塔/子弹已按关卡拆分，建"关卡 → 表行"索引，供 GetTower*/GetBullet 按作用域查询
                 BuildLevelIndexes();
@@ -198,6 +222,9 @@ namespace FTProject
                         RulesByLevel[r.Id] = r;
                     }
                 }
+
+                // 波型调节索引（levelId*10+waveType → 行）
+                RebuildWaveTuningIndex();
 
                 // Global 是单行表，单独取（引擎常量）；玩法常量随 ActiveLevelId 绑定
                 if (GlobalTable != null)
@@ -292,11 +319,12 @@ namespace FTProject
                 "  TBSceneInfo  : {6} 条\n" +
                 "  TBLevelMap   : {7} 条\n" +
                 "  TBGlobal     : {8} 条\n" +
-                "  TBLocalization: {9} 条",
+                "  TBLocalization: {9} 条\n" +
+                "  TBWaveTuning : {10} 条",
                 ok ? "完成" : "完成（有失败项）",
                 Count(EnemyTable), Count(TowerTable), Count(BulletTable), Count(WaveTable),
                 Count(RoundTable), Count(LevelTable), Count(LevelMapTable), Count(GlobalTable),
-                Count(LocalizationTable));
+                Count(LocalizationTable), Count(WaveTuningTable));
 
             if (ok)
             {
@@ -317,6 +345,7 @@ namespace FTProject
         private static int Count(TBLevelMap t) { return t != null && t.DataList != null ? t.DataList.Count : 0; }
         private static int Count(TBGlobal t) { return t != null && t.DataList != null ? t.DataList.Count : 0; }
         private static int Count(TBLocalization t) { return t != null && t.DataList != null ? t.DataList.Count : 0; }
+        private static int Count(TBWaveTuning t) { return t != null && t.DataList != null ? t.DataList.Count : 0; }
 
         /// <summary>交叉引用自检：波次引用的怪物、关卡引用的回合/棋盘是否都存在</summary>
         private static void ValidateCrossReferences()
@@ -403,6 +432,23 @@ namespace FTProject
                 }
             }
 
+            // 关卡 → 波型调节（每关必须同时有普通/困难两行，缺行只告警不拦启动）
+            if (LevelTable != null && LevelTable.DataList != null)
+            {
+                foreach (SceneInfo lv in LevelTable.DataList)
+                {
+                    for (int wt = 1; wt <= 2; wt++)
+                    {
+                        if (!WaveTuningByKey.ContainsKey(lv.Id * 10 + wt))
+                        {
+                            sb.AppendLine(string.Format(
+                                "  · 关卡 {0} 缺少 waveType={1} 的 WaveTuning 行（将按默认值 1/0 运行）", lv.Id, wt));
+                            problems++;
+                        }
+                    }
+                }
+            }
+
             if (problems > 0)
             {
                 Debug.LogWarning(string.Format(
@@ -424,7 +470,23 @@ namespace FTProject
         // 访问器（全部不抛异常，找不到就返回 null + 明确日志）
         // ------------------------------------------------------------------
 
-        public static EnemyConfig GetEnemy(int id)
+        /// <summary>
+        /// 取某关某波型的调节参数；缺表/缺行返回 null（调用方按默认值 1/0 处理）。
+        ///
+        /// 【口径】只认 waveType=2 为困难波，0/1 都按普通波取（防止脏数据把某波误判为困难）。
+        /// </summary>
+        public static WaveTuning GetWaveTuning(int levelId, bool isHardWave)
+        {
+            WaveTuning t;
+            return WaveTuningByKey.TryGetValue(levelId * 10 + (isHardWave ? 2 : 1), out t) ? t : null;
+        }
+
+        /// <summary>
+        /// 取怪物战斗配置。
+        /// <paramref name="isHardWave"/> 为 true 时套用本关「困难波」那一行的倍率与加成；
+        /// 默认 false = 普通波，保证不传参的老调用点（编辑器验证工具等）行为与改动前一致。
+        /// </summary>
+        public static EnemyConfig GetEnemy(int id, bool isHardWave = false)
         {
             EnemyData d = EnemyTable != null ? EnemyTable.GetOrDefault(id) : null;
             if (d == null)
@@ -432,7 +494,7 @@ namespace FTProject
                 Debug.LogError(string.Format("[Config] TBEnemyData 中找不到 id={0}", id));
                 return null;
             }
-            return new EnemyConfig(d);
+            return new EnemyConfig(d, GetWaveTuning(ActiveLevelId, isHardWave));
         }
         public static void ReloadForNewRunAsync(Action<bool> onDone)
         {
