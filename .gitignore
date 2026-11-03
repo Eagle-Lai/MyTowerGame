@@ -94,6 +94,9 @@ crashlytics-build.properties
 # Excel 打开时产生的 Office 锁文件
 Luban/Config/Datas/~$*.xlsx
 ~$*.xlsx
+# WPS/Excel 编辑 xlsx 时的 <name>~<hex>.tmp 临时文件（未正常关闭时残留，
+# 如 L02/SceneInfo~366C55.tmp；.bak_* 才是正式回滚基线，tmp 一律不入库）
+Luban/Config/Datas/**/*~*.tmp
 
 # ---------------------------------------------------------------------------
 # 4b. AI 协作工作区的自动备份快照（M2 起新增）

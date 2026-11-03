@@ -89,6 +89,44 @@
 - **SellConfirmView 单底板**：`SharedContentPlate(root, surfaces, "Panel/ContentBacking", 0, 24, 936, 440, 塔图/塔名/警告/退款标签/退款值 5 个节点)`，然后把 `paths` 置 `Array.Empty<string>()`，否则 `ApplyContentSurfaces` 还会给每行补一块独立底板。
 
 
+## ★Luban 导出会删掉 Assets/Gen/FTProject.Gen.asmdef（2026-11-03 实测）
+
+- 现象：跑完导出（`Luban.ClientServer.exe` 或 `gen_code_json.bat`），日志里出现
+  `[remove] file: "E:/MyTowerGame/Assets/Gen\FTProject.Gen.asmdef"`，文件被物理删除，`FTProject.Gen.asmdef.meta` 留在原地。
+- 后果：`Assets/Scripts/FTProject.Runtime.asmdef`、`Assets/Editor/FTProject.Editor.asmdef` 的 `references` 都含 `FTProject.Gen`，
+  asmdef 缺失 = 引用悬空（缺程序集/编译失败）；`Assets/Gen/*.cs` 还会掉回 Assembly-CSharp，破坏 HybridCLR 的程序集划分。
+- 处理：导出后立刻 `git checkout -- Assets/Gen/FTProject.Gen.asmdef`，并核对 `git status --porcelain -- Assets/Gen` 里**没有 ` D`**。
+  「导出 succ」≠ 工程没被改坏，这一步每次都要看。
+- 顺带：`gen_code_json.bat` 末尾有 `pause`，非交互环境直接调 exe：
+  `DOTNET_ROLL_FORWARD=LatestMajor Luban/Tools/Luban.ClientServer/Luban.ClientServer.exe -j cfg -c Luban/.cache.meta -- -d <__root__.xml> --input_data_dir ... --output_code_dir Assets/Gen --output_data_dir Assets/ConfigJson --gen_types code_cs_unity_json,data_json -s all`
+  （job 参数必须放在 `--` 之后，否则报 unknown argument）。
+- 判断「这次到底改了哪几张表」：导出日志只对内容变化的表打 `[override]`，例如本次仅
+  `tbenemydata.json` / `tbenemylist.json`，其余表未被重写；再用 `git diff` 对比 json 逐行核对字段与条数。
+
+## L02 地面血量 ×1.34（2026-11-03，用户口径）
+
+- 需求：第二关「第 5 波(不含) → 第 25 波」地面怪物血量改成当前值的 134%。
+- 落点：只改 `Levels/L02/EnemyData.xlsx` 的 `hp` 列（76 行），飞行单位（Bat，21 行）与 W1-W5（9 行）不动；speed/armor/reward/数量/间隔/波次奖励全不动。
+- 行数构成：W6-W10 各 3 只（Chicken/Larva/Crawler）=15；W11-W24 各 4 只（+Scarab）=56；W25 5 只（+Rat，用户明确连 BOSS 一起改）=5。
+- 波次解析：`SceneInfo.RoundList` 为准 —— 1..20 → roundId 2001..2020，21..25 → **2401..2405**（RoundData 物理行序是乱的）。
+- 脚本：`.workbuddy/tools/_l02_groundhp134_20261103.py`（values/apply/verify 三档，基线 `*.bak_20261103_before_groundhp134`）。
+- 校验：`tbenemydata.json` 与 HEAD 对比 = 76 行仅 `hp` 变化、比值精确 1.34；`tbenemylist.json` = 20 行仅 `desc` 变化。
+- 备注：`WaveTuning` 里 L02 普通/困难地面倍率都是 1，所以改 EnemyData 对两种波型同时生效；每波 EHP ×1.30~1.32（整体 ×1.3029），空军占比决定系数。
+
+## L02 同日第二轮：地面 ×1.25 叠加 + 空中 ×1.20（2026-11-03）
+
+- 用户原话「地面改当前值 125%、空中改当前值 120%」→ 按铁律先问「叠加 vs 替换」，用户选**叠加**：
+  地面相对今早改动前累计 **×1.675**（1.34×1.25），空中 **×1.20**（空中此前未动）。
+- 这轮的"当前值"= 上一轮已改过的值；**不要把"当前值"默认理解成原始配置值**，也不要因为上一轮是替换就推定这轮也是替换。
+- 范围：W6-W25 地面 76 行 + 空中 20 行（Bat），W1-W5 的 9 行地面与 W5 的 1 只 Bat 不动；其余字段全不动。
+- 基线管理：每轮写盘前另存一份 `*.bak_<日期>_before_<tag>`，verify 只对"本轮基线"做比值断言 + 反向断言（未列入计划的行必须与基线逐字节相同）。
+- 结果：全关 EHP 7289836.3 → 9081738.9（×1.245808），相对今早改动前 ×1.6231。
+
+### 修正（2026-11-03 09:15，同日第二次导出实测）
+- **编辑器菜单 `Tools/塔防/3. 导出配置表（Luban）`（`Assets/Editor/LubanExporter.cs`）会自动保留 asmdef**：`KeepFilesInCodeDir = { "FTProject.Gen.asmdef", "FTProject.Gen.asmdef.meta" }`，导出后写回；实测 09:12:43 那次菜单导出后 asmdef 仍存在、mtime 正是导出时刻。
+- 只有**直接跑 `Luban.ClientServer.exe`**（我做的自动化导出）才需要手动 `git checkout` 恢复。
+- 结论：手工导出走菜单最安全；自动化/命令行导出必须在导出后补 `git checkout -- Assets/Gen/FTProject.Gen.asmdef` + 核对 `git status` 无 ` D`。
+
 ## 跨关数值同步口径（2026-11-03 首次执行：L03 ← L02）
 
 - **触发**：用户说「把关卡 2 的数值修改同步到关卡 3」。多关之间有同名怪种、同 25 波，但**构成规模完全不同**（L02 106 条变体 / L03 302 条），不存在"整表复制"，必须先问清口径。
