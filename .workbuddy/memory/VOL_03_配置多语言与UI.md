@@ -68,6 +68,27 @@
 - 生成器写「基于 L01 模板」时，**SceneInfo / LevelMap / LevelRules 这类「一关一行」的表必须从目标关原表读，不能从模板抄**；`EnemyData` 的 id 段与 `levelId` 要在同一处赋值，别一个用 `id_base` 一个用源表列。
 - 提交这类产物前先问自己：这份表能不能在不看文档的情况下自证？不能就别标「完成」，标 WIP。
 
+## UI 品牌化与字号层级（2026-11-02，桌面《UI界面问题文档》19:12 版实施）
+
+### 四层同步（任何品牌文案/字号改动都按此走，缺一层必翻车）
+
+1. **源表** `Luban/Config/Datas/Localization.xlsx`：改单元格 → 跑标准 `LubanExporter.ExportInternal`（导出 11 张表）→ 只应改 `Assets/ConfigJson/tblocalization.json`。
+2. **AOT 启动层** `Assets/AOTAssembly/BootLocalization.cs`：`BrandTitleKey`/`BrandSloganKey` 常量 + `Get(key, language)` 显式语言重载。**APK 内的启动页/更新页不能挂 `TextLocalizer`**（那是热更层，AOT 阶段还没有）；`"Title"` 与 `BrandTitleKey` 走同一分支，旧 `"游戏更新"/"GAME UPDATE"` 文案已删除。
+3. **实际 prefab**（5 个）：`Assets/Resources/BootUI/HotUpdateView.prefab`、`Assets/HotUpdateUI/LoadingView.prefab`、`Assets/HotUpdateUI/SplashView.prefab`、`Assets/Prefabs/UI/MainMenuView.prefab`、`Assets/Prefabs/UI/{ConfirmView,SellConfirmView}.prefab`。
+4. **生成器**：`TacticalForgePrefabBuilder.BrandText/ApplyBrandTypography`（规则）、`UIPrefabBuilder`（首次生成的初始文案与字号）、`TacticalForgeLayout`（主菜单 `Panel/GameTitle` 144 高 / `Subtitle` 88 高，运行时按分辨率重排）。只改 prefab → 下次重生成被覆盖；只改生成器 → 现场 prefab 不更新。
+
+- **词条约定**：品牌名主键仍是 `FREEDOM TOWER`（值改成 `Freedom Tower` 只为显示大小写，**不要动主键**，代码里 `BrandTitleKey` 用它）；slogan 主键 = 英文整句 `Winding paths, thrills at every turn.`（id 与 en 同值，简中「曲径通幽，步步惊心」/ 繁中「曲徑通幽，步步驚心」），在 `Localization.xlsx` 第 385 行。**换 slogan = 改这一行 + 重导表 + 跑菜单 `Tools/塔防/Tactical Forge/同步问题文档修正（2026-11-02）`（MenuItem priority 94）**。
+- **字号层级**（TMP 逻辑画布基准，实际随分辨率缩放）：HotUpdate 104/40（状态·进度·失败 22、下载详情 20、按钮 24）；Loading 104/40（状态 22、百分比 24、提示 20、按钮 24）；Splash 112/40（启动提示 22、版本 18）；MainMenu 96/40（统计 24、主操作 28、次要按钮 24、版本 18）。品牌标题/slogan 的 `fontSizeMin` 固定 **72 / 32**，否则 auto-size 会把层级差抹平。辅助文字统一走 `ApplyBrandTypography`，`ButtonAt`/`FontSize` 会同时设 `fontSizeMax`。
+
+### 四个坑（都是本次踩的）
+
+- ★**`BrandText` 会改字体资产**：它对英/简/繁三语各跑 `_font.HasCharacters` → `TryAddCharacters`，缺字直接 `throw`（`Brand font is missing characters: ...`）。加新中文 slogan 前先确认 `Assets/_UIAssets/UI/TacticalForge/Fonts/TacticalSans.asset` 有字形；生成时会自动补进图集并 `SetDirty`，**这个 .asset 要跟着提交**（本次补了「曲/惊/驚」）。保留原 GUID，不要让 TMP 生成新字体资产。
+- ★**ConfirmView 去图标要三处一起删**：`ConfirmView.cs` 的 `_dangerIcon` 字段与两处赋值、prefab 的 `Panel/DangerIcon` 节点、生成器里的 `DangerIcon`/`StatusGlyph` 创建段。只删 prefab 会在 `panel.Find("DangerIcon").GetComponent<Image>()` 直接 NRE。删后 `BodyText` 由 `(160,140,752)` 改全宽 `(48,140,864)`。
+- ★**LoadingView 的 `StatusText` 不要挂 `TextLocalizer`**：生成器里 `DestroyImmediate` 掉了；运行时 `Awake` 先写「Initializing resources...」、`OnProgress` 到 1.0 写「Starting...」（旧版会覆盖成 Ready 标题）。要改文案改 `Assets/Scripts/UI/LoadingView.cs`，不是改表。
+- ★**`TowerBuildMenu` 的视觉必须在 `Configure` 末尾应用**：生成器也会调 `Configure` 保存 prefab，只写在 `Awake` 会让「新生成 prefab」与「旧 prefab 运行时修补」两套表现不一致。样式口径：face 全透明 + `ColorBlock` 五态全透明 + 关 Outline，`IconWell` 84×84、`PriceBadge` 76×20（深金 + 塔色描边）、`PriceMark` 10×10 金币点，图标 68×68，名字 19（下限 14，SemiBold），价格 18（下限 13，Bold，金色 `1,0.8,0.34`），Backdrop 340×340 / `(.12,.22,.31,.28)`。**本次没有重跑菜单 93（HUD 建造圆盘）**，HudView 靠运行时 `ApplyButtonVisuals` 兜底；要固化进 prefab 就跑菜单 93。
+- **SellConfirmView 单底板**：`SharedContentPlate(root, surfaces, "Panel/ContentBacking", 0, 24, 936, 440, 塔图/塔名/警告/退款标签/退款值 5 个节点)`，然后把 `paths` 置 `Array.Empty<string>()`，否则 `ApplyContentSurfaces` 还会给每行补一块独立底板。
+
+
 ## ★Luban 导出会删掉 Assets/Gen/FTProject.Gen.asmdef（2026-11-03 实测）
 
 - 现象：跑完导出（`Luban.ClientServer.exe` 或 `gen_code_json.bat`），日志里出现

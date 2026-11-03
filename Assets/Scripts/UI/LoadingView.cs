@@ -97,6 +97,11 @@ namespace FTProject
             _target = _shown = _velocity = 0f;
             ApplyProgress(0f);
             SetRecovery(null, null);
+            if (_statusText != null)
+            {
+                _statusText.text = Localization.Get("Initializing resources...") ?? "Initializing resources...";
+                _statusText.color = TextPrimary;
+            }
             EventDispatcher.AddEventListener<string, float>(EventName.LoadingProgressEvent, OnProgress);
             _tipIndex = -1;
             ShowNextTip();
@@ -118,7 +123,8 @@ namespace FTProject
 
             if (_statusText != null)
             {
-                _statusText.text = phase;
+                // Completion feedback stays below the fixed brand title; do not restore the old Ready heading.
+                _statusText.text = progress >= 1f ? Localization.Get("Starting...") ?? "Starting..." : phase;
                 _statusText.color = TextPrimary;
             }
             if (_percentText != null)

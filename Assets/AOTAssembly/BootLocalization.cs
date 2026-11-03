@@ -8,6 +8,8 @@ namespace FTProject.AOT
 {
     public static class BootLocalization
     {
+        public const string BrandTitleKey = "FREEDOM TOWER";
+        public const string BrandSloganKey = "Winding paths, thrills at every turn.";
         private const string Preference = "FT.Boot.Language";
         public static Language Current { get; private set; }
         public static bool HasSelection { get; private set; }
@@ -41,8 +43,14 @@ namespace FTProject.AOT
 
         public static string Get(string key)
         {
-            bool traditional = Current == Language.ChineseTraditional;
-            if (Current == Language.English) return English(key);
+            return Get(key, Current);
+        }
+
+        // Explicit language keeps editor previews independent of the player's saved selection.
+        public static string Get(string key, Language language)
+        {
+            bool traditional = language == Language.ChineseTraditional;
+            if (language == Language.English) return English(key);
             switch (key)
             {
                 case "Preparing": return traditional ? "正在準備啟動資源" : "正在准备启动资源";
@@ -59,7 +67,10 @@ namespace FTProject.AOT
                 case "Resume": return traditional ? "繼續" : "继续";
                 case "Retry": return traditional ? "重試" : "重试";
                 case "Paused": return traditional ? "已暫停" : "已暂停";
-                case "Title": return traditional ? "遊戲更新" : "游戏更新";
+                case "Title":
+                case BrandTitleKey: return "自由人塔防";
+                case "Slogan":
+                case BrandSloganKey: return traditional ? "曲徑通幽，步步驚心" : "曲径通幽，步步惊心";
                 case "Overall": return traditional ? "整體" : "总体";
                 case "Stage": return traditional ? "階段" : "阶段";
                 default: return key;
@@ -82,7 +93,10 @@ namespace FTProject.AOT
                 case "Ready": return "Update complete, entering game";
                 case "Failed": return "Update failed. Please retry";
                 case "Restart": return "Code loading failed. Please restart the game";
-                case "Title": return "GAME UPDATE";
+                case "Title":
+                case BrandTitleKey: return "Freedom Tower";
+                case "Slogan":
+                case BrandSloganKey: return BrandSloganKey;
                 default: return key;
             }
         }

@@ -21,6 +21,7 @@ namespace FTProject
         private static readonly Color Danger = new Color(1f, 0.302f, 0.369f, 1f);            // #FF4D5E
 
         private TMP_Text _title;
+        private TMP_Text _slogan;
         private TMP_Text _phaseText;
         private TMP_Text _percentText;
         private TMP_Text _sizeText;
@@ -52,6 +53,7 @@ namespace FTProject
         private void Awake()
         {
             _title = FindText("Panel/HotTitle");
+            _slogan = FindText("Panel/Subtitle");
             _phaseText = FindText("Panel/PhaseText");
             _percentText = FindText("Panel/PercentText");
             _sizeText = FindText("Panel/SizeText");
@@ -70,6 +72,7 @@ namespace FTProject
                 || !_phaseText.font.HasCharacters(BootLocalization.Get("Preparing"), out missingGlyphs, true, true);
 
             if (_title != null) _title.color = TextPrimary;
+            if (_slogan != null) _slogan.color = TextSecondary;
             if (_percentText != null) _percentText.color = Cyan;
             if (_sizeText != null) _sizeText.color = TextSecondary;
             if (_speedText != null) _speedText.color = TextSecondary;
@@ -81,7 +84,7 @@ namespace FTProject
                 _failText.overflowMode = TextOverflowModes.Ellipsis;
                 _failText.enableAutoSizing = true;
                 _failText.fontSizeMin = 18;
-                _failText.fontSizeMax = 26;
+                _failText.fontSizeMax = 22;
                 _failText.rectTransform.sizeDelta = new Vector2(1400, 100);
             }
 
@@ -107,6 +110,7 @@ namespace FTProject
             _target = BootUpdateSession.Overall;
             SetPhase(Localize(BootUpdateSession.Paused ? "Paused" : BootUpdateSession.Phase));
             if (_title != null) _title.text = Localize("Title");
+            if (_slogan != null) _slogan.text = Localize("Slogan");
             _currentCount = BootUpdateSession.Files; _totalCount = BootUpdateSession.TotalFiles;
             _currentBytes = BootUpdateSession.Bytes; _totalBytes = BootUpdateSession.TotalBytes;
             UpdateSpeed(_currentBytes);

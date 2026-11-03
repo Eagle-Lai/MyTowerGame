@@ -1909,7 +1909,7 @@ public class Reporter : MonoBehaviour
 
 	// 【双击调出】两次"按下"间隔 < DoubleClickInterval 视为双击。
 	// 原版阈值 0.2s 在鼠标/模拟器上偏紧，放宽到 0.35s（仍属标准双击区间）；
-	// 画圈在模拟器里较难完成，双击是主要的备用调起方式（见 Update）。
+	// 双击调用入口已在 Update 中注释，保留检测逻辑方便恢复。
 	const float DoubleClickInterval = 0.35f;
 
 	bool RegisterClickForDoubleClick()
@@ -2053,7 +2053,7 @@ public class Reporter : MonoBehaviour
 #endif
 
 		calculateStartIndex();
-		if (!show && (isGestureDone() || isDoubleClickDone())) {
+		if (!show && (isGestureDone() /* || isDoubleClickDone() */)) {
 			doShow();
 		}
 

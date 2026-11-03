@@ -1,18 +1,56 @@
-﻿# FishTestGame —— 项目工作规范
+﻿# 自由人塔防 —— 项目工作规范
 
 ## 工程与 MCP
 
-- 工程根目录：`D:\FishTestGame`；Unity `2022.3.62f3c1`，实际版本以 `ProjectSettings/ProjectVersion.txt` 为准。
-- MCP 插件：`com.coplaydev.unity-mcp`；HTTP 地址 `http://127.0.0.1:8088/mcp`。服务名按客户端区分、大小写敏感：Claude Code 为 `UnityMCP`（工具前缀 `mcp__UnityMCP__*`），Codex 为 `unityMCP`（工具前缀 `mcp__unityMCP__*`）。
-- 插件使用 HTTP Local `http://127.0.0.1:8088` 并启用 Auto-Start on Editor Load（端口以编辑器 EditorPrefs `MCPForUnity.HttpUrl` 为准）。8080 是另一个 Unity 2020 工程 CatchFish_Android 的桥接端口；本项目使用 8088（2026-11-02 实测，旧值 8082/8084 均已失效）。
-- 操作前先读取 `mcpforunity://custom-tools`、`mcpforunity://instances`（`server` 用当前客户端对应的服务名，如 `UnityMCP`），选择当前列表中 FishTestGame 的完整 ID，调用 `set_active_instance`；再读 `mcpforunity://project/info`，确认 `data.projectRoot=D:/FishTestGame` 与 Unity 版本正确。新会话、重连、域重载后重新选定并核对，不依赖窗口焦点或上个会话的实例 ID。
-- Unity 操作一律通过 MCP 工具调用；禁止用 Bash/curl/python 直连 `http://127.0.0.1:8088/mcp`。该端点是 streamable HTTP，需要 MCP 会话与 `Accept: application/json, text/event-stream`，手工请求只会得到 400 / Not Acceptable，不能据此判定「MCP 不可用」。
+### 多实体工程（2026-11-03 用户定规，最高优先级）
+
+本工程**包含多个不同的实体工程**：同一份规范与记忆会被多台机器、多个 Unity 工程复用，各实体工程的磁盘路径、Unity 版本、MCP 插件版本、桥接端口、客户端服务名都可能不同。**任何路径、端口、服务名、实例 ID 都必须按"当前实际运行的那个实体工程"判断，不得跨工程套用，也不得沿用上一次会话或其它工程的结论。**
+
+- 已知实体工程（**只作线索，不是默认值**，一律以运行时核对为准）：
+  - `E:\MyTowerGame`（公司 E 机，Unity `2022.3.62f3c1`）
+  - `D:\FreedomTower_1`（家用 D 机）
+  - `D:\FishTestGame`（历史路径/工程名，仅作线索）
+- **判定当前实体工程（只读，三者互相印证）**：当前工作区根目录 + `ProjectSettings/ProjectVersion.txt`（Unity 版本）+ `Packages/manifest.json`（依赖与 MCP 插件版本）。三者一致才算确认；不一致或无法判断时先问用户，不要猜。
+- Unity 版本一律以 `ProjectSettings/ProjectVersion.txt` 为准，不采信文档里的旧值。
+- MCP 插件：`com.coplaydev.unity-mcp`（版本以 `Packages/manifest.json` 为准），传输统一 HTTP Local。
+- **端口不是固定值**：以当前实体工程编辑器 `MCP for Unity` 窗口显示的 HTTP URL / EditorPrefs `MCPForUnity.HttpUrl` 为准。历史上出现过的 `8080`、`8082`、`8084`、`8088` 都只是**某次、某个工程**的实测值，**一律不得当作默认端口**（`8080` 曾属 Unity 2020 工程 CatchFish_Android）。
+- 服务名按客户端区分、大小写敏感：Claude Code 为 `UnityMCP`（工具前缀 `mcp__UnityMCP__*`），Codex 为 `unityMCP`（工具前缀 `mcp__unityMCP__*`）；以当前客户端实际工具前缀为准。
+- 连接后按固定流程核对身份：读 `mcpforunity://custom-tools` → `mcpforunity://instances`（`server` 用当前客户端服务名）→ `set_active_instance` 选当前实体工程的完整 ID → 读 `mcpforunity://project/info` 比对 `data.projectRoot` 与 Unity 版本。新会话、重连、域重载、切换实体工程后都要重做，不依赖窗口焦点或上个会话的实例 ID。
+- Unity 操作一律通过 MCP 工具调用；禁止用 Bash/curl/python 直连 `/mcp` 端点。该端点是 streamable HTTP，需要 MCP 会话与 `Accept: application/json, text/event-stream`，手工请求只会得到 400 / Not Acceptable，不能据此判定「MCP 不可用」。
+
+### ★★ MCP 连接失败时的端口确认规则（2026-11-03 用户定规，最高优先级）
+
+**触发条件**（满足任一即触发，不得直接硬试或换端口重试）：
+
+1. 任一 Unity MCP 工具返回连接失败、超时、`Not Acceptable`、`session not found`，或工具列表为空；
+2. `mcpforunity://instances` 为空，或列表中找不到当前实体工程的实例；
+3. 新会话首次连接、客户端重连、域重载/编译后重连；
+4. 切换实体工程（工作区路径变化、用户改开另一个 Unity 工程、或用户明确说"换工程"）；
+5. 客户端配置里该工程的 URL 缺失，或与当前工程不一致。
+
+**执行步骤**：
+
+1. **先确认实体工程身份**：按上节三项只读核对，确认当前是哪个实体工程；身份不明时先问用户，不猜路径、不猜版本。
+2. **只做一次低成本只读自检**：查看 `MCP for Unity` 插件窗口显示的 HTTP URL、EditorPrefs `MCPForUnity.HttpUrl`、当前客户端配置（如 `~/.workbuddy/mcp.json`）里对应条目。**不扫描端口段、不逐个端口试连、不改插件端口、不重复启动服务、不抢占端口。**
+3. **自检无法确定端口 → 立即停止动作，主动询问用户**：「当前这个工程用的 MCP 端口是多少？」必要时一并问清：实体工程路径、Unity 是否已打开、客户端服务名。提问时**可列出历史端口作为候选供参考，但不得预选、不得默认采用任何一项**。
+4. **拿到用户答复后才连接**：按用户给出的 URL 建连 → `set_active_instance` 选当前工程实例 → 读 `mcpforunity://project/info` 核对 `projectRoot` 与 Unity 版本。
+5. 连上后把「实体工程路径 ↔ 端口 ↔ 客户端服务名」写入 `.workbuddy/memory/VOL_07_工具与UnityMCP.md`，作为**线索记录**；下次仍按本规则重新确认，不自动升格为默认值。
+6. 用户在当次会话明确说"这个工程固定用某端口"时，该口径**只对当次会话/当次工程有效**，不构成跨工程、跨会话的默认值。
+
+**适用范围**：
+
+- 覆盖全部 Unity 相关 MCP 操作：资产/场景读写、编译刷新、Console 读取、Play Mode、菜单执行、构建出包。
+- 覆盖所有实体工程与所有客户端（Claude Code、Codex、WorkBuddy 等）。
+- 覆盖 MCP 服务未启动、端口被改、插件升级、切换工程、换机器等场景。
+- **不适用**于非 Unity 的 MCP 连接器（如 Agent Mail），那类按各自连接器状态处理。
+- 与本规范其它章节并行生效；与旧文任何"固定端口"表述冲突时，**以本节为准**。
 
 ## MCP 未开启时
 
-- 用户允许为本项目开发与验证自主启动/重连已有 MCP，无需逐次询问。先检查 8088 服务和本工程桥接实例；复用在线服务，优先使用插件 HTTP Local 自动启动或 MCP 窗口的启动/连接功能。服务离线时可通过可用的本机进程/编辑器界面操作恢复；不要依赖已离线的 MCP 工具启动自身。
-- 编译重载短暂断线先等约 5 秒再重试；无进展则限次尝试，不重复启动服务、抢占端口或连接另一个工程。
-- 无法自主恢复时，及时提示用户打开 `D:\FishTestGame` 的 Unity 2022.3.62f3c1，在 MCP 窗口开启 HTTP Local `http://127.0.0.1:8088` 服务并连接，并在当前客户端启用/重连 `UnityMCP`（Codex 为 `unityMCP`）；说明实际失败环节。恢复后重新选定实例、核对工程身份并补做验证；最终未连接则明确说明编辑器验证未完成。
+- 用户允许为本项目开发与验证自主启动/重连**已有**的 MCP，无需逐次询问；但"启动/重连"不等于"猜端口"，端口一律按上节确认。
+- 编译重载短暂断线先等约 5 秒再重试（限次）；不重复启动服务、不抢占端口、不连接另一个实体工程。
+- 自检与限次重试仍失败 → 按上节第 3 步**主动询问用户当前工程的 MCP 端口**，并说明实际失败环节（卡在哪一步、报什么错）。
+- 恢复后重新选定实例、核对 `projectRoot` 与 Unity 版本，补做被中断的验证；最终未连上必须明确报告「编辑器验证未完成」，不得用其它工程的结果替代。
 
 ## 代码修改后的强制验证
 
@@ -20,6 +58,7 @@
 2. 间隔 1~2 秒读取 `mcpforunity://editor/state`，直到 `data.compilation.is_compiling=false`、`data.compilation.is_domain_reload_pending=false`、`data.assets.is_updating=false`、`data.advice.ready_for_tools=true`；编译期间不继续修改代码。
 3. 使用 `read_console(action="get", types=["error"], count="50", format="json")` 检查编译错误及异常，必要时用 `filter_text="error CS"` 定位并分页。`execute_code` 可用时补查 `return UnityEditor.EditorUtility.scriptCompilationFailed;` 应为 `false`。
 4. 本次错误修复后重复验证。历史错误结合时间和现状说明，不擅自清空日志。MCP 断线先等约 5 秒重试，并重新选定实例和核对身份；未连上就明确报告未完成编辑器验证。
+5. **不得跳过验证**：端口/实例身份未确认时，先按「MCP 连接失败时的端口确认规则」确认，再补做验证；不得改用其它实体工程的实例顶替。
 
 运行时排查先读取本工程错误日志，再查看状态、复现和修改；不得使用 CatchFish_Android 的 `unity` 结果作为本工程验证。Unity 2020 的专用语言/API 限制不自动适用于本项目。进入/退出 Play Mode 和破坏性操作按用户当前授权处理。
 

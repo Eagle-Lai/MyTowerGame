@@ -70,6 +70,12 @@
 - execute_code 是 CodeDom（C#6）：无 out var/本地函数/模式匹配；复杂片段写临时 .cs 文件再读入执行，避免 shell 转义地狱。
 - 改完必须 `EditorApplication.ExecuteMenuItem("File/Save Project")`（2022.3 存在，返回 true）才落盘；磁盘核验直接 grep ProjectSettings.asset 的 guid 引用数（本工程图标节应为 8+50=58 处）。
 
+## 真机调试面板 Reporter 的调出方式（2026-11-02 改动）
+
+- **双击调出已停用**：`Assets/Reporter/Reporter.cs` 的 `Update` 里 `if (!show && (isGestureDone() /* || isDoubleClickDone() */))`，只保留**画圈**调出。`DoubleClickInterval = 0.35f` 与 `RegisterClickForDoubleClick()` 检测逻辑**原样保留**，要恢复就取消那段注释（别删方法，否则要重写点击计时）。
+- 同步改了 `Assets/Scripts/GameSceneLauncher.cs` 的两处说明与挂载日志（「画圈或双击调出」→「画圈调出」），改面板调出方式时**这两处文案要一起改**，否则日志会误导真机排查。
+- Reporter 仍由 `GameSceneLauncher` 运行时 `AddComponent<Reporter>()` 动态挂载（它是热更程序集 `FTProject.ThirdParty.Reporter`，挂进 Build Settings 场景会在打包时被剥离）。
+
 ## 2026-11-03 Codex 本轮连接线索
 - E:/MyTowerGame / Unity 2022.3.62f3c1 / unityMCP / http://127.0.0.1:8087/mcp。已由当前 EditorPrefs、Codex 配置、实例 MyTowerGame@9e28c50b510eeb91 与 project/info 互相核对；仅作线索，下次仍重新确认。
 
