@@ -30,6 +30,9 @@ namespace FTProject.EditorTools
         private static long _allocatedStart;
         private static string _out, _requestPath, _loadedCandidate, _oldStartScene;
         private static int _runIndex, _shopWave = -1;
+        private static int _towerLimit = 8;   // 自动策略的塔数上限，可由 request.run.towerLimit 覆盖
+        private static JSONNode _buildPlan;   // strategy=plan 时的显式塔位序列（row/col/type）
+        private static double _lastPlanShopMs = -1;
         private static double _startWall, _runWall;
         private static bool _initialized, _levelInitialized, _launcherEnabled, _flowEnabled;
         private static IDisposable _manualClock;
@@ -268,7 +271,7 @@ namespace FTProject.EditorTools
                         typeof(GameFlowManager).GetMethod("StepManualSimulation", BindingFlags.Instance | BindingFlags.Public));
                     _manualClock = GameClock.BeginManualSimulation();
                     BaseTower.EvidenceTrackReentry = true;
-                    EventDispatcher.AddEventListener<BaseEnemy, int>(EventName.EnemyKilledEvent, ObserveKilled);
+                    EventDispatcher.AddEventListener<BaseEnemy, float>(EventName.EnemyKilledEvent, ObserveKilled);
                     EventDispatcher.AddEventListener<BaseEnemy, int>(EventName.EnemyReachedEndEvent, ObserveLeaked);
                     _initialized = true;
                 }
@@ -301,14 +304,15 @@ namespace FTProject.EditorTools
                     UIManager.Instance.Close(LevelDetailView.LogicalName);
                     UIManager.Instance.Close("LoadingView");
                     LevelLoadingMask.Hide();
-                    flow.InitLevel(run["levelId"].AsInt);
+                    flow.InitLevel(run["levelId"].AsInt, false);
                     _initialGold = PlayerDataManager.Instance.Gold;
                     _initialHp = PlayerDataManager.Instance.Hp;
                     EnemyOutcomes.Clear(); OperationStages.Clear();
                     if (flow.State != GameFlowState.Preparing) throw new InvalidOperationException("Level did not enter Preparing");
                     GameClock.Speed = run["speed"].AsFloat > 0 ? run["speed"].AsFloat : 1;
                     Time.timeScale = 1; GameClock.SetBackground(false);
-                    _shopWave = -1; Operations.Clear(); Boundaries.Clear(); StepCosts.Clear();
+                    _shopWave = -1; _lastPlanShopMs = -1;
+                    Operations.Clear(); Boundaries.Clear(); StepCosts.Clear();
                     BalanceRenderSampler.Reset();
                     _performanceScreensCaptured = false;
                     BaseTower.EvidenceTrackReentry = !_request["renderedPerformance"].AsBool;
@@ -317,6 +321,8 @@ namespace FTProject.EditorTools
                     _pendingScreenshot = null;
                     _waitForFunds = run["waitForFunds"].AsBool;
                     ReplayedOperations.Clear();
+                    _towerLimit = run["towerLimit"] != null ? run["towerLimit"].AsInt : 8;
+                    _buildPlan = run["buildPlan"];
                     _plannedOperations = File.Exists(run["operationsPath"].Value) ? JSON.Parse(File.ReadAllText(run["operationsPath"].Value)) : null;
                     if (_plannedOperations != null)
                     {
@@ -402,6 +408,15 @@ namespace FTProject.EditorTools
                         if (nextWave == 1) EventDispatcher.TriggerEvent(EventName.StartRoundRequestEvent);
                         // Later waves retain the actual configured 5 second automatic waiting time.
                     }
+                    if (_plannedOperations == null && (string)run["strategy"] == "plan" && flow.State == GameFlowState.RoundRunning)
+                    {
+                        double nowMs = GameClock.CombatElapsedMs;
+                        if (_lastPlanShopMs < 0 || nowMs - _lastPlanShopMs >= 400)
+                        {
+                            _lastPlanShopMs = nowMs;
+                            RunPlan(flow, flow.CurrentRoundIndex);
+                        }
+                    }
                     if (_plannedOperations != null && flow.State == GameFlowState.RoundRunning)
                     {
                         var waveMetrics = flow.RunMetrics.waves;
@@ -447,7 +462,8 @@ namespace FTProject.EditorTools
         private static void Shop(GameFlowManager flow, string strategy, int wave)
         {
             if (strategy == "mistake" && TowerManager.Instance.Count >= 1) return;
-            int limit = strategy == "mistake" ? 1 : 8;
+            if (strategy == "plan") { RunPlan(flow, wave); return; }
+            int limit = strategy == "mistake" ? 1 : Mathf.Max(1, _towerLimit);
             for (int n = 0; n < 30; n++)
             {
                 var towers = TowerManager.Instance.Towers;
@@ -462,7 +478,7 @@ namespace FTProject.EditorTools
                     else if (normals >= 3 && powers >= 1 && slows == 0) type = 3;
                     else if (normals >= 4 && powers < 2) type = 2;
                 }
-                int targetCount = wave < 4 ? 4 : wave < 8 ? 6 : limit;
+                int targetCount = strategy == "mistake" ? 1 : Mathf.Min(limit, 6 + wave * 5);
                 if (towers.Count >= targetCount)
                 {
                     var candidates = towers.Where(t => t != null && !t.Config.IsMaxLevel)
@@ -491,6 +507,66 @@ namespace FTProject.EditorTools
                 if (built == null) throw new InvalidOperationException("Selected legal build was rejected");
                 AStarManager.Instance.ProcessRefresh();
                 LogOperation("build", built, wave, cfg.Prices);
+            }
+        }
+
+        /// <summary>
+        /// 显式塔位方案：按 buildPlan 顺序买塔（只走原生付费 TryBuild），
+        /// 计划全部落地后把余钱用于升级（优先靠近路径的塔）。不发放金币、不改配置。
+        /// </summary>
+        private static int _planDebug;
+        private static void RunPlan(GameFlowManager flow, int wave)
+        {
+            if (_planDebug < 12) { _planDebug++; UnityEngine.Debug.Log("[PlanShop] call=" + _planDebug + " wave=" + wave + " state=" + flow.State + " gold=" + PlayerDataManager.Instance.Gold + " towers=" + TowerManager.Instance.Count); }
+            var board = BoardView.Instance;
+            if (_buildPlan != null)
+            {
+                for (int i = 0; i < _buildPlan.Count; i++)
+                {
+                    var item = _buildPlan[i];
+                    int row = item["row"].AsInt, col = item["col"].AsInt, type = item["type"].AsInt;
+                    var cell = board.GetCell(row, col);
+                    if (cell == null || cell.HasTower || !cell.IsBuildable) continue;
+                    var cfg = Configs.GetTowerByTypeAndLevel(type, 1);
+                    if (cfg == null) continue;
+                    if (cfg.Prices > PlayerDataManager.Instance.Gold) break;
+                    var built = TowerManager.Instance.TryBuild(type, 1, row, col);
+                    if (built != null) { AStarManager.Instance.ProcessRefresh(); LogOperation("build", built, wave, cfg.Prices); }
+                }
+            }
+            // 计划里还有能盖但暂时买不起的格子 → 先攒钱买塔，不把钱花在升级上
+            bool pendingBuild = false;
+            if (_buildPlan != null)
+            {
+                for (int i = 0; i < _buildPlan.Count; i++)
+                {
+                    var it = _buildPlan[i];
+                    int r0 = it["row"].AsInt, c0 = it["col"].AsInt, t0 = it["type"].AsInt;
+                    var cell0 = board.GetCell(r0, c0);
+                    if (cell0 == null || cell0.HasTower || !cell0.IsBuildable) continue;
+                    var cfg0 = Configs.GetTowerByTypeAndLevel(t0, 1);
+                    if (cfg0 == null) continue;
+                    pendingBuild = true; break;
+                }
+            }
+            if (pendingBuild) return;
+            for (int guard = 0; guard < 400; guard++)
+            {
+                BaseTower best = null; TowerConfig nextCfg = null;
+                foreach (var tower in TowerManager.Instance.Towers)
+                {
+                    if (tower == null || tower.Config.IsMaxLevel) continue;
+                    var next = Configs.GetNextLevel(tower.Config);
+                    if (next == null || next.Prices > PlayerDataManager.Instance.Gold) continue;
+                    float score = next.Power - tower.Config.Power + (next.RadiusGrid - tower.Config.RadiusGrid) * 10f;
+                    if (best == null || score > (nextCfg.Power - best.Config.Power + (nextCfg.RadiusGrid - best.Config.RadiusGrid) * 10f))
+                    { best = tower; nextCfg = next; }
+                }
+                if (best == null) break;
+                int cost = nextCfg.Prices;
+                var upgraded = TowerManager.Instance.TryUpgrade(best);
+                if (upgraded == null) break;
+                LogOperation("upgrade", upgraded, wave, cost);
             }
         }
 
@@ -630,9 +706,9 @@ namespace FTProject.EditorTools
         }
 
         // Read-only settlement evidence: callbacks run before pooled enemies are recycled.
-        private static void ObserveKilled(BaseEnemy enemy, int reward) { ObserveOutcome(enemy, false, reward); }
+        private static void ObserveKilled(BaseEnemy enemy, float reward) { ObserveOutcome(enemy, false, reward); }
         private static void ObserveLeaked(BaseEnemy enemy, int damage) { ObserveOutcome(enemy, true, damage); }
-        private static void ObserveOutcome(BaseEnemy enemy, bool leaked, int amount)
+        private static void ObserveOutcome(BaseEnemy enemy, bool leaked, float amount)
         {
             if (!_levelInitialized || _request == null || !_request["captureOutcomes"].AsBool || enemy == null || enemy.Config == null) return;
             var flow = GameFlowManager.Instance;
@@ -654,7 +730,7 @@ namespace FTProject.EditorTools
         }
         private static void RemoveOutcomeObservers()
         {
-            EventDispatcher.RemoveEventListener<BaseEnemy, int>(EventName.EnemyKilledEvent, ObserveKilled);
+            EventDispatcher.RemoveEventListener<BaseEnemy, float>(EventName.EnemyKilledEvent, ObserveKilled);
             EventDispatcher.RemoveEventListener<BaseEnemy, int>(EventName.EnemyReachedEndEvent, ObserveLeaked);
         }
 
