@@ -88,3 +88,13 @@
 - ★**`TowerBuildMenu` 的视觉必须在 `Configure` 末尾应用**：生成器也会调 `Configure` 保存 prefab，只写在 `Awake` 会让「新生成 prefab」与「旧 prefab 运行时修补」两套表现不一致。样式口径：face 全透明 + `ColorBlock` 五态全透明 + 关 Outline，`IconWell` 84×84、`PriceBadge` 76×20（深金 + 塔色描边）、`PriceMark` 10×10 金币点，图标 68×68，名字 19（下限 14，SemiBold），价格 18（下限 13，Bold，金色 `1,0.8,0.34`），Backdrop 340×340 / `(.12,.22,.31,.28)`。**本次没有重跑菜单 93（HUD 建造圆盘）**，HudView 靠运行时 `ApplyButtonVisuals` 兜底；要固化进 prefab 就跑菜单 93。
 - **SellConfirmView 单底板**：`SharedContentPlate(root, surfaces, "Panel/ContentBacking", 0, 24, 936, 440, 塔图/塔名/警告/退款标签/退款值 5 个节点)`，然后把 `paths` 置 `Array.Empty<string>()`，否则 `ApplyContentSurfaces` 还会给每行补一块独立底板。
 
+
+## 跨关数值同步口径（2026-11-03 首次执行：L03 ← L02）
+
+- **触发**：用户说「把关卡 2 的数值修改同步到关卡 3」。多关之间有同名怪种、同 25 波，但**构成规模完全不同**（L02 106 条变体 / L03 302 条），不存在"整表复制"，必须先问清口径。
+- **四问必答**（沿用 AGENTS.md 关卡数值确认条）：①同步哪一套改动（一次关卡迭代常留多套并存，旧改动可能已被后续脚本覆盖，只剩 `.bak`）②按什么基准（目标关现值乘倍率 / 源关绝对值照抄 / 模板重算）③字段边界（是否含 SceneInfo / levelId）④关卡范围。
+- **本次落定的映射规则**：EnemyData 按 `(wave, name, isFlying)` 取源关绝对 hp，源关没有的怪种保留目标关原值；EnemyList 每波总数取源关、波内构成按目标关原序列等比取样；RoundData 奖励取源关同波值；SceneInfo / levelId / 击杀奖励 / speed / armor / waveType 一律不动。
+- ★★**教训：逐怪种照抄 ≠ 等强度**。L03 同步后全 25 波实际血量只有 L02 的 **0.68×**，因为目标关独有怪种保留了旧值，而出怪构成里它们占大头（空中尤其明显：Bat 828.64，同波 EvilEye 仍是 84）。要等强度必须再对独有怪种按同波同地空基准缩放——这一步要单独确认，不能默认做。
+- **后续（同日 12:43 用户同意后已做）**：`Tools/_manual_l03_scale_unique.py` 按同波同地空**几何均值**缩放 196 行（系数样本只取已同步行，地面 1.82~3.71、空中 6.3~9.9；L02 无空中对照的 W3/W4 借用 W5 系数）。结果：地面 0.92×、空中 **2.27×**、合计 **1.08×**。空中偏高是构成问题——L03 空中占比约 1/4、L02 仅 3.5%，单只拉到同级后总量必然高出；要压回 1.0× 只能改构成或接受单只偏弱，二者都需用户拍板。
+- 工具 `Tools/_manual_l03_sync_from_l02.py`：`--dry-run` 出逐波对照、`--apply` 首跑自动备份、`--verify` 逐格复核；另用「当前表 vs `.bak` 逐格 diff 按列统计」证明只改了目标列（本次 106+75+25 格）。
+- 导表后仍要恢复 `Assets/Gen/FTProject.Gen.asmdef`（每次删）。
