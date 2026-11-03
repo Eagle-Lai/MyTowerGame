@@ -14,16 +14,24 @@
 | `VOL_04_适配与SuperScrollView.md` | 多分辨率三组件、安全区、边缘锚数值、SuperScrollView 吸附约束 |
 | `VOL_05_玩法存档音频与地图.md` | 关卡生命周期、存档、音频/倍速、塔型与攻击表现、建造交互、地图链路、新增关卡 |
 | `VOL_06_敌人四方向.md` | AdvancedHen / Monkey 两套架构、构建器与校验坑、AI 分件美术 |
-| `VOL_07_工具与UnityMCP.md` | Unity MCP 两版端口、Python/脚本兜底、怪物素材、待办与环境事实 |
+| `VOL_07_工具与UnityMCP.md` | **多实体工程 MCP 端口规则（现行，失败即问）** + 历史端口线索、Python/脚本兜底、怪物素材、待办与环境事实 |
 
 ## 开工必读铁律
 - 双版本：[家用D] `D:\FreedomTower_1`｜[公司E] `E:\MyTowerGame`。记录必须标版本，严禁跨版套结论；同步走 GitHub `Eagle-Lai/MyTowerGame`(main)。
+  - **2026-11-03 扩展为「多实体工程」口径**：本工程还含历史实体 `D:\FishTestGame` 等，路径/Unity 版本/插件版本/端口/客户端服务名都可能不同，一律按当次实际运行的工程判断，详见下条铁律。
+- ★★★**多实体工程 + MCP 端口"失败即问"**（2026-11-03 用户定规，最高优先级）：本工程包含多个不同的实体工程（[公司E] `E:\MyTowerGame` / [家用D] `D:\FreedomTower_1` / 历史 `D:\FishTestGame`），**运行时按当次实际情况判断，严禁跨工程套用路径、版本、端口、服务名**。
+  - **触发条件**：① 任一 Unity MCP 工具返回连接失败/超时/`Not Acceptable`/`session not found`/工具表为空；② `mcpforunity://instances` 为空或找不到当前工程实例；③ 新会话首连、客户端重连、域重载后重连；④ 切换实体工程；⑤ 客户端配置里 URL 缺失或与当前工程不一致。
+  - **执行步骤**：① 用「工作区根目录 + `ProjectSettings/ProjectVersion.txt` + `Packages/manifest.json`」三项只读核对实体工程身份，不明先问；② 只做一次低成本只读自检（插件窗口 URL / EditorPrefs `MCPForUnity.HttpUrl` / 客户端配置），**不扫端口段、不逐个试连、不改端口、不重复起服务**；③ 自检仍定不了端口 → **停止动作，主动问用户「当前这个工程用的 MCP 端口是多少」**，可列历史端口作候选但**不得预选、不得默认采用**；④ 按答复连接 → `set_active_instance` → `project/info` 核对 `projectRoot` 与版本；⑤ 结果记入 `VOL_07`，**只作线索**，下次仍重新确认；⑥ 用户当次说"固定用某端口"只管当次/当工程，不跨会话、不跨工程。
+  - **禁止**：沿用默认端口（`8080`/`8082`/`8084`/`8088` 都只是某次某工程的实测值）、假定固定值、为试通而扫描端口、连接另一个实体工程顶替。
+  - **适用范围**：全部 Unity MCP 操作（资产/场景/编译/Console/Play/菜单/构建）、所有实体工程与所有客户端（Claude Code / Codex / WorkBuddy）；**不适用**非 Unity 的 MCP（如 Agent Mail）。完整条文见 `AGENTS.md`「工程与 MCP」「MCP 未开启时」两节与 `VOL_07` 顶部「现行规则」。
 - 命名：`自由人塔防`=文档名｜`FREEDOM TOWER`=副标题｜`freedomtower`=包名｜`FreeTower`=YooAsset 包裹名（★改则热更全失效）｜`FTProject`=命名空间。
 - 跑生成/挂载菜单前必须 `isCompiling == false && isPlaying == false`；改过 `Assets/Editor/*.cs` 要等编译完；动手前先确认 MCP 连的是本工程（不是 CatchFish）。
+  - **Luban 导出 / AssetDatabase 刷新同理**（2026-11-03 实测）：另一个任务正在跑真实对局（`editor.play=True`）时导出配置，虽因"运行中冻结配置"不会改掉那一局，但写 asmdef/json 仍有触发重导入甚至域重载、中断对局的风险。**动表与导出前先查 `EditorApplication.isPlaying`，为 true 就等或问**。
 - 编辑器脚本不弹 `DisplayDialog`（走 `Debug.Log`）；危险操作拆成两档菜单。
 - ★提交：默认**按功能分批**（2026-10-22 用户新口径：按功能拆多笔，代码契约→工具→资产→文档的先后顺序，保证每笔不悬空）；**先写完记录再提交**（当天日档 + 本文件 + 相关分册同一笔）；提交后不再写盘。旧口径「全部一起提交，不拆不挑」已被取代。
 - ★git 代理：**先用环境默认 `http_proxy`**（2026-10-23 实测为 `127.0.0.1:61051`，26 秒推完 200MB；历史 56630/57267/62114/7897 逐个失效，别写死）；配 `git -c http.version=HTTP/2`；>10MB 必带 HTTP/2；`cannot lock ref` = 并行竞态，先 `ls-remote` 核对，**不要装 git-lfs**。
 - ★★出 APK 前核对 Build Settings：`Boot.unity` 启用 + `Main.unity` 禁用（main 只能从 AB 加载）。
+- ★★**Luban 导出与 `Assets/Gen/FTProject.Gen.asmdef`（2026-11-03 两轮实测，原记录已修正）**：**直接跑 exe/bat** 导出会被 Luban 删掉该 asmdef（日志 `[remove] file: ...FTProject.Gen.asmdef`，`.meta` 留下），而 `FTProject.Runtime`/`FTProject.Editor` 的 references 都写着 `FTProject.Gen` → 必须 `git checkout -- Assets/Gen/FTProject.Gen.asmdef` 并核对 `git status` 没有 ` D`；**用编辑器菜单 `Tools/塔防/3. 导出配置表（Luban）` 导出则会自动保留**（`LubanExporter.KeepFilesInCodeDir` 会把它写回，实测 asmdef mtime = 导出时刻）。差别只在"谁调的 Luban"，别因为菜单安全就以为 exe 也安全。详见 `VOL_03`。
 - ★★改热更码真机三件套：重编 dll → AB 有变化才重打（菜单 9 后立刻 deploy）→ 先跑 `启动热更服务器.bat`。
 - ★★**配置表只能手工改**（2026-10-21 定规）：`balance_pipeline.py` 的 `apply`/`rollback` 与事务层已整体删除；只读命令保留。改表流程＝手工改 xlsx → 跑 Luban 导出 → 进 Unity 看 `[Config]` 汇总。**2026-11-01 起不再有 `runtimeContentHash` 重封步骤**（评级表已删，见下条）。以 `AGENTS.md` 的完整保护规则为准。
 - ★★★**星级评分体系已整体删除**（2026-11-01 用户口径）：`tblevelrating` 表、30 张 `Levels/Lxx/LevelRating.xlsx`、`LevelRatingEvaluator/Profile/Result`、`RatingPresentation`、`SaveProgressMigration`、`Configs.VerifyRatingContent/CalculateRuntimeContentHash/ValidateRatingPlan/RatingContentVerified`、编辑器 `LevelRatingTests` 全部移除；**通关一律记 5 星**（`SaveManager.MaxStars`），失败 0 星，星级存档字段保留以兼容老档。改数值不再被哈希拦关。评分待 30 关数值定稿后重做。
