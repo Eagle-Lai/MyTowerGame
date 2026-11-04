@@ -1,0 +1,16 @@
+
+var f=FTProject.GameFlowManager.Instance;var p=FTProject.PlayerDataManager.Instance;var tm=FTProject.TowerManager.Instance;var r=System.AppDomain.CurrentDomain.GetData("CodexL01A19Record") as System.Action<string,object>;
+if(!FTProject.GameClock.IsPaused||p.TotalLeaked!=0)return new{success=false,reason="must_be_paused_zero_leak"};
+var mid=System.AppDomain.CurrentDomain.GetData("CodexL01Midwave") as UnityEditor.EditorApplication.CallbackFunction;if(mid!=null)UnityEditor.EditorApplication.update-=mid;
+foreach(var s in new int[][]{new int[]{0,9},new int[]{2,12}}){
+ var t=FTProject.BoardView.Instance.GetCell(s[0],s[1]).Tower;int before=p.Gold;int prev=t.Config.Level;int type=t.Config.Type;bool ok=tm.Sell(t);
+ r("sell",new{afterWave=24,duringWave=25,trigger="final_route_change",type,row=s[0],col=s[1],success=ok,levelBefore=prev,level=0,cost=before-p.Gold,goldBefore=before,goldAfter=p.Gold});if(!ok)return new{success=false,reason="sell_failed"};
+}
+foreach(var s in new int[][]{new int[]{1,1,4,12},new int[]{2,2,5,9},new int[]{1,1,1,11},new int[]{2,1,1,11}}){
+ int before=p.Gold;var cell=FTProject.BoardView.Instance.GetCell(s[2],s[3]);int prev=cell.Tower!=null?cell.Tower.Config.Level:0;
+ var t=s[0]==1?tm.TryBuild(s[1],1,s[2],s[3]):tm.TryUpgrade(cell.Tower);
+ r(s[0]==1?"build":"upgrade",new{afterWave=24,duringWave=25,trigger="final_route_change",type=s[1],row=s[2],col=s[3],success=t!=null,levelBefore=prev,level=t!=null?t.Config.Level:0,cost=before-p.Gold,goldBefore=before,goldAfter=p.Gold});if(t==null)return new{success=false,reason="purchase_failed"};
+}
+r("route_change",new{reason="extend_last_ground_path_via_top_gate",opened=new int[][]{new int[]{0,9},new int[]{2,12}},closed=new int[]{4,12},ordinarySellAndBuild=true});
+return new{success=true,gold=p.Gold,hp=p.Hp,leaked=p.TotalLeaked};
+

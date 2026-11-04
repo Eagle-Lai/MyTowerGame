@@ -1,0 +1,14 @@
+
+var f=FTProject.GameFlowManager.Instance;var p=FTProject.PlayerDataManager.Instance;var tm=FTProject.TowerManager.Instance;var record=System.AppDomain.CurrentDomain.GetData("CodexL01A16Record") as System.Action<string,object>;
+var old=FTProject.BoardView.Instance.GetCell(1,7).Tower;int before=p.Gold;int l=old.Config.Level;bool sold=tm.Sell(old);
+record("sell",new{afterWave=21,duringWave=22,trigger="danger_pause",type=2,row=1,col=7,success=sold,levelBefore=l,level=0,cost=before-p.Gold,goldBefore=before,goldAfter=p.Gold});
+if(!sold)return new{success=false};
+foreach(var s in new int[][]{new int[]{1,2,1,7},new int[]{1,1,3,10},new int[]{2,1,3,10}}){
+ before=p.Gold;var cell=FTProject.BoardView.Instance.GetCell(s[2],s[3]);int prev=cell.Tower!=null?cell.Tower.Config.Level:0;var t=s[0]==1?tm.TryBuild(s[1],1,s[2],s[3]):tm.TryUpgrade(cell.Tower);
+ record(s[0]==1?"build":"upgrade",new{afterWave=21,duringWave=22,trigger="danger_pause",type=s[1],row=s[2],col=s[3],success=t!=null,levelBefore=prev,level=t!=null?t.Config.Level:0,cost=before-p.Gold,goldBefore=before,goldAfter=p.Gold});
+ if(t==null)return new{success=false};
+}
+var plan=System.AppDomain.CurrentDomain.GetData("CodexL01A16Plan") as System.Collections.Generic.Dictionary<int,int[][]>;plan[22]=(new int[][]{new int[]{2,1,3,10}}).Concat(plan[22]).ToArray();
+record("plan_adjustment",new{reason="add_reference_end_normal_tower_early",steps=plan[22]});
+return new{success=true,gold=p.Gold};
+

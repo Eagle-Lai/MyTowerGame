@@ -1,0 +1,14 @@
+
+var f=FTProject.GameFlowManager.Instance;var p=FTProject.PlayerDataManager.Instance;var tm=FTProject.TowerManager.Instance;var record=System.AppDomain.CurrentDomain.GetData("CodexL01A12Record") as System.Action<string,object>;
+foreach(var s in new int[][]{new int[]{0,2},new int[]{6,11}}){
+ var t=FTProject.BoardView.Instance.GetCell(s[0],s[1]).Tower;int before=p.Gold;int l=t.Config.Level;bool ok=tm.Sell(t);
+ record("sell",new{afterWave=20,duringWave=21,trigger="ground_danger_pause",type=1,row=s[0],col=s[1],success=ok,levelBefore=l,level=0,cost=before-p.Gold,goldBefore=before,goldAfter=p.Gold});
+ if(!ok)return new{success=false};
+}
+var cell=FTProject.BoardView.Instance.GetCell(2,11);int g=p.Gold;int prev=cell.Tower.Config.Level;var up=tm.TryUpgrade(cell.Tower);
+record("upgrade",new{afterWave=20,duringWave=21,trigger="ground_danger_pause",type=2,row=2,col=11,success=up!=null,levelBefore=prev,level=up!=null?up.Config.Level:0,cost=g-p.Gold,goldBefore=g,goldAfter=p.Gold});
+var plan=System.AppDomain.CurrentDomain.GetData("CodexL01A12Plan") as System.Collections.Generic.Dictionary<int,int[][]>;
+plan[21]=new int[][]{new int[]{1,1,0,2},new int[]{1,1,6,11}};
+record("plan_adjustment",new{reason="restore_two_temporary_sells_before_wave22",steps=plan[21]});
+return new{success=up!=null,gold=p.Gold};
+

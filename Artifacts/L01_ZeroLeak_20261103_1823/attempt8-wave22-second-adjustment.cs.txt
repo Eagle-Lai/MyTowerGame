@@ -1,0 +1,17 @@
+
+var record=System.AppDomain.CurrentDomain.GetData("CodexL01A8Record") as System.Action<string,object>;
+var f=FTProject.GameFlowManager.Instance;var p=FTProject.PlayerDataManager.Instance;var tm=FTProject.TowerManager.Instance;
+if(!FTProject.GameClock.IsPaused||p.TotalLeaked!=0)return new{success=false};
+foreach(var s in new int[][]{new int[]{4,10},new int[]{3,1}}){
+ var t=FTProject.BoardView.Instance.GetCell(s[0],s[1]).Tower;int before=p.Gold;int type=t.Config.Type;int level=t.Config.Level;bool ok=tm.Sell(t);
+ record("sell",new{afterWave=f.CurrentRoundIndex-1,duringWave=f.CurrentRoundIndex,trigger="danger_pause",type,row=s[0],col=s[1],success=ok,levelBefore=level,level=0,cost=before-p.Gold,goldBefore=before,goldAfter=p.Gold});
+ if(!ok)return new{success=false};
+}
+foreach(var s in new int[][]{new int[]{1,4,10},new int[]{2,4,10},new int[]{2,4,10},new int[]{1,2,12},new int[]{2,2,12}}){
+ int before=p.Gold;var cell=FTProject.BoardView.Instance.GetCell(s[1],s[2]);int level=cell.Tower!=null?cell.Tower.Config.Level:0;
+ var t=s[0]==1?tm.TryBuild(1,1,s[1],s[2]):tm.TryUpgrade(cell.Tower);
+ record(s[0]==1?"build":"upgrade",new{afterWave=f.CurrentRoundIndex-1,duringWave=f.CurrentRoundIndex,trigger="danger_pause",type=1,row=s[1],col=s[2],success=t!=null,levelBefore=level,level=t!=null?t.Config.Level:0,cost=before-p.Gold,goldBefore=before,goldAfter=p.Gold});
+ if(t==null)return new{success=false};
+}
+return new{success=true,gold=p.Gold};
+

@@ -1,0 +1,91 @@
+var plan=new System.Collections.Generic.Dictionary<int,int[][]>{{0,new int[][]{new int[]{1,2,1,3},new int[]{1,1,3,1}}},{1,new int[][]{new int[]{1,1,4,1},new int[]{1,2,5,1},new int[]{2,2,1,3}}},{2,new int[][]{new int[]{2,2,1,3},new int[]{2,1,3,1},new int[]{1,1,2,1}}},{3,new int[][]{new int[]{2,1,3,1},new int[]{2,2,5,1},new int[]{1,3,3,3}}},{4,new int[][]{new int[]{1,2,1,1},new int[]{1,2,0,1},new int[]{1,1,2,3}}},{5,new int[][]{new int[]{1,2,6,3},new int[]{2,2,5,1},new int[]{1,1,4,3}}},{6,new int[][]{new int[]{1,2,5,3}}},{7,new int[][]{new int[]{2,1,2,1},new int[]{2,1,2,1},new int[]{2,1,4,1}}},{8,new int[][]{new int[]{1,1,3,5},new int[]{1,2,1,5},new int[]{1,1,2,5},new int[]{1,1,2,7}}},{9,new int[][]{new int[]{1,1,4,5},new int[]{1,2,5,5},new int[]{1,3,3,7}}},{10,new int[][]{new int[]{1,2,0,5},new int[]{2,1,2,3},new int[]{2,1,4,1},new int[]{2,1,3,5},new int[]{2,1,4,3}}},{11,new int[][]{new int[]{1,2,1,7},new int[]{1,1,4,7},new int[]{1,2,5,7},new int[]{2,1,3,5}}},{12,new int[][]{new int[]{1,2,6,7},new int[]{2,1,2,3},new int[]{2,1,4,3}}},{13,new int[][]{new int[]{2,3,3,3},new int[]{2,3,3,3},new int[]{2,1,2,5},new int[]{2,1,2,5}}},{14,new int[][]{new int[]{2,3,3,7},new int[]{2,3,3,7},new int[]{2,1,4,5},new int[]{2,1,2,7}}},{15,new int[][]{new int[]{2,1,4,5},new int[]{2,1,2,7},new int[]{2,1,4,7},new int[]{2,1,4,7},new int[]{1,1,3,9}}},{16,new int[][]{new int[]{2,2,1,5},new int[]{2,2,1,5},new int[]{2,2,5,3},new int[]{2,2,5,3}}},{17,new int[][]{new int[]{1,1,2,9},new int[]{1,1,4,9},new int[]{1,2,0,9},new int[]{1,2,1,9},new int[]{1,2,5,9}}},{18,new int[][]{new int[]{2,1,3,9},new int[]{2,1,3,9},new int[]{2,1,2,9},new int[]{2,1,2,9},new int[]{1,3,3,11}}},{19,new int[][]{new int[]{2,1,4,9},new int[]{2,1,4,9},new int[]{2,3,3,11},new int[]{2,3,3,11}}},{20,new int[][]{new int[]{1,1,2,10},new int[]{2,1,2,10},new int[]{2,1,2,10},new int[]{1,1,4,10},new int[]{2,1,4,10},new int[]{2,1,4,10},new int[]{2,2,1,7},new int[]{2,2,5,7}}},{21,new int[][]{new int[]{2,2,1,7},new int[]{2,2,5,7},new int[]{1,1,2,11},new int[]{1,1,4,11}}},{22,new int[][]{new int[]{2,1,2,11},new int[]{2,1,2,11},new int[]{2,1,4,11},new int[]{2,1,4,11},new int[]{2,2,1,9},new int[]{2,2,5,9}}},{23,new int[][]{new int[]{2,2,1,9},new int[]{2,2,5,9},new int[]{2,2,6,7},new int[]{2,2,6,7}}},{24,new int[][]{new int[]{1,1,2,0},new int[]{2,1,2,0},new int[]{2,1,2,0},new int[]{1,1,2,12},new int[]{2,2,0,9},new int[]{2,2,0,9}}}};
+var flow=FTProject.GameFlowManager.Instance;
+var pd=FTProject.PlayerDataManager.Instance;
+if(flow.State.ToString()!="Preparing" || flow.CurrentRoundIndex!=0 || pd.Gold!=100 || pd.Hp!=10 || pd.TotalKilled!=0 || pd.TotalLeaked!=0 || FTProject.TowerManager.Instance.Towers.Count!=0) return new {started=false,reason="not_fresh"};
+var events=new System.Collections.Generic.List<object>();
+System.AppDomain.CurrentDomain.SetData("CodexL01A14Events",events);
+System.Action<string,object> record=(kind,detail)=>{
+ var f=FTProject.GameFlowManager.Instance;var p=FTProject.PlayerDataManager.Instance;
+ events.Add(new {sequence=events.Count+1,utc=System.DateTime.UtcNow.ToString("o"),kind,detail=Newtonsoft.Json.Linq.JToken.FromObject(detail),state=f.State.ToString(),wave=f.CurrentRoundIndex,gold=p.Gold,hp=p.Hp,killed=p.TotalKilled,leaked=p.TotalLeaked,paused=FTProject.GameClock.IsPaused,combatSeconds=FTProject.GameClock.CombatElapsedSeconds,levelSeconds=FTProject.GameClock.LevelElapsedSeconds});
+ System.IO.File.WriteAllText("E:/MyTowerGame/Artifacts/L01_ZeroLeak_20261103_1823/attempt14-live.json",Newtonsoft.Json.JsonConvert.SerializeObject(events,Newtonsoft.Json.Formatting.Indented));
+};
+System.AppDomain.CurrentDomain.SetData("CodexL01A14Record",record);
+System.Action<int> apply=afterWave=>{
+ var f=FTProject.GameFlowManager.Instance;var p=FTProject.PlayerDataManager.Instance;var tm=FTProject.TowerManager.Instance;
+ foreach(var s in plan[afterWave]){
+  int before=p.Gold;var cell=FTProject.BoardView.Instance.GetCell(s[2],s[3]);int beforeLevel=cell.Tower!=null?cell.Tower.Config.Level:0;
+  var t=s[0]==1?tm.TryBuild(s[1],1,s[2],s[3]):tm.TryUpgrade(cell.Tower);
+  record(s[0]==1?"build":"upgrade",new{afterWave,type=s[1],row=s[2],col=s[3],success=t!=null,levelBefore=beforeLevel,level=t!=null?t.Config.Level:0,cost=before-p.Gold,goldBefore=before,goldAfter=p.Gold});
+  if(t==null){record("halt",new{reason="purchase_failed"});return;}
+ }
+ if(FTProject.GameClock.IsPaused)f.TogglePause();
+ FTProject.EventDispatcher.TriggerEvent(FTProject.EventName.StartRoundRequestEvent);
+ record("start_wave",new{afterWave,speed=FTProject.GameClock.Speed});
+};
+System.Action<int> handler=wave=>{
+ var f=FTProject.GameFlowManager.Instance;if(!FTProject.GameClock.IsPaused)f.TogglePause();
+ UnityEditor.EditorApplication.delayCall+=()=>{
+  record("wave_complete",new{wave,metrics=f.RunMetrics});
+  if(wave<25 && FTProject.PlayerDataManager.Instance.TotalLeaked==0)apply(wave);
+ };
+};
+System.Action<FTProject.BaseEnemy,int> leak=(e,dmg)=>{
+ record("leak",new{enemy=e.Config.Name,enemyId=e.Config.Id,hp=e.CurrentHp,totalHp=e.TotalHp,flying=e.Config.IsFlying,x=e.Position.x,y=e.Position.y,damage=dmg});
+ if(!FTProject.GameClock.IsPaused)FTProject.GameFlowManager.Instance.TogglePause();
+};
+System.Action<bool> finish=victory=>{
+ UnityEditor.EditorApplication.delayCall+=()=>{
+  record("settlement",new{victory,metrics=FTProject.GameFlowManager.Instance.RunMetrics});
+ };
+};
+System.AppDomain.CurrentDomain.SetData("CodexL01A14Apply",apply);
+System.AppDomain.CurrentDomain.SetData("CodexL01AutoPause",handler);
+System.AppDomain.CurrentDomain.SetData("CodexL01LeakLogger",leak);
+System.AppDomain.CurrentDomain.SetData("CodexL01FinishLogger",finish);
+FTProject.EventDispatcher.AddEventListener<int>(FTProject.EventName.RoundClearEvent,handler);
+FTProject.EventDispatcher.AddEventListener<FTProject.BaseEnemy,int>(FTProject.EventName.EnemyReachedEndEvent,leak);
+FTProject.EventDispatcher.AddEventListener<bool>(FTProject.EventName.GameOverEvent,finish);
+FTProject.EventDispatcher.TriggerEvent<float>(FTProject.EventName.GameSpeedChangeRequestEvent,3f);
+record("fresh_start",new{level=1,restoreSavedState=false,runId=flow.RunMetrics.runId,initialGold=pd.Gold,initialHp=pd.Hp,towerCount=FTProject.TowerManager.Instance.Towers.Count,source="user_reference_image_current_turn",attempt=14});
+
+System.AppDomain.CurrentDomain.SetData("CodexL01A14Plan",plan);
+UnityEditor.EditorApplication.CallbackFunction upgrades=null;
+upgrades=()=>{
+ var f=FTProject.GameFlowManager.Instance;var p=FTProject.PlayerDataManager.Instance;int wave=f.CurrentRoundIndex;
+ if(f.State.ToString()=="GameOver"){UnityEditor.EditorApplication.update-=upgrades;return;}
+ if(f.State.ToString()!="RoundRunning" || wave<5 || wave>=25 || FTProject.GameClock.IsPaused || p.TotalLeaked!=0 || !plan.ContainsKey(wave) || plan[wave].Length==0)return;
+ var s=plan[wave][0];var cell=FTProject.BoardView.Instance.GetCell(s[2],s[3]);if(s[0]==2 && (cell.Tower==null || cell.Tower.Config.Level>=3))return;
+ int beforeLevel=cell.Tower!=null?cell.Tower.Config.Level:0;int cost=s[0]==1?(s[1]==1?32:(s[1]==2?44:30)):(s[1]==1?(beforeLevel==1?28:40):(s[1]==2?(beforeLevel==1?40:55):(beforeLevel==1?40:60)));
+ if(p.Gold<cost+0)return;f.TogglePause();int before=p.Gold;var t=s[0]==1?FTProject.TowerManager.Instance.TryBuild(s[1],1,s[2],s[3]):FTProject.TowerManager.Instance.TryUpgrade(cell.Tower);
+ record(s[0]==1?"build":"upgrade",new{afterWave=wave-1,plannedAfterWave=wave,duringWave=wave,phase="mid_wave",trigger="first_affordable",type=s[1],row=s[2],col=s[3],success=t!=null,levelBefore=beforeLevel,level=t!=null?t.Config.Level:0,cost=before-p.Gold,goldBefore=before,goldAfter=p.Gold});
+ if(t==null){record("halt",new{reason="mid_wave_upgrade_failed"});UnityEditor.EditorApplication.update-=upgrades;return;}
+ plan[wave]=plan[wave].Skip(1).ToArray();f.TogglePause();
+};
+System.AppDomain.CurrentDomain.SetData("CodexL01EarlyUpgrades",upgrades);
+UnityEditor.EditorApplication.update+=upgrades;
+
+apply(0);return new{started=true,attempt=14,stopAfterWave=25,eventLogPath="attempt14-live.json"};
+
+
+// Wave25 purchases:
+
+var record=System.AppDomain.CurrentDomain.GetData("CodexL01A14Record") as System.Action<string,object>;
+int next=0;int[][] items=new int[][]{new int[]{1,1,3,10},new int[]{2,1,3,10},new int[]{2,1,3,10},new int[]{2,1,2,12},new int[]{2,1,2,12},new int[]{1,2,5,10}};
+UnityEditor.EditorApplication.CallbackFunction tick=null;
+tick=()=>{
+ var f=FTProject.GameFlowManager.Instance;var p=FTProject.PlayerDataManager.Instance;
+ if(f.State.ToString()=="GameOver"){UnityEditor.EditorApplication.update-=tick;return;}
+ if(f.State.ToString()!="RoundRunning" || f.CurrentRoundIndex!=25 || FTProject.GameClock.IsPaused || p.TotalLeaked!=0 || next>=items.Length)return;
+ var s=items[next];var cell=FTProject.BoardView.Instance.GetCell(s[2],s[3]);int beforeLevel=cell.Tower!=null?cell.Tower.Config.Level:0;
+ int cost=s[1]==2?(s[0]==1?44:(beforeLevel==1?40:55)):(s[0]==1?32:(beforeLevel==1?28:40));if(p.Gold<cost)return;
+ f.TogglePause();int before=p.Gold;
+ var t=s[0]==1?FTProject.TowerManager.Instance.TryBuild(s[1],1,s[2],s[3]):FTProject.TowerManager.Instance.TryUpgrade(cell.Tower);
+ record(s[0]==1?"build":"upgrade",new{afterWave=24,duringWave=25,phase="mid_wave",trigger="first_affordable",type=s[1],row=s[2],col=s[3],success=t!=null,levelBefore=beforeLevel,level=t!=null?t.Config.Level:0,cost=before-p.Gold,goldBefore=before,goldAfter=p.Gold});
+ if(t==null){record("halt",new{reason="mid_wave_purchase_failed"});UnityEditor.EditorApplication.update-=tick;return;}
+ next++;f.TogglePause();if(next>=items.Length)UnityEditor.EditorApplication.update-=tick;
+};
+System.AppDomain.CurrentDomain.SetData("CodexL01Midwave",tick);
+UnityEditor.EditorApplication.update+=tick;
+record("mid_wave_plan_registered",new{wave=25,trigger="first_affordable",items});
+return new{wave25ExtraDefense=true,ordinaryPurchasesOnly=true};
+

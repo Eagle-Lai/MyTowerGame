@@ -1,0 +1,21 @@
+
+var record=System.AppDomain.CurrentDomain.GetData("CodexL01A19Record") as System.Action<string,object>;
+int next=0;int[][] items=new int[][]{new int[]{2,2,5,9},new int[]{2,1,1,10},new int[]{1,1,1,11},new int[]{2,1,1,11},new int[]{2,1,1,11}};
+UnityEditor.EditorApplication.CallbackFunction tick=null;
+tick=()=>{
+ var f=FTProject.GameFlowManager.Instance;var p=FTProject.PlayerDataManager.Instance;
+ if(f.State.ToString()=="GameOver"){UnityEditor.EditorApplication.update-=tick;return;}
+ if(f.State.ToString()!="RoundRunning" || f.CurrentRoundIndex!=25 || FTProject.GameClock.IsPaused || p.TotalLeaked!=0 || next>=items.Length)return;
+ var s=items[next];var cell=FTProject.BoardView.Instance.GetCell(s[2],s[3]);int beforeLevel=cell.Tower!=null?cell.Tower.Config.Level:0;
+ int cost=s[1]==2?(s[0]==1?44:(beforeLevel==1?40:55)):(s[0]==1?32:(beforeLevel==1?28:40));if(p.Gold<cost)return;
+ f.TogglePause();int before=p.Gold;
+ var t=s[0]==1?FTProject.TowerManager.Instance.TryBuild(s[1],1,s[2],s[3]):FTProject.TowerManager.Instance.TryUpgrade(cell.Tower);
+ record(s[0]==1?"build":"upgrade",new{afterWave=24,duringWave=25,phase="mid_wave",trigger="first_affordable",type=s[1],row=s[2],col=s[3],success=t!=null,levelBefore=beforeLevel,level=t!=null?t.Config.Level:0,cost=before-p.Gold,goldBefore=before,goldAfter=p.Gold});
+ if(t==null){record("halt",new{reason="mid_wave_purchase_failed"});UnityEditor.EditorApplication.update-=tick;return;}
+ next++;f.TogglePause();if(next>=items.Length)UnityEditor.EditorApplication.update-=tick;
+};
+System.AppDomain.CurrentDomain.SetData("CodexL01Midwave",tick);
+UnityEditor.EditorApplication.update+=tick;
+record("mid_wave_plan_registered",new{wave=25,trigger="first_affordable",items});
+return new{wave25ExtraDefense=true,ordinaryPurchasesOnly=true};
+
