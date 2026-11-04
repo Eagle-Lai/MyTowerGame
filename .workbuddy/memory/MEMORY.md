@@ -30,6 +30,7 @@
 - 编辑器脚本不弹 `DisplayDialog`（走 `Debug.Log`）；危险操作拆成两档菜单。
 - ★提交：默认**按功能分批**（2026-10-22 用户新口径：按功能拆多笔，代码契约→工具→资产→文档的先后顺序，保证每笔不悬空）；**先写完记录再提交**（当天日档 + 本文件 + 相关分册同一笔）；提交后不再写盘。旧口径「全部一起提交，不拆不挑」已被取代。
 - ★git 代理：**先用环境默认 `http_proxy`**（2026-10-23 实测为 `127.0.0.1:61051`，26 秒推完 200MB；历史 56630/57267/62114/7897 逐个失效，别写死）；配 `git -c http.version=HTTP/2`；>10MB 必带 HTTP/2；`cannot lock ref` = 并行竞态，先 `ls-remote` 核对，**不要装 git-lfs**。
+  - **2026-11-04 实测（大批证据推送）**：环境默认代理当日是 `127.0.0.1:62915`（会变，先 `env | grep -i proxy`）。**单 commit 130MB 推不上去**：先报 `unable to rewind rpc post data - try increasing http.postBuffer`，`http.postBuffer` 抬到 1GB 仍报 `curl 55 Send failure: Connection was reset`。可行姿势 = **按目录把提交拆到 ≤20MB/笔**（`git reset` 回退未推送的本地提交后重拆，已推送的不要改写）→ 每笔 `git -c http.version=HTTP/2 -c http.postBuffer=524288000 push origin HEAD:main`。GitHub 端还会偶发 `Internal Server Error` / `remote rejected (failure)` / 瞬时断连，**同一笔重试 1-3 次即可过**，不要因一次失败就改历史或转向 LFS。
 - ★★出 APK 前核对 Build Settings：`Boot.unity` 启用 + `Main.unity` 禁用（main 只能从 AB 加载）。
 - ★★**Luban 导出与 `Assets/Gen/FTProject.Gen.asmdef`（2026-11-03 两轮实测，原记录已修正）**：**直接跑 exe/bat** 导出会被 Luban 删掉该 asmdef（日志 `[remove] file: ...FTProject.Gen.asmdef`，`.meta` 留下），而 `FTProject.Runtime`/`FTProject.Editor` 的 references 都写着 `FTProject.Gen` → 必须 `git checkout -- Assets/Gen/FTProject.Gen.asmdef` 并核对 `git status` 没有 ` D`；**用编辑器菜单 `Tools/塔防/3. 导出配置表（Luban）` 导出则会自动保留**（`LubanExporter.KeepFilesInCodeDir` 会把它写回，实测 asmdef mtime = 导出时刻）。差别只在"谁调的 Luban"，别因为菜单安全就以为 exe 也安全。详见 `VOL_03`。
 - ★★改热更码真机三件套：重编 dll → AB 有变化才重打（菜单 9 后立刻 deploy）→ 先跑 `启动热更服务器.bat`。
