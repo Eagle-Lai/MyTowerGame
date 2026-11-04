@@ -121,6 +121,14 @@ Luban/Config/Datas/**/*~*.tmp
 __pycache__/
 *.pyc
 
+# Node 脚本工具的运行时依赖与一次性暂存目录（2026-11-04 新增）
+# .workbuddy/tools/node_modules 是指向 codex 运行时缓存（约 385MB）的目录联接，
+# 下含 @oai/artifact-tool 等百余个包，跨机绝对路径必然失效，绝不能入库。
+/.workbuddy/tools/node_modules
+# 落表脚本的暂存目录：xlsx 副本 + inspect 预览 ndjson，可由脚本重新生成，
+# 内容与源表 Luban/Config/Datas/Levels/<关>/*.xlsx 重复（入库只会造成分叉）。
+/.workbuddy/tools/_temp_*/
+
 # ---------------------------------------------------------------------------
 # 4c. 地图编辑器的页面导出中转文件（M3-7）
 # ---------------------------------------------------------------------------
