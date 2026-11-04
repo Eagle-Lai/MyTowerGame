@@ -1,0 +1,91 @@
+var gm = FTProject.GameFlowManager.Instance;
+var pd = FTProject.PlayerDataManager.Instance;
+var tm = FTProject.TowerManager.Instance;
+if (gm == null || gm.Level == null || gm.Level.Id != 2 || gm.State != FTProject.GameFlowState.Preparing || pd.Gold != 100 || pd.Hp != 10 || tm.Count != 0 || gm.CurrentRoundIndex != 0 || gm.RunMetrics.expectedEnemyCount != 16069) return "Requires native fresh empty L02 with 16069 planned enemies";
+string root = "E:/MyTowerGame/Artifacts/L02_ZeroLeak_20261104_134025";
+string dir = System.IO.Path.Combine(root, System.IO.File.ReadAllText(root + "/active-attempt.txt").Trim()).Replace('\\', '/');
+System.IO.Directory.CreateDirectory(dir + "/screenshots");
+int oi = 0, lastWave = -1, lastComplete = -1;
+bool done = false, settling = false;
+float t0 = UnityEngine.Time.realtimeSinceStartup, nextAction = 0, nextSample = 0, nextAirSample = 0, prepSince = -1, finishAt = -1;
+System.Action<string> Log = s => System.IO.File.AppendAllText(dir + "/playlog.txt", "[" + (UnityEngine.Time.realtimeSinceStartup - t0).ToString("F2", System.Globalization.CultureInfo.InvariantCulture) + "] " + s + "\n");
+System.Func<string> State = () => "state=" + gm.State + " wave=" + gm.CurrentRoundIndex + " gold=" + pd.Gold + " hp=" + pd.Hp + "/" + pd.MaxHp + " killed=" + pd.TotalKilled + " leaked=" + pd.TotalLeaked + " towers=" + tm.Count + " speed=" + FTProject.GameClock.Speed + " op=" + oi;
+System.Action<string> Shot = n => { UnityEngine.ScreenCapture.CaptureScreenshot(dir + "/screenshots/" + n + ".png"); Log("SHOT " + n); };
+System.Action<string> Save = n => {
+    var snapshot = new { recordedUtc = System.DateTime.UtcNow.ToString("o"), elapsedSeconds = System.Math.Round(UnityEngine.Time.realtimeSinceStartup - t0, 3), manualSimulation = FTProject.GameClock.IsManualSimulation, gameSeconds = FTProject.GameClock.LevelElapsedSeconds, combatSeconds = FTProject.GameClock.CombatElapsedSeconds, levelId = gm.Level.Id, levelName = gm.Level.Name, mapId = gm.Map.Id, rows = gm.Map.Rows, cols = gm.Map.Cols, coordinateBase = 1, state = gm.State.ToString(), wave = gm.CurrentRoundIndex, gold = pd.Gold, hp = pd.Hp, maxHp = pd.MaxHp, killed = pd.TotalKilled, leaked = pd.TotalLeaked, expectedEnemies = gm.RunMetrics.expectedEnemyCount, completedWaves = gm.RunMetrics.completedWaveCount, speed = FTProject.GameClock.Speed, operationIndex = oi, towers = tm.Towers.Where(t => t != null && t.Cell != null).Select(t => new { row = t.Cell.Row + 1, col = t.Cell.Col + 1, type = t.Config.Type, level = t.Config.Level, investedGold = t.InvestedGold, damage = t.EvidenceDamage, airHits = t.EvidenceAirHits }).ToArray(), path = FTProject.AStarManager.Instance.GetPath().Select(p => new[] { p.Row + 1, p.Col + 1 }).ToArray() };
+    System.IO.File.WriteAllText(dir + "/" + n + ".json", Newtonsoft.Json.JsonConvert.SerializeObject(snapshot, Newtonsoft.Json.Formatting.Indented));
+    System.IO.File.WriteAllText(dir + "/" + n + "-metrics.json", UnityEngine.JsonUtility.ToJson(gm.RunMetrics, true));
+};
+System.Action DoOp = () => {
+    var ops = System.IO.File.ReadAllLines(dir + "/planned-actions.txt").Where(x => !string.IsNullOrWhiteSpace(x) && !x.StartsWith("#")).ToArray();
+    if (oi >= ops.Length) return;
+    var p = ops[oi].Trim().Split(','); int r = int.Parse(p[1]) - 1, c = int.Parse(p[2]) - 1, v = int.Parse(p[3]);
+    var old = tm.Towers.FirstOrDefault(x => x != null && x.Cell != null && x.Cell.Row == r && x.Cell.Col == c);
+    if (p[0] == "b" && old != null) { Log("SKIP existing " + ops[oi]); oi++; return; }
+    if (p[0] == "u" && old != null && old.Config.Level >= v) { Log("SKIP upgraded " + ops[oi]); oi++; return; }
+    if (p[0] != "b" && p[0] != "u") throw new System.Exception("Only paid build and upgrade operations are supported");
+    FTProject.TowerConfig cfg = p[0] == "b" ? FTProject.Configs.GetTowerByTypeAndLevel(v, 1) : old == null ? null : FTProject.Configs.GetNextLevel(old.Config);
+    if (cfg == null) throw new System.Exception("INVALID OP " + ops[oi]);
+    if (p[0] == "b" && v == 1) {
+        var astar = FTProject.AStarManager.Instance; var a = astar.StartPoint.Center; var ab = astar.TargetPoint.Center - a;
+        var point = astar.GetPoint(r, c).Center; float distance = UnityEngine.Vector2.Distance(point, a + ab * UnityEngine.Mathf.Clamp01(UnityEngine.Vector2.Dot(point-a,ab)/ab.sqrMagnitude));
+        if (distance >= cfg.RadiusWorld - 0.05f) throw new System.Exception("Normal tower has no useful flight-line coverage: " + ops[oi]);
+    }
+    if (pd.Gold < cfg.Prices) return;
+    int before = pd.Gold, from = old == null ? 0 : old.Config.Level;
+    var built = p[0] == "b" ? tm.TryBuild(v, 1, r, c) : tm.TryUpgrade(old);
+    if (built == null) { Log("REJECTED " + ops[oi] + " " + State()); nextAction = UnityEngine.Time.realtimeSinceStartup + 1f; return; }
+    var entry = new { elapsedSeconds = System.Math.Round(UnityEngine.Time.realtimeSinceStartup - t0, 3), wave = gm.CurrentRoundIndex, state = gm.State.ToString(), action = p[0] == "b" ? "build" : "upgrade", row = r + 1, col = c + 1, type = built.Config.Type, fromLevel = from, toLevel = built.Config.Level, goldBefore = before, goldAfter = pd.Gold, spent = before - pd.Gold, operationIndex = oi };
+    System.IO.File.AppendAllText(dir + "/operations.jsonl", Newtonsoft.Json.JsonConvert.SerializeObject(entry) + "\n");
+    Log(entry.action + " r" + (r + 1) + " c" + (c + 1) + " T" + built.Config.Type + " L" + from + "->" + built.Config.Level + " gold=" + before + "->" + pd.Gold + " wave=" + gm.CurrentRoundIndex);
+    oi++; nextAction = UnityEngine.Time.realtimeSinceStartup + 0.35f; prepSince = UnityEngine.Time.realtimeSinceStartup;
+};
+System.Action<FTProject.BaseEnemy, int> leak = (enemy, damage) => {
+    var record = new { elapsedSeconds = UnityEngine.Time.realtimeSinceStartup - t0, frame = UnityEngine.Time.frameCount, serial = enemy == null ? 0 : enemy.EvidenceSpawnSerial, wave = gm.CurrentRoundIndex, enemyId = enemy == null ? 0 : enemy.Config.Id, name = enemy == null ? "null" : enemy.Config.Name, air = enemy != null && enemy.Config.IsFlying, hp = enemy == null ? 0 : enemy.CurrentHp, totalHp = enemy == null ? 0 : enemy.TotalHp, damage = damage, position = enemy == null ? "null" : enemy.transform.position.ToString() };
+    System.IO.File.AppendAllText(dir + "/leaks.jsonl", Newtonsoft.Json.JsonConvert.SerializeObject(record) + "\n"); Log("LEAK " + Newtonsoft.Json.JsonConvert.SerializeObject(record));
+};
+FTProject.EventDispatcher.AddEventListener<FTProject.BaseEnemy, int>(FTProject.EventName.EnemyReachedEndEvent, leak);
+UnityEditor.EditorApplication.CallbackFunction tick = null;
+System.Action Stop = () => { done = true; UnityEditor.EditorApplication.update -= tick; FTProject.EventDispatcher.RemoveEventListener<FTProject.BaseEnemy, int>(FTProject.EventName.EnemyReachedEndEvent, leak); Log("DRIVER STOP " + State()); };
+tick = () => {
+    try {
+        if (done || gm == null) { Stop(); return; }
+        float now = UnityEngine.Time.realtimeSinceStartup;
+        if (gm.State == FTProject.GameFlowState.GameOver) {
+            if (!settling) { settling = true; finishAt = now + 1.5f; Log("GAMEOVER " + State()); Save("final-layout"); Shot("98-result-initial"); }
+            if (now >= finishAt) {
+                var view = UnityEngine.Object.FindObjectOfType<FTProject.LevelClearView>(true);
+                if (view != null) { var field = typeof(FTProject.LevelClearView).GetField("_info", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic); var info = field.GetValue(view) as FTProject.LevelClearInfo; if (info != null) System.IO.File.WriteAllText(dir + "/result.json", UnityEngine.JsonUtility.ToJson(info, true)); }
+                Shot("99-result-settled"); Stop();
+            }
+            return;
+        }
+        if (pd.TotalLeaked > 0) { Log("ZERO-LEAK ATTEMPT STOP " + State()); Save("first-leak-state"); FTProject.EventDispatcher.TriggerEvent(FTProject.EventName.PauseRequestEvent); Shot("90-first-leak-paused"); Stop(); return; }
+        if (UnityEngine.Time.timeScale == 0) return;
+        if (FTProject.GameClock.Speed != 3f) { FTProject.EventDispatcher.TriggerEvent<float>(FTProject.EventName.GameSpeedChangeRequestEvent, 3f); Log("SPEED REQUEST 3"); }
+        if (now >= nextAction) DoOp();
+        if (gm.State == FTProject.GameFlowState.Preparing) {
+            if (lastComplete != gm.CurrentRoundIndex) { lastComplete = gm.CurrentRoundIndex; prepSince = now; Save("after-wave-" + lastComplete.ToString("00")); Shot("after-wave-" + lastComplete.ToString("00")); Log("WAVE-END " + State()); }
+            if (prepSince >= 0 && now - prepSince > 1.2f) { int w = gm.CurrentRoundIndex + 1; Save("before-wave-" + w.ToString("00")); Log("START-WAVE request=" + w + " " + State()); FTProject.EventDispatcher.TriggerEvent(FTProject.EventName.StartRoundRequestEvent); prepSince = -1; }
+        }
+        if (gm.State == FTProject.GameFlowState.RoundRunning && lastWave != gm.CurrentRoundIndex) { lastWave = gm.CurrentRoundIndex; Log("WAVE-RUNNING " + State()); }
+        if (gm.CurrentRoundIndex >= 20 && now >= nextAirSample) {
+            nextAirSample = now + 0.5f;
+            var flags = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic;
+            var speedField = typeof(FTProject.BaseEnemy).GetField("_speed", flags);
+            var slowField = typeof(FTProject.BaseEnemy).GetField("_slowRatio", flags);
+            var targetField = typeof(FTProject.BaseTower).GetField("_target", flags);
+            var trace = new { elapsed = now-t0, frame = UnityEngine.Time.frameCount, dt = UnityEngine.Time.deltaTime, clockDt = FTProject.GameClock.DeltaTime, wave = gm.CurrentRoundIndex,
+                air = UnityEngine.Object.FindObjectsOfType<FTProject.BaseEnemy>().Where(e=>e.IsAlive && e.Config.IsFlying).Select(e=>new { serial=e.EvidenceSpawnSerial, hp=e.CurrentHp, total=e.TotalHp, x=e.Position.x, y=e.Position.y, progress=e.PathProgress, speed=(float)speedField.GetValue(e), slow=(float)slowField.GetValue(e) }).ToArray(),
+                targets = tm.Towers.Where(t=>t!=null && t.Cell!=null && t.Config.Type==1).Select(t=>new {row=t.Cell.Row+1,col=t.Cell.Col+1,target=targetField.GetValue(t) as FTProject.BaseEnemy}).Select(t=>new {row=t.row,col=t.col,serial=t.target==null?0:t.target.EvidenceSpawnSerial,air=t.target!=null&&t.target.Config.IsFlying}).ToArray() };
+            System.IO.File.AppendAllText(dir + "/air-trace.jsonl", Newtonsoft.Json.JsonConvert.SerializeObject(trace)+"\n");
+        }
+        if (now >= nextSample) { nextSample = now + 3f; var enemies = UnityEngine.Object.FindObjectsOfType<FTProject.BaseEnemy>().Where(x => x.IsAlive).ToArray(); Log("SAMPLE " + State() + " ground=" + enemies.Count(x => !x.Config.IsFlying) + " air=" + enemies.Count(x => x.Config.IsFlying) + " maxProgress=" + (enemies.Length == 0 ? 0 : enemies.Max(x => x.PathProgress))); }
+    } catch (System.Exception e) { Log("EXCEPTION " + e); Save("exception-state"); FTProject.EventDispatcher.TriggerEvent(FTProject.EventName.PauseRequestEvent); Stop(); }
+};
+System.AppDomain.CurrentDomain.SetData("L02_ZERO_LEAK_DRIVER_STOP", Stop);
+System.IO.File.WriteAllText(dir + "/operations.jsonl", string.Empty); System.IO.File.WriteAllText(dir + "/playlog.txt", string.Empty);
+System.IO.File.WriteAllText(dir + "/test-context.json", Newtonsoft.Json.JsonConvert.SerializeObject(new { startedUtc = System.DateTime.UtcNow.ToString("o"), projectRoot = System.IO.Path.GetFullPath("Assets/.."), unityVersion = UnityEngine.Application.unityVersion, levelId = gm.Level.Id, mapId = gm.Map.Id, rows = gm.Map.Rows, cols = gm.Map.Cols, initialGold = pd.Gold, initialHp = pd.Hp, expectedWaves = gm.RunMetrics.expectedWaveCount, expectedEnemies = gm.RunMetrics.expectedEnemyCount }, Newtonsoft.Json.Formatting.Indented));
+Save("initial-state"); Shot("00-initial-board"); Log("BEGIN native fresh L02; legal 3x; paid builds/upgrades only; " + State());
+UnityEditor.EditorApplication.update += tick;
+return "Native L02 input/recording driver installed for " + dir;
