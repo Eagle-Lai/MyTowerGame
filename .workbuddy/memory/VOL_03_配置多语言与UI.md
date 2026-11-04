@@ -127,6 +127,19 @@
 - 只有**直接跑 `Luban.ClientServer.exe`**（我做的自动化导出）才需要手动 `git checkout` 恢复。
 - 结论：手工导出走菜单最安全；自动化/命令行导出必须在导出后补 `git checkout -- Assets/Gen/FTProject.Gen.asmdef` + 核对 `git status` 无 ` D`。
 
+## L02 全 25 波按 L01 模板重建（2026-11-04）
+
+- 与 11-03 三轮「在当前值上乘倍率」不同：本轮换口径为**以 L01 同波为模板整体重算**，不再是相对 L02 现值叠加。
+- 承接 W1-W4：保留 11-03 已获批但未提交的 **20/30/36/42 只** + **130/135/140/145 金**，本轮测试期不再动这四波。
+- 比例（全部相对 L01 同波）：出怪数 ×**144/91**（面积比）、地面 HP ×**71/42**、空中 HP ×**15/12**、清波奖励 ×**144/91**；`enemyInterval` / `waveType` 直接取 L01；EnemyData 其余列全等 L01 同波同怪种。
+- 脚本 `.workbuddy/tools/_l02_rebuild_from_l01_20261104.mjs`（原 `_temp_l02_artifact_edit.mjs`）：
+  - `inspect` 出表结构与预览、`plan` 复算「L01 数量×144/91 == 核准计数表」并统计总出怪/奖励、`apply` 写表；
+  - `apply` 的三道闸：①非 HP 列与 L01 全等断言 ②先 `exportXlsx` 到 `_temp_l02_xlsx/` 再 `importXlsx` 回读，`assertValuesPreservedExcept` 逐格保证「白名单单元格外零改动」③三份都通过才 `copyFile` 覆盖源表。
+  - 依赖 `.workbuddy/tools/node_modules`（指向 codex 运行时缓存的**目录联接**，385MB，已 `.gitignore`）；暂存目录 `_temp_*/` 同样忽略。
+- 落盘结果（`Artifacts/L02_ZeroLeak_20261104_134025/scope-check.json`，对 HEAD 逐表比对）：`tbenemydata` 100 行仅 `hp`、`tbenemylist` 25 行仅 `EnemyIndexs`、`tbrounddata` 25 行仅 `rewardGold`，三者行数不变、`outsideL02ChangedIds: []`；`otherLevelSourceChanges: []`。
+- 规模：W5-W25 **15,941 只 / 1,836 金**；全关 **16,069 只 / 2,386 金**；初始金币 100、10 血。
+- 保留缺陷（本轮明确不修）：106 个敌人行 `levelId=1`（应为 2）→ 交叉引用自检按 16,069 条引用报 Warning，运行时按 ID 取数不受影响；`SceneInfo.name` 仍是「关卡 1」。
+
 ## 跨关数值同步口径（2026-11-03 首次执行：L03 ← L02）
 
 - **触发**：用户说「把关卡 2 的数值修改同步到关卡 3」。多关之间有同名怪种、同 25 波，但**构成规模完全不同**（L02 106 条变体 / L03 302 条），不存在"整表复制"，必须先问清口径。

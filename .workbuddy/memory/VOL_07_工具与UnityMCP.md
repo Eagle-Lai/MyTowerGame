@@ -89,3 +89,8 @@
   ★**别在 shell 里手拼 JSON 传参**（代码里有 `"` 和 `,` 极易被吃成 `JSONDecodeError: Expecting ',' delimiter`）：用 `python - <<'PY'` 驱动脚本 `importlib` 加载 `mcp_unity.py` → `mu.init()` → `mu.call(tool, dict)`，代码块放 Python 三引号里最稳。
 - 编辑器内校验配置表的可靠姿势（`Configs.LoadAsync` 在 Edit 模式**不会完成**，`IsLoaded` 一直 False，别用它做 [Config] 校验）：
   `new cfg.TBEnemyData(SimpleJSON.JSON.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>("Assets/ConfigJson/tbenemydata.json").text))`，再 `GetOrDefault(id).Hp` 对比期望值；这一步同时证明了 Luban json 能被生成类解析。
+
+## 2026-11-03 本次会话连接核对
+- 实体工程：E:/MyTowerGame；Unity 2022.3.62f3c1；插件 v10.3.0。
+- 用户本轮指定端口：8086；Codex 服务 unityMCP；客户端 URL 与 EditorPrefs 均为 http://127.0.0.1:8086（MCP 端点 /mcp）。
+- 已通过现场实例选择和 project/info 核对。这仅为线索记录，下次重新确认。
