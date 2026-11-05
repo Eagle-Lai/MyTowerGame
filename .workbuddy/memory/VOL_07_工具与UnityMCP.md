@@ -108,3 +108,58 @@
 - 用户现场确认 8086、编辑器已打开，并提供 HTTP Local 窗口截图；本次端点 http://127.0.0.1:8086/mcp。
 - 已通过 custom-tools、instances 发现并选中 MyTowerGame@9e28c50b510eeb91，再用 project/info 核对 projectRoot 和 Unity 版本一致；只读状态为 Boot 场景、未播放且就绪，Console error 查询 0 条。
 - 仅为当次连接线索，不是跨会话默认端口或固定实例 ID；下次仍按 AGENTS.md 重新确认。此次只读审查未刷新编译或执行运行态测试，不能将 Console 查询当作业务验收。
+
+## ★★★ Codex 侧 stdio 起不来 MCP 的根因与修复（2026-11-05，家用 D 机实测）
+
+> 适用范围：**仅 Codex 客户端 + stdio transport**；WorkBuddy 侧 `~/.workbuddy/mcp.json` 一直正常，不要照此改动。
+> 端口口径仍按本文件开头的「多实体工程 + 失败即问」执行，本节只讲启动方式，不提供任何默认端口。
+
+**症状**
+- Codex 全程没有 unityMCP 工具，每轮 `omitting pending optional MCP server server_name=unityMCP` → `omitting MCP server without an exact ready client`。
+- 打开 trace 才看得到真正的错：`RUST_LOG=codex_mcp=trace codex exec ... < /dev/null` 输出
+  `MCP server startup failed server_name="unityMCP" error=handshaking with MCP server failed: connection closed: initialize response`。
+- 复现命令要点：`codex exec` 必须把 stdin 接 `/dev/null`，否则会卡在 "Reading additional input from stdin..."。
+
+**两个真根因（对照实验，缺一不可）**
+1. **Codex 不消费子进程 stderr**。`mcp-for-unity` 启动刷 FastMCP banner + INFO（含 emoji），管道写满后服务器阻塞，`initialize` 响应发不出去，对端报 "connection closed"。
+2. **`uvx.exe` / `uv.exe` 由 Codex 直接 spawn 时握不上手**。`uvx.exe` 只有 348KB，是 trampoline（和 `uvw.exe` 同尺寸，靠自身文件名分派），Codex 直接拉起无法完成握手；必须有一个显式传 `sys.stdin.buffer` / `sys.stdout.buffer` 的中间进程中转。
+
+**对照实验结果（同一台机、同一个 Unity，只换启动方式）**
+
+| 启动方式 | 结果 |
+|---|---|
+| `uvx.exe ... --transport stdio` 直启 | ✗ connection closed |
+| `cmd /c uvx.exe ...` | ✗ |
+| `cmd /c uvx.exe ... 2> log` | ✗ |
+| `uv.exe tool run ...` 直启 | ✗ |
+| python 中转，stderr 接父管道 | ✗ |
+| **python 中转，stderr 落文件** | **✓** |
+
+**修复形态**
+- `C:\Users\78296\.codex\unity_mcp_launcher.py`：纯转发 launcher，`Popen(stdin=sys.stdin.buffer, stdout=sys.stdout.buffer, stderr=log)`，
+  stderr 写 `~/.codex/unity-mcp-server.log`（2MB 滚动）。**不绑定工程路径**——目标 Unity 由 `~/.unity-mcp/unity-mcp-status-*.json` 自行发现，换工程不用改。
+- `~/.codex/config.toml`：
+  ```toml
+  [mcp_servers.unityMCP]
+  command = 'C:\Users\78296\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\python.exe'
+  args = ['C:\Users\78296\.codex\unity_mcp_launcher.py']
+  startup_timeout_sec = 90
+  ```
+- **`[mcp_servers.unityMCP.env]` 段没有必要，已删**：实测 Codex 传给子进程的 25 个变量里 `USERPROFILE`/`APPDATA`/`LOCALAPPDATA`/`PATH` 都在（只缺 `HOME`），删不删对现象无影响。
+
+**验收**
+- `manage_editor action=telemetry_ping` → `{"success":true,"message":"telemetry ping queued"}`。
+- 读 `mcpforunity://instances` → `FreedomTower_1@520e2c6d` / `port 6400` / `running` / `2022.3.62f3c1` / `D:/FreedomTower_1/Assets`。
+- 两次独立 `codex exec` 均通过，`~/.codex/unity-mcp-server.log` 无 traceback。
+
+**踩坑备注**
+- 改完 `config.toml` 后 **Codex 桌面版要重启**才重读；CLI 每次读文件，可直接验证。
+- 备份：`~/.codex/config.toml.bak-20261105215958`（改动前）、`config.toml.working-launcher`（验证通过版）。
+- command 依赖 uv 管理的 python 绝对路径，卸载 uv / `uv python uninstall` 会让它失效；失效时把 command 换成任意可用 `python.exe` 即可，launcher 本身不挑解释器。
+- 历史记录里 Codex 曾用 HTTP（`url = http://127.0.0.1:8086/mcp` 等）也能工作，那是「另起一个 `--transport http` 常驻进程」的路子；本次选 stdio 是为了免常驻。两条路都只是线索，端口仍须按开头规则当次确认。
+
+## 2026-11-05 Codex 重连实测线索（家用 D 机 `D:\FreedomTower_1`）
+
+- 用户当次确认 Unity `MCP for Unity` 窗口 HTTP URL 为 `http://127.0.0.1:8082`；Codex 服务名 `unityMCP`。该映射只作线索，不是默认值。
+- 当前读取到的 `~/.codex/config.toml` 仍配置 Python stdio launcher，没有 HTTP URL；`mcpforunity://instances` 返回 `transport=stdio`、实例 `FreedomTower_1@520e2c6d`、socket `port=6400`、Unity `2022.3.62f3c1`。本轮首次 `set_active_instance` 报无连接，等待约 5 秒后重试成功；随后 `project/info` 核对 `projectRoot=D:/FreedomTower_1` 与版本一致。插件窗口 URL、客户端 stdio 配置和实例 socket 是不同层的信息，不能据此推定 Codex 当前直接连 `8082`。
+- 编辑器 Play Mode 关闭。强制刷新后 `[Config]` 汇总显示 11 类配置成功加载；本轮 Console 保留 Unity Remote requirements 异常及 L02 交叉引用告警。下次会话仍须重读当前插件 URL、客户端配置和实例，重新核对工程身份。

@@ -14,9 +14,11 @@
 | `VOL_04_适配与SuperScrollView.md` | 多分辨率三组件、安全区、边缘锚数值、SuperScrollView 吸附约束 |
 | `VOL_05_玩法存档音频与地图.md` | 关卡生命周期、存档、音频/倍速、塔型与攻击表现、建造交互、地图链路、新增关卡 |
 | `VOL_06_敌人四方向.md` | AdvancedHen / Monkey 两套架构、构建器与校验坑、AI 分件美术 |
-| `VOL_07_工具与UnityMCP.md` | 多实体工程 MCP 规则 + 历史端口线索、Python/脚本兜底、怪物素材、待办与环境事实 |
+| `VOL_07_工具与UnityMCP.md` | 多实体工程 MCP 规则 + 历史端口线索、**Codex stdio 起不来 MCP 的根因与修复（2026-11-05）**、Python/脚本兜底、怪物素材、待办与环境事实 |
 
 ## 开工必读铁律（摘要；★=优先级，详见 `VOL_08` 同名条目）
+- ★★★**“手动改表”=代码定点修改（2026-11-05 用户澄清，覆盖旧的脚本禁令）**：用程序精确定位获授权的工作簿、sheet、单元格/唯一 ID 字段，核对预期旧值后写入新值；可一次执行已授权的多单元格清单，不要求 Excel/WPS 界面或电脑控制。保留改前基准，写后回读证明白名单外零改动；禁止未经授权扩范围、整表重建、擅自批量调平。源表修改仍走标准 Luban 导出，完整定义见 `AGENTS.md`「配置表按授权定点维护」。
+- ★★★**空中怪不得相邻出生（2026-11-05）**：按 `isFlying != 0` 判断，任意种类/ID 的空中怪均不得相邻，含跨编组/回合边界；只隔出生位置，不擅加秒数。改顺序须保留每波 ID 多重集合、数量、属性和间隔，按授权代码定点改源表；只读检查运行 `.workbuddy/tools/check_air_spawn_order.py`（默认对照 XLSX+JSON）。本轮 L01–L30 全关授权不自动延续；完整规范见根目录 `AGENTS.md` 的同名章节。
 - 双版本：[家用D] `D:\FreedomTower_1`｜[公司E] `E:\MyTowerGame`；记录标版本，严禁跨版套结论；同步走 GitHub `Eagle-Lai/MyTowerGame`(main)。
 - ★★★**多实体工程 + MCP「失败即问」**：含历史 `D:\FishTestGame` 等；路径/Unity 版本/插件版本/端口/服务名一律按当次实际工程判断。MCP 失败/超时/空表/新会话/域重载/换工程 → 先三项只读核对身份（工作区 + `ProjectVersion.txt` + `manifest.json`）→ 一次低成本自检（插件窗口 URL / `MCPForUnity.HttpUrl` / 客户端配置）→ **定不了就停下来问用户端口**；**禁扫端口、禁试连、禁默认端口**（8080/8082/8084/8086/8088 都只是某次的实测值）。连上后 `set_active_instance` → `project/info` 核对 `projectRoot`。
 - 命名：`自由人塔防`=文档名｜`FREEDOM TOWER`=副标题｜`freedomtower`=包名｜`FreeTower`=YooAsset 包裹名（★改则热更全失效）｜`FTProject`=命名空间。
@@ -27,7 +29,7 @@
 - ★★出 APK 前核对 Build Settings：`Boot.unity` 启用 + `Main.unity` 禁用（main 只能从 AB 加载）。
 - ★★**Luban 导出与 `Assets/Gen/FTProject.Gen.asmdef`**：直跑 exe/bat 会被 Luban 删掉该 asmdef → 必须 `git checkout -- Assets/Gen/FTProject.Gen.asmdef` 并确认 `git status` 无 ` D`；走编辑器菜单 `Tools/塔防/3. 导出配置表（Luban）` 会自动保留（`KeepFilesInCodeDir`）。差别只在「谁调的 Luban」。
 - ★★改热更码真机三件套：重编 dll → AB 有变化才重打（菜单 9 后立刻 deploy）→ 先跑 `启动热更服务器.bat`。
-- ★★**配置表只能手工改**（2026-10-21）：`balance_pipeline.py` 的 `apply`/`rollback` 与事务层已整体删除，只保留只读命令（inspect/generate/preview/validate/simulate/verify-layout/stage）。流程＝手工改 xlsx → Luban 导出 → Unity 看 `[Config]` 汇总。
+- ★★**配置表只能手工改**（2026-10-21；“手工”含义已由上文 2026-11-05 澄清为代码定点修改）：`balance_pipeline.py` 的 `apply`/`rollback` 与事务层已整体删除，只保留只读命令（inspect/generate/preview/validate/simulate/verify-layout/stage）。流程＝代码定点改 xlsx → Luban 导出 → Unity 看 `[Config]` 汇总；不恢复旧流水线。
 - ★★★**星级评分体系已整体删除**（2026-11-01）：`tblevelrating`、30 张 `LevelRating.xlsx`、`LevelRatingEvaluator/Profile/Result`、`Configs.VerifyRatingContent/CalculateRuntimeContentHash/…` 全移除；**通关一律记 5 星**，失败 0 星，存档字段保留兼容。改数值不再被哈希拦关。
 - ★★★**改关卡数值必须先问范围、只改指定范围**（2026-11-01）：先问①哪几关②哪张表/波次/怪种/字段③改成多少（值/倍率/基准）④是否「全部关卡应用」；默认只改被点名的部分，禁顺手统一；跨关只有**当次请求**写明才可；改完必须报「改了哪些关/字段 + 旧值→新值 + 其余未动」的证据。
 - ★★★**同一串数值需求连续下发，「替换 vs 叠加」每轮都要重新确认**（2026-11-01 踩坑）：上一轮确认过的口径不延续；脚本要参数化、基线固定为「改动前原值」（`.bak_*`），避免越跑越高。
@@ -41,4 +43,5 @@
 - ★★**真实子弹系统已删除**（2026-10-31）：塔即时命中；`tbbulletdata` 与 `TowerInfo.bulletId` 保留（AOE 半径/效果仍从这里取）；`BoardSorting.Bullet=400` 留给枪口焰。
 - ★★**UI 品牌文案/字号 = 四层同步**（2026-11-02）：`Localization.xlsx` 源表 → `BootLocalization` 常量（AOT 启动层不能依赖热更 `TextLocalizer`）→ 实际 prefab → 生成器（`TacticalForgePrefabBuilder`/`UIPrefabBuilder`/`TacticalForgeLayout`）。品牌：`BrandTitleKey="FREEDOM TOWER"`、`BrandSloganKey` 见 `VOL_03` 第 385 行。
 - ★**TMP 缺字形补字不换字体**（2026-11-05）：`TacticalSans` 是动态字体（源 `NotoSansCJKsc-Regular.otf`，单张 2048×2048，三语共用）→ 用 `TMP_FontAsset.TryAddCharacters(...)` 补并保存资产；换字体/加 fallback 会破坏三语共用口径。验收必须跑真实 prefab 节点的字体/缺字/溢出检查，只看词条文本不算过。
+- ★★**Codex 侧 unityMCP 只能经 python launcher 中转**（2026-11-05 家用 D 实测）：`uvx`/`uv`/`cmd` 直启一律 `connection closed: initialize response`，真根因是 Codex 不消费子进程 stderr（banner 写满管道阻塞握手）+ uvx trampoline 无法被 Codex 直接 spawn。解=`~/.codex/unity_mcp_launcher.py`（stderr 落 `~/.codex/unity-mcp-server.log`，不绑工程路径），`config.toml` 用 uv 自带 python 启动它；`env` 段非必需已删。改完**桌面版要重启**。WorkBuddy 侧 `mcp.json` 一直正常，别跟着改。详见 `VOL_07`。
 - 日档 `YYYY-MM-DD.md` 追加写，读最近的在最前。

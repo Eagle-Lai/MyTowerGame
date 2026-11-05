@@ -1,10 +1,12 @@
 # VOL_08 开工必读铁律（全文）
 
-> 由 `MEMORY.md` 于 2026-11-04 拆出，**内容逐字保留、未做删改**。
+> 由 `MEMORY.md` 于 2026-11-04 拆出，保留拆分时的完整条文；后续增补澄清与新定规时不删减历史内容。
 > 目的：MEMORY.md 注入时会因体积被截断，把逐条细节移到本册，索引只留一行摘要 + 指针。
 > 需要完整条文、参数、踩坑原因时读本文件；日常开工读 `MEMORY.md` 的摘要表即可。
 
 ## 开工必读铁律
+- ★★★**“手动改表 / 手工维护”的当前定义（2026-11-05 用户澄清，覆盖旧字面禁令）**：利用程序代码精确定位指定工作簿、sheet、行列/唯一 ID 字段，定点修改本次获授权的单元格数据；不要求 Excel/WPS 界面或电脑控制。一个程序可逐项处理已授权的多单元格清单。写前核对文件与预期旧值并保留基准，写后回读逐格确认白名单外零改动，保留其余公式、格式与结构。禁止未经授权扩范围、整表重建/覆盖或擅自批量调平；不得直接写 Luban 导出物，标准导出与 Unity 验收继续执行。下文及旧日档中“禁止任何脚本写表 / 批量写源表”按此定义解释，历史原文保留，不再按必须操作桌面的含义执行。完整规则见根目录 `AGENTS.md`。
+- ★★★**空中怪不得相邻出生（2026-11-05 新增，不删改既有条文）**：完整规则以根目录 `AGENTS.md` 的同名章节为准。空中属性仅取 `EnemyData.isFlying != 0`，同关实际出生顺序任意两只空中怪不得相邻，跨编组/回合边界同样检查；不擅自增加最小秒数。修复仅按当次授权用代码定点调整源表顺序，保留每波 ID 多重集合、数量、属性与间隔。运行 `.workbuddy/tools/check_air_spawn_order.py` 核对现行 XLSX 和标准 Luban 导出 JSON，任何违规、缺失引用或导出不同步均不得作为完成结果。未来跨关修改仍须当次授权。
 - 双版本：[家用D] `D:\FreedomTower_1`｜[公司E] `E:\MyTowerGame`。记录必须标版本，严禁跨版套结论；同步走 GitHub `Eagle-Lai/MyTowerGame`(main)。
   - **2026-11-03 扩展为「多实体工程」口径**：本工程还含历史实体 `D:\FishTestGame` 等，路径/Unity 版本/插件版本/端口/客户端服务名都可能不同，一律按当次实际运行的工程判断，详见下条铁律。
 - ★★★**多实体工程 + MCP 端口"失败即问"**（2026-11-03 用户定规，最高优先级）：本工程包含多个不同的实体工程（[公司E] `E:\MyTowerGame` / [家用D] `D:\FreedomTower_1` / 历史 `D:\FishTestGame`），**运行时按当次实际情况判断，严禁跨工程套用路径、版本、端口、服务名**。
@@ -22,7 +24,7 @@
 - ★★出 APK 前核对 Build Settings：`Boot.unity` 启用 + `Main.unity` 禁用（main 只能从 AB 加载）。
 - ★★**Luban 导出与 `Assets/Gen/FTProject.Gen.asmdef`（2026-11-03 两轮实测，原记录已修正）**：**直接跑 exe/bat** 导出会被 Luban 删掉该 asmdef（日志 `[remove] file: ...FTProject.Gen.asmdef`，`.meta` 留下），而 `FTProject.Runtime`/`FTProject.Editor` 的 references 都写着 `FTProject.Gen` → 必须 `git checkout -- Assets/Gen/FTProject.Gen.asmdef` 并核对 `git status` 没有 ` D`；**用编辑器菜单 `Tools/塔防/3. 导出配置表（Luban）` 导出则会自动保留**（`LubanExporter.KeepFilesInCodeDir` 会把它写回，实测 asmdef mtime = 导出时刻）。差别只在"谁调的 Luban"，别因为菜单安全就以为 exe 也安全。详见 `VOL_03`。
 - ★★改热更码真机三件套：重编 dll → AB 有变化才重打（菜单 9 后立刻 deploy）→ 先跑 `启动热更服务器.bat`。
-- ★★**配置表只能手工改**（2026-10-21 定规）：`balance_pipeline.py` 的 `apply`/`rollback` 与事务层已整体删除；只读命令保留。改表流程＝手工改 xlsx → 跑 Luban 导出 → 进 Unity 看 `[Config]` 汇总。**2026-11-01 起不再有 `runtimeContentHash` 重封步骤**（评级表已删，见下条）。以 `AGENTS.md` 的完整保护规则为准。
+- ★★**配置表按授权定点修改**（2026-10-21 原定规，2026-11-05 澄清“手工”指代码精确定位单元格，不要求桌面 UI）：`balance_pipeline.py` 的 `apply`/`rollback` 与事务层已整体删除；只读命令保留。改表流程＝代码定点改 xlsx → 跑 Luban 导出 → 进 Unity 看 `[Config]` 汇总。**2026-11-01 起不再有 `runtimeContentHash` 重封步骤**（评级表已删，见下条）。以 `AGENTS.md` 的完整保护规则为准。
 - ★★★**星级评分体系已整体删除**（2026-11-01 用户口径）：`tblevelrating` 表、30 张 `Levels/Lxx/LevelRating.xlsx`、`LevelRatingEvaluator/Profile/Result`、`RatingPresentation`、`SaveProgressMigration`、`Configs.VerifyRatingContent/CalculateRuntimeContentHash/ValidateRatingPlan/RatingContentVerified`、编辑器 `LevelRatingTests` 全部移除；**通关一律记 5 星**（`SaveManager.MaxStars`），失败 0 星，星级存档字段保留以兼容老档。改数值不再被哈希拦关。评分待 30 关数值定稿后重做。
 - ★★★**改关卡数值必须先问范围、只改指定范围**（2026-11-01 用户定规，最高优先级）：收到"改关卡数值"请求时**先提问**确认①哪几关②哪张表/波次/怪种/字段③改成多少（值或倍率、基准）④本轮是否"全部关卡应用"，得到明确答复才动手。**默认只改被点名的那部分**，禁止顺手统一其他关/对齐同类行/批量调平。跨关只有用户在**当次请求**写明"全部关卡应用"才可；历史说过一次不构成长期授权。改完要报"实际改了哪些关/字段 + 旧值→新值 + 其余关未改动"的核对结论。（原 `runtimeContentHash` 30 关同值属正常重封，该机制已于 2026-11-01 随评级表删除。）详见 `AGENTS.md` 同名章节与 `VOL_03`。
 - ★★★**同一串数值需求连续下发时，"替换 vs 叠加"每轮都要重新确认**（2026-11-01 实战踩坑）：L01 波次奖励连改三轮（+5/+15 → +7/+20 用户明确选**替换** → +3/+5），我在第三轮沿用第二轮的"替换"口径，被用户指出「你这次理解错了」——正确是**叠加**。**结论：用户确认过的"替换"只对被确认的那一次有效，不构成后续轮次的长期授权；下一轮默认按叠加处理**，或每次先问一句。另：改表脚本要**参数化 + 基线固定为"改动前原值"**（如 `.bak_*_goldhp`），传不同增量即可回到任一历史版本，避免"越跑越高"和重复改代码。
