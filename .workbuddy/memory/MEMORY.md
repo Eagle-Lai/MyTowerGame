@@ -40,4 +40,5 @@
 - ★★**局内进度落盘 = 续玩快照**（2026-10-31，推翻 10-30「局内不落盘」）：每过一波存塔阵(row/col/type/level/investedGold)+金币+生命+波次游标+整份 `LevelRunMetrics` 到 kv `layout/campaign`，重进接着打；通关写「重玩起点」；`RefundOf=min(配置售价,累计投入)×返还比例` 唯一口径；卖塔立刻落盘。详见 `VOL_05`。
 - ★★**真实子弹系统已删除**（2026-10-31）：塔即时命中；`tbbulletdata` 与 `TowerInfo.bulletId` 保留（AOE 半径/效果仍从这里取）；`BoardSorting.Bullet=400` 留给枪口焰。
 - ★★**UI 品牌文案/字号 = 四层同步**（2026-11-02）：`Localization.xlsx` 源表 → `BootLocalization` 常量（AOT 启动层不能依赖热更 `TextLocalizer`）→ 实际 prefab → 生成器（`TacticalForgePrefabBuilder`/`UIPrefabBuilder`/`TacticalForgeLayout`）。品牌：`BrandTitleKey="FREEDOM TOWER"`、`BrandSloganKey` 见 `VOL_03` 第 385 行。
+- ★**TMP 缺字形补字不换字体**（2026-11-05）：`TacticalSans` 是动态字体（源 `NotoSansCJKsc-Regular.otf`，单张 2048×2048，三语共用）→ 用 `TMP_FontAsset.TryAddCharacters(...)` 补并保存资产；换字体/加 fallback 会破坏三语共用口径。验收必须跑真实 prefab 节点的字体/缺字/溢出检查，只看词条文本不算过。
 - 日档 `YYYY-MM-DD.md` 追加写，读最近的在最前。

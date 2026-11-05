@@ -149,3 +149,11 @@
 - **后续（同日 12:43 用户同意后已做）**：`Tools/_manual_l03_scale_unique.py` 按同波同地空**几何均值**缩放 196 行（系数样本只取已同步行，地面 1.82~3.71、空中 6.3~9.9；L02 无空中对照的 W3/W4 借用 W5 系数）。结果：地面 0.92×、空中 **2.27×**、合计 **1.08×**。空中偏高是构成问题——L03 空中占比约 1/4、L02 仅 3.5%，单只拉到同级后总量必然高出；要压回 1.0× 只能改构成或接受单只偏弱，二者都需用户拍板。
 - 工具 `Tools/_manual_l03_sync_from_l02.py`：`--dry-run` 出逐波对照、`--apply` 首跑自动备份、`--verify` 逐格复核；另用「当前表 vs `.bak` 逐格 diff 按列统计」证明只改了目标列（本次 106+75+25 格）。
 - 导表后仍要恢复 `Assets/Gen/FTProject.Gen.asmdef`（每次删）。
+
+## 本地化词条补齐与 TMP 动态字体补字（2026-11-05）
+
+- 审计口径：把 `Localization.Get("字面量")` 调用点扫全，与 `tblocalization` 的 id 对账。本次 173 处调用点 / 131 个唯一 key 中 6 个 key 缺失（7 处调用、21 次三语查找落空）：`Combat {0} · Level {1}`、`Boss leaks {0}`、`Best stars: {0}/5`、`Not cleared`、`Best clear: {0}`、`Clearing a level awards five stars until the rating rules are rebuilt`。
+- 补齐方式：手工加 `Localization.xlsx` 第 386-391 行（三语），原 377 条与 5 条历史空 key 行（24-26、159-160）一律不动；导出后 383 个唯一 key。**新增词条要跟前一条同格式的相对时间 comment**（本次统一 `Localization fix 2026-11-05`），方便回溯批次。
+- ★**TMP 缺字形不要在 prefab 上换字体**：`TacticalSans` 是动态字体资产（源 `NotoSansCJKsc-Regular.otf`，单张 2048x2048 图集，三语共用）。`TMP_FontAsset.TryAddCharacters("規則記", out missing, false)` 成功后保存资产即可（本次字符表 838→841、字形表 837→840）；换字体或加 fallback 会破坏三语共用同一字体资产的适配口径。
+- ★**验收只看词条文本不够**：要跑「真实 prefab 节点」的 TMP 检查——赋 `Localization.Get` 结果 → `LanguageManager.ApplyFont` → `ForceMeshUpdate`，再核字体身份、图集尺寸、缺字、`isTextOverflowing`。本次 21 项 0 错配 / 0 缺字 / 0 溢出。
+- 遗留待用户定：`Combat {0} · Level {1}` 简中译作「战斗 {0} · 整局 {1}」，Level 用「整局」与游戏内「关卡」口径不一致。

@@ -102,3 +102,9 @@
 - 实体工程：E:/MyTowerGame；Unity 2022.3.62f3c1；插件 v10.3.0。
 - 用户本轮指定端口：8086；Codex 服务 unityMCP；客户端 URL 与 EditorPrefs 均为 http://127.0.0.1:8086（MCP 端点 /mcp）。
 - 已通过现场实例选择和 project/info 核对。这仅为线索记录，下次重新确认。
+
+## 2026-11-05 Codex 代码审查连接线索
+- 实体工程 E:/MyTowerGame；Unity 2022.3.62f3c1；插件 com.coplaydev.unity-mcp v10.3.0；客户端服务 unityMCP。
+- 用户现场确认 8086、编辑器已打开，并提供 HTTP Local 窗口截图；本次端点 http://127.0.0.1:8086/mcp。
+- 已通过 custom-tools、instances 发现并选中 MyTowerGame@9e28c50b510eeb91，再用 project/info 核对 projectRoot 和 Unity 版本一致；只读状态为 Boot 场景、未播放且就绪，Console error 查询 0 条。
+- 仅为当次连接线索，不是跨会话默认端口或固定实例 ID；下次仍按 AGENTS.md 重新确认。此次只读审查未刷新编译或执行运行态测试，不能将 Console 查询当作业务验收。
