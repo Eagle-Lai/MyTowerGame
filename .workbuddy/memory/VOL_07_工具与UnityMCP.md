@@ -13,6 +13,14 @@
 - **适用范围**：全部 Unity MCP 操作（资产/场景/编译/Console/Play/菜单/构建）；所有实体工程与所有客户端（Claude Code / Codex / WorkBuddy）；MCP 未启动、端口被改、插件升级、切工程、换机器。**不适用**非 Unity 的 MCP（如 Agent Mail）。
 - 完整条文见工程根目录 `AGENTS.md` 的「工程与 MCP」与「MCP 未开启时」两节。
 
+## 最近实测线索（2026-11-04，家用 D 机 `D:\FreedomTower_1`；**只作线索，下次仍按现行规则重新确认**）
+
+- 插件 `MCP for Unity v10.3.0`，窗体显示 **Transport = Stdio**、`Unity Socket Port = 6400`、`Session Active (FreedomTower_1)`；Client 下拉里出现的是 "Antigravity 2.0 / Not Configured"，**与 WorkBuddy 无关**，不代表 WorkBuddy 连不上。
+- WorkBuddy 侧 `~/.workbuddy/mcp.json` 用 **stdio**：`uvx --from mcpforunityserver==10.3.0 mcp-for-unity --transport stdio`，**没有 URL/端口可填**，靠 UDP 发现 + socket 6400 桥接。所以「连不上」时**没有端口可问**，先看插件窗体是否 `Session Active`、Unity 是否刚启动还在起桥。
+- ★本次实测：Unity 19:48 启动，`listMcpResources` 从 19:51 一直报 `unavailableServers:[unityMCP]`，**20:00 自行恢复**（22 项资源一次返回）。结论：**先等 10 分钟量级，不要换端口、不要改配置、不要重启服务**。
+- 实例 ID `FreedomTower_1@520e2c6d`；`project/info` → `projectRoot=D:/FreedomTower_1`、Unity `2022.3.62f3c1`、platform `Android`。
+- 导出配置表走 `execute_menu_item("Tools/塔防/3. 导出配置表（Luban）")`，约 3 秒完成；日志里仍会出现 `[remove] .../FTProject.Gen.asmdef`，但菜单会写回，`git status` 确认 asmdef 未变（本次已复核）。副作用：`Assets/Gen/*.cs` 会因换行符（LF→CRLF）显示为 modified，但 `git diff` 内容为空，属噪音。
+
 ## Unity MCP（两版严禁混用）
 
 > **2026-11-03 起：本节所有固定端口（8082 / 8084 / 8088）全部降级为历史线索**，现行口径见上方「现行规则」；别再照抄这里的端口直接连。

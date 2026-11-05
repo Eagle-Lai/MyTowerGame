@@ -1,52 +1,43 @@
 # FreedomTower 项目长期记忆（索引）
 
-> **记录原则（用户已明确）**：不要精简、不要为了篇幅砍内容。宁可记忆文件更大更全，也要保留可复用的规则、参数、坑和原因。
-> 建议结构：先按主题分区，每条写「结论 + 关键参数/路径 + 为什么」。过期内容只做标注，不直接删。
->
-> **结构**：本文件为索引与开工规则；其余技术记录按主题分册保存。
+> **记录原则（用户已明确）**：不要精简、不要为了篇幅砍内容；过期内容只标注不删。
+> **结构**：本文件只放「索引 + 一行铁律摘要」；逐条细节、参数、踩坑原因在分册。需要完整条文时读 `VOL_08`（全文，逐字保留）。
+> 2026-11-04 拆分原因：本文件 18.9KB 注入时被截断，尾部铁律丢失；改为索引 + `VOL_08_开工铁律全文.md`。
 
-## 分册目录（同目录下，按需读取）
+## 分册目录
 | 分册 | 内容 |
 |---|---|
-| `VOL_01_环境流程与出包.md` | 双版本路径、命名规范、生成/挂载前置、编辑器脚本约定、提交规范、git 代理、APK 出包铁律、真机 adb |
-| `VOL_02_热更与资源.md` | 程序集与 HybridCLR、dll/AB 链路、UDP 发现与闸门、一键热更菜单 10、部署铁律、配置加载失败自恢复 |
+| `VOL_08_开工铁律全文.md` | **开工必读铁律全文**（2026-11-04 从本文件逐字拆出，未删改） |
+| `VOL_01_环境流程与出包.md` | 双版本路径、命名、生成/挂载前置、编辑器脚本约定、提交规范、git 代理、APK 出包、真机 adb |
+| `VOL_02_热更与资源.md` | 程序集与 HybridCLR、dll/AB 链路、UDP 发现与闸门、一键热更菜单 10、部署、配置加载失败自恢复 |
 | `VOL_03_配置多语言与UI.md` | Luban 表、多语言词条、TextLocalizer、UIPrefabBuilder、全量重建副作用、HUD 两按钮 |
 | `VOL_04_适配与SuperScrollView.md` | 多分辨率三组件、安全区、边缘锚数值、SuperScrollView 吸附约束 |
 | `VOL_05_玩法存档音频与地图.md` | 关卡生命周期、存档、音频/倍速、塔型与攻击表现、建造交互、地图链路、新增关卡 |
 | `VOL_06_敌人四方向.md` | AdvancedHen / Monkey 两套架构、构建器与校验坑、AI 分件美术 |
-| `VOL_07_工具与UnityMCP.md` | **多实体工程 MCP 端口规则（现行，失败即问）** + 历史端口线索、Python/脚本兜底、怪物素材、待办与环境事实 |
+| `VOL_07_工具与UnityMCP.md` | 多实体工程 MCP 规则 + 历史端口线索、Python/脚本兜底、怪物素材、待办与环境事实 |
 
-## 开工必读铁律
-- 双版本：[家用D] `D:\FreedomTower_1`｜[公司E] `E:\MyTowerGame`。记录必须标版本，严禁跨版套结论；同步走 GitHub `Eagle-Lai/MyTowerGame`(main)。
-  - **2026-11-03 扩展为「多实体工程」口径**：本工程还含历史实体 `D:\FishTestGame` 等，路径/Unity 版本/插件版本/端口/客户端服务名都可能不同，一律按当次实际运行的工程判断，详见下条铁律。
-- ★★★**多实体工程 + MCP 端口"失败即问"**（2026-11-03 用户定规，最高优先级）：本工程包含多个不同的实体工程（[公司E] `E:\MyTowerGame` / [家用D] `D:\FreedomTower_1` / 历史 `D:\FishTestGame`），**运行时按当次实际情况判断，严禁跨工程套用路径、版本、端口、服务名**。
-  - **触发条件**：① 任一 Unity MCP 工具返回连接失败/超时/`Not Acceptable`/`session not found`/工具表为空；② `mcpforunity://instances` 为空或找不到当前工程实例；③ 新会话首连、客户端重连、域重载后重连；④ 切换实体工程；⑤ 客户端配置里 URL 缺失或与当前工程不一致。
-  - **执行步骤**：① 用「工作区根目录 + `ProjectSettings/ProjectVersion.txt` + `Packages/manifest.json`」三项只读核对实体工程身份，不明先问；② 只做一次低成本只读自检（插件窗口 URL / EditorPrefs `MCPForUnity.HttpUrl` / 客户端配置），**不扫端口段、不逐个试连、不改端口、不重复起服务**；③ 自检仍定不了端口 → **停止动作，主动问用户「当前这个工程用的 MCP 端口是多少」**，可列历史端口作候选但**不得预选、不得默认采用**；④ 按答复连接 → `set_active_instance` → `project/info` 核对 `projectRoot` 与版本；⑤ 结果记入 `VOL_07`，**只作线索**，下次仍重新确认；⑥ 用户当次说"固定用某端口"只管当次/当工程，不跨会话、不跨工程。
-  - **禁止**：沿用默认端口（`8080`/`8082`/`8084`/`8088` 都只是某次某工程的实测值）、假定固定值、为试通而扫描端口、连接另一个实体工程顶替。
-  - **适用范围**：全部 Unity MCP 操作（资产/场景/编译/Console/Play/菜单/构建）、所有实体工程与所有客户端（Claude Code / Codex / WorkBuddy）；**不适用**非 Unity 的 MCP（如 Agent Mail）。完整条文见 `AGENTS.md`「工程与 MCP」「MCP 未开启时」两节与 `VOL_07` 顶部「现行规则」。
+## 开工必读铁律（摘要；★=优先级，详见 `VOL_08` 同名条目）
+- 双版本：[家用D] `D:\FreedomTower_1`｜[公司E] `E:\MyTowerGame`；记录标版本，严禁跨版套结论；同步走 GitHub `Eagle-Lai/MyTowerGame`(main)。
+- ★★★**多实体工程 + MCP「失败即问」**：含历史 `D:\FishTestGame` 等；路径/Unity 版本/插件版本/端口/服务名一律按当次实际工程判断。MCP 失败/超时/空表/新会话/域重载/换工程 → 先三项只读核对身份（工作区 + `ProjectVersion.txt` + `manifest.json`）→ 一次低成本自检（插件窗口 URL / `MCPForUnity.HttpUrl` / 客户端配置）→ **定不了就停下来问用户端口**；**禁扫端口、禁试连、禁默认端口**（8080/8082/8084/8086/8088 都只是某次的实测值）。连上后 `set_active_instance` → `project/info` 核对 `projectRoot`。
 - 命名：`自由人塔防`=文档名｜`FREEDOM TOWER`=副标题｜`freedomtower`=包名｜`FreeTower`=YooAsset 包裹名（★改则热更全失效）｜`FTProject`=命名空间。
-- 跑生成/挂载菜单前必须 `isCompiling == false && isPlaying == false`；改过 `Assets/Editor/*.cs` 要等编译完；动手前先确认 MCP 连的是本工程（不是 CatchFish）。
-  - **Luban 导出 / AssetDatabase 刷新同理**（2026-11-03 实测）：另一个任务正在跑真实对局（`editor.play=True`）时导出配置，虽因"运行中冻结配置"不会改掉那一局，但写 asmdef/json 仍有触发重导入甚至域重载、中断对局的风险。**动表与导出前先查 `EditorApplication.isPlaying`，为 true 就等或问**。
-- 编辑器脚本不弹 `DisplayDialog`（走 `Debug.Log`）；危险操作拆成两档菜单。
-- ★提交：默认**按功能分批**（2026-10-22 用户新口径：按功能拆多笔，代码契约→工具→资产→文档的先后顺序，保证每笔不悬空）；**先写完记录再提交**（当天日档 + 本文件 + 相关分册同一笔）；提交后不再写盘。旧口径「全部一起提交，不拆不挑」已被取代。
-- ★git 代理：**先用环境默认 `http_proxy`**（2026-10-23 实测为 `127.0.0.1:61051`，26 秒推完 200MB；历史 56630/57267/62114/7897 逐个失效，别写死）；配 `git -c http.version=HTTP/2`；>10MB 必带 HTTP/2；`cannot lock ref` = 并行竞态，先 `ls-remote` 核对，**不要装 git-lfs**。
-  - **2026-11-04 实测（大批证据推送）**：环境默认代理当日是 `127.0.0.1:62915`（会变，先 `env | grep -i proxy`）。**单 commit 130MB 推不上去**：先报 `unable to rewind rpc post data - try increasing http.postBuffer`，`http.postBuffer` 抬到 1GB 仍报 `curl 55 Send failure: Connection was reset`。可行姿势 = **按目录把提交拆到 ≤20MB/笔**（`git reset` 回退未推送的本地提交后重拆，已推送的不要改写）→ 每笔 `git -c http.version=HTTP/2 -c http.postBuffer=524288000 push origin HEAD:main`。GitHub 端还会偶发 `Internal Server Error` / `remote rejected (failure)` / 瞬时断连，**同一笔重试 1-3 次即可过**，不要因一次失败就改历史或转向 LFS。
+- 跑生成/挂载/导出前必须 `isCompiling==false && isPlaying==false`；改过 `Assets/Editor/*.cs` 等编译完；**动表与 Luban 导出前先查 `EditorApplication.isPlaying`，对局中就先等或问**（写 asmdef/json 会触发重导入甚至域重载）。
+- 编辑器脚本不弹 `DisplayDialog`（走 `Debug.Log`）；危险操作拆两档菜单。
+- ★提交：**按功能分批**（代码契约→工具→资产→文档，每笔不悬空）；**先写完记录再提交**（当天日档 + 本文件 + 分册同一笔）；提交后不再写盘。
+- ★git 代理：先用环境默认 `http_proxy`（会变，先 `env | grep -i proxy`）；带 `-c http.version=HTTP/2`；**单笔 ≤20MB**（130MB 单 commit 必失败）；`cannot lock ref` = 并行竞态先 `ls-remote`；**不要装 git-lfs**；GitHub 偶发 5xx 重试 1-3 次即可过。
 - ★★出 APK 前核对 Build Settings：`Boot.unity` 启用 + `Main.unity` 禁用（main 只能从 AB 加载）。
-- ★★**Luban 导出与 `Assets/Gen/FTProject.Gen.asmdef`（2026-11-03 两轮实测，原记录已修正）**：**直接跑 exe/bat** 导出会被 Luban 删掉该 asmdef（日志 `[remove] file: ...FTProject.Gen.asmdef`，`.meta` 留下），而 `FTProject.Runtime`/`FTProject.Editor` 的 references 都写着 `FTProject.Gen` → 必须 `git checkout -- Assets/Gen/FTProject.Gen.asmdef` 并核对 `git status` 没有 ` D`；**用编辑器菜单 `Tools/塔防/3. 导出配置表（Luban）` 导出则会自动保留**（`LubanExporter.KeepFilesInCodeDir` 会把它写回，实测 asmdef mtime = 导出时刻）。差别只在"谁调的 Luban"，别因为菜单安全就以为 exe 也安全。详见 `VOL_03`。
+- ★★**Luban 导出与 `Assets/Gen/FTProject.Gen.asmdef`**：直跑 exe/bat 会被 Luban 删掉该 asmdef → 必须 `git checkout -- Assets/Gen/FTProject.Gen.asmdef` 并确认 `git status` 无 ` D`；走编辑器菜单 `Tools/塔防/3. 导出配置表（Luban）` 会自动保留（`KeepFilesInCodeDir`）。差别只在「谁调的 Luban」。
 - ★★改热更码真机三件套：重编 dll → AB 有变化才重打（菜单 9 后立刻 deploy）→ 先跑 `启动热更服务器.bat`。
-- ★★**配置表只能手工改**（2026-10-21 定规）：`balance_pipeline.py` 的 `apply`/`rollback` 与事务层已整体删除；只读命令保留。改表流程＝手工改 xlsx → 跑 Luban 导出 → 进 Unity 看 `[Config]` 汇总。**2026-11-01 起不再有 `runtimeContentHash` 重封步骤**（评级表已删，见下条）。以 `AGENTS.md` 的完整保护规则为准。
-- ★★★**星级评分体系已整体删除**（2026-11-01 用户口径）：`tblevelrating` 表、30 张 `Levels/Lxx/LevelRating.xlsx`、`LevelRatingEvaluator/Profile/Result`、`RatingPresentation`、`SaveProgressMigration`、`Configs.VerifyRatingContent/CalculateRuntimeContentHash/ValidateRatingPlan/RatingContentVerified`、编辑器 `LevelRatingTests` 全部移除；**通关一律记 5 星**（`SaveManager.MaxStars`），失败 0 星，星级存档字段保留以兼容老档。改数值不再被哈希拦关。评分待 30 关数值定稿后重做。
-- ★★★**改关卡数值必须先问范围、只改指定范围**（2026-11-01 用户定规，最高优先级）：收到"改关卡数值"请求时**先提问**确认①哪几关②哪张表/波次/怪种/字段③改成多少（值或倍率、基准）④本轮是否"全部关卡应用"，得到明确答复才动手。**默认只改被点名的那部分**，禁止顺手统一其他关/对齐同类行/批量调平。跨关只有用户在**当次请求**写明"全部关卡应用"才可；历史说过一次不构成长期授权。改完要报"实际改了哪些关/字段 + 旧值→新值 + 其余关未改动"的核对结论。（原 `runtimeContentHash` 30 关同值属正常重封，该机制已于 2026-11-01 随评级表删除。）详见 `AGENTS.md` 同名章节与 `VOL_03`。
-- ★★★**同一串数值需求连续下发时，"替换 vs 叠加"每轮都要重新确认**（2026-11-01 实战踩坑）：L01 波次奖励连改三轮（+5/+15 → +7/+20 用户明确选**替换** → +3/+5），我在第三轮沿用第二轮的"替换"口径，被用户指出「你这次理解错了」——正确是**叠加**。**结论：用户确认过的"替换"只对被确认的那一次有效，不构成后续轮次的长期授权；下一轮默认按叠加处理**，或每次先问一句。另：改表脚本要**参数化 + 基线固定为"改动前原值"**（如 `.bak_*_goldhp`），传不同增量即可回到任一历史版本，避免"越跑越高"和重复改代码。
-- ★★★**跨关"数值同步"必须按波次逐条映射，且照抄 ≠ 等强度**（2026-11-03 首次执行 L03←L02）：两关都 25 波也不代表能整表复制——变体数/怪种集/出怪构成完全不同（L02 106 条 6 种怪 vs L03 302 条 14 种怪）。落定口径：`EnemyData` 按 `(wave,name,isFlying)` 取源关绝对 hp、源关没有的怪种保留目标关原值；`EnemyList` 每波总数取源关、波内构成按目标关原序列等比取样；`RoundData` 奖励取源关同波值；**SceneInfo/levelId/击杀奖励/speed/armor/waveType 不动**。★代价：目标关独有怪种保留旧值会稀释强度——L03 同步后全 25 波实际血量仅 **0.68×** L02（W5 0.61×、W25 0.70×，空中 Bat 828 而 EvilEye 仍 84）；**同日已按用户批准补做**：独有怪按同波同地空几何均值缩放 196 行（`Tools/_manual_l03_scale_unique.py`），结果地面 0.92×、空中 2.27×、**合计 1.08×**——空中偏高源于 L03 空中占比（约 1/4）远高于 L02（3.5%），单只拉平后总量必然高，要压回只能改构成或接受单只偏弱。工具 `Tools/_manual_l03_sync_from_l02.py`（dry-run/apply/verify + 自动备份），改完用「当前表 vs `.bak` 逐格 diff 按列统计」证明只动目标列；导表后记得 `git checkout -- Assets/Gen/FTProject.Gen.asmdef`。详见 `VOL_03` 与 `2026-11-03.md`。
-- ★★**以 L01 为模板重建 L02 全 25 波（2026-11-04）**：W1-W4 保留此前获批的 20/30/36/42 只 + 130/135/140/145 金；W5-W25 按 L01 同波 `出怪数×144/91`（面积比）、`地面 HP×71/42`、`空中 HP×15/12`、`enemyInterval` 与 `waveType` 照取 L01、`清波奖励×144/91`，EnemyData 其余列（speed/armor/killGold/scale/isFlying…）**全等 L01 同波同怪种**（脚本对非 HP 列做全等断言，不一致即停）。规模：W5-W25 15,941 只 / 1,836 金；全关 16,069 只 / 2,386 金，初始 100 金 10 血。脚本 `.workbuddy/tools/_l02_rebuild_from_l01_20261104.mjs`（inspect/plan/apply，写盘前先导出暂存再回读逐格校验"白名单外零改动"）。落表核对用 `Artifacts/L02_ZeroLeak_*/scope-check.json`：tbenemydata 100 行仅 hp、tbenemylist 25 行仅 EnemyIndexs、tbrounddata 25 行仅 rewardGold、L02 外 0 变更。**已知保留缺陷**：L02 的 106 个敌人行 `levelId` 仍为 1（应为 2，交叉引用自检报 Warning）、SceneInfo 名称仍显示「关卡 1」，均未改。
-- ★★**证据入库体量口径**（2026-10-30 定）：结论级文本（README/*.md、progress.json、installed_manifest、final_validation、review.json、索引与前后对比图）入库；生成图、真实运行帧、审阅时序板、集中 GIF、`git status` 全量快照、`scope_*.json`、以及 `reference/`/`before/` 下的**资源副本**一律不入库（`.gitignore` 第 10 节）。依据：Remaining_20261024 全量 12GB / 11.1 万文件，AllGIF 1.2GB / 1765 GIF，而已入库的全部 EnemyDirectionReview 证据只有 12MB，不该被一批媒体稀释成 GB 级；生产资源 `Directions/Animations/*.anim` 约 722MB 属必需品，不能靠仓库瘦身解决。
-  - **例外（2026-11-04 用户决定）**：`Artifacts/` 下的零漏怪实战证据（`L01_ZeroLeak_*` / `L02_ZeroLeak_*` 的 attempt 逐波快照、真实运行截图、README、汇总 json 与数值 csv）**全量入库**，不按本节筛选（该批 1352 文件 / 130MB）。此例外只适用于 `Artifacts/`，不外推到 `Docs/` 下其它证据目录（那些仍按本节与 `.gitignore` 第 8/10/11 节执行）。
-- ★★**清理磁盘/删大目录**（2026-10-23 实测）：本机 safe-delete 钩子把删除**移入回收站**（删 20GB 后 Free 不变，`E:\$RECYCLE.BIN` 堆到 26.4GB），必须 `Clear-RecycleBin -DriveLetter E -Force` 才真正释放；且钩子有**每 turn 50 个文件**上限——`shutil.rmtree` 会被替换成空操作（脚本打印成功但文件还在，极易误判），逐文件 `os.remove` 删到 50 个即被拦，`Remove-Item`/`cmd rd` 也被拦；**批量删用 `robocopy <空目录> <目标> /MIR`**（在 PowerShell 里调，Git Bash 会把 `/MIR` 当路径转换）。`.gitignore` 已补 `/Library/ /Temp/ /Obj/ /Logs/`（此前遗漏导致 281 个工作台结果被误提交）。工程瘦身基线：25.38GB → 5.89GB。
-  - **2026-10-30 复核更正（按这条执行）**：`Remove-Item` 现在是**完全无效且不抛异常**（不是"删到 50 个才拦"，249 个目标 removed=0、`-ErrorAction Stop` 也抓不到）。**单文件删除**用 `robocopy <文件所在目录> <临时目录> <文件名> /MOV`（实测 200/200）；**目录清空**仍用 `robocopy <空目录> <目标> /MIR`（688 个目录约 13 分钟）。删除先进回收站，`E:\$RECYCLE.BIN` 会涨到与删除量同量级，必须 `$ProgressPreference='SilentlyContinue'; Clear-RecycleBin -DriveLetter E -Force`（11GB 约 9-10 分钟）跑完 Free 才真正变化。
-- ★★**删 Library 的代价**（2026-10-23 实测）：`Packages/manifest.json` 有 3 个 git 包（hybridclr v8.14.1 / unity-mcp v10.3.0 / yooasset 3.0.6），PackageCache 一删就要重新 clone；代理不通时 Unity 报 `invalid dependencies` 后直接退出。手动恢复：从 `packages-lock.json` 取 hash → `git clone --depth 1 --branch <tag>` → 复制到 `Library/PackageCache/<name>@<hash>`（unity-mcp 取 `MCPForUnity/`，yooasset 取 `Assets/YooAsset/`，排除 .git）。Library 删剩一半会弹 **"Corrupted Library Detected"** 模态框并静默退出（return code 0），必须删到只剩 PackageCache。**从工具启动的 Unity 会被会话清理杀掉**，最后一步让用户从 Hub 手动打开。`-logFile` 别指向工程内 `Logs/`（会和 CatchFish 实例串日志），用 `%TEMP%\tower_editor.log`。
-- ★★**震屏白名单**（2026-10-30 用户定规）：关卡内**只有"怪到达终点（漏怪）"允许场景抖动**，开火/爆炸/命中/失败结算一律不震。唯一入口是 `CameraController.ShakeOnEnemyLeak`（原名 `Shake` 已删，故意不给通用接口）；想加抖动必须改 API 并先问用户。振幅仍取 `Configs.Global.ShakeAmplitude/ShakeDurationSec`（表不改）。
-- ★★**局内进度落盘 = 续玩快照已恢复**（2026-10-31 用户四轮口径，**实质推翻 10-30"局内一律不落盘"**）：**每通过一波**把 该关 塔阵(row/col/type/level/**investedGold**) + 金币 + 生命 + **波次游标** + **整份 `LevelRunMetrics`** 存 kv `layout/campaign`；重进该关**接着上一波继续**（资源覆盖、塔阵免费还原、评级统计继续累加）。通关那一笔写"重玩起点"（游标 0、无统计），否则一进门又判通关。存整份统计仍是硬要求（结算/续局的战绩来源）；评级下线后不再有 `Incomplete waves` 之类的判定拦关。老记录靠 `resourcesSaved` / `runSaved` 两个开关区分（缺省 0 会送"0 血开局"）。旧 `level_snapshot`/`snapshot_tower` 两张表**仍不写**，schema 仍 4。**出售返还**唯一口径是 `TowerManager.RefundOf`＝`min(配置售价, 累计投入)×返还比例`，公式只准一处；**2026-11-01 起还原塔的投入随阵型一起存**（`TowerLayoutEntry.investedGold` + `hasInvested` 开关；老档 false 走"按配置售价兜底"，FormatVersion 仍 1），卖还原塔按投入返还、不再是 0，配套**卖塔立刻落盘**（`TowerSoldEvent` → `GameFlowManager.OnTowerSold`：战斗中裁掉未结算波次、游标 0 时不写 runSaved、结算后不写），否则卖完退出重进塔会带着投入复活、可反复卖。详见 `VOL_05` 与 `Docs/LevelLayoutPersistence_2026-10-31.md`。
-- ★★**真实子弹系统已整体删除**（2026-10-31）：`BaseBullet`/`BulletManager`/`Bullet_Normal.prefab`/`bullet_normal` 包/`BulletRoot` 节点全部移除，塔为即时命中。**`tbbulletdata` 表与 `TowerInfo.bulletId` 保留**（火力塔 AOE 半径/效果仍从这取）；`BoardSorting.Bullet=400` 保留给枪口焰/爆炸。别再“接回子弹”，要弹道先改 `DetonateAt` 口径与测试。详见 `VOL_05`。
-- ★★**UI 品牌文案/字号改动是四层同步**（2026-11-02 定）：`Luban/Config/Datas/Localization.xlsx`（源表）→ `BootLocalization` 常量与三语取值（AOT 启动层，APK 内启动页/更新页**不能**依赖热更层 `TextLocalizer`）→ 实际 prefab → 生成器（`TacticalForgePrefabBuilder.BrandText/ApplyBrandTypography`、`UIPrefabBuilder` 初始字号、`TacticalForgeLayout` 主菜单布局）。只改 prefab 会在下次「同步问题文档修正」时被覆盖；只改生成器不会更新现场 prefab。当前品牌词条：`BrandTitleKey="FREEDOM TOWER"`（复用旧主键）、`BrandSloganKey="Winding paths, thrills at every turn."`（id 与英文值同），三语在 `Localization.xlsx` 第 385 行。字号层级 HotUpdate/Loading 104-40、Splash 112-40、MainMenu 96-40，自适应下限固定 72/32。细节与四个坑见 `VOL_03`。
+- ★★**配置表只能手工改**（2026-10-21）：`balance_pipeline.py` 的 `apply`/`rollback` 与事务层已整体删除，只保留只读命令（inspect/generate/preview/validate/simulate/verify-layout/stage）。流程＝手工改 xlsx → Luban 导出 → Unity 看 `[Config]` 汇总。
+- ★★★**星级评分体系已整体删除**（2026-11-01）：`tblevelrating`、30 张 `LevelRating.xlsx`、`LevelRatingEvaluator/Profile/Result`、`Configs.VerifyRatingContent/CalculateRuntimeContentHash/…` 全移除；**通关一律记 5 星**，失败 0 星，存档字段保留兼容。改数值不再被哈希拦关。
+- ★★★**改关卡数值必须先问范围、只改指定范围**（2026-11-01）：先问①哪几关②哪张表/波次/怪种/字段③改成多少（值/倍率/基准）④是否「全部关卡应用」；默认只改被点名的部分，禁顺手统一；跨关只有**当次请求**写明才可；改完必须报「改了哪些关/字段 + 旧值→新值 + 其余未动」的证据。
+- ★★★**同一串数值需求连续下发，「替换 vs 叠加」每轮都要重新确认**（2026-11-01 踩坑）：上一轮确认过的口径不延续；脚本要参数化、基线固定为「改动前原值」（`.bak_*`），避免越跑越高。
+- ★★★**跨关数值同步要按波次逐条映射，照抄≠等强度**（2026-11-03 L03←L02）：按 `(wave,name,isFlying)` 取源关 hp、独有怪留原值、构成等比取样、奖励取源关；SceneInfo/levelId/击杀奖励/speed/armor/waveType 不动。L03 曾掉到 0.68×，补缩放后 1.08×。
+- ★★**以 L01 为模板重建 L02 全 25 波**（2026-11-04）：W1-W4 保留 20/30/36/42 只 + 130/135/140/145 金；W5-W25 按「出怪×144/91、地面 HP×71/42、空中 HP×15/12」，enemyInterval/waveType 照取 L01；全关 16,069 只 / 2,386 金。已知缺陷：L02 敌人行 `levelId` 仍为 1、SceneInfo 名称仍「关卡 1」。
+- ★★**证据入库体量口径**（2026-10-30）：结论级文本入库；生成图/运行帧/时序板/集中 GIF/`scope_*.json`/资源副本不入库。**例外**：`Artifacts/` 下零漏怪实战证据全量入库（1352 文件 /130MB），不外推到 `Docs/`。
+- ★★**清理磁盘/删大目录**：safe-delete 钩子把删除移入回收站，必须 `Clear-RecycleBin -DriveLetter <X> -Force` 才真正释放；`Remove-Item` 完全无效且不抛异常 → **单文件用 `robocopy <dir> <tmp> <file> /MOV`，清目录用 `robocopy <空目录> <目标> /MIR`**。
+- ★★**删 Library 的代价**：3 个 git 包（hybridclr 8.14.1 / unity-mcp 10.3.0 / yooasset 3.0.6）要重新 clone；删剩一半会弹 "Corrupted Library Detected" 并静默退出；从工具启动的 Unity 会被会话清理杀掉 → 最后让用户从 Hub 开。
+- ★★**震屏白名单**（2026-10-30）：关卡内只有「漏怪」允许抖，开火/爆炸/命中/结算一律不震；唯一入口 `CameraController.ShakeOnEnemyLeak`，加抖动必须改 API 且先问。
+- ★★**局内进度落盘 = 续玩快照**（2026-10-31，推翻 10-30「局内不落盘」）：每过一波存塔阵(row/col/type/level/investedGold)+金币+生命+波次游标+整份 `LevelRunMetrics` 到 kv `layout/campaign`，重进接着打；通关写「重玩起点」；`RefundOf=min(配置售价,累计投入)×返还比例` 唯一口径；卖塔立刻落盘。详见 `VOL_05`。
+- ★★**真实子弹系统已删除**（2026-10-31）：塔即时命中；`tbbulletdata` 与 `TowerInfo.bulletId` 保留（AOE 半径/效果仍从这里取）；`BoardSorting.Bullet=400` 留给枪口焰。
+- ★★**UI 品牌文案/字号 = 四层同步**（2026-11-02）：`Localization.xlsx` 源表 → `BootLocalization` 常量（AOT 启动层不能依赖热更 `TextLocalizer`）→ 实际 prefab → 生成器（`TacticalForgePrefabBuilder`/`UIPrefabBuilder`/`TacticalForgeLayout`）。品牌：`BrandTitleKey="FREEDOM TOWER"`、`BrandSloganKey` 见 `VOL_03` 第 385 行。
 - 日档 `YYYY-MM-DD.md` 追加写，读最近的在最前。
