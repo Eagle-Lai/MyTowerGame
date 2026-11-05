@@ -27,6 +27,7 @@ namespace FTProject
         private Vector2 _lastAnchor;
         private Rect _lastBounds;
         private bool _hasPlacement;
+        private Button _dismissMask;
 
         public void Configure(RectTransform actions, Button upgrade, Button sell, Button more)
         {
@@ -88,6 +89,7 @@ namespace FTProject
             if(upgradeButton!=null) upgradeButton.onClick.RemoveListener(Upgrade);
             if(sellButton!=null) sellButton.onClick.RemoveListener(Sell);
             if(moreButton!=null) moreButton.onClick.RemoveListener(More);
+            if(_dismissMask!=null) _dismissMask.onClick.RemoveListener(DismissOutside);
         }
 
         private void Select(BaseTower tower) { _tower=tower; _hasPlacement=false; RefreshButtons(); SetVisible(false); }
@@ -255,9 +257,56 @@ namespace FTProject
             else EventDispatcher.TriggerEvent<string>(EventName.ShowTipEvent,
                 Localization.Get("Tower panel not ready, cannot upgrade/sell yet")??"塔详情暂不可用");
         }
+
+        private void DismissOutside()
+        {
+            if(TowerPlacement.Instance!=null) TowerPlacement.Instance.Deselect();
+            else Deselect();
+        }
+
         private void SetVisible(bool value)
         {
-            if(menu!=null && menu.gameObject.activeSelf!=value)menu.gameObject.SetActive(value);
+            if(menu==null)return;
+            if(value)
+            {
+                EnsureDismissMask();
+                if(!_dismissMask.gameObject.activeSelf)
+                {
+                    var maskTransform=_dismissMask.transform;
+                    if(maskTransform.GetSiblingIndex()!=maskTransform.parent.childCount-1)
+                        maskTransform.SetAsLastSibling();
+                    _dismissMask.gameObject.SetActive(true);
+                }
+                if(!menu.gameObject.activeSelf)menu.gameObject.SetActive(true);
+                if(menu.GetSiblingIndex()!=menu.parent.childCount-1)menu.SetAsLastSibling();
+                return;
+            }
+
+            if(_dismissMask!=null && _dismissMask.gameObject.activeSelf)_dismissMask.gameObject.SetActive(false);
+            if(menu.gameObject.activeSelf)menu.gameObject.SetActive(false);
+        }
+
+        private void EnsureDismissMask()
+        {
+            if(_dismissMask!=null)return;
+
+            var maskObject=new GameObject("TowerActionsDismissMask",
+                typeof(RectTransform),typeof(CanvasRenderer),typeof(Image),typeof(Button));
+            var rect=(RectTransform)maskObject.transform;
+            rect.SetParent(menu.parent,false);
+            rect.anchorMin=Vector2.zero;
+            rect.anchorMax=Vector2.one;
+            rect.offsetMin=Vector2.zero;
+            rect.offsetMax=Vector2.zero;
+
+            var image=maskObject.GetComponent<Image>();
+            image.color=Color.clear;
+            image.raycastTarget=true;
+
+            _dismissMask=maskObject.GetComponent<Button>();
+            _dismissMask.transition=Selectable.Transition.None;
+            _dismissMask.targetGraphic=image;
+            _dismissMask.onClick.AddListener(DismissOutside);
         }
     }
 }
