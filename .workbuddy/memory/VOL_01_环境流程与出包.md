@@ -28,6 +28,14 @@
     当前能用的是**环境注入的 `http://127.0.0.1:56630`**（`$http_proxy` 默认值）→ **先 `git ls-remote origin HEAD` 试环境默认代理**，
     通了就别覆盖；不通再逐个探端口（`for p in ...; do (echo >/dev/tcp/127.0.0.1/$p); done`）。
 - ★`cannot lock ref` = 并行推送竞态 → 先 `git ls-remote` 确认远端 sha，**不要装 git-lfs**。
+  - ※**2026-11-05 实测补充：端口 OPEN ≠ 能推大包，HTTP/2 也不是万能**。当次 `7897` 与 `59176` 两个端口都 OPEN，
+    6 笔共约 25MB：前 4 笔（≤9MB）经 `7897 + HTTP/2` 全部成功，**第 5 笔 13.1MB 连续两次 `curl 55 Send failure:
+    Connection was reset` + `unexpected disconnect while reading sideband packet`**（HTTP/2 与 HTTP/1.1 都失败，
+    尾部同样混一句假的 `Everything up-to-date`）。
+    改走**当次环境注入的 `http_proxy`（本次 59176）+ `-c http.version=HTTP/1.1` + `-c http.postBuffer=524288000`** 一次通过。
+  - 结论：①"单笔 ≤20MB"是体积上限不是免死金牌，13MB 就会在代理上重置；②失败先分笔推（`git push origin <sha>:main`）
+    定位是哪一笔，再换代理/换 HTTP 版本/加大 postBuffer 重试，**不要重写已推的历史、也不要急着拆 commit**；
+    ③`Everything up-to-date` 出现在报错之后是假象，以 `git ls-remote` / `git status -sb` 为准。
 - 凭据弹窗 → 在 `~/.gitconfig` 的 `[credential]` 段插一行空 `helper =` 后重试，并用 `ls-remote` 核对 sha。
 
 ## 出包铁律（2026-10-19 黑屏事故）
