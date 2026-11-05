@@ -62,12 +62,14 @@
 
 运行时排查先读取本工程错误日志，再查看状态、复现和修改；不得使用 CatchFish_Android 的 `unity` 结果作为本工程验证。Unity 2020 的专用语言/API 限制不自动适用于本项目。进入/退出 Play Mode 和破坏性操作按用户当前授权处理。
 
-## 配置表只能手工维护（2026-10-21 用户定规，最高优先级）
+## 配置表按授权定点维护（2026-10-21 定规；2026-11-05 用户澄清，所有 AI 必须遵守）
 
-- **禁止任何脚本批量改写关卡配置表**：`Luban/Config/Datas/Levels/L01..L30/**`、`Luban/Config/Datas/EnemyData.xlsx`、`Luban/Config/Datas/__tables__.xlsx`。
+- **“手动改表 / 手工维护”的准确含义**：利用程序代码，精确定位指定工作簿、工作表、行与列（或唯一 ID 对应的字段），定点修改本次获授权的单元格数据。**不要求通过 Excel/WPS 界面点击、键盘输入或电脑控制完成，不得再把“手动”解释成必须操作桌面。**
+- **允许代码定点修改源表**：适用于 `Luban/Config/Datas/Levels/L01..L30/**`、`Luban/Config/Datas/EnemyData.xlsx`、`Luban/Config/Datas/__tables__.xlsx` 等配置源表。已确认的修改清单可以由一个程序逐项执行；涉及多个单元格或多个获授权关卡，本身不构成违规。禁止的是**未经授权扩范围、整表重建/覆盖、批量调平或生成器擅自重算配置**。此澄清取代旧文“一律禁止脚本写源表 / 任何脚本批量改写”的字面禁令。
+- **定点修改要求**：写入前确定文件、sheet、单元格/唯一 ID、字段及预期旧值 → 新值；核对旧值与当前文件一致，保留改前基准；只写白名单单元格，保留其余数据、公式、格式与工作簿结构。写后回读逐格比对，报告实际改动及白名单外零改动；旧值、定位或范围不符时停止该次写入并核查，不猜测覆盖。
 - `Assets/ConfigJson/**` 与 `Assets/Gen/**` 是 Luban 的**导出产物**，只由「改表 → 跑 Luban 导出」这条链产生，不允许第三方脚本直接写。
 - `.workbuddy/tools/balance_pipeline.py` 的 `apply` / `rollback` 及事务提交层**已整体移除**（`apply_plan` / `commit_files` / `job_lock` / `restore_transaction` / `check_managed_conflicts` / `assert_sources`）。不要为了"方便"把它们加回来；只允许用它的只读能力：`inspect` / `generate` / `preview` / `validate` / `simulate` / `verify-layout` / `stage`（`stage` 只写 `--out`，且禁止指向 `Luban/`、`Assets/`）。
-- 手工改表后的标准流程：改 `Levels/Lxx/*.xlsx` → 跑 Luban 导出到 `Assets/ConfigJson` → 进 Unity 确认 `[Config]` 汇总无失败表。
+- 定点改表后的标准流程：代码定点修改获授权的 `Levels/Lxx/*.xlsx` → 跑 Luban 导出到 `Assets/ConfigJson` → 进 Unity 确认 `[Config]` 汇总无失败表。
   **2026-11-01 起不再有 `runtimeContentHash` 重封这一步**：星级评分体系（`tblevelrating` / 30 张 `Levels/Lxx/LevelRating.xlsx` / `LevelRatingEvaluator`）已按用户要求整体删除，通关一律记 5 星，改表不再需要动任何评级表，也不会再出现 `content hash mismatch` 拦关。评分规则待 30 关数值定稿后重做。
 - 已被删除的写表脚本（需要时从 git 历史取）：`migrate_split_level_tables.py`、`migrate_config.py`、`gen_m3_levelmaps.py`、`gen_m3_waves_rounds.py`、`apply_m2_monsters.py`、`add_levels_9_15/16_20_*.py`。
 - 仍然保留的两个人工工具：`apply_levelmap_export.py`（地图编辑器「一键写入」只写当前关的 `LevelMap.xlsx`）、`_manual_l1_tune.py`（第一关数值手工调整，按倍率写入）。
@@ -87,6 +89,16 @@
 - **改完必须交代边界**：报告实际改动的文件 / 关卡 / 波次 / 字段、旧值 → 新值，并给出"其余关卡未改动"的核对结论（`git diff --stat`、导出 json 行数比对等可复核证据），不要只说"改好了"。
 - **适用范围**：`Levels/Lxx/*.xlsx`（含 `EnemyData` / `EnemyList` / `RoundData` / `LevelMap` / `LevelRules` / `SceneInfo`）、关卡级代码常量与生成器参数，一律按本条执行。
 - **不是扩展的例外**：（2026-11-01 起该条仅作历史说明）原 `runtimeContentHash` 是全局哈希，30 张 `LevelRating.xlsx` 写同一个值属正常重封流程，不算"改到其他关卡"。评级表删除后已无此项，存档语义本身仍不得因本条而改动。
+
+## 空中怪不得相邻出生（2026-11-05 用户定规，所有 AI 必须遵守）
+
+- **规则**：同一关的实际出怪顺序中，任意两只空中怪之间必须至少隔一个非空中出生位置；不论是否同种、同 ID，均禁止空中接空中。仅保证位置隔开，不擅自增加最小秒数要求。
+- **唯一判定依据**：`EnemyData.isFlying != 0`。不得根据名称、资源名、`type`、`desc`、旧报告或历史记忆推断；例如名为 `QuickEnemy` 的记录也可能是空中怪。
+- **检查顺序**：按当前 `SceneInfo.RoundList` → `RoundData.EnemyIndexs` → `EnemyList.EnemyIndexs` 展开实际出生序列；检查同编组、同回合跨编组和同关相邻回合的边界，禁止只查重复 ID 或只查单个单元格。
+- **修改边界**：本规则是长期约束，不构成未来跨关改表的授权。每次修改仍先按「关卡数值改动的范围与确认」取得当次范围。修复顺序时保留每波怪物 ID 的多重集合、数量、属性及出怪间隔；不得顺手改血量、奖励、速度、波型、地图或其他关卡。
+- **维护方式**：按上文“配置表按授权定点维护”的定义，允许代码按获授权的单元格清单定点修改 `EnemyList.EnemyIndexs`，无需电脑控制。禁止未经授权扩范围或整表重建，禁止直接改 `Assets/ConfigJson` / `Assets/Gen`，禁止在运行时静默重排或复制/删除怪物来掩盖配置问题。只读工具可以检测并生成待审调整清单。
+- **验收**：改表前后运行 `.workbuddy/tools/check_air_spawn_order.py`，分别核查现行 XLSX 与 Luban 导出的 JSON；任何相邻空中怪或缺失/重复引用都必须作为失败报告。输出关卡、关内波号、roundId、编组 ID、出生位置、怪物 ID 及源表单元格。标准流程为代码定点改表 → Luban 导出 → Unity 核对 `[Config]` 汇总；编辑器验证未完成时不得声称全部完成。
+- **2026-11-05 本次授权边界**：用户明确确认 L01–L30 全部关卡应用，仅调整 `EnemyList.xlsx` 的 `EnemyIndexs` 顺序，以改前配置为基准，保持每波数量、种类、属性和出生间隔；L01、L02 已符合，源表保持不动。该授权不自动延续至下次请求。
 
 ## 原创声音维护（2026-10-27）
 
