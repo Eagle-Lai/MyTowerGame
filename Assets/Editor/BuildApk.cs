@@ -1,6 +1,7 @@
 ﻿using System.IO;
 using System.Text;
 using UnityEditor;
+using UnityEditor.Android;
 using UnityEditor.Build.Reporting;
 using UnityEngine;
 
@@ -11,7 +12,7 @@ namespace FTProject.EditorTools
     ///
     /// 流程：
     ///   ① 前置检查：非编译中 / 非运行中 / 当前构建目标必须是 Android
-    ///   ② 环境自检：JDK / SDK / NDK 路径是否已配置（缺了只警告不中止，让 Gradle 自己报真正的错）
+    ///   ② 环境自检：检查 Unity 实际使用的 JDK / SDK / NDK / Gradle 路径，缺失则中止
     ///   ③ BuildPipeline.BuildPlayer 构建到 &lt;工程根目录&gt;/Builds/Android/freedomtower.apk
     ///      （未配置签名 keystore 时 Unity 自动使用 debug keystore，仅限开发用）
     ///   ④ 自检：APK 文件是否存在、大小是否合理，结果全部走 Console 日志（不弹窗）
@@ -62,21 +63,11 @@ namespace FTProject.EditorTools
                 return;
             }
 
-            // ② 环境自检（只警告不中止）
-            EditorUtil.Report env = new EditorUtil.Report();
-            env.Head("构建环境自检");
-            CheckEnv("JDK", "JdkPath", env);
-            CheckEnv("SDK", "AndroidSdkRoot", env);
-            CheckEnv("NDK", "AndroidNdkRoot", env);
-            if (string.IsNullOrEmpty(PlayerSettings.Android.keystoreName))
+            // ② 在进入耗时构建前检查实际工具链（包括内置工具路径）
+            if (!ValidateAndroidToolchain())
             {
-                env.Ok("未配置签名 keystore → 使用 debug keystore（仅开发用）");
+                return;
             }
-            else
-            {
-                env.Ok("签名 keystore：" + PlayerSettings.Android.keystoreName);
-            }
-            Debug.Log("[BuildApk] " + env.Text);
 
             // ③ 收集构建场景
             var sceneList = new StringBuilder();
@@ -130,13 +121,53 @@ namespace FTProject.EditorTools
             }
         }
 
-        /// <summary>检查一项 Android 工具链路径是否已配置，结果只记日志</summary>
-        private static void CheckEnv(string label, string prefsKey, EditorUtil.Report report)
+        /// <summary>两个构建入口共用的工具链检查；不得仅凭旧 EditorPrefs 键判断内置工具。</summary>
+        internal static bool ValidateAndroidToolchain()
         {
-            string path = EditorPrefs.GetString(prefsKey, "");
+            EditorUtil.Report env = new EditorUtil.Report();
+            env.Head("构建环境自检");
+            CheckEnv("JDK", AndroidExternalToolsSettings.jdkRootPath, env);
+            CheckEnv("SDK", AndroidExternalToolsSettings.sdkRootPath, env);
+            CheckEnv("NDK", AndroidExternalToolsSettings.ndkRootPath, env);
+            string gradlePath = AndroidExternalToolsSettings.gradlePath;
+            CheckEnv("Gradle", gradlePath, env);
+            if (!string.IsNullOrEmpty(gradlePath) && Directory.Exists(gradlePath))
+            {
+                string libPath = Path.Combine(gradlePath, "lib");
+                if (!Directory.Exists(libPath) ||
+                    Directory.GetFiles(libPath, "gradle-launcher-*.jar").Length == 0)
+                {
+                    env.Error("Gradle 缺少 lib/gradle-launcher-*.jar：" + gradlePath);
+                }
+            }
+
+            if (env.Errors > 0)
+            {
+                Debug.LogError("[BuildApk] 构建中止：Android 工具链配置不完整。" +
+                               "请在 Edit ▸ Preferences ▸ External Tools 中勾选对应的 Installed with Unity，" +
+                               "或配置有效的自定义路径。\n" + env.Text);
+                WriteStatus("DONE FAIL android_toolchain");
+                return false;
+            }
+
+            if (string.IsNullOrEmpty(PlayerSettings.Android.keystoreName))
+            {
+                env.Ok("未配置签名 keystore → 使用 debug keystore（仅开发用）");
+            }
+            else
+            {
+                env.Ok("签名 keystore：" + PlayerSettings.Android.keystoreName);
+            }
+            Debug.Log("[BuildApk] " + env.Text);
+            return true;
+        }
+
+        /// <summary>检查 Unity 已解析的 Android 工具链路径，缺失时记录错误。</summary>
+        private static void CheckEnv(string label, string path, EditorUtil.Report report)
+        {
             if (string.IsNullOrEmpty(path) || !Directory.Exists(path))
             {
-                report.Warn(label + " 路径未配置或不存在（EditorPrefs." + prefsKey + " = '" + path + "'）");
+                report.Error(label + " 实际路径未配置或不存在：'" + path + "'");
             }
             else
             {
@@ -221,6 +252,12 @@ namespace FTProject.EditorTools
             {
                 Debug.LogError("[BuildFull] 构建中止：当前构建目标是 " +
                                EditorUserBuildSettings.activeBuildTarget + "，请先切换到 Android。");
+                return;
+            }
+
+            // Generate/All 自身也会执行 Android 构建，必须在第一个阶段前检查工具链。
+            if (!BuildApk.ValidateAndroidToolchain())
+            {
                 return;
             }
 
