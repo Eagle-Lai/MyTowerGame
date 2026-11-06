@@ -248,6 +248,7 @@ namespace FTProject.EditorTools
             importer.mipmapEnabled = false;
             importer.filterMode = FilterMode.Bilinear;
             importer.wrapMode = TextureWrapMode.Clamp;
+            importer.npotScale = TextureImporterNPOTScale.None;
             importer.textureCompression = TextureImporterCompression.Uncompressed;
 
             var metas = new SpriteMetaData[manifest.sprites.Length];

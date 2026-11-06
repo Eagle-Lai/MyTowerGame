@@ -230,6 +230,7 @@ namespace FTProject.EditorTools
             importer.textureType = TextureImporterType.Sprite; importer.spriteImportMode = SpriteImportMode.Multiple;
             importer.spritePixelsPerUnit = manifest.ppu; importer.alphaIsTransparency = true;
             importer.mipmapEnabled = false; importer.filterMode = FilterMode.Bilinear; importer.wrapMode = TextureWrapMode.Clamp;
+            importer.npotScale = TextureImporterNPOTScale.None;
             importer.maxTextureSize = 2048; importer.textureCompression = TextureImporterCompression.Uncompressed;
             var settings = new TextureImporterSettings(); importer.ReadTextureSettings(settings);
             settings.spriteMeshType = SpriteMeshType.FullRect; importer.SetTextureSettings(settings);

@@ -3,6 +3,8 @@ from pathlib import Path
 import sys,json,math
 import numpy as np
 from PIL import Image,ImageDraw
+sys.path.insert(0,str(Path(__file__).resolve().parents[3]/'.workbuddy/tools'))
+from directional_atlas_packing import build_atlas
 HERE=Path(__file__).resolve().parent
 name=sys.argv[1]
 t=next(t for t in json.loads((HERE/'local_baseline.json').read_text(encoding='utf-8'))['targets'] if t['name']==name)
@@ -46,13 +48,10 @@ for direction in ['Up','Down']:
     processing.append({'direction':direction,'source':str(source.relative_to(HERE)),'actual':actual,'part_overrides':selection.get('part_overrides',{}),'key_method':'Original alpha >=128 plus magenta spectral separation; opaque interiors, antialias at final resampling','ground_shadow':'none permitted'})
 
 # Full-rect slices retain transparent padding. Head expression canvases are identical in size.
-atlas=Image.new('RGBA',(2048,2048));sprites=[];x=y=8;row_height=0
+sprites=[]
 for key,piece in parts.items():
     if max(piece.size)>500:piece.thumbnail((500,500),Image.Resampling.LANCZOS)
     piece.save(out/(key+'.png'))
-    if x+piece.width+8>2048:x=8;y+=row_height+8;row_height=0
-    if y+piece.height+8>2048:raise ValueError('Atlas does not fit')
-    atlas.alpha_composite(piece,(x,y))
     role=key.split('_',1)[1]
     pivot=(1,.5) if role.startswith('Wing') else ((1,.95) if scorpion else (.5,.95)) if role.startswith('Leg') else (1,.5) if role=='Claw' else (.5,.05) if role=='Tail' else (.5,.5)
     if bat and role.startswith('Wing'):
@@ -60,10 +59,10 @@ for key,piece in parts.items():
         # pivot would make the wing root jump when the Animator swaps its sprite.
         pivot={'Up_WingRaised':(.897,.556),'Up_WingLowered':(.911,.856),
                'Down_WingRaised':(.936,.457),'Down_WingLowered':(.940,.739)}[key]
-    sprites.append({'name':key,'x':x,'y':2048-y-piece.height,'w':piece.width,'h':piece.height,'pivotX':pivot[0],'pivotY':pivot[1]})
-    x+=piece.width+8;row_height=max(row_height,piece.height)
-atlas.save(out/(name+'_Directions.png'))
-(out/(name+'_Directions.sprites.json')).write_text(json.dumps({'texture':name+'_Directions.png','width':2048,'height':2048,'ppu':100,'sprites':sprites},indent=2),encoding='utf-8')
+    sprites.append({'name':key,'x':0,'y':0,'w':piece.width,'h':piece.height,'pivotX':pivot[0],'pivotY':pivot[1]})
+atlas,sprites=build_atlas(parts,sprites)
+atlas.save(out/(name+'_Directions.png'),optimize=True)
+(out/(name+'_Directions.sprites.json')).write_text(json.dumps({'texture':name+'_Directions.png','width':atlas.width,'height':atlas.height,'ppu':100,'sprites':sprites},indent=2),encoding='utf-8')
 
 reference=json.loads((directory/'reference/battle_structure.json').read_text(encoding='utf-8'))['visible_bounds_root_local']
 bottom=reference['min'][1];height=reference['max'][1]-bottom

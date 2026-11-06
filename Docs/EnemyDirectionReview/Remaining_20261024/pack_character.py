@@ -2,6 +2,8 @@
 from pathlib import Path
 from PIL import Image,ImageDraw
 import numpy as np,json,sys,math
+sys.path.insert(0,str(Path(__file__).resolve().parents[3]/'.workbuddy/tools'))
+from directional_atlas_packing import build_atlas
 HERE=Path(__file__).resolve().parent
 name=sys.argv[1];directory=HERE/name
 t=next(t for t in json.loads((HERE/'local_baseline.json').read_text(encoding='utf-8'))['targets'] if t['name']==name)
@@ -68,20 +70,18 @@ for direction in ['Up','Down']:
     for p in heads:
         im=parts[p];canvas=Image.new('RGBA',(w,h));canvas.alpha_composite(im,((w-im.width)//2,(h-im.height)//2));parts[p]=canvas
     processing.append({'direction':direction,'source':source.relative_to(directory).as_posix(),'format':raw.format,'size':list(raw.size),'mode':raw.mode,'rectangles':rectangles,'transparency':transparency,'shadow':'none'})
-atlas=Image.new('RGBA',(2048,2048));sprites=[];x=y=8;row_h=0
+sprites=[]
 for key,im in parts.items():
     if max(im.size)>490:im.thumbnail((490,490),Image.Resampling.LANCZOS)
-    if x+im.width+8>2048:x=8;y+=row_h+8;row_h=0
-    if y+im.height+8>2048:raise ValueError('Atlas full')
     role=key.split('_',1)[1]
     pivot=(.93,.9) if role.startswith('Leg') and role!='Leg' else (.5,.95) if role in ['Leg','ArmWeapon','ArmFree'] else (.93,.85) if role=='Wing' else (.93,.5) if role.startswith('Wing') else (.5,.06) if role=='Tail' else (.93,.5) if role in ['Claw','Feelers','Flap'] else (.5,.03) if role.startswith('Head') and plan['kind']=='chest' else (.5,.95) if role=='Tongue' else (.5,.5)
     if plan['kind']=='quadruped' and role in ['LegFront','LegBack']:pivot=(.5,.87)
     if plan['controller_family']=='Cow' and role=='Tail':pivot=(.5,.94)
-    atlas.alpha_composite(im,(x,y));im.save(out/(key+'.png'))
-    sprites.append({'name':key,'x':x,'y':2048-y-im.height,'w':im.width,'h':im.height,'pivotX':pivot[0],'pivotY':pivot[1]})
-    x+=im.width+8;row_h=max(row_h,im.height)
-atlas.save(out/(name+'_Directions.png'))
-(out/(name+'_Directions.sprites.json')).write_text(json.dumps({'texture':name+'_Directions.png','width':2048,'height':2048,'ppu':100,'sprites':sprites},indent=2),encoding='utf-8')
+    im.save(out/(key+'.png'))
+    sprites.append({'name':key,'x':0,'y':0,'w':im.width,'h':im.height,'pivotX':pivot[0],'pivotY':pivot[1]})
+atlas,sprites=build_atlas(parts,sprites)
+atlas.save(out/(name+'_Directions.png'),optimize=True)
+(out/(name+'_Directions.sprites.json')).write_text(json.dumps({'texture':name+'_Directions.png','width':atlas.width,'height':atlas.height,'ppu':100,'sprites':sprites},indent=2),encoding='utf-8')
 reference=json.loads((directory/'reference'/('battle_structure.json' if (directory/'reference/battle_structure.json').exists() else 'source_structure.json')).read_text(encoding='utf-8'))['visible_bounds_root_local']
 bottom=reference['min'][1];height=reference['max'][1]-bottom
 kind=plan['kind'];views=[]
