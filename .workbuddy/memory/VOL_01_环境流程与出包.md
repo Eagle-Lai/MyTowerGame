@@ -36,6 +36,16 @@
   - 结论：①"单笔 ≤20MB"是体积上限不是免死金牌，13MB 就会在代理上重置；②失败先分笔推（`git push origin <sha>:main`）
     定位是哪一笔，再换代理/换 HTTP 版本/加大 postBuffer 重试，**不要重写已推的历史、也不要急着拆 commit**；
     ③`Everything up-to-date` 出现在报错之后是假象，以 `git ls-remote` / `git status -sb` 为准。
+  - ※**2026-11-06 实测：单次推送实际上限约 7~8MB，且「预置 blob」救不了同树重推**。当次 `7897` 可用但环境代理 `56304`
+    握手失败（schannel）/`502`（openssl 回落），没有 11-05 的 `59176` 备路。一笔 104.8MB 的图集提交：
+    `HTTP/2`、`HTTP/1.1+postBuffer=512MB`、`HTTP/1.1+postBuffer=1MB`(chunked) 全部被重置（`curl 55`/`curl 65`）。
+  - **无效方案**：先把文件拆成 17 片推到一个临时分支（17 片全部成功），再推正式提交，git 仍整包 106MB。
+    根因是排除逻辑对「正负两侧共享同一棵 tree」失效（实测 `X --not Y` 在两者 tree 相同的情况下仍打包 104.87MB，
+    而祖先关系且 tree 不同时为 0）。**结论：预置 blob 只适用于内容有差异的提交，同树重推无效，别再重复这条路。**
+  - **有效做法**：`GIT_INDEX_FILE` 临时索引 + `ls-tree -r | update-index --index-info` 重建分批提交（≤7MB/批），
+    `cat-file -p` 改写 `parent` 行 + `hash-object -t commit -w` 重放后续提交，最后逐笔 `git push origin <sha>:main`。
+    全程不动工作区；校验点为「分片末 tree == 原提交 tree」「末端 tree == 原末端 tree」。
+  - **预防**：大资源（图集/字体/AB/APK）从一开始就按目录或按族分笔入库，别攒成一笔；单笔控制在 7MB 以内最稳。
 - 凭据弹窗 → 在 `~/.gitconfig` 的 `[credential]` 段插一行空 `helper =` 后重试，并用 `ls-remote` 核对 sha。
 
 ## 出包铁律（2026-10-19 黑屏事故）
