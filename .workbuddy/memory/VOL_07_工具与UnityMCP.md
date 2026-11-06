@@ -163,3 +163,9 @@
 - 用户当次确认 Unity `MCP for Unity` 窗口 HTTP URL 为 `http://127.0.0.1:8082`；Codex 服务名 `unityMCP`。该映射只作线索，不是默认值。
 - 当前读取到的 `~/.codex/config.toml` 仍配置 Python stdio launcher，没有 HTTP URL；`mcpforunity://instances` 返回 `transport=stdio`、实例 `FreedomTower_1@520e2c6d`、socket `port=6400`、Unity `2022.3.62f3c1`。本轮首次 `set_active_instance` 报无连接，等待约 5 秒后重试成功；随后 `project/info` 核对 `projectRoot=D:/FreedomTower_1` 与版本一致。插件窗口 URL、客户端 stdio 配置和实例 socket 是不同层的信息，不能据此推定 Codex 当前直接连 `8082`。
 - 编辑器 Play Mode 关闭。强制刷新后 `[Config]` 汇总显示 11 类配置成功加载；本轮 Console 保留 Unity Remote requirements 异常及 L02 交叉引用告警。下次会话仍须重读当前插件 URL、客户端配置和实例，重新核对工程身份。
+## 2026-11-06 Codex Android 构建排错连接线索（公司 E 机）
+
+- 当前实体工程 `E:/MyTowerGame`；版本文件及 MCP 均为 Unity `2022.3.62f3c1`；manifest 插件 `com.coplaydev.unity-mcp` v10.3.0；客户端服务 `unityMCP`。
+- 本次只读自检：EditorPrefs `MCPForUnity.HttpUrl` 为 `http://127.0.0.1:8086`，Codex 对应 URL 为 `http://127.0.0.1:8086/mcp`；二者一致后通过 MCP 读取 custom-tools、instances，选定现场实例并核对 project/info 的完整路径和版本一致。
+- 本条仅为此次连接线索，下次仍须按 AGENTS.md 重新确认，不能作为默认端口或跨工程配置。
+
