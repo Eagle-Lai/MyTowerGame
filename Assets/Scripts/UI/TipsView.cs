@@ -9,8 +9,10 @@ namespace FTProject
     /// 监听 ShowTipEvent，把消息排队显示，避免短时间内多条提示互相覆盖
     ///（塔防里"金币不足"很容易在一秒内被触发好几次）。
     ///
-    /// 节点：根 TipsView（CanvasGroup + 本脚本）→ 子节点 TipBar（底条）→ 其下 TipText(TMP)
+    /// 节点：根 TipsView（CanvasGroup + 本脚本）→ 子节点 TipBar（定位容器）→ 其下 TipText(TMP)
     /// （★ 2026-10-15 手工版把 TipText 从 root 直挂改为挂在 TipBar 之下，随条一起动）
+    /// （★ 2026-11-06 用户手工版删除了 TipBar 上的 Image 底条，提示改为纯文字浮层；
+    ///   TipBar 仅作定位容器保留，本脚本只关心 "TipBar/TipText" 这条路径与根节点的 CanvasGroup 淡入淡出）
     /// </summary>
     public class TipsView : MonoBehaviour
     {

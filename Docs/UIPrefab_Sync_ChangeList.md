@@ -447,3 +447,35 @@ python .workbuddy/tools/diff_ui_prefabs.py --base .workbuddy/tmp/ui_base
   | 菜单「继续」 | 1 | 暂停 | 关闭 |
   两个按钮 `onClick.GetPersistentEventCount()` 均为 0（无 prefab 持久化绑定，无重复派发）。
 - 真机/热更要看到新文案仍须**重打 AB（ui_hud）+ 重部署**；仅 git 提交不生效。
+
+---
+
+## 8. 第五轮同步（2026-11-06）：TipsView 去掉 TipBar 底条 Image
+
+### 8.1 手改事实（`git diff` 证据）
+
+- 文件：`Assets/Prefabs/UI/TipsView.prefab`（+0 −31）。
+- **唯一改动**：删除 `TipBar` 上的 `UnityEngine.UI.Image`（fileID `2101118539537458477`，`sprite = panel.png`、`color = 1E2939` 不透明、`m_RaycastTarget = 0`），`TipBar` 的 `m_Component` 由 3 项降为 2 项。
+- 其余零改动：根节点仍是 `RectTransform + CanvasGroup + TipsView`；`TipBar` 仍是 `(0.5,1) @ (0,−263) 1160×84`；`TipText` 仍是四边拉伸、TMP 38 / auto 22–38 / wrap。
+- 形态变化：提示层从「深色底条 + 文字」变为**纯文字浮层**，`TipBar` 只剩 `RectTransform + CanvasRenderer` 作定位容器。
+
+### 8.2 代码侧同步
+
+| 文件 | 改动 |
+|---|---|
+| `Assets/Editor/UIPrefabBuilder.cs` | `BuildTips` 删除 `bar.AddComponent<Image>()` 与 `ApplySlicedSkin(barImg, "UI_Tip_Bar", …)`，并注明「不可再挂底条、TipBar 节点必须保留」的原因；文件头节点树注释与完成日志改为「定位容器 / 无 Image 底条」。否则**全量重建 UI 预制体**会把底条恢复，与磁盘事实相反。 |
+| `Assets/Editor/TacticalForgePrefabBuilder.cs` | 皮肤循环去掉 `n == "TipBar"` 分支（不再把 TipBar 当 panel 皮肤；该分支已无对象可命中）。 |
+| `Assets/Scripts/UI/TipsView.cs` | 仅更新类注释记录本次手改；`Find("TipBar/TipText")`、CanvasGroup 淡入淡出、颜色分级逻辑均不变（原本就不引用具体 Graphic）。 |
+
+核对后确认**无需改动**：`M0SetupWizard` 自检串仍为 `TipBar/TipText`（节点存在即通过）、`UIResolutionLayout` 只改 TipBar 锚点、`UIResolutionVerifier` 只往 `TipText` 填文本、`ResTable` / `UIManager` 只登记 prefab 路径。
+
+### 8.3 验证
+
+- `refresh_unity(force/all/compile)` → 域重载完成；`scriptCompilationFailed=False`，Console error 0 条。
+- 编辑器实测：`TipsView` 根 = `RectTransform, CanvasGroup, TipsView`；`TipBar` = `RectTransform, CanvasRenderer`（无 Graphic）；`TipBar/TipText` 存在，TMP `fontSize=38 / min=22 / max=38 / wrap=true`。
+
+### 8.4 遗留（本轮刻意未动）
+
+- `TipBar` 上残留一个**空 `CanvasRenderer`**（无 Graphic 即不渲染），需要清理可单独提。
+- `Assets/_UIAssets/UI/UI_Tip_Bar.png` 及 `UISkinArtGenerator` 的生成项现在**无预制体引用**（现行底条此前已被 TacticalForge 换成 `panel.png`）。是否清理按包体归因另议，本轮不清美术资源。
+- 纯文字浮层没有底板托底：运行时提示色（正常青 `35E0FF` / 警告黄 `FFC94D` / 失败红 `FF4D5E`）直接压在战场画面上，浅色地图（雪地等）可读性需实际观感确认。如需要，可给 `TipText` 加 TMP 描边/阴影——本轮未加，避免擅自改视觉。

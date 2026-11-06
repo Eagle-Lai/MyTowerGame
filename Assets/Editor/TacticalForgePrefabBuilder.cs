@@ -116,7 +116,8 @@ namespace FTProject.EditorTools
             {
                 string n=img.name;
                 if(n=="Bg") {img.color = new Color(Ink.r,Ink.g,Ink.b,name=="TowerInfoView"?0:1);img.sprite=null;}
-                else if(n=="Panel" || n=="StatBg" || n=="TipBar") Skin(img,"panel",Panel);
+                // ★ TipBar 不再参与皮肤替换：2026-11-06 起提示条已去掉 Image 底条，只剩纯文字。
+                else if(n=="Panel" || n=="StatBg") Skin(img,"panel",Panel);
                 else if(img.GetComponent<Button>()!=null) Skin(img,"button",Panel);
             }
             foreach (Button button in root.GetComponentsInChildren<Button>(true))

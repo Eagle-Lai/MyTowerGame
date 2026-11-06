@@ -46,8 +46,8 @@ namespace FTProject.EditorTools
     ///
     /// TipsView 节点：
     ///   TipsView（CanvasGroup）
-    ///   └── TipBar（提示底条，居中 1160×84）
-    ///       └── TipText（四边拉伸，随底条一起动）
+    ///   └── TipBar（定位容器，居中 1160×84；★ 2026-11-06 起不再挂 Image 背景，提示为纯文字浮层）
+    ///       └── TipText（四边拉伸，随容器一起动）
     ///
     /// LevelClearView 节点（通关 / 失败结算弹窗）：
     ///   LevelClearView
@@ -852,9 +852,11 @@ namespace FTProject.EditorTools
             brt.pivot = new Vector2(0.5f, 0.5f);
             brt.anchoredPosition = new Vector2(0f, -263f);
             brt.sizeDelta = new Vector2(1160f, 84f);
-            Image barImg = bar.AddComponent<Image>();
-            barImg.raycastTarget = false;
-            ApplySlicedSkin(barImg, "UI_Tip_Bar", new Color(0.06f, 0.09f, 0.13f, 0.72f));
+            // ★ 2026-11-06 用户手工版：TipBar 上的 Image 底条（UI_Tip_Bar）已从预制体删除，
+            //   提示改为**纯文字浮层**（无深色底条）。生成器必须同样不挂 Image，
+            //   否则「全量重建 UI 预制体」会把底条恢复回来，与线上资源不一致。
+            //   TipBar 节点本身必须保留：锚点/尺寸/文字的拉伸都挂在它上面，TipsView.cs 也按
+            //   "TipBar/TipText" 取文本，删节点会直接导致提示层空白。
 
             // ★ 2026-10-15 手工版微调：TipText 由「root 直挂 + 横向拉伸（高 100、中心略高）」改为
             //   **挂到 TipBar 之下并四边拉伸**（锚点 0,0/1,1、位置 0、尺寸 0）——
@@ -874,7 +876,7 @@ namespace FTProject.EditorTools
                 report.Error("保存失败：" + TipsPath);
                 return;
             }
-            report.Ok("TipsView.prefab（CanvasGroup + TipBar/TipText，初始 alpha=0）");
+            report.Ok("TipsView.prefab（CanvasGroup + TipBar/TipText，TipBar 无 Image 底条）");
         }
 
         // ------------------------------------------------------------------
