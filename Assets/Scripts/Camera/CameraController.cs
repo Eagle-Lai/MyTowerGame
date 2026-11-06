@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 namespace FTProject
 {
@@ -14,6 +15,11 @@ namespace FTProject
     /// 【坐标换算约定】正交相机下 `ScreenToWorldPoint` 的 z 必须传
     /// `-camera.transform.position.z`，否则算出的世界坐标落在错误的深度平面。
     /// BoardView 与 TowerPlacement 都遵循这个约定。
+    ///
+    /// 【2026-11-06 真机手势】桌面端两条老路径（滚轮缩放 / 中键拖拽）**原样保留**，
+    /// 另加两条触屏路径与之一一对应：双指捏合 = 滚轮、单指长按后拖动 = 中键。
+    /// 两套输入互斥判定见 HandleTouchGestures 的注释（真机上滚轮恒 0、中键不存在，
+    /// 所以两套同时挂着不会叠加）。
     /// </summary>
     [RequireComponent(typeof(Camera))]
     public class CameraController : MonoBehaviour
@@ -45,6 +51,16 @@ namespace FTProject
         public bool enableEdgeScroll = true;
         [Tooltip("边缘触发带宽度（像素）")]
         public float edgeBandPx = 18f;
+
+        [Header("触屏手势（真机：双指缩放 ≈ 滚轮 / 长按拖动 ≈ 中键）")]
+        [Tooltip("总开关。关掉后真机上就只剩键盘（等于完全无法操作视角）")]
+        public bool enableTouchGestures = true;
+        [Tooltip("双指捏合灵敏度：1 = 两指距离变化多少，视野就跟着变化多少")]
+        public float pinchZoomSpeed = 1f;
+        [Tooltip("单指按住多久后进入拖动视角（秒）。取 0.25 与 HUD 塔按钮长按拖拽保持一致")]
+        public float longPressPanDelay = 0.25f;
+        [Tooltip("长按成立前允许的手指抖动（像素）。超过即认为是指针拖动，本次不接管")]
+        public float longPressPanSlopPx = 14f;
 
         [Header("棋盘取景留白（单位：格，2026-10-16 多分辨率适配）")]
         [Tooltip("棋盘底边留白（格）——为底部 HUD 建造栏/倍速按钮让位")]
@@ -84,6 +100,34 @@ namespace FTProject
             _centeredHudFit=centeredHudFit;
             ApplyBoardFit();
         }
+
+        // ---- 触屏视角手势（2026-11-06）----
+        /// <summary>单指手势所处的阶段；双指缩放单独占一个阶段，任何阶段都能抢占。</summary>
+        /// <remarks>名字不能叫 TouchPhase —— 会和 UnityEngine.TouchPhase 撞名，导致 switch 里比较失败。</remarks>
+        private enum TouchGesturePhase
+        {
+            None,      // 空闲：等待下一次按下
+            Pressing,  // 已按下，正在等长按计时成立
+            Panning,   // 长按成立，手指移动即平移视角
+            Pinching,  // 双指缩放中（独占，直到所有手指抬起）
+            Locked     // 本序列已被普通点按/拖塔占用，本次不再接管
+        }
+
+        private TouchGesturePhase _touchPhase = TouchGesturePhase.None;
+        /// <summary>正在跟踪的手指 id（多指时 GetTouch(0) 的下标会变，必须按 id 找）</summary>
+        private int _touchFingerId = -1;
+        private Vector2 _touchStartPos;
+        private Vector2 _touchLastPos;
+        private float _touchPressTime;
+        /// <summary>进入拖动后累计移动的像素数（用于判断"真的动过镜头"）</summary>
+        private float _touchPanMovedPx;
+        /// <summary>上一帧两指间距（捏合缩放的基准）</summary>
+        private float _pinchPrevDist;
+        /// <summary>本次触摸序列是否已被视角手势实际占用（供 TowerPlacement 跳过点选）</summary>
+        private bool _touchConsumed;
+
+        /// <summary>拖动累计超过该像素数才认为"真的平移过视角"，松手就不再当点按。</summary>
+        private const float TouchPanConsumePx = 4f;
 
         // ---- 屏幕震动（M2-W5）----
         private Vector3 _shakeOffset;
@@ -278,6 +322,9 @@ namespace FTProject
         private void Update()
         {
             RefitOnScreenChange();
+            // 触屏手势放在最前：真机上滚轮恒 0、中键不存在，下面两条鼠标路径自动空转，
+            // 两套输入不会叠加；编辑器里 touchCount 恒 0，也不会被触屏逻辑干扰。
+            HandleTouchGestures();
             HandleZoom();
             HandlePan();
         }
@@ -339,7 +386,10 @@ namespace FTProject
             }
 
             // ③ 边缘自动平移（放置/选中塔时禁用，否则拖塔到边缘会把镜头一起带走）
-            if (enableEdgeScroll && !IsInteractingWithTower())
+            // 【2026-11-06】真机上 Input.mousePosition = 第一根手指的位置：
+            // 手持时拇指本来就贴在屏幕边缘，边缘滚屏会一直偷偷推镜头，还会和长按拖动抢控制权。
+            // 边缘滚屏是鼠标语义，触屏有手指拖动就够了 —— 有手指按着时整条关掉。
+            if (enableEdgeScroll && Input.touchCount == 0 && !IsInteractingWithTower())
             {
                 Vector3 m = Input.mousePosition;
                 if (m.x >= 0f && m.x <= Screen.width && m.y >= 0f && m.y <= Screen.height)
@@ -367,6 +417,256 @@ namespace FTProject
         {
             TowerPlacement tp = TowerPlacement.Instance;
             return tp != null && (tp.IsPlacing || tp.SelectedTower != null);
+        }
+
+        // ------------------------------------------------------------------
+        // 触屏视角手势（2026-11-06）
+        // ------------------------------------------------------------------
+
+        /// <summary>本次触摸序列是否已经被视角手势（双指缩放 / 长按拖动）占用。</summary>
+        /// <remarks>
+        /// 给 TowerPlacement 用：真机上"长按拖视角"和"点塔/点空地开建造圆盘"共用同一根手指，
+        /// 没有这个标记的话，长按的第一帧就会顺手选中塔并弹出圆盘，然后镜头一拖菜单挂在原地。
+        /// 只有**真的动过镜头**才算占用 —— 按久了不动再抬起，仍然算一次正常点按。
+        /// </remarks>
+        public bool IsTouchViewGestureConsumed
+        {
+            get { return _touchConsumed; }
+        }
+
+        /// <summary>
+        /// 触屏手势主循环：双指捏合 = 滚轮缩放，单指长按后拖动 = 中键平移。
+        ///
+        /// 【为什么要单独一套】旧实现只有 `Input.GetAxis("Mouse ScrollWheel")` 和
+        /// `Input.GetMouseButton(2)`：真机上滚轮恒为 0、中键根本不存在，等于完全没有视角操作。
+        /// 桌面端两条老路径原样保留，本方法在编辑器里因 `touchCount == 0` 直接退出。
+        ///
+        /// 【互斥规则 —— 需求"两个操作不能相互影响"落在下面 4 条上】
+        ///   ① 第二根手指落下 → 缩放独占：立刻放弃单指的长按/拖动，并把本次序列标记为已占用。
+        ///      双指松开一根后，**剩下那根不接管**，必须等所有手指抬起才允许下一轮手势，
+        ///      否则捏合结束时手指先后抬起的那一下会变成平移，镜头会窜一段。
+        ///   ② 手指从 UI 上起手、或正处在放塔/拖塔状态 → 完全不接管（交给 UI 与建造逻辑），
+        ///      避免"点 HUD 按钮顺手把镜头拖走"和"拖塔时镜头跟着跑"。
+        ///   ③ 长按成立前手指已经移动超过 longPressPanSlopPx → 判定为普通点按/拖动，本序列锁死不接管。
+        ///   ④ 单指长按成立后，手指位移按"屏幕像素 → 世界单位"折算后平移；速度随缩放变化，
+        ///      放大后同样一段手指距离推得更少，手感与中键拖拽一致。
+        /// </summary>
+        private void HandleTouchGestures()
+        {
+            if (!enableTouchGestures)
+            {
+                // 运行中被关掉时不能留残留标记，否则 TowerPlacement 的点选会被一直吞掉
+                _touchConsumed = false;
+                return;
+            }
+            if (_cam == null)
+            {
+                return;
+            }
+
+            int count = Input.touchCount;
+            if (count <= 0)
+            {
+                ResetTouchGesture();
+                return;
+            }
+
+            // ---- 双指：独占缩放 ----
+            if (count >= 2)
+            {
+                HandlePinchZoom();
+                return;
+            }
+
+            if (Time.timeScale <= 0f)
+            {
+                return;   // 暂停（结算/设置弹窗）不接管单指，免得在面板上误长按把镜头拖走
+            }
+
+            Touch touch = Input.GetTouch(0);
+            switch (_touchPhase)
+            {
+                case TouchGesturePhase.Pinching:
+                case TouchGesturePhase.Locked:
+                    // 双指松掉一根 / 本序列已交给别的交互：等全部抬起再重置
+                    return;
+
+                case TouchGesturePhase.Pressing:
+                {
+                    if (!TryGetTouch(_touchFingerId, out touch))
+                    {
+                        _touchPhase = TouchGesturePhase.Locked;   // 跟踪的那根手指已抬起
+                        return;
+                    }
+                    Vector2 moved = touch.position - _touchStartPos;
+                    if (moved.sqrMagnitude > longPressPanSlopPx * longPressPanSlopPx)
+                    {
+                        // 长按没成立就先划走了 → 这是一次拖动/滑动，不抢
+                        _touchPhase = TouchGesturePhase.Locked;
+                        return;
+                    }
+                    if (Time.unscaledTime - _touchPressTime < longPressPanDelay)
+                    {
+                        return;
+                    }
+                    // 【为什么长按成立时还要再查一次 UI / 放塔态】
+                    //   ① EventSystem 处理这次触摸可能晚于本脚本：按下那一帧 IsPointerOverGameObject
+                    //      还可能返回 false，等到 0.25s 后就已经可靠了；
+                    //   ② HUD 塔按钮同样是 0.25s 长按进入拖拽建造，同帧竞态下 IsPlacing 可能刚被置真。
+                    //   这两条任一命中都必须放弃，否则会出现"一边拖塔一边拖镜头"。
+                    if (IsTouchOverUI(_touchFingerId) || IsPlacingTower())
+                    {
+                        _touchPhase = TouchGesturePhase.Locked;
+                        return;
+                    }
+                    // 长按成立：以当前位置为拖动基准，避免把前面那点抖动一次性补成一段位移
+                    _touchPhase = TouchGesturePhase.Panning;
+                    _touchLastPos = touch.position;
+                    _touchPanMovedPx = 0f;
+                    return;
+                }
+
+                case TouchGesturePhase.Panning:
+                {
+                    if (!TryGetTouch(_touchFingerId, out touch))
+                    {
+                        _touchPhase = TouchGesturePhase.Locked;
+                        return;
+                    }
+                    // 拖动途中若进入了放置态（HUD 长按抢先生效），立刻让出控制权，避免塔和镜头一起动
+                    if (IsPlacingTower())
+                    {
+                        _touchPhase = TouchGesturePhase.Locked;
+                        return;
+                    }
+                    Vector2 deltaPx = touch.position - _touchLastPos;
+                    _touchLastPos = touch.position;
+                    if (deltaPx.sqrMagnitude <= 0f)
+                    {
+                        return;
+                    }
+                    _touchPanMovedPx += deltaPx.magnitude;
+                    if (!_touchConsumed && _touchPanMovedPx >= TouchPanConsumePx)
+                    {
+                        _touchConsumed = true;   // 确实动过镜头 → 松手不再当点按处理
+                    }
+                    // 像素 → 世界：视口高度（2×ortho）对应 pixelHeight 像素。
+                    // 取负号 = 画面跟着手指走（手指往右上推，镜头往左下移），与中键拖拽同向。
+                    float worldPerPx = 2f * _cam.orthographicSize / Mathf.Max(1f, _cam.pixelHeight);
+                    Vector3 worldDelta = new Vector3(-deltaPx.x, -deltaPx.y, 0f) * worldPerPx;
+                    // 减去震动偏移：LateUpdate 会把它重新叠回去，否则震动期间拖动会丢一截
+                    transform.position = ClampToBoard(transform.position - _shakeOffset + worldDelta);
+                    return;
+                }
+
+                default:
+                {
+                    // 只从"这一帧刚按下"起手接管。手指已经在屏上才被我们看到（例如从 UI 划出来）
+                    // 时不接管 —— 那种手势的起点属于 UI。
+                    if (touch.phase != UnityEngine.TouchPhase.Began)
+                    {
+                        return;
+                    }
+                    if (IsTouchOverUI(touch.fingerId) || IsPlacingTower())
+                    {
+                        _touchPhase = TouchGesturePhase.Locked;
+                        return;
+                    }
+                    _touchConsumed = false;   // 新一轮触摸从"未被占用"开始
+                    _touchPhase = TouchGesturePhase.Pressing;
+                    _touchFingerId = touch.fingerId;
+                    _touchStartPos = touch.position;
+                    _touchPressTime = Time.unscaledTime;
+                    return;
+                }
+            }
+        }
+
+        /// <summary>
+        /// 双指捏合缩放（等价于滚轮）。手指张开 = 放大，与滚轮向前同向。
+        /// 【为什么不做"以捏合中点为锚"】滚轮缩放同样以屏幕中心为锚，两者保持一致；
+        /// 且以中点为锚会和平移夹取框互相拉扯（缩放后位置要重新夹，画面会漂）。
+        /// </summary>
+        private void HandlePinchZoom()
+        {
+            Touch a = Input.GetTouch(0);
+            Touch b = Input.GetTouch(1);
+
+            if (_touchPhase != TouchGesturePhase.Pinching)
+            {
+                // 任何阶段（包括正在长按拖动）被第二根手指抢占：停止平移，进入缩放独占
+                _touchPhase = TouchGesturePhase.Pinching;
+                _pinchPrevDist = 0f;
+                _touchConsumed = true;   // 双指落下即视为视角操作，抬手后不再当点按
+            }
+
+            float dist = Vector2.Distance(a.position, b.position);
+            if (dist < 1f)
+            {
+                return;
+            }
+            if (_pinchPrevDist < 1f)
+            {
+                _pinchPrevDist = dist;   // 第一帧只记基准，避免落下瞬间跳变
+                return;
+            }
+
+            float ratio = dist / _pinchPrevDist;
+            _pinchPrevDist = dist;
+            if (ratio <= 0f || Mathf.Abs(ratio - 1f) < 0.0005f)
+            {
+                return;
+            }
+
+            float min = _fitSize / Mathf.Max(1.01f, maxZoomOutFactor);
+            float max = _fitSize * Mathf.Max(1.01f, maxZoomInFactor);
+            float next = Mathf.Clamp(
+                _cam.orthographicSize / Mathf.Pow(ratio, Mathf.Max(0.05f, pinchZoomSpeed)), min, max);
+            if (Mathf.Approximately(next, _cam.orthographicSize))
+            {
+                return;
+            }
+            _cam.orthographicSize = next;
+            transform.position = ClampToBoard(transform.position - _shakeOffset);
+        }
+
+        private void ResetTouchGesture()
+        {
+            _touchPhase = TouchGesturePhase.None;
+            _touchFingerId = -1;
+            _pinchPrevDist = 0f;
+            _touchPanMovedPx = 0f;
+            // 注意：_touchConsumed 故意不在这里清 —— 抬手那一帧 TowerPlacement 还要读它，
+            // 顺序上谁先 Update 不确定；改到下一次按下（TouchGesturePhase.None）时重置。
+        }
+
+        /// <summary>按 fingerId 取当前触摸（多指时下标会重排，不能直接信 GetTouch 的序号）。</summary>
+        private static bool TryGetTouch(int fingerId, out Touch touch)
+        {
+            for (int i = 0; i < Input.touchCount; i++)
+            {
+                Touch t = Input.GetTouch(i);
+                if (t.fingerId == fingerId)
+                {
+                    touch = t;
+                    return true;
+                }
+            }
+            touch = default(Touch);
+            return false;
+        }
+
+        private static bool IsTouchOverUI(int fingerId)
+        {
+            EventSystem es = EventSystem.current;
+            return es != null && es.IsPointerOverGameObject(fingerId);
+        }
+
+        /// <summary>放塔/拖塔期间禁止触屏平移（与边缘滚屏的禁用口径一致）。</summary>
+        private static bool IsPlacingTower()
+        {
+            TowerPlacement tp = TowerPlacement.Instance;
+            return tp != null && tp.IsPlacing;
         }
 
         /// <summary>

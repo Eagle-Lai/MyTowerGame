@@ -69,6 +69,15 @@ namespace FTProject
         private SortingGroup _selectionGroup;
         private int _selectionOrder;
 
+        /// <summary>左键/手指按下时的屏幕位置（点选判定基准，2026-11-06）</summary>
+        private Vector2 _pressPos;
+        /// <summary>是否有一笔"已按下、待抬起结算"的点选</summary>
+        private bool _tapPending;
+        /// <summary>按下那一刻指针是否在 UI 上（抬起时 UI 可能已被自己隐藏，必须留快照）</summary>
+        private bool _pressOverUi;
+        /// <summary>点按允许的最大起落点位移（像素）。超过即认为是拖动而不是点选。</summary>
+        private const float TapSlopPx = 12f;
+
         public bool IsPlacing { get { return _active; } }
 
         public BaseTower SelectedTower { get { return _selected; } }
@@ -554,9 +563,38 @@ namespace FTProject
                 Deselect();
                 return;
             }
+
+            // 【2026-11-06 触屏视角手势配套：点选改为"抬起结算"】
+            //   真机上"长按拖动视角"和"点塔/点空地开建造圆盘"共用同一根手指。原先按下即判定，
+            //   长按的第一帧就会选中塔并弹出圆盘，随后手指拖动镜头 → 菜单被甩在原地，两个手势互相污染。
+            //   现在：按下只记录位置，抬起时同时满足下面三条才算点选：
+            //     ① 有一笔未结算的按下；
+            //     ② 起落点位移在 TapSlopPx 内（真手指点按本来就会抖，不用 0）；
+            //     ③ 这段时间内镜头没有真的被视角手势拖动/缩放（按久了不动再抬起仍算点按）。
+            //   PC 鼠标语义不变：按下与抬起在同一位置，最多晚一帧生效。
             if (Input.GetMouseButtonDown(0))
             {
-                HandleSelectClick();
+                _pressPos = Input.mousePosition;
+                // 按下瞬间的 UI 快照必须留：建造圆盘的关闭遮罩是个 Button，onClick 在**抬起**时
+                // 就把自己 SetActive(false) 了；如果只在抬起时查 IsPointerOverUI，
+                // 会得到"没点在 UI 上"→ 关掉后立刻在原格重开。按下这一刻遮罩还在，才查得准。
+                _pressOverUi = IsPointerOverUI();
+                _tapPending = true;
+            }
+            if (Input.GetMouseButtonUp(0))
+            {
+                bool overUi = _pressOverUi || IsPointerOverUI();
+                bool gestureConsumed = CameraController.Instance != null
+                                       && CameraController.Instance.IsTouchViewGestureConsumed;
+                bool movedTooFar = ((Vector2)Input.mousePosition - _pressPos).sqrMagnitude
+                                   > TapSlopPx * TapSlopPx;
+                bool tap = _tapPending && !overUi && !movedTooFar && !gestureConsumed;
+                _tapPending = false;
+                _pressOverUi = false;
+                if (tap)
+                {
+                    HandleSelectClick();
+                }
             }
         }
 
