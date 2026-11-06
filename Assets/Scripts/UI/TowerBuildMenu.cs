@@ -151,7 +151,8 @@ namespace FTProject
                 well.raycastTarget = false;
                 well.transform.SetAsFirstSibling();
 
-                Image priceBadge = EnsureChildImage(button.transform, "PriceBadge", face.sprite);
+                // A sprite-less UI Image renders a straight-edged rectangular price plate.
+                Image priceBadge = EnsureChildImage(button.transform, "PriceBadge", null);
                 SetChildRect(priceBadge.rectTransform, new Vector2(0f, -48f), new Vector2(76f, 20f));
                 priceBadge.color = PriceBadgeColor;
                 priceBadge.raycastTarget = false;

@@ -482,7 +482,8 @@ namespace FTProject.EditorTools
         }
         private static Sprite LoadTowerPortrait(string kind)
         {
-            return AssetDatabase.LoadAssetAtPath<Sprite>(Art+"/TowerPortraits/tower-"+kind+".png");
+            // Build choices use transparent cutouts; codex cards keep their authored portraits.
+            return AssetDatabase.LoadAssetAtPath<Sprite>(Art+"/TowerBuildIcons/tower-"+kind+".png");
         }
         /// <summary>
         /// 建造圆盘的塔按钮：透明圆形点击区 + 塔头像 + 塔名 + 价格。
@@ -632,8 +633,8 @@ namespace FTProject.EditorTools
                 string before=EditorJsonUtility.ToJson(importer);
                 importer.textureType=TextureImporterType.Sprite;importer.spriteImportMode=SpriteImportMode.Single;
                 importer.alphaIsTransparency=true;importer.mipmapEnabled=false;importer.textureCompression=TextureImporterCompression.Uncompressed;
-                importer.maxTextureSize=path.Contains("/TowerPortraits/")?1024:path.Contains("/Portraits/")?512:2048;
-                bool photographic=path.Contains("/Portraits/") || path.Contains("/TowerPortraits/") || path.EndsWith("/keyart.png") || path.EndsWith("/command-backdrop.png");
+                importer.maxTextureSize=path.Contains("/TowerPortraits/")?1024:path.Contains("/Portraits/") || path.Contains("/TowerBuildIcons/")?512:2048;
+                bool photographic=path.Contains("/Portraits/") || path.Contains("/TowerPortraits/") || path.Contains("/TowerBuildIcons/") || path.EndsWith("/keyart.png") || path.EndsWith("/command-backdrop.png");
                 var android=importer.GetPlatformTextureSettings("Android");android.name="Android";android.overridden=true;
                 bool actionArt=System.IO.Path.GetFileName(path).StartsWith("action-",StringComparison.Ordinal);
                 android.maxTextureSize=actionArt?256:importer.maxTextureSize;android.format=photographic?TextureImporterFormat.ETC2_RGBA8:TextureImporterFormat.RGBA32;
