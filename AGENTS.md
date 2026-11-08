@@ -70,6 +70,12 @@
 - `Assets/ConfigJson/**` 与 `Assets/Gen/**` 是 Luban 的**导出产物**，只由「改表 → 跑 Luban 导出」这条链产生，不允许第三方脚本直接写。
 - `.workbuddy/tools/balance_pipeline.py` 的 `apply` / `rollback` 及事务提交层**已整体移除**（`apply_plan` / `commit_files` / `job_lock` / `restore_transaction` / `check_managed_conflicts` / `assert_sources`）。不要为了"方便"把它们加回来；只允许用它的只读能力：`inspect` / `generate` / `preview` / `validate` / `simulate` / `verify-layout` / `stage`（`stage` 只写 `--out`，且禁止指向 `Luban/`、`Assets/`）。
 - 定点改表后的标准流程：代码定点修改获授权的 `Levels/Lxx/*.xlsx` → 跑 Luban 导出到 `Assets/ConfigJson` → 进 Unity 确认 `[Config]` 汇总无失败表。
+- ★★★ **改表不等于任务完成（2026-11-08 用户定规，最高优先级）**：**只要动过配置源表，就必须成功跑完一次 Luban 导表、`Assets/ConfigJson` 真正更新之后，任务才算结束。**
+  - 禁止在「源表已改、导出未跑」的状态下汇报完成、收尾或让用户以为数值已生效；这种状态只能表述为「**未完成，卡在导出**」。
+  - 汇报完成的验收三件套：① 源表回读校验通过；② **导出命令真实返回成功**（`Assets/ConfigJson/*.json` 的 mtime 已更新、`[Config]` 汇总无失败表）；③ `git status` 里导出产物确认为 `M`。
+  - 导出失败或被环境卡住（Unity 未开、MCP/MCP 客户端不可用、Luban 报错）时：**立即如实说明「卡在哪一步、报什么错」并请用户处置**，不得静默跳过、不得用「源表已改好」替代完成。
+  - 连续多轮改表可以合并成**最后一次导出**，但必须在最后一轮结束后立刻导出；不允许跨天遗留未导出状态。
+  - 2026-11-08 之前曾多次出现「只改源表、导出未跑」的收尾（如 L02 当天两轮血量改动），此类收尾一律视为未完成。
   **2026-11-01 起不再有 `runtimeContentHash` 重封这一步**：星级评分体系（`tblevelrating` / 30 张 `Levels/Lxx/LevelRating.xlsx` / `LevelRatingEvaluator`）已按用户要求整体删除，通关一律记 5 星，改表不再需要动任何评级表，也不会再出现 `content hash mismatch` 拦关。评分规则待 30 关数值定稿后重做。
 - 已被删除的写表脚本（需要时从 git 历史取）：`migrate_split_level_tables.py`、`migrate_config.py`、`gen_m3_levelmaps.py`、`gen_m3_waves_rounds.py`、`apply_m2_monsters.py`、`add_levels_9_15/16_20_*.py`。
 - 仍然保留的两个人工工具：`apply_levelmap_export.py`（地图编辑器「一键写入」只写当前关的 `LevelMap.xlsx`）、`_manual_l1_tune.py`（第一关数值手工调整，按倍率写入）。
@@ -89,6 +95,10 @@
 - **改完必须交代边界**：报告实际改动的文件 / 关卡 / 波次 / 字段、旧值 → 新值，并给出"其余关卡未改动"的核对结论（`git diff --stat`、导出 json 行数比对等可复核证据），不要只说"改好了"。
 - **适用范围**：`Levels/Lxx/*.xlsx`（含 `EnemyData` / `EnemyList` / `RoundData` / `LevelMap` / `LevelRules` / `SceneInfo`）、关卡级代码常量与生成器参数，一律按本条执行。
 - **不是扩展的例外**：（2026-11-01 起该条仅作历史说明）原 `runtimeContentHash` 是全局哈希，30 张 `LevelRating.xlsx` 写同一个值属正常重封流程，不算"改到其他关卡"。评级表删除后已无此项，存档语义本身仍不得因本条而改动。
+- ★★★ **所有关卡的 `initialGold` 必须恒为 100（2026-11-08 用户重申铁律）**：`SceneInfo.initialGold` 是全关卡统一的起始资源，用于校准玩家的开局操作空间；**任何关卡都不得单独上调或下调**。
+  - 重设计/调经济时若需要额外开局资源，**只能摊到 W1–W4 的 `RoundData.rewardGold` 里**，不允许动 `initialGold`。
+  - 改动或新增关卡后必须整表核对：`tbsceneinfo.json` 里 30 关的 `initialGold` 应**全部等于 100**，出现例外即为配置错误。
+  - 2026-11-08 L02 重设计曾把 `initialGold` 写成 174，后按本条把多出的 74 金拆到 W1–W4（82/82/81/81），总经济不变（7,195.76）。
 
 ## 空中怪不得相邻出生（2026-11-05 用户定规，所有 AI 必须遵守）
 
