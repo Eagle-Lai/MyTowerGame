@@ -1,0 +1,30 @@
+var f=FTProject.GameFlowManager.Instance;
+if(FTProject.GameClock.IsManualSimulation)throw new System.Exception("Manual simulation still active");
+FTProject.SaveManager.Instance.SetTestStorageContext("wave-realframes-20261107");
+var p=FTProject.PlayerDataManager.Instance;
+var state=new System.Collections.Generic.Dictionary<string,object>();
+state["status"]="running";state["actions"]=0;state["checks"]=0;state["cycles"]=0;
+System.AppDomain.CurrentDomain.SetData("WaveRealFrameStatus",state);
+int checks=0,actions=0,cycle=0,stage=0,retries=0;string first=null,second=null;double due=0;
+System.Func<string> snapshot=()=>{var l=FTProject.LevelLayoutStore.CaptureCurrentLevel(1,f.CompletedRoundCount,f.RunMetrics);l.savedAtUnix=0;l.runMetrics.combatElapsedSeconds=System.Math.Round(l.runMetrics.combatElapsedSeconds,7);l.runMetrics.levelElapsedSeconds=System.Math.Round(l.runMetrics.levelElapsedSeconds,7);foreach(var w in l.runMetrics.waves){w.combatStartSeconds=System.Math.Round(w.combatStartSeconds,7);w.combatEndSeconds=System.Math.Round(w.combatEndSeconds,7);w.levelEndSeconds=System.Math.Round(w.levelEndSeconds,7);}return UnityEngine.JsonUtility.ToJson(l);};
+System.Action<bool,string> check=(ok,msg)=>{checks++;state["checks"]=checks;if(!ok)throw new System.Exception(msg);};
+System.Action start=()=>{FTProject.EventDispatcher.TriggerEvent(FTProject.EventName.StartRoundRequestEvent);actions++;state["actions"]=actions;check(f.State==FTProject.GameFlowState.RoundRunning,"normal-frame wave starts");};
+System.Action<bool,bool> press=(previous,accept)=>{var hud=FTProject.UIManager.Instance.Get<FTProject.HudView>(FTProject.HudView.LogicalName);hud.transform.Find(previous?"Btn_PreviousWave":"Btn_RestartWave").GetComponent<UnityEngine.UI.Button>().onClick.Invoke();var dialog=FTProject.UIManager.Instance.Get<FTProject.ConfirmView>(FTProject.ConfirmView.LogicalName);check(dialog!=null&&FTProject.GameClock.IsPaused,"normal-frame button opens modal");dialog.transform.Find(accept?"Panel/ConfirmBtn":"Panel/CancelBtn").GetComponent<UnityEngine.UI.Button>().onClick.Invoke();actions+=2;state["actions"]=actions;};
+var flags=System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic;
+System.Action reset=()=>{f.TeardownLevel();f.InitLevel(1,false);p.RestoreState(1,10000,5000,5000);FTProject.GameClock.Speed=3;typeof(FTProject.GameFlowManager).GetField("_autoNextTimer",flags).SetValue(f,0f);first=snapshot();start();stage=1;};
+UnityEditor.EditorApplication.CallbackFunction update=null;
+update=()=>{
+ try{
+  if(!UnityEditor.EditorApplication.isPlaying){state["status"]="interrupted";UnityEditor.EditorApplication.update-=update;return;}
+  if(f.State==FTProject.GameFlowState.GameOver)throw new System.Exception("unexpected GameOver");
+  if(stage==0){reset();return;}
+  if(stage==1&&f.State==FTProject.GameFlowState.Preparing&&f.CompletedRoundCount==1){second=snapshot();start();due=UnityEditor.EditorApplication.timeSinceStartup+1;stage=2;return;}
+  if(stage==2&&UnityEditor.EditorApplication.timeSinceStartup>=due){var current=snapshot();press(false,false);check(snapshot()==current,"normal-frame cancel preserves resources timers statistics");press(false,true);check(snapshot()==second&&f.CompletedRoundCount==1&&f.CurrentRoundIndex==2,"normal-frame retry restores wave 2 boundary");var h=FTProject.UIManager.Instance.Get<FTProject.HudView>(FTProject.HudView.LogicalName);h.RefreshAll();check(h.transform.Find("Bg_Round/RoundText").GetComponent<TMPro.TMP_Text>().text==FTProject.Localization.Get("Wave {0}/{1}",2,f.Level.RoundCount),"normal-frame full HUD refresh wave 2");retries++;start();due=UnityEditor.EditorApplication.timeSinceStartup+1;if(retries>=5)stage=3;return;}
+  if(stage==3&&f.State==FTProject.GameFlowState.Preparing&&f.CompletedRoundCount==2){start();due=UnityEditor.EditorApplication.timeSinceStartup+1;stage=4;return;}
+  if(stage==4&&UnityEditor.EditorApplication.timeSinceStartup>=due){press(true,true);check(snapshot()==second&&f.CompletedRoundCount==1,"normal-frame previous from wave 3");press(true,true);check(snapshot()==first&&f.CurrentRoundIndex==1,"normal-frame consecutive previous to first wave");check(!f.RestartPreviousWave(),"normal-frame first wave lower bound");cycle++;state["cycles"]=cycle;retries=0;if(cycle>=3){state["status"]="passed";FTProject.GameClock.SetPaused(true);UnityEditor.EditorApplication.update-=update;}else stage=0;return;}
+  state["stage"]=stage;state["wave"]=f.CurrentRoundIndex;
+ }catch(System.Exception ex){state["status"]="failed";state["failure"]=ex.ToString();FTProject.GameClock.SetPaused(true);UnityEditor.EditorApplication.update-=update;}
+};
+System.AppDomain.CurrentDomain.SetData("WaveRealFrameUpdate",update);
+FTProject.GameClock.SetPaused(false);UnityEditor.EditorApplication.update+=update;
+return state;

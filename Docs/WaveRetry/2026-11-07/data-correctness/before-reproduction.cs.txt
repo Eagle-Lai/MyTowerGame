@@ -1,0 +1,42 @@
+var results=new System.Collections.Generic.List<object>();
+var f=FTProject.GameFlowManager.Instance;
+if(f==null) return "Boot not ready";
+FTProject.SaveManager.Instance.SetTestStorageContext("wave-correctness-20261107");
+// Real clock seam: toggling pause in the same frame must not accrue the frame again.
+FTProject.GameClock.SetPaused(false);FTProject.GameClock.ResetLevelTimer();FTProject.GameClock.RestoreTimers(3,5,true);
+FTProject.GameClock.RefreshFrame(UnityEngine.Time.frameCount+100,.1f);
+var before=FTProject.GameClock.LevelElapsedSeconds;
+FTProject.GameClock.SetPaused(true);FTProject.GameClock.RefreshFrame(UnityEngine.Time.frameCount+100,.1f);
+results.Add(new {name="paused frame delta",expected=0,actual=FTProject.GameClock.DeltaTime,elapsedBefore=before,elapsedAfter=FTProject.GameClock.LevelElapsedSeconds});
+FTProject.GameClock.SetPaused(false);FTProject.GameClock.BeginManualSimulation();
+f.TeardownLevel();f.InitLevel(1,false);
+var p=FTProject.PlayerDataManager.Instance;
+p.RestoreState(1,900,20,20,0,0,0);p.AddGold(.99999f);
+results.Add(new {name="fractional gold invariant",expected="0 <= carry < 1",actual=p.GoldCarry});
+p.RestoreState(1,900,20,20);
+FTProject.BaseTower tower=null;
+for(int r=0;r<f.Map.Rows && tower==null;r++) for(int c=0;c<f.Map.Cols && tower==null;c++) tower=FTProject.TowerManager.Instance.RestoreTower(1,1,r,c,97);
+var flags=System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic;
+typeof(FTProject.BaseTower).GetField("_fireTimer",flags).SetValue(tower,.123f);
+typeof(FTProject.BaseTower).GetField("_searchTimer",flags).SetValue(tower,.037f);
+FTProject.GameClock.RestoreTimers(7.5,11.25,true);
+FTProject.EventDispatcher.TriggerEvent(FTProject.EventName.StartRoundRequestEvent);
+p.AddGold(5);
+f.RestartCurrentWave();
+var state=new FTProject.TowerSnapshot();FTProject.TowerManager.Instance.Towers[0].CaptureCheckpointState(state);
+results.Add(new {name="tower phase after retry",expectedFire=.123,actualFire=state.fireTimer,expectedSearch=.037,actualSearch=state.searchTimer});
+var hud=FTProject.UIManager.Instance.Get<FTProject.HudView>(FTProject.HudView.LogicalName);
+var text=hud.transform.Find("Bg_Round/RoundText").GetComponent<TMPro.TMP_Text>();var textBefore=text.text;hud.RefreshAll();
+results.Add(new {name="HUD repeated refresh",expected=textBefore,actual=text.text});
+FTProject.LevelLayout saved;FTProject.LevelLayoutStore.TryGet(1,out saved);
+var memory=f.RunMetrics;
+results.Add(new {name="metrics and clock after retry",clock=FTProject.GameClock.CombatElapsedSeconds,memory=memory.combatElapsedSeconds,saved=saved.runMetrics.combatElapsedSeconds});
+FTProject.EventDispatcher.TriggerEvent(FTProject.EventName.StartRoundRequestEvent);
+for(int tick=0;tick<20000 && f.State==FTProject.GameFlowState.RoundRunning;tick++) {
+ FTProject.GameClock.StepManualFrame(.25); f.StepManualSimulation();
+ foreach(var e in UnityEngine.Object.FindObjectsOfType<FTProject.BaseEnemy>()) if(e.IsAlive) e.Hurt(1000000);
+}
+typeof(FTProject.GameFlowManager).GetField("_autoNextTimer",flags).SetValue(f,0f);
+FTProject.LevelLayoutStore.TryGet(1,out saved);
+results.Add(new {name="completed-wave stored timer",expected=FTProject.GameClock.CombatElapsedSeconds,actual=saved.runMetrics.combatElapsedSeconds});
+return results;

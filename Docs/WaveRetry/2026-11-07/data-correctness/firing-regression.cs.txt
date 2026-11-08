@@ -1,0 +1,35 @@
+var checks=0;var results=new System.Collections.Generic.List<object>();
+try {
+System.Action<bool,string> check=(ok,msg)=>{checks++;if(!ok)throw new System.Exception(msg);};
+var f=FTProject.GameFlowManager.Instance;var p=FTProject.PlayerDataManager.Instance;
+FTProject.SaveManager.Instance.SetTestStorageContext("wave-firing-replay-20261107");
+using(var manual=FTProject.GameClock.BeginManualSimulation()){
+FTProject.GameClock.SetPaused(false);f.TeardownLevel();f.InitLevel(1,false);p.RestoreState(1,10000,5000,5000);
+var flags=System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic;
+var cells=new System.Collections.Generic.List<FTProject.CellData>();
+var path=FTProject.AStarManager.Instance.CurrentPathWorld;var near=path[System.Math.Min(3,path.Length-1)];
+for(int r=0;r<f.Map.Rows;r++)for(int c=0;c<f.Map.Cols;c++)cells.Add(f.boardView.GetCell(r,c));
+cells.Sort((a,b)=>UnityEngine.Vector2.Distance(a.Center,near).CompareTo(UnityEngine.Vector2.Distance(b.Center,near)));
+int built=0;foreach(var cell in cells){if(FTProject.TowerManager.Instance.RestoreTower(1+built%3,2,cell.Row,cell.Col,100)!=null)built++;if(built==9)break;}
+check(built==9,"nine combat towers placed near route");FTProject.AStarManager.Instance.ProcessRefresh();
+System.Action step=()=>{FTProject.GameClock.StepManualFrame(.025/FTProject.GameClock.Speed);typeof(FTProject.CombatSystem).GetMethod("OnUpdate",flags).Invoke(FTProject.CombatSystem.Instance,null);f.StepManualSimulation();};
+string expected=null;int expectedFires=-1,expectedHits=-1;double expectedDamage=0;string expectedSpawns=null;
+for(int replay=0;replay<6;replay++){
+ FTProject.GameClock.Speed=1+replay%3;
+ FTProject.EventDispatcher.TriggerEvent(FTProject.EventName.StartRoundRequestEvent);
+ var spawns=new System.Collections.Generic.List<string>();for(int tick=0;tick<30000&&f.State==FTProject.GameFlowState.RoundRunning;tick++){int countBefore=f.RunMetrics.successfulSpawned;step();int countAfter=f.RunMetrics.successfulSpawned;if(countAfter>countBefore){var enemies=(System.Collections.Generic.List<FTProject.BaseEnemy>)typeof(FTProject.CombatSystem).GetField("_enemies",flags).GetValue(FTProject.CombatSystem.Instance);for(int e=enemies.Count-(countAfter-countBefore);e<enemies.Count;e++){var enemy=enemies[e];spawns.Add(enemy.Config.Id+"|"+enemy.Config.Hp+"|"+enemy.Config.Speed+"|"+enemy.Config.Armor+"|"+enemy.Config.Reward+"|"+enemy.Config.DamageToPlayer+"|"+enemy.Config.IsFlying+"|"+enemy.TotalHp+"|"+enemy.CurrentHp);}}}
+ typeof(FTProject.GameFlowManager).GetField("_autoNextTimer",flags).SetValue(f,0f);
+ check(f.State==FTProject.GameFlowState.Preparing,"natural combat wave finished");
+ int fires=0,hits=0;double damage=0;foreach(var t in FTProject.TowerManager.Instance.Towers){fires+=t.FireCount;hits+=t.EvidenceHits;damage+=t.EvidenceDamage;}
+ check(fires>0&&hits>0&&p.TotalKilled>0,"actual attacks and kills occurred");
+ var run=f.RunMetrics;run.combatElapsedSeconds=System.Math.Round(run.combatElapsedSeconds,7);run.levelElapsedSeconds=System.Math.Round(run.levelElapsedSeconds,7);foreach(var w in run.waves){w.combatStartSeconds=System.Math.Round(w.combatStartSeconds,7);w.combatEndSeconds=System.Math.Round(w.combatEndSeconds,7);w.levelEndSeconds=System.Math.Round(w.levelEndSeconds,7);}
+ string actual=UnityEngine.JsonUtility.ToJson(run)+"|"+p.Gold+"|"+p.GoldCarry+"|"+p.Hp;
+ string spawnTrace=string.Join(";",spawns.ToArray());check(spawns.Count==f.RunMetrics.waves[0].expected,"actual spawn trace count matches plan");if(expectedSpawns==null)expectedSpawns=spawnTrace;else check(spawnTrace==expectedSpawns,"replay spawn order HP speed armor reward and damage match");if(expected==null){expected=actual;expectedFires=fires;expectedHits=hits;expectedDamage=damage;}
+ else {check(actual==expected,"same combat outcome resources statistics and clocks across speed");check(fires==expectedFires&&hits==expectedHits&&damage==expectedDamage,"same attack hit and damage totals");}
+ results.Add(new {replay=replay+1,speed=FTProject.GameClock.Speed,killed=p.TotalKilled,leaked=p.TotalLeaked,gold=p.Gold,carry=p.GoldCarry,hp=p.Hp,fires=fires,hits=hits,damage=damage,combat=FTProject.GameClock.CombatElapsedSeconds});
+ check(f.RestartPreviousWave(),"rewind first completed wave");
+}
+FTProject.GameClock.StepManualFrame(0);
+}
+FTProject.GameClock.SetPaused(true);return new {success=true,checks=checks,results=results};
+}catch(System.Exception ex){FTProject.GameClock.SetPaused(true);return new {success=false,checks=checks,results=results,failure=ex.ToString()};}

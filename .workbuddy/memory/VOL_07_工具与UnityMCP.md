@@ -169,3 +169,12 @@
 - 本次只读自检：EditorPrefs `MCPForUnity.HttpUrl` 为 `http://127.0.0.1:8086`，Codex 对应 URL 为 `http://127.0.0.1:8086/mcp`；二者一致后通过 MCP 读取 custom-tools、instances，选定现场实例并核对 project/info 的完整路径和版本一致。
 - 本条仅为此次连接线索，下次仍须按 AGENTS.md 重新确认，不能作为默认端口或跨工程配置。
 
+
+## 2026-11-07 Codex HUD 重试本波连接实测线索（家用 D 机）
+
+- 当前实体工程 D:/FreedomTower_1；ProjectVersion 与 MCP project/info 均为 Unity 2022.3.62f3c1；manifest 插件 v10.3.0。
+- 首次只读自检读到 EditorPrefs HTTP URL 为 http://127.0.0.1:8082，但当前 Codex 没有加载 Unity 工具。用户当次明确要求改用 stdio 尝试，并确认桥接端口 6400；本次按用户授权使用官方 MCP Python SDK 调用已有 mcpforunityserver==10.3.0 的 stdio 工具。未猜测或扫描端口，未修改客户端配置。
+- instances 唯一实例 FreedomTower_1@520e2c6d，path=D:/FreedomTower_1/Assets，port=6400；逐次 set_active_instance 后核对 project/info 的 projectRoot 与 Unity 版本。服务名口径 unityMCP。本插件资源目录未提供 custom-tools URI（首次读取返回 Unknown resource），其它资源与 execute_code/refresh_unity/read_console/run_tests 均可用。
+- 编译重载恢复后重新选择并核对同一工程。此记录只作线索，下次仍须现场确认；8082 是 HTTP URL 线索，6400 是本次 stdio 桥接 socket，二者不可混用。
+- 同日“回到上波”后续需求仍按当次授权 stdio / 6400 连接，逐次发现实例并按完整路径/版本核对。最终编译成功、编辑器退出 Play Mode 且 ready_for_tools=true。插件空闲快照时间戳不更新导致 stale_status 时，使用 MCP execute_code 调其原生 EditorStateCache.ForceUpdate 重新采样真实状态；未改插件文件。功能与数据验证见 Docs/WaveRetry/2026-11-07/previous-wave/README.md。
+

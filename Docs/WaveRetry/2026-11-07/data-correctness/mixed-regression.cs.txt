@@ -1,0 +1,90 @@
+var passed=new System.Collections.Generic.List<string>();
+var trace=new System.Collections.Generic.List<string>();
+int actions=0, checks=0;
+try {
+System.Action<bool,string> check=(ok,name)=>{checks++;if(!ok)throw new System.Exception(name);};
+var f=FTProject.GameFlowManager.Instance; if(f==null)throw new System.Exception("Boot unavailable");
+FTProject.SaveManager.Instance.SetTestStorageContext("wave-correctness-mixed-20261107");
+if(FTProject.GameClock.IsManualSimulation) typeof(FTProject.GameClock).GetField("_manualSimulation",System.Reflection.BindingFlags.Static|System.Reflection.BindingFlags.NonPublic).SetValue(null,false);
+var manual=FTProject.GameClock.BeginManualSimulation();FTProject.GameClock.SetPaused(false);
+f.TeardownLevel();f.InitLevel(1,false);
+var p=FTProject.PlayerDataManager.Instance;
+var flags=System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic;
+System.Action noAuto=()=>typeof(FTProject.GameFlowManager).GetField("_autoNextTimer",flags).SetValue(f,0f);
+System.Func<FTProject.HudView> hud=()=>FTProject.UIManager.Instance.Get<FTProject.HudView>(FTProject.HudView.LogicalName);
+System.Func<string> snapshot=()=>{var l=FTProject.LevelLayoutStore.CaptureCurrentLevel(f.Level.Id,f.CompletedRoundCount,f.RunMetrics);l.savedAtUnix=0;l.runMetrics.combatElapsedSeconds=System.Math.Round(l.runMetrics.combatElapsedSeconds,8);l.runMetrics.levelElapsedSeconds=System.Math.Round(l.runMetrics.levelElapsedSeconds,8);foreach(var w in l.runMetrics.waves){w.combatStartSeconds=System.Math.Round(w.combatStartSeconds,8);w.combatEndSeconds=System.Math.Round(w.combatEndSeconds,8);w.levelEndSeconds=System.Math.Round(w.levelEndSeconds,8);}return UnityEngine.JsonUtility.ToJson(l);};
+System.Func<string> phases=()=>{var values=new System.Collections.Generic.List<string>();foreach(var t in FTProject.TowerManager.Instance.Towers){var s=new FTProject.TowerSnapshot {row=t.Cell.Row,col=t.Cell.Col,type=t.Config.Type,level=t.Config.Level};t.CaptureCheckpointState(s);values.Add(UnityEngine.JsonUtility.ToJson(s));}return string.Join("|",values.ToArray());};
+System.Action refresh=()=>{var h=hud();h.RefreshAll();check(h.transform.Find("Bg_Round/RoundText").GetComponent<TMPro.TMP_Text>().text==FTProject.Localization.Get("Wave {0}/{1}",f.CurrentRoundIndex,f.Level.RoundCount),"HUD matches formal cursor");};
+System.Action start=()=>{noAuto();FTProject.EventDispatcher.TriggerEvent(FTProject.EventName.StartRoundRequestEvent);actions++;check(f.State==FTProject.GameFlowState.RoundRunning,"start enters running");check(f.RunMetrics.waves.Count==f.CompletedRoundCount+1,"one active wave metric");};
+System.Action<bool,bool> modal=(previous,accept)=>{
+ hud().transform.Find(previous?"Btn_PreviousWave":"Btn_RestartWave").GetComponent<UnityEngine.UI.Button>().onClick.Invoke();actions++;
+ var view=FTProject.UIManager.Instance.Get<FTProject.ConfirmView>(FTProject.ConfirmView.LogicalName);check(view!=null&&view.gameObject.activeInHierarchy&&FTProject.GameClock.IsPaused,"real button pauses and opens confirmation");
+ check(!f.RestartCurrentWave()&&!f.RestartPreviousWave(),"modal blocks direct duplicate restore");
+ view.transform.Find(accept?"Panel/ConfirmBtn":"Panel/CancelBtn").GetComponent<UnityEngine.UI.Button>().onClick.Invoke();
+ actions++;
+};
+System.Action<float> step=dt=>{FTProject.GameClock.StepManualFrame(dt/FTProject.GameClock.Speed);typeof(FTProject.CombatSystem).GetMethod("OnUpdate",flags).Invoke(FTProject.CombatSystem.Instance,null);f.StepManualSimulation();};
+System.Func<int,FTProject.BaseTower> build=kind=>{FTProject.BaseTower t=null;for(int r=f.Map.Rows-1;r>=0&&t==null;r--)for(int c=f.Map.Cols-1;c>=0&&t==null;c--)t=FTProject.TowerManager.Instance.RestoreTower(kind,1,r,c,97);check(t!=null,"test tower placement");return t;};
+System.Action<bool> finish=force=>{
+ bool leaked=false;
+ for(int i=0;i<20000&&f.State==FTProject.GameFlowState.RoundRunning;i++){
+  step(.05f);
+  if(force)foreach(var e in UnityEngine.Object.FindObjectsOfType<FTProject.BaseEnemy>())if(e.IsAlive){if(!leaked){typeof(FTProject.BaseEnemy).GetMethod("OnReachEnd",flags).Invoke(e,null);leaked=true;}else e.Hurt(1000000);}
+ }
+ noAuto();check(f.State==FTProject.GameFlowState.Preparing,"wave completes");
+ var run=f.RunMetrics;check(run.waves.Count==f.CompletedRoundCount&&run.completedWaveCount==f.CompletedRoundCount,"completed ledger cursor matches");
+ int killed=0,leaks=0,spawned=0;for(int i=0;i<run.waves.Count;i++){var w=run.waves[i];check(w.ordinal==i+1&&w.successfulSpawned==w.expected&&w.killed+w.leaked==w.expected,"each wave exactly once");killed+=w.killed;leaks+=w.leaked;spawned+=w.successfulSpawned;}
+ check(killed==run.killed&&leaks==run.leaked&&spawned==run.successfulSpawned&&p.TotalKilled==killed&&p.TotalLeaked==leaks,"global and player ledgers match");
+ FTProject.LevelLayout saved;check(FTProject.LevelLayoutStore.TryGet(1,out saved)&&saved.roundCursor==f.CompletedRoundCount&&System.Math.Abs(saved.runMetrics.combatElapsedSeconds-FTProject.GameClock.CombatElapsedSeconds)<1e-8&&System.Math.Abs(saved.runMetrics.levelElapsedSeconds-FTProject.GameClock.LevelElapsedSeconds)<1e-8&&saved.goldCarry==p.GoldCarry,"completed save clocks carry cursor match");refresh();
+};
+for(int cycle=0;cycle<12;cycle++){
+ f.TeardownLevel();f.InitLevel(1,false);p.RestoreState(1,10000,5000,5000);noAuto();
+ var boundaries=new System.Collections.Generic.List<string>();var towerPhases=new System.Collections.Generic.List<string>();
+ for(int n=0;n<5;n++){
+  if(n==0){build(1);build(2);build(3);}
+  if(n==1)check(FTProject.TowerManager.Instance.TryUpgrade(FTProject.TowerManager.Instance.Towers[0])!=null,"preparation upgrade");
+  if(n==2)check(FTProject.TowerManager.Instance.Sell(FTProject.TowerManager.Instance.Towers[0]),"preparation sell");
+  if(n==3)build(1);
+  p.AddGold(.99999f);check(p.GoldCarry>=0&&p.GoldCarry<1,"fractional carry remains valid");
+  FTProject.GameClock.Speed=1+cycle%3;
+  step(.137f);noAuto();
+  boundaries.Add(snapshot());towerPhases.Add(phases());
+  for(int retry=0;retry<3;retry++){
+   start();for(int tick=0;tick<24;tick++)step(.1f);
+   var beforeCancel=snapshot();var beforePhase=phases();modal(false,false);check(snapshot()==beforeCancel&&phases()==beforePhase,"cancel preserves complete live state");
+   if(retry==1&&FTProject.TowerManager.Instance.Count>0){check(FTProject.TowerManager.Instance.Sell(FTProject.TowerManager.Instance.Towers[0]),"live-wave sale");FTProject.LevelLayout saved;FTProject.LevelLayoutStore.TryGet(1,out saved);check(saved.runMetrics.waves.Count==n&&saved.roundCursor==n&&saved.gold==UnityEngine.JsonUtility.FromJson<FTProject.LevelLayout>(boundaries[n]).gold,"live sale persists whole start boundary");}
+   if(retry==2&&FTProject.TowerManager.Instance.Count>0)FTProject.TowerManager.Instance.TryUpgrade(FTProject.TowerManager.Instance.Towers[0]);
+   modal(false,true);check(f.CompletedRoundCount==n&&f.CurrentRoundIndex==n+1,"retry preserves target formal ordinal");
+   check(snapshot()==boundaries[n],"retry restores every resource metric and clock");check(phases()==towerPhases[n],"retry restores phases and registration order");refresh();
+  }
+  start();finish(true);
+ }
+ // Just-cleared wave 5 in preparation -> start of wave 5, then 4 ... 1.
+ for(int n=4;n>=0;n--){modal(true,true);check(snapshot()==boundaries[n]&&phases()==towerPhases[n],"repeated previous restores exact wave "+(n+1));check(f.CurrentRoundIndex==n+1&&f.CompletedRoundCount==n,"previous correct ordinal");refresh();}
+ check(!f.RestartPreviousWave()&&!f.CanRestartPreviousWave,"first-wave lower bound");
+ // Replay authors a new branch; later history must not leak old resources.
+ p.AddGold(17.25f);start();finish(true);var branch=snapshot();var branchPhase=phases();start();finish(true);start();modal(true,true);check(snapshot()==branch&&phases()==branchPhase,"new branch replaces old wave 2");modal(true,true);check(f.CompletedRoundCount==0,"branch still rewinds to first wave");
+ passed.Add("mixed cycle "+(cycle+1));
+}
+// Full combat at a fixed game-time step: no forced outcomes in these passes.
+f.TeardownLevel();f.InitLevel(1,false);p.RestoreState(1,10000,5000,5000);noAuto();build(1);build(2);build(3);FTProject.TowerManager.Instance.TryUpgrade(FTProject.TowerManager.Instance.Towers[0]);
+var combatBoundary=snapshot();var combatPhases=phases();string expectedResult=null;
+for(int replay=0;replay<8;replay++){
+ start();finish(false);
+ var result=snapshot();
+ if(expectedResult==null)expectedResult=result;else check(result==expectedResult,"full combat replay exact outcomes clocks resource equality");
+ trace.Add("replay "+(replay+1)+": gold="+p.Gold+" carry="+p.GoldCarry+" hp="+p.Hp+" kills="+p.TotalKilled+" leaks="+p.TotalLeaked+" combat="+FTProject.GameClock.CombatElapsedSeconds);
+ modal(true,true);check(snapshot()==combatBoundary&&phases()==combatPhases,"full combat rewind restores phases order and resources");
+}
+passed.Add("8 full combat replays");
+// First-wave roundCursor=0 is a valid resume boundary, with its exact fractional money.
+p.AddGold(.375f);var reentry=snapshot();start();step(1);FTProject.TowerManager.Instance.Sell(FTProject.TowerManager.Instance.Towers[0]);
+f.TeardownLevel();f.InitLevel(1,true);noAuto();
+check(snapshot()==reentry&&f.CompletedRoundCount==0,"first-wave save/reentry restores consistent run resources metrics and clocks");refresh();
+// Later-wave re-entry, including active-wave sale, cannot retain partial income/damage.
+start();finish(true);p.AddGold(.625f);var laterReentry=snapshot();start();for(int i=0;i<20;i++)step(.1f);p.AddGold(11.5f);p.LoseHp(1);FTProject.TowerManager.Instance.Sell(FTProject.TowerManager.Instance.Towers[0]);
+f.TeardownLevel();f.InitLevel(1,true);noAuto();check(snapshot()==laterReentry,"later-wave sale/reentry restores whole boundary");refresh();
+passed.Add("first and later-wave persistence reentry");
+FTProject.GameClock.StepManualFrame(0);manual.Dispose();FTProject.GameClock.SetPaused(true);
+return new {success=true,checks=checks,actions=actions,passed=passed,combat=trace,storage=FTProject.SaveManager.Instance.StorageLocation};
+} catch(System.Exception ex){FTProject.GameClock.StepManualFrame(0);FTProject.GameClock.SetPaused(true);return new {success=false,checks=checks,actions=actions,passed=passed,failure=ex.ToString(),combat=trace};}

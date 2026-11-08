@@ -1,0 +1,26 @@
+var passed=new System.Collections.Generic.List<string>();
+var f=FTProject.GameFlowManager.Instance;
+FTProject.SaveManager.Instance.SetTestStorageContext("wave-invalid-save-20261107");
+using(var manual=FTProject.GameClock.BeginManualSimulation()){
+f.TeardownLevel();f.InitLevel(1,false);FTProject.GameClock.SetPaused(false);
+var p=FTProject.PlayerDataManager.Instance;
+System.Action<bool,string> check=(ok,msg)=>{if(!ok)throw new System.Exception(msg);passed.Add(msg);};
+int initialGold=p.Gold,initialHp=p.Hp;
+var original=FTProject.LevelLayoutStore.CaptureCurrentLevel(1,0,f.RunMetrics);var bad=UnityEngine.JsonUtility.FromJson<FTProject.LevelLayout>(UnityEngine.JsonUtility.ToJson(original));
+bad.gold=999999;bad.runMetrics.killed=5;bad.goldCarry=.75f;
+check(FTProject.LevelLayoutStore.SaveCapturedLevel(bad),"write deliberately inconsistent test boundary");
+f.TeardownLevel();f.InitLevel(1,true);
+check(p.Gold==initialGold&&p.Hp==initialHp&&p.GoldCarry==0&&f.RunMetrics.runId!=bad.runMetrics.runId&&FTProject.TowerManager.Instance.Count==0,"bad ledger rejects entire economic boundary");
+p.RestoreState(1,123,9,10,0,0,.375f);FTProject.GameClock.RestoreTimers(10.25,20.5,true);
+var valid=FTProject.LevelLayoutStore.CaptureCurrentLevel(1,0,f.RunMetrics);check(FTProject.LevelLayoutStore.SaveCapturedLevel(valid),"write valid zero cursor test boundary");
+f.TeardownLevel();f.InitLevel(1,true);
+check(f.CompletedRoundCount==0&&f.CurrentRoundIndex==1&&f.RunMetrics.runId==valid.runMetrics.runId&&p.Gold==123&&p.Hp==9&&p.GoldCarry==.375f&&FTProject.GameClock.CombatElapsedSeconds==10.25&&FTProject.GameClock.LevelElapsedSeconds==20.5,"zero cursor resumes exact resources clocks and run identity");
+check(!f.CanRestartPreviousWave&&!f.CanRestartCurrentWave,"resume cannot invent missing in-memory history");
+FTProject.EventDispatcher.TriggerEvent(FTProject.EventName.StartRoundRequestEvent);
+check(f.CanRestartCurrentWave&&f.RunMetrics.waves.Count==1,"resumed zero cursor starts exactly one wave");
+FTProject.GameClock.StepManualFrame(.25);f.StepManualSimulation();
+check(f.RestartCurrentWave()&&f.CompletedRoundCount==0&&p.Gold==123&&p.GoldCarry==.375f,"retry after disk reentry preserves zero cursor boundary");
+FTProject.GameClock.StepManualFrame(0);
+}
+FTProject.GameClock.SetPaused(true);
+return new {success=true,passed=passed.Count,checks=passed};
