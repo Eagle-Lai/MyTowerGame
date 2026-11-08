@@ -22,7 +22,7 @@ namespace FTProject
             new Dictionary<string, ObjectPool<BaseEnemy>>();
 
         private readonly List<BaseEnemy> _all = new List<BaseEnemy>(256);
-        public enum SpawnFailure { None, Capacity, Configuration, Resource, Path }
+        public enum SpawnFailure { None, Configuration, Resource, Path }
         public SpawnFailure LastSpawnFailure { get; private set; }
 
         public override void OnInit()
@@ -78,14 +78,7 @@ namespace FTProject
                 return null;
             }
 
-            // 同屏上限保护（低端机性能兜底）
             CombatSystem cs = CombatSystem.Instance;
-            if (cs != null && Configs.Global != null && cs.AliveEnemyCount >= Configs.Global.MaxEnemyAlive)
-            {
-                LastSpawnFailure = SpawnFailure.Capacity;
-                return null;
-            }
-
             ObjectPool<BaseEnemy> pool = GetPool(cfg.ResName);
             BaseEnemy enemy = pool.Get();
             if (enemy == null)

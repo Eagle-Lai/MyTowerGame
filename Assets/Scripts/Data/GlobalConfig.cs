@@ -9,7 +9,7 @@ namespace FTProject
     /// ==================================================================
     /// 【为什么还叫 Global、还保留这些属性名】
     ///   拆分前它包着 `TBGlobal` 单行表的 22 个常量，全工程 ~30 处引用 `Configs.Global.X`。
-    ///   拆分后：**引擎/性能常量**（池大小、同屏上限、死亡回收、离线检查、日志开关）仍来自
+    ///   拆分后：**引擎常量**（池大小、死亡回收、离线检查、日志开关）仍来自
     ///   单行 `TBGlobal`；**玩法/表现常量**（格子尺寸、退款率、波次节奏、飘字、震屏…）
     ///   改由每关一份的 `TBLevelRules` 提供。
     ///
@@ -37,9 +37,6 @@ namespace FTProject
 
         public int EnemyPoolSize { get { return _g.EnemyPoolSize > 0 ? _g.EnemyPoolSize : 64; } }
         public int BulletPoolSize { get { return _g.BulletPoolSize > 0 ? _g.BulletPoolSize : 128; } }
-
-        /// <summary>同屏怪物上限（性能保护）</summary>
-        public int MaxEnemyAlive { get { return _g.MaxEnemyAlive > 0 ? _g.MaxEnemyAlive : 200; } }
 
         // 帧率由启动层统一固定，旧配置字段不再覆盖运行策略。
         public int TargetFrameRate { get { return FTProject.AOT.FrameRatePolicy.TargetFrameRate; } }

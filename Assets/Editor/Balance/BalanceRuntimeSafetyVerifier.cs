@@ -37,7 +37,6 @@ namespace FTProject.EditorTools
             Application.logMessageReceived += CaptureLog;
             try
             {
-                Scenario(results, "capacity_deferral_first_success_clock", Capacity);
                 Scenario(results, "pause_and_speed_real_flow", PauseAndSpeed);
                 Scenario(results, "missing_resource_invalidates_without_reward", MissingResource);
                 Scenario(results, "f2_debug_victory_cannot_save", DebugVictory);
@@ -125,31 +124,6 @@ namespace FTProject.EditorTools
             var save = SaveManager.Instance; var p = save.Data.Find(1);
             Check(save.GetStars(1) == 0 && save.TotalStars == 0 && (p == null || p.clearCount == 0), context + ": no stars or clearCount");
             Check(!save.IsUnlocked(2), context + ": level 2 remains locked under actual player rules");
-        }
-
-        private static void Capacity()
-        {
-            int enemyId = FirstEnemyId(), cap = Configs.Global.MaxEnemyAlive; BaseEnemy first = null;
-            Check(cap > 0 && cap <= 1000, "Bounded actual configured population");
-            for (int i = 0; i < cap; i++)
-            {
-                BaseEnemy enemy = EnemyManager.Instance.Spawn(enemyId); Check(enemy != null, "Fill actual spawn capacity");
-                if (first == null) first = enemy;
-                CountActualEnemies();
-            }
-            Check(CombatSystem.Instance.AliveEnemyCount == cap, "Real combat registry reaches capacity");
-            StartWave(); Step(FirstSpawnTime() + .0625f);
-            Check(EnemyManager.Instance.LastSpawnFailure == EnemyManager.SpawnFailure.Capacity && Wave.SpawnedCount == 0, "Capacity retains pending timeline entry");
-            Check(GameClock.CombatElapsedSeconds == 0d && GameClock.LevelElapsedSeconds > 0d, "Deferred spawning cannot start combat timer");
-            Step(.0625f);
-            Check(Wave.SpawnedCount == 0 && GameFlowManager.Instance.RunMetrics.successfulSpawned == 0 && GameClock.CombatElapsedSeconds == 0d, "Repeated full frame cannot consume spawn or combat time");
-            EnemyManager.Instance.RecycleEnemy(first); CountActualEnemies();
-            Step(.0625f); CountActualEnemies();
-            Check(Wave.SpawnedCount == 1 && GameFlowManager.Instance.RunMetrics.successfulSpawned == 1, "Exactly the pending item spawns after capacity frees");
-            Check(GameClock.CombatElapsedSeconds == 0d, "First successful spawn starts timer after current frame accrual");
-            Step(.0625f);
-            Check(GameClock.CombatElapsedSeconds == .0625d, "Next frame accrues combat once");
-            NoClear("Capacity fixture");
         }
 
         private static void PauseAndSpeed()

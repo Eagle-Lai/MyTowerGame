@@ -21,7 +21,6 @@ public sealed partial class Global :  Bright.Config.BeanBase
         { if(!_json["id"].IsNumber) { throw new SerializationException(); }  Id = _json["id"]; }
         { if(!_json["enemyPoolSize"].IsNumber) { throw new SerializationException(); }  EnemyPoolSize = _json["enemyPoolSize"]; }
         { if(!_json["bulletPoolSize"].IsNumber) { throw new SerializationException(); }  BulletPoolSize = _json["bulletPoolSize"]; }
-        { if(!_json["maxEnemyAlive"].IsNumber) { throw new SerializationException(); }  MaxEnemyAlive = _json["maxEnemyAlive"]; }
         { if(!_json["targetFrameRate"].IsNumber) { throw new SerializationException(); }  TargetFrameRate = _json["targetFrameRate"]; }
         { if(!_json["deathRecycleDelayMs"].IsNumber) { throw new SerializationException(); }  DeathRecycleDelayMs = _json["deathRecycleDelayMs"]; }
         { if(!_json["checkOfflinePerFrame"].IsNumber) { throw new SerializationException(); }  CheckOfflinePerFrame = _json["checkOfflinePerFrame"]; }
@@ -29,12 +28,11 @@ public sealed partial class Global :  Bright.Config.BeanBase
         PostInit();
     }
 
-    public Global(int id, int enemyPoolSize, int bulletPoolSize, int maxEnemyAlive, int targetFrameRate, int deathRecycleDelayMs, int checkOfflinePerFrame, int showDebugLog ) 
+    public Global(int id, int enemyPoolSize, int bulletPoolSize, int targetFrameRate, int deathRecycleDelayMs, int checkOfflinePerFrame, int showDebugLog ) 
     {
         this.Id = id;
         this.EnemyPoolSize = enemyPoolSize;
         this.BulletPoolSize = bulletPoolSize;
-        this.MaxEnemyAlive = maxEnemyAlive;
         this.TargetFrameRate = targetFrameRate;
         this.DeathRecycleDelayMs = deathRecycleDelayMs;
         this.CheckOfflinePerFrame = checkOfflinePerFrame;
@@ -50,7 +48,6 @@ public sealed partial class Global :  Bright.Config.BeanBase
     public int Id { get; private set; }
     public int EnemyPoolSize { get; private set; }
     public int BulletPoolSize { get; private set; }
-    public int MaxEnemyAlive { get; private set; }
     public int TargetFrameRate { get; private set; }
     public int DeathRecycleDelayMs { get; private set; }
     public int CheckOfflinePerFrame { get; private set; }
@@ -74,7 +71,6 @@ public sealed partial class Global :  Bright.Config.BeanBase
         + "Id:" + Id + ","
         + "EnemyPoolSize:" + EnemyPoolSize + ","
         + "BulletPoolSize:" + BulletPoolSize + ","
-        + "MaxEnemyAlive:" + MaxEnemyAlive + ","
         + "TargetFrameRate:" + TargetFrameRate + ","
         + "DeathRecycleDelayMs:" + DeathRecycleDelayMs + ","
         + "CheckOfflinePerFrame:" + CheckOfflinePerFrame + ","
