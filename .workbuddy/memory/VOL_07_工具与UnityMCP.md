@@ -16,7 +16,8 @@
 ## 最近实测线索（2026-11-04，家用 D 机 `D:\FreedomTower_1`；**只作线索，下次仍按现行规则重新确认**）
 
 - 插件 `MCP for Unity v10.3.0`，窗体显示 **Transport = Stdio**、`Unity Socket Port = 6400`、`Session Active (FreedomTower_1)`；Client 下拉里出现的是 "Antigravity 2.0 / Not Configured"，**与 WorkBuddy 无关**，不代表 WorkBuddy 连不上。
-- WorkBuddy 侧 `~/.workbuddy/mcp.json` 用 **stdio**：`uvx --from mcpforunityserver==10.3.0 mcp-for-unity --transport stdio`，**没有 URL/端口可填**，靠 UDP 发现 + socket 6400 桥接。所以「连不上」时**没有端口可问**，先看插件窗体是否 `Session Active`、Unity 是否刚启动还在起桥。
+- WorkBuddy 侧 `~/.workbuddy/mcp.json` 用 **stdio**，**没有 URL/端口可填**，靠发现文件 `~/.unity-mcp/unity-mcp-port-<hash>.json`（`unity_port`）+ socket 桥接。所以「连不上」时**没有端口可问**，先看 `~/.unity-mcp/unity-mcp-status-*.json` 是否 `reason:"ready"`、插件窗体是否 `Session Active`。
+  **2026-11-08 起启动方式改为经 `~/.codex/unity_mcp_launcher.py` 中转**（原来是 `uvx.exe --from mcpforunityserver==10.3.0 mcp-for-unity --transport stdio` 直启，会卡 initialize，详见下文同名章节）。
 - ★本次实测：Unity 19:48 启动，`listMcpResources` 从 19:51 一直报 `unavailableServers:[unityMCP]`，**20:00 自行恢复**（22 项资源一次返回）。结论：**先等 10 分钟量级，不要换端口、不要改配置、不要重启服务**。
 - 实例 ID `FreedomTower_1@520e2c6d`；`project/info` → `projectRoot=D:/FreedomTower_1`、Unity `2022.3.62f3c1`、platform `Android`。
 - 导出配置表走 `execute_menu_item("Tools/塔防/3. 导出配置表（Luban）")`，约 3 秒完成；日志里仍会出现 `[remove] .../FTProject.Gen.asmdef`，但菜单会写回，`git status` 确认 asmdef 未变（本次已复核）。副作用：`Assets/Gen/*.cs` 会因换行符（LF→CRLF）显示为 modified，但 `git diff` 内容为空，属噪音。
@@ -111,7 +112,13 @@
 
 ## ★★★ Codex 侧 stdio 起不来 MCP 的根因与修复（2026-11-05，家用 D 机实测）
 
-> 适用范围：**仅 Codex 客户端 + stdio transport**；WorkBuddy 侧 `~/.workbuddy/mcp.json` 一直正常，不要照此改动。
+> 适用范围（**2026-11-08 修正**）：原写「仅 Codex 客户端，WorkBuddy 侧一直正常，不要照此改动」——**已推翻**。
+> 11-08 家用 D 机实测 WorkBuddy 的 `uvx.exe` 直启同样会全程 timeout（`ListMcpResources` → `unavailableServers:["unityMCP"]`，
+> 重试 4 次全败），而同一时刻桥接健康（`~/.unity-mcp/unity-mcp-status-*.json` = `reloading:false / reason:"ready"`，
+> `unity_port:6400`，心跳在跳）。改法一样：`~/.workbuddy/mcp.json` 的 `command` 换成
+> `...\workbuddy\binaries\python\envs\default\Scripts\python.exe`、`args` 换成 `["C:\Users\78296\.codex\unity_mcp_launcher.py"]`，
+> **改完必须重启 WorkBuddy**。验证方式：只发 `initialize` 读响应，收到 `serverInfo: mcp-for-unity-server 3.4.11` 即通
+> （脚本 `.workbuddy/tools/_probe_unity_mcp_launcher_20261108.py`）。→ **三个客户端（Claude Code / Codex / WorkBuddy）统一走 launcher**。
 > 端口口径仍按本文件开头的「多实体工程 + 失败即问」执行，本节只讲启动方式，不提供任何默认端口。
 
 **症状**

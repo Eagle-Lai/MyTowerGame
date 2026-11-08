@@ -1,0 +1,10 @@
+# VOL_10 —— 包体优化、字体与交互细节（逐字归档）
+
+> 2026-11-08 从 `MEMORY.md` **逐字搬出**（未删改），原因为注入上限截断；索引摘要仍在 `MEMORY.md`。
+
+- ★**TMP 缺字形补字不换字体**（2026-11-05）：`TacticalSans` 是动态字体（源 `NotoSansCJKsc-Regular.otf`，单张 2048×2048，三语共用）→ 用 `TMP_FontAsset.TryAddCharacters(...)` 补并保存资产；换字体/加 fallback 会破坏三语共用口径。验收必须跑真实 prefab 节点的字体/缺字/溢出检查，只看词条文本不算过。
+- ★★**字体源文件是子集版，别再换回完整字库**（2026-11-06，APK 优化第 2 项）：`NotoSansCJKsc-Regular.otf`（3.81 MB）与 `SiYuanSongTi.ttf`（2.68 MB）已按 7038 字子集化（实际文案 ∪ ASCII/标点 ∪ GB2312 一级 ∪ Big5 一级）；TMP 默认字体已改为 LiberationSans SDF，SiYuanSongTi 只在 font 包里一份。**新增文案后若出现子集外的字，必须重跑 `.workbuddy/tools/gen_font_subset_chars.py` 再子集，不要用完整字体覆盖回去**（那是 +20 MB 体积回退）。校验用 `.workbuddy/tools/verify_font_subset.py`，包体归因用 `.workbuddy/tools/apk_size_probe.py`。
+- ★★**真机视角手势＝双指缩放 + 单指长按拖动**（2026-11-06）：`CameraController.HandleTouchGestures` 状态机；长按 0.25s、抖动 14px、缩放不做中点锚；**互斥**靠「第二指落下即抢占、松一根不接管、全部抬起才开下一轮」。配套：`TowerPlacement` 非放置态点选改为「抬起结算」+ 按下 UI 快照（`IsTouchViewGestureConsumed` 为真则不点选），放置态两条老路径未动。桌面滚轮/中键原样保留，改这块先读日档 2026-11-06 11:56。
+- ★★**怪物方向图集按内容裁紧，导入必须 `npotScale=None`**（2026-11-06，APK 优化第 1 项）：119 套四方向图集已用 `.workbuddy/tools/directional_atlas_packing.build_atlas` 重排（8px 间距/4px 对齐/不旋转不缩放），RGBA32 理论纹理 1900→574.8 MiB，1622 个部件像素/切片/Pivot/PPU/fileID 全保持。**再生成图集必须走同一算法**，否则切片坐标全部错位；`EnemyDirectionPrefabBuilder`/`EnemyDirectionalRigBuilder` 的 `TextureImporterNPOTScale.None` 不得删（删了 Unity 把尺寸拉回 2048）。改前基准在 `Library/EnemyAtlasCompaction_20261106*/`（本机缓存）。证据见 `Docs/EnemyDirectionReview/AtlasCompaction_20261106/`。
+- ★**建造按钮图标用 `TowerBuildIcons`，Codex 卡面仍用 `TowerPortraits`**（2026-11-06）：`tower-{normal,power,retard}.png` 是透明抠图，专供建造圆盘；价格牌是无 sprite 的直角矩形 + 塔色 `Outline`，`Icon/IconWell/Label/PriceBadge/PriceMark` 由 `TowerBuildMenu` 现场补建、`TacticalForgePrefabBuilder` 只负责素材路径与导入档位。
+- ★**`BuildApk` 工具链校验读 `AndroidExternalToolsSettings`**（2026-11-06）：别再按 EditorPrefs 的 `JdkPath`/`AndroidSdkRoot`/`AndroidNdkRoot` 判断（内置工具链不写这些键）；缺 JDK/SDK/NDK/Gradle 或 Gradle 少 `lib/gradle-launcher-*.jar` 直接中止并写 `DONE FAIL android_toolchain`，不再"只警告继续跑"。
