@@ -25,6 +25,7 @@
 - 跑生成/挂载/导出前必须 `isCompiling==false && isPlaying==false`；改过 `Assets/Editor/*.cs` 等编译完；**动表与 Luban 导出前先查 `EditorApplication.isPlaying`，对局中就先等或问**（写 asmdef/json 会触发重导入甚至域重载）。
 - 编辑器脚本不弹 `DisplayDialog`（走 `Debug.Log`）；危险操作拆两档菜单。
 - ★提交：**按功能分批**（代码契约→工具→资产→文档，每笔不悬空）；**先写完记录再提交**（当天日档 + 本文件 + 分册同一笔）；提交后不再写盘。
+- ★★**tag 不会跟着 `git push origin main` 走**（2026-11-08 用户追问）：git 默认只推分支历史，tag 必须显式 `--tags` 或 `--follow-tags`。此前仓库远端 **0 个 tag**（`第一关关卡的数值定稿` 自 2026-11-01 起一直只在本地），2026-11-08 已补推两个：`第一关关卡的数值定稿`(annotated→a3252c9e5)、`L01关卡数值定稿！！！`(lightweight→b27d9c3a0)。**发版/定稿打 tag 后必须单独推一次并 `ls-remote --tags` 复核**；带 `^{}` 的行是 annotated tag 的解引用提示，不是多出来的 tag。
 - ★git 代理：先用环境默认 `http_proxy`（会变，先 `env | grep -i proxy`）；带 `-c http.version=HTTP/2`；**单笔 ≤20MB**（130MB 单 commit 必失败）；`cannot lock ref` = 并行竞态先 `ls-remote`；**不要装 git-lfs**；GitHub 偶发 5xx 重试 1-3 次即可过。
 - ★★出 APK 前核对 Build Settings：`Boot.unity` 启用 + `Main.unity` 禁用（main 只能从 AB 加载）。
 - ★★**Luban 导出与 `Assets/Gen/FTProject.Gen.asmdef`**：直跑 exe/bat 会被 Luban 删掉该 asmdef → 必须 `git checkout -- Assets/Gen/FTProject.Gen.asmdef` 并确认 `git status` 无 ` D`；走编辑器菜单 `Tools/塔防/3. 导出配置表（Luban）` 会自动保留（`KeepFilesInCodeDir`）。差别只在「谁调的 Luban」。
