@@ -143,6 +143,12 @@ namespace FTProject
         /// <summary>请求重开当前关卡</summary>
         public const string RestartLevelRequestEvent = "RestartLevelRequestEvent";
 
+        /// <summary>请求确认并重试 HUD 当前波次（整条 Round，不是其中的出怪编组）。</summary>
+        public const string RestartWaveRequestEvent = "RestartWaveRequestEvent";
+
+        /// <summary>确认后回到上一波开打前，允许在准备态连续回退至第一波。</summary>
+        public const string RestartPreviousWaveRequestEvent = "RestartPreviousWaveRequestEvent";
+
         /// <summary>请求退出当前对局、回到关卡选择</summary>
         public const string QuitToSelectRequestEvent = "QuitToSelectRequestEvent";
 

@@ -46,22 +46,24 @@ namespace FTProject
         private TMP_Text _cancelLabel;
 
         private Action _onConfirm;
+        private Action _onCancel;
 
         /// <summary>
         /// 弹一个确认框。<paramref name="onConfirm"/> 在点"确定"后**只执行一次**。
         /// 【prefab 缺失时的行为】记一条明确错误并**不执行** onConfirm ——
         /// 不可撤销的操作宁可"什么都没发生"，也不能在玩家没确认的情况下执行。
         /// </summary>
-        public static void Show(string title, string body, ConfirmType type, Action onConfirm,
-            string confirmLabel = "确定", string cancelLabel = "取消")
+        public static bool Show(string title, string body, ConfirmType type, Action onConfirm,
+            string confirmLabel = "确定", string cancelLabel = "取消", Action onCancel = null)
         {
             ConfirmView view = UIManager.Instance.Open<ConfirmView>(LogicalName, UILayout.NormalPanel);
             if (view == null)
             {
                 Debug.LogError("[Confirm] ConfirmView 打开失败（prefab 可能还没生成），已取消本次操作：" + title);
-                return;
+                return false;
             }
-            view.Setup(title, body, type, onConfirm, confirmLabel, cancelLabel);
+            view.Setup(title, body, type, onConfirm, confirmLabel, cancelLabel, onCancel);
+            return true;
         }
 
         private void Awake()
@@ -82,9 +84,12 @@ namespace FTProject
         }
 
         private void Setup(string title, string body, ConfirmType type, Action onConfirm,
-            string confirmLabel, string cancelLabel)
+            string confirmLabel, string cancelLabel, Action onCancel)
         {
+            // 复用中的确认框被其它请求替换时，先收尾旧请求，避免遗留暂停锁。
+            CancelPending();
             _onConfirm = onConfirm;
+            _onCancel = onCancel;
 
             SetText(_title, title);
             SetText(_body, body);
@@ -157,6 +162,7 @@ namespace FTProject
             // 不清空的话"连点两次确定"会把回调执行两遍（不可撤销操作执行两次是灾难）。
             Action cb = _onConfirm;
             _onConfirm = null;
+            _onCancel = null;
             UIManager.Instance.Close(LogicalName);
             if (cb != null)
             {
@@ -166,8 +172,23 @@ namespace FTProject
 
         private void OnClickCancel()
         {
+            Action cb = _onCancel;
+            _onCancel = null;
             _onConfirm = null;
             UIManager.Instance.Close(LogicalName);
+            if (cb != null) cb();
+        }
+
+        private void OnDisable() { CancelPending(); }
+
+        private void OnDestroy() { CancelPending(); }
+
+        private void CancelPending()
+        {
+            Action cb = _onCancel;
+            _onCancel = null;
+            _onConfirm = null;
+            if (cb != null) cb();
         }
 
         private static void SetText(TMP_Text t, string v)

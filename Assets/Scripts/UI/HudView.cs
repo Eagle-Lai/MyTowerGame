@@ -56,6 +56,8 @@ namespace FTProject
 
         // ---- 右上角：暂停开关 / 暂停菜单（2026-10-14；2026-10-18 职责重划）----
         private Button _pauseButton;
+        private Button _restartWaveButton;
+        private Button _previousWaveButton;
         private Button _introButton;
         /// <summary>
         /// 暂停按钮的文案（2026-10-18 起由本类按状态写：未暂停 = Pause，已暂停 = Continue）。
@@ -232,6 +234,18 @@ namespace FTProject
             if (_introButton != null)
             {
                 _introButton.onClick.AddListener(OnClickIntro);
+            }
+            _restartWaveButton = FindButton("Btn_RestartWave");
+            if (_restartWaveButton != null)
+            {
+                _restartWaveButton.onClick.AddListener(OnClickRestartWave);
+                _restartWaveButton.interactable = false;
+            }
+            _previousWaveButton = FindButton("Btn_PreviousWave");
+            if (_previousWaveButton != null)
+            {
+                _previousWaveButton.onClick.AddListener(OnClickPreviousWave);
+                _previousWaveButton.interactable = false;
             }
 
             _hudRect = transform as RectTransform;
@@ -442,6 +456,16 @@ namespace FTProject
 
         private void Update()
         {
+            if (_previousWaveButton != null)
+            {
+                GameFlowManager flow = GameFlowManager.Instance;
+                _previousWaveButton.interactable = flow != null && flow.CanRestartPreviousWave;
+            }
+            if (_restartWaveButton != null)
+            {
+                GameFlowManager flow = GameFlowManager.Instance;
+                _restartWaveButton.interactable = flow != null && flow.CanRestartCurrentWave;
+            }
             // Canvas 初次布局可能晚于 Awake；宽度未变时不写 RectTransform。
             RefreshBottomLayout();
             // 吞 click 的窗口只保留一帧：click 永远发生在松手当帧，下一帧必然已处理完
@@ -476,6 +500,27 @@ namespace FTProject
             // 后续链路看 [Flow] 暂停/继续（timeScale=…）。
             Debug.Log("[HUD] 点击暂停按钮（暂停/继续开关，不弹窗）");
             EventDispatcher.TriggerEvent(EventName.PauseToggleRequestEvent);
+        }
+
+        private void OnClickRestartWave()
+        {
+            EventDispatcher.TriggerEvent(EventName.RestartWaveRequestEvent);
+        }
+
+        private void OnClickPreviousWave()
+        {
+            EventDispatcher.TriggerEvent(EventName.RestartPreviousWaveRequestEvent);
+        }
+
+        public void RefreshAfterWaveRestart()
+        {
+            _placing = false;
+            _towerPressIndex = -1;
+            _suppressTowerClick = true;
+            RefreshAll();
+            if (_startButton != null) _startButton.interactable = true;
+            if (_speedButton != null) _speedButton.interactable = true;
+            SetStartLabelLocalized("Start", "开始");
         }
 
         /// <summary>
@@ -702,7 +747,10 @@ namespace FTProject
 
         private void OnRoundClear(int roundIndex)
         {
-            SetRoundTextLocalized("Wave {0}/{1} clear", roundIndex, "第 {0}/{1} 波完成");
+            // The flow has already committed its cursor; show the wave the Start
+            // button will actually run, using the same source as a full refresh.
+            RefreshAll();
+            if (GameFlowManager.Instance != null && GameFlowManager.Instance.State == GameFlowState.GameOver) return;
             // 恢复"开始"按钮，让玩家推进到下一回合
             if (_startButton != null)
             {

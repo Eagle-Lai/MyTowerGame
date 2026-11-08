@@ -98,13 +98,16 @@ namespace FTProject
 
         /// <summary>
         /// 暂停 / 继续的唯一写入口。
-        /// 【为什么要把帧缓存作废】暂停那一帧之前可能已经算过 `_cachedDelta`，
-        ///   恢复当帧若沿用旧值，会让模拟多吃一帧（表现为"继续后怪物瞬移一小步"）。
+        /// 切换当帧清零步长并保留帧号，避免暂停后消费旧 delta 或重复累计计时。
         /// </summary>
         public static void SetPaused(bool paused)
         {
+            if (IsPaused == paused) return;
             Time.timeScale = paused ? 0f : 1f;
-            _cachedFrame = -1;
+            // timeScale does not change Time.deltaTime until the next Unity frame.
+            // Discard the remainder of this frame rather than charging it a second time.
+            _cachedFrame = Time.frameCount;
+            _cachedDelta = 0f;
         }
 
         /// <summary>
@@ -151,6 +154,7 @@ namespace FTProject
             _combatElapsed = combatSeconds; _levelElapsed = levelSeconds;
             _combatTimerRunning = false; _levelTimerRunning = levelStarted;
             _cachedFrame = Time.frameCount;
+            _cachedDelta = 0f;
         }
 
         /// <summary>停止计时（结算/退出对局时调用；停止后 LevelElapsedSec 保留最后值供结算读取）。</summary>
@@ -173,7 +177,7 @@ namespace FTProject
 #endif
             if (_cachedFrame == frame) return;
             _cachedFrame = frame;
-            _cachedDelta = _background ? 0f : Mathf.Max(0f, scaledDeltaSeconds) * _speed;
+            _cachedDelta = _background || IsPaused ? 0f : Mathf.Max(0f, scaledDeltaSeconds) * _speed;
             if (_levelTimerRunning) _levelElapsed += _cachedDelta;
             if (_combatTimerRunning) _combatElapsed += _cachedDelta;
         }

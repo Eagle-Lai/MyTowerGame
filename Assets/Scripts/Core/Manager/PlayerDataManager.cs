@@ -24,6 +24,8 @@ namespace FTProject
 
         /// <summary>击杀小数金币的取整余数（0 ≤ x &lt; 1），只在本局有效，见 AddGold(float)</summary>
         private float _goldCarry;
+        /// <summary>波次重试需要保留上一波累计的小数奖励，避免反复重试丢失零头。</summary>
+        public float GoldCarry { get { return _goldCarry; } }
 
         public override void OnInit()
         {
@@ -67,7 +69,8 @@ namespace FTProject
         /// 【为什么不复用 InitFromLevel】那个方法会把金币/生命重置成关卡初始值并清空统计，
         /// 而恢复的场景恰恰相反 —— 要**保留**玩家打到一半的状态。
         /// </summary>
-        public void RestoreState(int levelId, int gold, int hp, int maxHp, int killed = 0, int leaked = 0)
+        public void RestoreState(int levelId, int gold, int hp, int maxHp, int killed = 0, int leaked = 0,
+            float goldCarry = 0f)
         {
             CurrentLevelId = levelId;
             Gold = Mathf.Max(0, gold);
@@ -76,7 +79,7 @@ namespace FTProject
             IsGameOver = false;
             TotalKilled = killed;
             TotalLeaked = leaked;
-            _goldCarry = 0f;
+            _goldCarry = goldCarry >= 0f && goldCarry < 1f ? goldCarry : 0f;
 
             EventDispatcher.TriggerEvent<int, int>(EventName.GoldChangeEvent, Gold, 0);
             EventDispatcher.TriggerEvent<int, int>(EventName.PlayerHpChangeEvent, Hp, 0);
@@ -116,12 +119,11 @@ namespace FTProject
         /// 【为什么是 float】2026-10-29 起击杀金按「小数单价」配置（L01 每只 0.16~1.40），
         /// 掉落的零头先攒在 _goldCarry 里，累计满 1 才真正加到 Gold 并发事件 ——
         /// 所以玩家看到的是「每只都在掉、满 1 进账」，而不是 90% 的怪一分不给。
-        /// 【为什么零头不落存档】它只是本局内的取整余数（< 1 金），跨局沿用会让
-        /// 同一关的复现收入随上一局残留而漂移；InitFromLevel / RestoreState 一律清零。
+        /// 零头随同一局的波次边界保存和恢复；全新一局仍由 InitFromLevel 清零。
         /// </summary>
         public void AddGold(float amount)
         {
-            if (amount <= 0f)
+            if (amount <= 0f || float.IsNaN(amount) || float.IsInfinity(amount))
             {
                 return;
             }
@@ -131,7 +133,9 @@ namespace FTProject
             {
                 return;
             }
-            _goldCarry -= whole;
+            // The rounding tolerance may advance a value just below an integer.
+            // Never carry that tiny negative remainder into a checkpoint.
+            _goldCarry = Mathf.Max(0f, _goldCarry - whole);
             Gold += whole;
             EventDispatcher.TriggerEvent<int, int>(EventName.GoldChangeEvent, Gold, whole);
         }

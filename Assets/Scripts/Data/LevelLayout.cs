@@ -75,6 +75,8 @@ namespace FTProject
         public int gold;
         public int hp;
         public int maxHp;
+        /// <summary>同一局续玩时保留小数金币；旧档缺省为 0。</summary>
+        public float goldCarry;
 
         /// <summary>
         /// 是否带"局内进度"（波次游标 + 运行统计）。2026-10-31 第二轮追加。
@@ -268,15 +270,36 @@ namespace FTProject
         /// </summary>
         public static bool SaveCurrentLevel(int levelId, int roundCursor, LevelRunMetrics runMetrics, string runId)
         {
+            LevelLayout layout = CaptureCurrentLevel(levelId, roundCursor, runMetrics, runId);
+            return SaveCapturedLevel(layout);
+        }
+
+        /// <summary>保存已捕获的一致边界；不能重新采集正在战斗的资源替换其中一部分。</summary>
+        public static bool SaveCapturedLevel(LevelLayout layout)
+        {
+            if (layout == null) return false;
+            LevelLayoutBook book = LoadBook();
+            book.Upsert(JsonUtility.FromJson<LevelLayout>(JsonUtility.ToJson(layout)));
+            bool ok = WriteBook(book);
+            if (ok)
+                Debug.Log(string.Format("[Layout] 第 {0} 关已落盘：{1} 座塔，金币 {2}，生命 {3}/{4}，波次 {5}",
+                    layout.levelId, layout.towerCount, layout.gold, layout.hp, layout.maxHp,
+                    layout.runSaved ? layout.roundCursor.ToString() : "从头"));
+            return ok;
+        }
+
+        /// <summary>只读捕获当前局面，不写存档；供波次开打前的内存检查点复用。</summary>
+        public static LevelLayout CaptureCurrentLevel(int levelId, int roundCursor, LevelRunMetrics runMetrics, string runId = null)
+        {
             if (levelId <= 0)
             {
-                return false;
+                return null;
             }
             TowerManager manager = TowerManager.Instance;
             if (manager == null)
             {
                 Debug.LogWarning("[Layout] TowerManager 未就绪，本次记录未落盘");
-                return false;
+                return null;
             }
 
             List<TowerLayoutEntry> entries = new List<TowerLayoutEntry>(manager.Count);
@@ -323,6 +346,7 @@ namespace FTProject
                 layout.gold = player.Gold;
                 layout.hp = player.Hp;
                 layout.maxHp = player.MaxHp;
+                layout.goldCarry = player.GoldCarry;
             }
 
             // 【2026-10-31 第二轮】波次游标 + 整份运行统计。传 null 表示"这条记录是重玩起点"
@@ -333,19 +357,16 @@ namespace FTProject
                 layout.roundCursor = Mathf.Max(0, roundCursor);
                 layout.levelTimerStarted = GameClock.IsLevelTimerRunning;
                 layout.runMetrics = runMetrics.Clone();
+                layout.runMetrics.combatElapsedSeconds = GameClock.CombatElapsedSeconds;
+                layout.runMetrics.levelElapsedSeconds = GameClock.LevelElapsedSeconds;
+                if (player != null)
+                {
+                    layout.runMetrics.hp = player.Hp;
+                    layout.runMetrics.maxHp = player.MaxHp;
+                }
             }
 
-            LevelLayoutBook book = LoadBook();
-            book.Upsert(layout);
-            bool ok = WriteBook(book);
-            if (ok)
-            {
-                Debug.Log(string.Format(
-                    "[Layout] 第 {0} 关已落盘：{1} 座塔，金币 {2}，生命 {3}/{4}，波次 {5}（累计 {6} 关有记录）",
-                    levelId, entries.Count, layout.gold, layout.hp, layout.maxHp,
-                    layout.runSaved ? layout.roundCursor.ToString() : "从头", book.levels.Count));
-            }
-            return ok;
+            return layout;
         }
 
         // ------------------------------------------------------------------
@@ -382,7 +403,7 @@ namespace FTProject
             }
             // killed / leaked 传进来是为了让本局统计接着累加：
             //   续玩后结算要报"击杀 N / 漏怪 M"，从 0 开始会把前面几波的数据抹掉。
-            player.RestoreState(layout.levelId, layout.gold, layout.hp, layout.maxHp, killed, leaked);
+            player.RestoreState(layout.levelId, layout.gold, layout.hp, layout.maxHp, killed, leaked, layout.goldCarry);
             Debug.Log(string.Format("[Layout] 第 {0} 关资源已还原：金币 {1}，生命 {2}/{3}",
                 layout.levelId, layout.gold, layout.hp, layout.maxHp));
             return true;

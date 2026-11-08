@@ -395,7 +395,7 @@ namespace FTProject.EditorTools
                     double wallLimit = run["wallTimeoutSeconds"].AsDouble;
                     if (wallLimit <= 0) wallLimit = 300;
                     if (EditorApplication.timeSinceStartup - _runWall > wallLimit) { RecordResult(flow, run, "wall_timeout"); return; }
-                    int nextWave = flow.CurrentRoundIndex + 1;
+                    int nextWave = flow.CompletedRoundCount + 1;
                     if ((flow.State == GameFlowState.Preparing || flow.State == GameFlowState.RoundComplete) && _shopWave != nextWave)
                     {
                         _shopWave = nextWave;
