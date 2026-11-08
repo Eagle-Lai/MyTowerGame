@@ -27,7 +27,9 @@ namespace FTProject.EditorTools
     ///   ├── SpeedButton     倍速（→ SpeedButton/Label）
     ///   ├── StartButton     开始 / 下一回合（→ StartButton/Label）
     ///   ├── Btn_Pause       暂停/继续开关（右上角，2026-10-14）→ PauseToggleRequestEvent（不弹窗）
-    ///   └── Btn_Intro       暂停菜单入口（右上角）→ PauseRequestEvent（打开 PauseView，不暂停）
+    ///   ├── Btn_RestartWave 重试本波（暂停与菜单之间）→ RestartWaveRequestEvent（确认后恢复开波状态）
+    ///   ├── Btn_PreviousWave 回到上波 → RestartPreviousWaveRequestEvent（可连续回退至第一波）
+    ///   └── Btn_Intro       暂停菜单入口（右上角）→ PauseRequestEvent
     ///
     /// GameIntroView 节点（游戏介绍弹窗，2026-10-14）：
     ///   GameIntroView
@@ -273,7 +275,7 @@ namespace FTProject.EditorTools
             "Btn_Tower_Normal", "Btn_Tower_Power", "Btn_Tower_Retard",
             "StartButton", "SpeedButton",
             // 右上角（2026-10-14）：暂停 / 游戏介绍
-            "Btn_Pause", "Btn_Intro",
+            "Btn_Pause", "Btn_RestartWave", "Btn_PreviousWave", "Btn_Intro",
         };
 
         // 塔按钮：节点名 / 塔型枚举 / 参考位置（锚点=画布中心）。
@@ -691,6 +693,8 @@ namespace FTProject.EditorTools
             // 右上角：暂停开关 / 暂停菜单（2026-10-14；2026-10-18 职责重划）
             //   Btn_Pause = 暂停/继续开关（不弹窗）；Btn_Intro = 打开展停菜单（不暂停）
             CreateHudCornerButton(root.transform, "Btn_Pause", "Pause", HudPausePos, HudCornerBtnSize);
+            CreateHudCornerButton(root.transform, "Btn_RestartWave", "Retry Wave", HudRestartWavePos, HudCornerBtnSize);
+            CreateHudCornerButton(root.transform, "Btn_PreviousWave", "Previous Wave", HudPreviousWavePos, HudCornerBtnSize);
             CreateHudCornerButton(root.transform, "Btn_Intro", "Menu", HudIntroPos, HudCornerBtnSize);
 
             GameObject saved = SaveUiPrefab(root, HudPath);
@@ -702,7 +706,7 @@ namespace FTProject.EditorTools
                 return;
             }
             report.Ok("HudView.prefab（Bg_Gold+GoldText / Bg_Hp+HpText / Bg_Round+RoundText / " +
-                      "Btn_Tower_Normal·Power·Retard / StartButton / SpeedButton / Btn_Pause / Btn_Intro）");
+                      "Btn_Tower_Normal·Power·Retard / StartButton / SpeedButton / Btn_Pause / Btn_RestartWave / Btn_PreviousWave / Btn_Intro）");
         }
 
         /// <summary>HUD 上的"芯片底"（金币/生命/回合），不吃点击。返回其 Transform 供挂子文本。</summary>
@@ -725,10 +729,12 @@ namespace FTProject.EditorTools
 
         // ---- HUD 右上角工具按钮（暂停 / 游戏介绍，2026-10-14）----
         // 锚点 = 画布右上角 (1,1)、轴心 (1,1)，anchoredPosition 取负值向内缩。
-        // 右边距 40 与左上角三颗芯片的左边距 40 对齐；两颗上下排、间距 14。
+        // 右边距 40；四颗横排为 暂停 / 重试本波 / 回到上波 / 菜单，间距 14。
         private static readonly Vector2 HudCornerBtnSize = new Vector2(180f, 56f);
-        private static readonly Vector2 HudPausePos = new Vector2(-40f, -30f);
-        private static readonly Vector2 HudIntroPos = new Vector2(-40f, -100f);
+        private static readonly Vector2 HudPausePos = new Vector2(-622f, -30f);
+        private static readonly Vector2 HudRestartWavePos = new Vector2(-428f, -30f);
+        private static readonly Vector2 HudPreviousWavePos = new Vector2(-234f, -30f);
+        private static readonly Vector2 HudIntroPos = new Vector2(-40f, -30f);
 
         /// <summary>
         /// 芯片底内嵌的文本：**全拉伸铺满父芯片**，不单独定位。
@@ -1396,7 +1402,7 @@ namespace FTProject.EditorTools
         }
 
         /// <summary>
-        /// 给**已存在**的 HudView.prefab 幂等补挂右上角两颗按钮（Btn_Pause / Btn_Intro）。
+        /// 给已存在的 HudView.prefab 幂等补挂暂停 / 重试本波 / 回到上波 / 菜单，保留其它节点。
         ///
         /// 【为什么单独开这个入口而不用全量重建】HudView.prefab 是手工改造过的资产
         /// （塔按钮槽位、芯片布局都按手工版对齐），BuildHud 的 DeleteAsset+重建会把
@@ -1405,7 +1411,7 @@ namespace FTProject.EditorTools
         /// </summary>
         public static void EnsureHudTopRightButtons(EditorUtil.Report report)
         {
-            report.Head("HudView 右上角补挂 暂停/介绍 按钮（幂等，不重建）");
+            report.Head("HudView 右上角同步 暂停/重试本波/回到上波/菜单（幂等，不重建）");
             if (AssetDatabase.LoadAssetAtPath<GameObject>(HudPath) == null)
             {
                 report.Error("HudView.prefab 不存在，请先跑「补缺 UI 预制体」");
@@ -1414,6 +1420,16 @@ namespace FTProject.EditorTools
 
             GameObject root = PrefabUtility.LoadPrefabContents(HudPath);
             bool changed = false;
+            if (root.transform.Find("Btn_PreviousWave") == null)
+            {
+                CreateHudCornerButton(root.transform, "Btn_PreviousWave", "Previous Wave", HudPreviousWavePos, HudCornerBtnSize);
+                changed = true;
+            }
+            if (root.transform.Find("Btn_RestartWave") == null)
+            {
+                CreateHudCornerButton(root.transform, "Btn_RestartWave", "Retry Wave", HudRestartWavePos, HudCornerBtnSize);
+                changed = true;
+            }
             if (root.transform.Find("Btn_Pause") == null)
             {
                 CreateHudCornerButton(root.transform, "Btn_Pause", "Pause", HudPausePos, HudCornerBtnSize);
@@ -1427,13 +1443,25 @@ namespace FTProject.EditorTools
                 changed = true;
             }
 
+            if (root.GetComponent<TacticalForgeLayout>() == null)
+            {
+                string[] names = { "Btn_Pause", "Btn_RestartWave", "Btn_PreviousWave", "Btn_Intro" };
+                Vector2[] positions = { HudPausePos, HudRestartWavePos, HudPreviousWavePos, HudIntroPos };
+                for (int i = 0; i < names.Length; i++)
+                {
+                    var rect = root.transform.Find(names[i]) as RectTransform;
+                    if (rect.anchoredPosition == positions[i]) continue;
+                    rect.anchoredPosition = positions[i];
+                    changed = true;
+                }
+            }
             if (changed)
             {
                 SaveUiPrefab(root, HudPath);
             }
             else
             {
-                report.Skip("两颗按钮都已存在，跳过");
+                report.Skip("四颗按钮都已存在，跳过");
             }
             PrefabUtility.UnloadPrefabContents(root);
         }

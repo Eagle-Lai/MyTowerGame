@@ -104,9 +104,18 @@ namespace FTProject
                     Put("Panel/LockReason",rightX,200+574*detailScale,rightW,65*detailScale);
                     break;
                 case "HudView":
-                    Put("Bg_Gold",56,40,200,72); Put("Bg_Hp",272,40,220,72);
-                    Put("Bg_Round",narrow?508:w*.5f-160,40,narrow?260:320,72);
-                    Put("Btn_Pause",w-356,36,140,78); Put("Btn_Intro",w-200,36,144,78);
+                    float toolsX = w - 732;
+                    float statusScale = Mathf.Min(1, (toolsX - 104) / 620);
+                    Put("Bg_Gold",56,40,200*statusScale,72);
+                    Put("Bg_Hp",72+200*statusScale,40,220*statusScale,72);
+                    float roundLeft = 88+420*statusScale;
+                    float roundWidth = Mathf.Min(320, toolsX-24-roundLeft);
+                    float roundX = Mathf.Clamp(w*.5f-roundWidth*.5f,roundLeft,toolsX-24-roundWidth);
+                    Put("Bg_Round",roundX,40,roundWidth,72);
+                    Put("Btn_Pause",toolsX,36,140,78);
+                    Put("Btn_RestartWave",toolsX+152,36,168,78);
+                    Put("Btn_PreviousWave",toolsX+332,36,188,78);
+                    Put("Btn_Intro",w-200,36,144,78);
                     for(int i=0;i<3;i++)
                         Put(new[]{"Btn_Tower_Normal","Btn_Tower_Power","Btn_Tower_Retard"}[i],56+i*164,h-152,148,104);
                     Put("SpeedButton",w-390,h-136,144,88); Put("StartButton",w-230,h-136,174,88);

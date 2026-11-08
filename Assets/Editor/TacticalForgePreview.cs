@@ -98,6 +98,16 @@ namespace FTProject.EditorTools
                 if(info)textAt("Panel/BodyText",string.Join("\n\n",new[]{tr("Stop the monsters before they reach your base: build towers on the open tiles beside the path."),tr("Long-press a tower button, drag it onto the board, then release to build."),tr("You may slow the monsters down, but never fully block their path."),tr("Survive every round to win the level.")}));
                 textAt("Panel/ConfirmBtn/Label",tr(danger||info||success?"OK":"Restart Level"));textAt("Panel/CancelBtn/Label",tr("Cancel"));
                 root.GetComponent<ConfirmView>().ArrangeContent(danger?ConfirmType.Danger:info?ConfirmType.Info:success?ConfirmType.Success:ConfirmType.Warning);
+                if(state=="wave-retry" || state=="previous-wave")
+                {
+                    string retryKey = state=="previous-wave" ? "Previous Wave" : "Retry Wave";
+                    textAt("Panel/TopBar/BodyTitle",tr(retryKey));
+                    textAt("Panel/BodyText",state=="previous-wave"
+                        ? string.Format(tr("Return to the start of wave {0}? Later progress will be undone. You can keep going back to wave 1."),4)
+                        : tr("Retry this wave? Towers, gold and HP will return to their wave-start state."));
+                    textAt("Panel/ConfirmBtn/Label",tr(retryKey));
+                    root.GetComponent<ConfirmView>().ArrangeContent(ConfirmType.Warning);
+                }
             }
             if(name=="GameIntroView")
             {
@@ -206,6 +216,14 @@ namespace FTProject.EditorTools
                 textAt("Bg_Gold/GoldText",level.InitialGold.ToString());
                 textAt("Bg_Hp/HpText",level.InitialHp+"/"+level.InitialHp);
                 textAt("Bg_Round/RoundText",tr("Ready"));
+                if(state=="wave-retry" || state=="previous-wave")
+                {
+                    textAt("Bg_Round/RoundText",string.Format(tr("Wave {0}/{1}"),5,level.RoundIds.Count));
+                    textAt("Btn_Pause/Label",tr("Pause"));
+                    textAt("StartButton/Label",tr("In Progress"));
+                    root.transform.Find("Btn_RestartWave").GetComponent<Button>().interactable=true;
+                    root.transform.Find("Btn_PreviousWave").GetComponent<Button>().interactable=true;
+                }
                 var board=new GameObject("Formal map layout preview",typeof(RectTransform),typeof(LevelMapPreviewGraphic));board.transform.SetParent(root.transform,false);board.transform.SetAsFirstSibling();
                 var boardRect=(RectTransform)board.transform;boardRect.anchorMin=Vector2.zero;boardRect.anchorMax=Vector2.one;boardRect.offsetMin=new Vector2(TacticalForgeLayout.BattleSideInset,TacticalForgeLayout.BattleVerticalInset);boardRect.offsetMax=-boardRect.offsetMin;
                 if(map!=null)board.GetComponent<LevelMapPreviewGraphic>().Bind(new LevelMapConfig(map));

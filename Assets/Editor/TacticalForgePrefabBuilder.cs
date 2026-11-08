@@ -90,6 +90,72 @@ namespace FTProject.EditorTools
             finally { PrefabUtility.UnloadPrefabContents(root); }
             return true;
         }
+
+        [MenuItem("Tools/塔防/Tactical Forge/同步 HUD 波次回退按钮", false, 95)]
+        public static void ApplyWaveRestartButton()
+        {
+            if (EditorApplication.isPlayingOrWillChangePlaymode) throw new InvalidOperationException("Edit Mode required.");
+            // 只修改这个 HUD 的四个工具按钮及其布局，保留其它节点与 GUID。
+            var root = PrefabUtility.LoadPrefabContents(UIPrefabBuilder.HudPath);
+            try
+            {
+                EnsureWaveRestartButton(root);
+                Ensure<TacticalForgeLayout>(root).Refresh();
+                PrefabUtility.SaveAsPrefabAsset(root, UIPrefabBuilder.HudPath);
+            }
+            finally { PrefabUtility.UnloadPrefabContents(root); }
+            AssetDatabase.SaveAssets();
+        }
+
+        private static void EnsureWaveRestartButton(GameObject root)
+        {
+            var retry = root.transform.Find("Btn_RestartWave");
+            if (retry == null)
+            {
+                var source = root.transform.Find("Btn_Pause");
+                if (source == null) throw new InvalidOperationException("HUD is missing Btn_Pause.");
+                retry = UnityEngine.Object.Instantiate(source.gameObject, root.transform).transform;
+                retry.name = "Btn_RestartWave";
+                retry.GetComponent<Button>().onClick = new Button.ButtonClickedEvent();
+            }
+            retry.SetSiblingIndex(root.transform.Find("Btn_Pause").GetSiblingIndex() + 1);
+            var label = retry.Find("Label").GetComponent<TMP_Text>();
+            label.text = "Retry Wave";
+            label.enableAutoSizing = true;
+            label.fontSizeMin = 22;
+            label.fontSizeMax = 28;
+            label.enableWordWrapping = false;
+            Ensure<TextLocalizer>(label.gameObject).Key = "Retry Wave";
+            retry.GetComponent<Button>().interactable = false;
+            var previous = root.transform.Find("Btn_PreviousWave");
+            if (previous == null)
+            {
+                previous = UnityEngine.Object.Instantiate(retry.gameObject, root.transform).transform;
+                previous.name = "Btn_PreviousWave";
+                previous.GetComponent<Button>().onClick = new Button.ButtonClickedEvent();
+            }
+            previous.SetSiblingIndex(retry.GetSiblingIndex() + 1);
+            var previousLabel = previous.Find("Label").GetComponent<TMP_Text>();
+            previousLabel.text = "Previous Wave";
+            previousLabel.enableAutoSizing = true;
+            previousLabel.fontSizeMin = 22;
+            previousLabel.fontSizeMax = 28;
+            previousLabel.enableWordWrapping = false;
+            Ensure<TextLocalizer>(previousLabel.gameObject).Key = "Previous Wave";
+            previous.GetComponent<Button>().interactable = false;
+            // Prefab contents can have zero canvas size. Persist corner anchors explicitly so
+            // Prefab Mode displays the same order before runtime layout has ever executed.
+            string[] names = { "Btn_Pause", "Btn_RestartWave", "Btn_PreviousWave", "Btn_Intro" };
+            float[] rightInsets = { 592, 412, 212, 56 };
+            float[] widths = { 140, 168, 188, 144 };
+            for (int i = 0; i < names.Length; i++)
+            {
+                var rect = root.transform.Find(names[i]) as RectTransform;
+                rect.anchorMin = rect.anchorMax = rect.pivot = Vector2.one;
+                rect.anchoredPosition = new Vector2(-rightInsets[i], -36);
+                rect.sizeDelta = new Vector2(widths[i], 78);
+            }
+        }
         public static void Apply(GameObject root)
         {
             string name = root.name.Replace("(Clone)","");
@@ -180,6 +246,7 @@ namespace FTProject.EditorTools
             }
             else if(name=="HudView")
             {
+                EnsureWaveRestartButton(root);
                 foreach(string band in new[]{"TopBar","BottomBar"})
                 {var tr=root.transform.Find(band);if(tr!=null)tr.gameObject.SetActive(false);}
                 BuildTowerActions(root);

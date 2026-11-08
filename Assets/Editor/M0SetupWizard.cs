@@ -319,7 +319,7 @@ namespace FTProject.EditorTools
                 new[] { "Bg_Gold/GoldText", "Bg_Hp/HpText", "Bg_Round/RoundText",
                         "StartButton", "SpeedButton",
                         "Btn_Tower_Normal", "Btn_Tower_Power", "Btn_Tower_Retard",
-                        "Btn_Pause", "Btn_Intro" });
+                        "Btn_Pause", "Btn_RestartWave", "Btn_PreviousWave", "Btn_Intro" });
             // ★ TipText 是底条 TipBar 的子节点（两段式路径），2026-10-15 手工版移入。
             CheckUiPrefab(report, UIPrefabBuilder.TipsPath, "TipsView", new[] { "TipBar/TipText" });
             CheckUiPrefab(report, UIPrefabBuilder.TowerInfoPath, "TowerInfoView", new[] { "Bg", "Panel" });
