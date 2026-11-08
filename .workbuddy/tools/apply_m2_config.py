@@ -42,7 +42,7 @@ TOWER_COLS = ["id", "type", "name", "resName", "level", "radius", "power", "CD",
 BULLET_COLS = ["id", "name", "resName", "speed", "hitRadius", "lifeTimeMs", "pierce",
                "aoeRadius", "effectType", "effectValue", "scale", "desc"]
 GLOBAL_COLS = ["id", "cellSize", "boardOriginPadding", "enemyPoolSize", "bulletPoolSize",
-               "maxEnemyAlive", "defaultReward", "defaultDamageToPlayer", "defaultBodyRadius",
+               "defaultReward", "defaultDamageToPlayer", "defaultBodyRadius",
                "defaultSearchIntervalMs", "targetFrameRate", "deathRecycleDelayMs",
                "checkOfflinePerFrame", "showDebugLog", "autoNextRoundDelayMs",
                "autoStartRoundDelayMs", "sellRefundRate", "artFaceLeft"]

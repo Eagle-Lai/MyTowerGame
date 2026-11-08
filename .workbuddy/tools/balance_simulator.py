@@ -204,14 +204,13 @@ def simulate_level(plan,L,strategy,step_ms,out,seed=42):
         path=path_for(cells,[t['cell'] for t in towers]);airpath=[path[0],path[-1]]
         alive=[];cursor=0;elapsed=0.0;wave_kills=wave_leaks=wave_income=wave_boss=wave_critical=peak=0
         wave_overkill=0;wave_air_window=wave_ground_window=0
-        initial_ops=len(operations);deferred=0;leak_roles=collections.Counter()
+        initial_ops=len(operations);leak_roles=collections.Counter()
         upgrade_spent=sum(op['cost'] for op in operations if op['action']=='upgrade')
         upgrade_cap=POLICY.get('upgradeBudgetGold')
         # Full wave; do not overlap the next wave or pre-credit any income.
         while cursor<len(w['enemyIds']) or alive:
             if elapsed>240:error='wave simulation exceeded 240 seconds';break
             while cursor<len(w['enemyIds']) and elapsed+1e-9>=cursor*w['spawnIntervalMs']/1000:
-                if len(alive)>=tables['tbglobal'][0].get('maxEnemyAlive',200):deferred+=1;break
                 cfg=enemy_table[w['enemyIds'][cursor]];role=next(c['role'] for c in w['composition'] if c['variantId']==cfg['id'])
                 alive.append({'spawnIndex':cursor,'cfg':cfg,'role':role,'hp':cfg['hp'],'path':airpath if cfg['isFlying'] else path,
                   'segment':0,'segmentProgress':0.0,'slowRatio':0.0,'slowUntil':0.0,'alive':True})
@@ -308,7 +307,7 @@ def simulate_level(plan,L,strategy,step_ms,out,seed=42):
         if cleared:gold+=w['rewardGold']
         reports.append({'waveOrdinal':w['waveOrdinal'],'planned':w['count'],'successfulSpawned':cursor,'totalEhp':w['actualEhp'],
           'towerCount':len(towers),'capacity':map_capacity['capacity'],'occupancy':len(towers)/map_capacity['capacity'],'leakedByRole':dict(leak_roles),
-          'pathLength':len(path)-1,'spawnDeferredCount':deferred,'layout':[{'row':t['cell'][1],'col':t['cell'][0],'towerId':t['id']} for t in towers],
+          'pathLength':len(path)-1,'layout':[{'row':t['cell'][1],'col':t['cell'][0],'towerId':t['id']} for t in towers],
           'repeatedCoverageTowers':sum(__import__('balance_maze').intervals(t['cell'],path,tower_table[t['id']]['radius'])>1 for t in towers),
           'flyingCount':w['flyingCount'],'heavyCount':w['heavyCount'],'eliteCount':w['eliteCount'],'bossCount':w['bossCount'],
           'killed':wave_kills,'leaked':wave_leaks,'bossLeaked':wave_boss,'criticalLeaked':wave_critical,'killGold':wave_income,

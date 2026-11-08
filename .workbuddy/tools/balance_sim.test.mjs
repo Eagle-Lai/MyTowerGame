@@ -24,14 +24,14 @@ const FROST_L1 = TOWER_ROWS.get(7);    // radius 3, slow 0.3, CD 250 ms
 
 // ---------------------------------------------------------------- fixtures
 // Build a run state on a synthetic map with the real tower and bullet tables.
-function fixtureState({ lines, initialGold = 0, initialHp = 12, maxAlive = 200, rounds = [], groups = new Map(),
+function fixtureState({ lines, initialGold = 0, initialHp = 12, rounds = [], groups = new Map(),
   enemies = new Map(), rewardGold = 0, dt = 0.05 }) {
   const cols = lines[0].length;
   const grid = buildGrid({ levelId: 999, cols, rows: lines.length, cells: lines });
   const roundIds = rounds.map((_, i) => 9000 + i);
   const tables = {
     ...REAL,
-    global: { autoNextRoundDelayMs: 2500, maxEnemyAlive: maxAlive },
+    global: { autoNextRoundDelayMs: 2500 },
     scenes: new Map([[999, { id: 999, name: 'fixture', mapId: 999, RoundList: roundIds, initialGold, initialHp }]]),
     maps: new Map([[999, { levelId: 999, cols, rows: lines.length, cells: lines }]]),
     rounds: new Map(roundIds.map((id, i) => [id, { id, EnemyIndexs: rounds[i].groups, rewardGold: rounds[i].reward ?? rewardGold, interval: 0 }])),
@@ -196,19 +196,16 @@ test('kill pays gold immediately; round reward is paid once at clear; leak costs
   assert.ok(grid.N === 4);
 });
 
-test('spawn cap: deferred, not dropped; leak deducts 1 HP for damageToPlayer 0; round reward once', () => {
+test('wave spawn: all planned units spawn; leak deducts 1 HP for damageToPlayer 0; round reward once', () => {
   const groups = new Map([[77, { id: 77, EnemyIndexs: [5001, 5001, 5001], enemyInterval: 100, interval: 0 }]]);
   const enemies = new Map([[5001, { id: 5001, speed: 40, hp: 1, armor: 0, reward: 1, damageToPlayer: 0, isFlying: 0 }]]);
   const { st } = fixtureState({
-    lines: corridor(12), initialGold: 0, initialHp: 12, maxAlive: 2, groups, enemies,
+    lines: corridor(12), initialGold: 0, initialHp: 12, groups, enemies,
     rounds: [{ groups: [77], reward: 26 }],
   });
-  let maxSeen = 0;
   for (let i = 0; i < 2000 && !st.done && !st.lost; i++) {
     stepOnce(st);
-    maxSeen = Math.max(maxSeen, st.enemies.length);
   }
-  assert.ok(maxSeen <= 2, `alive cap respected, max seen ${maxSeen}`);
   assert.equal(st.spawnedTotal, 3, 'all three units eventually spawn');
   assert.equal(st.leaksTotal, 3);
   assert.equal(st.hp, 12 - 3, 'each leak costs max(1, 0) = 1 HP');

@@ -262,7 +262,6 @@ def _run_one(task):
         'spentUpgrade': sum(op['cost'] for op in res['operations'] if op['action'] == 'upgrade'),
         'upgradeBudget': budget,
         'fullMazeCost': round(len(policy['blueprintCells']) * unit_price(plan), 1),
-        'spawnDeferred': sum(w.get('spawnDeferredCount', 0) for w in res['waves']),
         'alivePeak': res['alivePeak'], 'overkill': res['overkillDamage'],
         'leakWaves': [w['waveOrdinal'] for w in res['waves'] if w.get('leaked')],
         'leakRoles': {k: sum(w['leakedByRole'].get(k, 0) for w in res['waves'])

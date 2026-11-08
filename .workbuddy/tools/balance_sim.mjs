@@ -70,7 +70,6 @@ export function loadTables(configDir = CONFIG_DIR) {
   return {
     global: {
       autoNextRoundDelayMs: glob.autoNextRoundDelayMs ?? 2500,
-      maxEnemyAlive: glob.maxEnemyAlive ?? 200,
     },
     scenes: new Map(read('tbsceneinfo.json').map((s) => [s.id, s])),
     rounds: byId(read('tbrounddata.json')),
@@ -588,7 +587,6 @@ export function makeRunState(prep, tables, opts) {
     dt: opts.dt,
     k: 0,
     delaySteps: Math.max(0, Math.round(tables.global.autoNextRoundDelayMs / 1000 / opts.dt)),
-    maxAlive: tables.global.maxEnemyAlive,
     gold: prep.scene.initialGold,
     hp: prep.scene.initialHp,
     occ: new Uint8Array(g.N),
@@ -630,7 +628,7 @@ function roundRec(st, idx) {
       goldStart: null, goldEnd: null, rewardGold: null,
       planned: 0, plannedGround: 0, plannedAir: 0,
       spawned: 0, spawnedGround: 0, spawnedAir: 0,
-      killed: 0, leaked: 0, hpLost: 0, built: 0, upgraded: 0, spawnDeferredSteps: 0, delayedSpawns: 0,
+      killed: 0, leaked: 0, hpLost: 0, built: 0, upgraded: 0,
     });
   }
   return st.rounds[idx];
@@ -1010,12 +1008,10 @@ function startRound(st) {
   }
 }
 
-// C#: WaveManager.Tick. Spawns are deferred (not dropped) while the alive cap is reached.
+// C#: WaveManager.Tick. Spawn every timeline entry that is due.
 function spawnDue(st) {
   const tl = (st.k - st.roundStep + 1) * st.dt;
-  let deferred = false;
   while (st.cursor < st.timeline.length && st.timeline[st.cursor].time <= tl + EPS) {
-    if (st.enemies.length >= st.maxAlive) { deferred = true; break; }
     const entry = st.timeline[st.cursor];
     st.cursor += 1;
     st.enemies.push(makeEnemy(st, entry.enemyId));
@@ -1025,11 +1021,6 @@ function spawnDue(st) {
     const cfg = st.tables.enemies.get(entry.enemyId);
     if (cfg && cfg.isFlying === 1) rec.spawnedAir += 1;
     else rec.spawnedGround += 1;
-  }
-  if (deferred) {
-    const rec = roundRec(st, st.roundIdx);
-    rec.spawnDeferredSteps += 1;
-    rec.delayedSpawns = Math.max(rec.delayedSpawns, st.timeline.length - st.cursor);
   }
 }
 
