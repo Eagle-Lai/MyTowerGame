@@ -103,7 +103,7 @@ namespace FTProject
     /// 【为什么整本存一个 kv 键，而不是每关一个键】
     ///   1. 读取要么"全有"要么"全无"，不会出现"第 3 关解析成功、第 4 关坏了"的半截状态；
     ///   2. 覆盖写入天然是原子的（一次 INSERT OR REPLACE），不需要"先删旧再写新"两步；
-    ///   3. 规模可控：30 关 × 最多几十座塔，整本 json 也就几十 KB，
+    ///   3. 规模可控：历史仅含各波开局边界，塔阵和统计随波数增长；不包含怪物或子弹对象，
     ///      相比多键枚举/前缀删除的实现成本，这点体积不值得优化。
     /// </summary>
     [Serializable]
@@ -111,6 +111,9 @@ namespace FTProject
     {
         public int formatVersion = LevelLayoutStore.FormatVersion;
         public List<LevelLayout> levels = new List<LevelLayout>();
+        // Stored in the same encrypted KV value as levels: progress and rewind
+        // history are committed together, without recursive LevelLayout payloads.
+        public List<WaveRestartHistory> waveHistories = new List<WaveRestartHistory>();
 
         public LevelLayout Find(int levelId)
         {
@@ -156,40 +159,41 @@ namespace FTProject
         }
     }
 
+    [Serializable]
+    public sealed class WaveRestartCheckpoint
+    {
+        public LevelLayout layout;
+        public int roundId;
+        public float goldCarry;
+        public int killed, leaked;
+        public double combatSeconds, levelSeconds;
+        public bool timerStarted;
+        public List<TowerSnapshot> towerStates = new List<TowerSnapshot>();
+    }
+
+    [Serializable]
+    public sealed class WaveRestartHistory
+    {
+        public const int CurrentVersion = 1;
+        public int version = CurrentVersion;
+        public int levelId;
+        public string runId;
+        public string contentSignature;
+        public List<int> roundIds = new List<int>();
+        public List<WaveRestartCheckpoint> checkpoints = new List<WaveRestartCheckpoint>();
+    }
+
     /// <summary>
-    /// 关卡布阵 + 资源的落盘入口（业务门面之外的一个小仓库）。
+    /// 关卡布阵、资源、波次进度与开波历史的落盘入口（2026-11-10）。
     ///
-    /// ==================================================================
-    /// 【口径（2026-10-31 用户定案，逐步收敛）】
-    ///   · **每通过一波就写**：`GameFlowManager.FinishRound` 在回合结算后调用
-    ///     <see cref="SaveCurrentLevel"/>，同时记下**塔阵 + 金币 + 生命**。
-    ///     （用户实测场景：打一波 → 回选关 → 再进，塔和资源都要还在。）
-    ///   · **整关通关再写一次**：`CompleteVictory` 里 `RecordClear` 成功后写，带 runId，属权威覆盖。
-    ///   · 每关一份，**后写整条替换前写**（清旧写新），不做历史累积。
-    ///   · 进入某关时若存在记录：塔阵**免费还原**（不扣金币），金币/生命**直接覆盖**成记录值。
-    ///   · 失败 / 中途退出 / 杀进程：不写（但那之前已通过的波次已经存过了）。
+    /// 开波前保存完整边界；过波后保存下一波准备态。战斗中卖塔仍保存原开波边界，
+    /// 避免半波收入、受损生命和已完成波次账目混写。回退后裁掉未来历史，再一起落盘。
+    /// 当前边界与本局历史共用一个加密 KV 值，SQLite 单行替换 / JSON 文件替换保证成对写入。
+    /// 退出或停止运行只释放内存；重进从保存的完整边界恢复，并恢复可用的历史。
+    /// 显式新局立即替换旧局与历史；通关后的重玩记录不携带旧局历史。
     ///
-    /// 【和 10-30 停写的 level_snapshot 差在哪】
-    ///   差在**波次游标**：本类不存"打到第几波"，重进一定从第 1 波开始。
-    ///   所以金币/生命虽然是"打到一半"的数值，却不能用来跳波。
-    ///   代价：重进后重打前面几波会再赚一遍钱，"退关 → 重进"仍能把金币滚大
-    ///   （用户 2026-10-31 明确接受这个便利；要彻底闭合必须连波次游标一起存，
-    ///   那等于把 10-30 废止的续玩快照恢复回来，需用户另行确认）。
-    ///
-    /// 【为什么免费还原不会变成刷金币】
-    ///   塔的出售返还口径是 `min(配置售价, 实际投入) × 返还比例`
-    ///   （见 `TowerManager.RefundOf`），而"实际投入"随阵型一起落盘
-    ///   （<see cref="TowerLayoutEntry.investedGold"/>），所以：
-    ///   · 还原塔卖出拿回的是"它当年投入的一部分"，含它自己；
-    ///   · 返还额永远 ≤ 投入，卖塔本身不可能增殖；
-    ///   · 关键在于**卖塔立刻再落盘一次**（`GameFlowManager.OnTowerSold`）：
-    ///     塔从记录里消失、金币进记录，否则"卖完退出再进"会让塔带着投入额复活，
-    ///     同一座塔可以被反复卖 —— 那才是真正的刷钱路径。
-    ///   2026-11-01 之前这里是"还原塔投入 0 → 卖 0"，代价是同一座塔的返还
-    ///   在退出重进前后不一致；按用户当次要求改成把投入一并存下来。
-    ///
-    /// 【异常策略】与存档层一致：读坏了当"没有记录"，写失败只记日志，绝不抛给玩法层。
-    /// ==================================================================
+    /// 每座塔保留实际投入，恢复后出售返还仍按原口径计算。旧档缺少历史时继续读取当前
+    /// 进度，不推造此前的检查点。历史兼容性和完整性由 GameFlowManager 接管前校验。
     /// </summary>
     public static class LevelLayoutStore
     {
@@ -226,7 +230,15 @@ namespace FTProject
         /// </summary>
         public static bool TryGet(int levelId, out LevelLayout layout)
         {
+            WaveRestartHistory ignored;
+            return TryGet(levelId, out layout, out ignored);
+        }
+
+        /// <summary>从同一份落盘记录读取当前边界和回退历史。</summary>
+        public static bool TryGet(int levelId, out LevelLayout layout, out WaveRestartHistory history)
+        {
             layout = null;
+            history = null;
             if (levelId <= 0)
             {
                 return false;
@@ -251,6 +263,8 @@ namespace FTProject
                 return false;
             }
             layout = found;
+            if (found.runSaved && found.runMetrics != null && book.waveHistories != null)
+                history = book.waveHistories.Find(h => h != null && h.levelId == levelId && h.runId == found.runMetrics.runId);
             return true;
         }
 
@@ -268,18 +282,28 @@ namespace FTProject
         ///     —— 通关后再进这一关属于"重玩"，应该从第 1 波、全新评级开始，
         ///     否则一进关就 `_roundCursor >= _roundIds.Count` 立刻又判一次通关。
         /// </summary>
-        public static bool SaveCurrentLevel(int levelId, int roundCursor, LevelRunMetrics runMetrics, string runId)
+        public static bool SaveCurrentLevel(int levelId, int roundCursor, LevelRunMetrics runMetrics, string runId,
+            WaveRestartHistory history = null)
         {
             LevelLayout layout = CaptureCurrentLevel(levelId, roundCursor, runMetrics, runId);
-            return SaveCapturedLevel(layout);
+            return SaveCapturedLevel(layout, history);
         }
 
         /// <summary>保存已捕获的一致边界；不能重新采集正在战斗的资源替换其中一部分。</summary>
-        public static bool SaveCapturedLevel(LevelLayout layout)
+        public static bool SaveCapturedLevel(LevelLayout layout, WaveRestartHistory history = null)
         {
             if (layout == null) return false;
+            if (history != null && (!layout.runSaved || layout.runMetrics == null ||
+                history.version != WaveRestartHistory.CurrentVersion || history.levelId != layout.levelId ||
+                history.runId != layout.runMetrics.runId || history.checkpoints == null ||
+                history.checkpoints.Exists(c => c == null || c.layout == null || c.layout.roundCursor > layout.roundCursor)))
+                return false;
             LevelLayoutBook book = LoadBook();
             book.Upsert(JsonUtility.FromJson<LevelLayout>(JsonUtility.ToJson(layout)));
+            if (book.waveHistories == null) book.waveHistories = new List<WaveRestartHistory>();
+            book.waveHistories.RemoveAll(h => h == null || h.levelId == layout.levelId);
+            if (history != null)
+                book.waveHistories.Add(JsonUtility.FromJson<WaveRestartHistory>(JsonUtility.ToJson(history)));
             bool ok = WriteBook(book);
             if (ok)
                 Debug.Log(string.Format("[Layout] 第 {0} 关已落盘：{1} 座塔，金币 {2}，生命 {3}/{4}，波次 {5}",
@@ -288,7 +312,7 @@ namespace FTProject
             return ok;
         }
 
-        /// <summary>只读捕获当前局面，不写存档；供波次开打前的内存检查点复用。</summary>
+        /// <summary>只读捕获当前局面，不写存档；供开波检查点与成对持久化复用。</summary>
         public static LevelLayout CaptureCurrentLevel(int levelId, int roundCursor, LevelRunMetrics runMetrics, string runId = null)
         {
             if (levelId <= 0)
@@ -549,7 +573,10 @@ namespace FTProject
             {
                 string json = JsonUtility.ToJson(book);
                 SaveManager.Instance.SetUserValue(StorageKey, json, Sensitive);
-                return true;
+                // Storage backends deliberately swallow IO errors. Read back the
+                // complete value so a failed history write cannot report success.
+                string persisted;
+                return SaveManager.Instance.TryGetUserValue(StorageKey, out persisted) && persisted == json;
             }
             catch (Exception ex)
             {

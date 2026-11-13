@@ -1,0 +1,49 @@
+var checks=new System.Collections.Generic.List<string>();
+try{
+System.Action<bool,string> check=(ok,msg)=>{if(!ok)throw new System.Exception(msg);checks.Add(msg);};
+check(FTProject.SaveManager.IsTestStorage,"all abnormal cases use isolated storage");
+var f=FTProject.GameFlowManager.Instance;var p=FTProject.PlayerDataManager.Instance;
+using(var manual=FTProject.GameClock.BeginManualSimulation()){
+FTProject.GameClock.SetPaused(false);f.TeardownLevel();f.InitLevel(1,false);p.RestoreState(1,10000,5000,5000);
+var flags=System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic;
+System.Func<System.Collections.IDictionary> memory=()=>(System.Collections.IDictionary)typeof(FTProject.GameFlowManager).GetField("_waveRestartHistory",flags).GetValue(f);
+System.Action noAuto=()=>typeof(FTProject.GameFlowManager).GetField("_autoNextTimer",flags).SetValue(f,0f);
+System.Action start=()=>FTProject.EventDispatcher.TriggerEvent(FTProject.EventName.StartRoundRequestEvent);
+System.Action finish=()=>{for(int i=0;i<20000&&f.State==FTProject.GameFlowState.RoundRunning;i++){FTProject.GameClock.StepManualFrame(.1);f.StepManualSimulation();foreach(var e in UnityEngine.Object.FindObjectsOfType<FTProject.BaseEnemy>())if(e.IsAlive)e.Hurt(1000000);}noAuto();check(f.State==FTProject.GameFlowState.Preparing,"wave completed");};
+System.Action reload=()=>{f.TeardownLevel();FTProject.SaveManager.Instance.SetTestStorageContext("wave-history-persistence-20261110");f.InitLevel(1,true);noAuto();};
+start();finish();p.AddGold(.375f);start();finish();start();
+FTProject.LevelLayout layout;FTProject.WaveRestartHistory history;FTProject.LevelLayoutStore.TryGet(1,out layout,out history);
+var baseline=UnityEngine.JsonUtility.ToJson(layout);var baselineHistory=UnityEngine.JsonUtility.ToJson(history);
+check(history.checkpoints.Count==3&&f.CompletedRoundCount==2,"three boundaries available");
+reload();check(f.CanRestartPreviousWave&&memory().Count==3,"same-level teardown and storage reopen restore history");
+start();p.AddGold(19.5f);check(f.RestartCurrentWave(),"current-wave retry succeeds after resume");
+reload();check(f.CompletedRoundCount==2&&f.CanRestartPreviousWave&&memory().Count==3,"current-wave retry retains earlier persistent boundaries");
+check(f.RestartPreviousWave()&&f.CompletedRoundCount==1,"rollback old branch");p.AddGold(77.625f);int branchGold=p.Gold;float branchCarry=p.GoldCarry;start();finish();start();
+reload();check(f.RestartPreviousWave()&&f.CompletedRoundCount==1&&p.Gold==branchGold&&p.GoldCarry==branchCarry,"new branch replaces checkpoint after storage reopen");
+reload();check(memory().Count==2&&f.RestartPreviousWave()&&f.CompletedRoundCount==0,"pruned future branch cannot return after another reload");
+foreach(string fault in new[]{"version","signature","round","duplicate","foreign","phase","metric","future","clock-nan","clock-mismatch"}){
+ var l=UnityEngine.JsonUtility.FromJson<FTProject.LevelLayout>(baseline);
+ var h=UnityEngine.JsonUtility.FromJson<FTProject.WaveRestartHistory>(baselineHistory);
+ if(fault=="version")h.version=999;if(fault=="signature")h.contentSignature="different-content";if(fault=="round")h.roundIds[0]=-1;
+ if(fault=="duplicate")h.checkpoints[1]=h.checkpoints[0];if(fault=="foreign")h.checkpoints[0].layout.runMetrics.runId="foreign-run";
+ if(fault=="phase")h.checkpoints[0].towerStates.Add(new FTProject.TowerSnapshot());
+ if(fault=="metric")h.checkpoints[0].layout.runMetrics.killed=999;
+ if(fault=="future")h.checkpoints[2].layout.roundCursor=3;
+ if(fault=="clock-nan")h.checkpoints[0].layout.runMetrics.combatElapsedSeconds=double.NaN;
+ if(fault=="clock-mismatch")h.checkpoints[0].layout.runMetrics.levelElapsedSeconds=999;
+ var b=new FTProject.LevelLayoutBook();b.levels.Add(l);b.waveHistories.Add(h);FTProject.SaveManager.Instance.SetUserValue(FTProject.LevelLayoutStore.StorageKey,UnityEngine.JsonUtility.ToJson(b),true);
+ reload();check(f.CompletedRoundCount==2&&p.Gold==l.gold&&p.Hp==l.hp&&f.RunMetrics.runId==l.runMetrics.runId&&!f.CanRestartPreviousWave&&memory().Count==0,"reject "+fault+" history while retaining valid current progress");
+}
+var old=UnityEngine.JsonUtility.FromJson<FTProject.LevelLayout>(baseline);check(FTProject.LevelLayoutStore.SaveCapturedLevel(old),"legacy primary without history saved");
+reload();check(f.CompletedRoundCount==2&&!f.CanRestartPreviousWave,"old save loads without invented earlier history");start();finish();check(f.CanRestartPreviousWave,"newly recorded suffix usable for old save");
+reload();check(f.CanRestartPreviousWave&&f.RestartPreviousWave()&&f.CompletedRoundCount==2&&!f.CanRestartPreviousWave,"legacy suffix persists without skipping missing earlier checkpoints");
+FTProject.LevelLayout l1;FTProject.WaveRestartHistory h1;FTProject.LevelLayoutStore.TryGet(1,out l1,out h1);
+f.TeardownLevel();f.InitLevel(2,false);noAuto();check(!f.CanRestartPreviousWave&&memory().Count==0,"another level never inherits history");start();
+f.TeardownLevel();f.InitLevel(1,true);noAuto();check(f.RunMetrics.runId==l1.runMetrics.runId&&memory().Count==h1.checkpoints.Count,"switch back retains own level history");
+string previousRun=f.RunMetrics.runId;f.TeardownLevel();f.InitLevel(1,false);noAuto();
+reload();check(f.CompletedRoundCount==0&&f.RunMetrics.runId!=previousRun&&!f.CanRestartPreviousWave&&memory().Count==0,"explicit new game immediately replaces persistent history before any wave starts");
+FTProject.LevelLayoutStore.TryGet(1,out layout,out history);layout.runSaved=false;layout.runMetrics=null;layout.roundCursor=0;layout.runId="completed-test";check(FTProject.LevelLayoutStore.SaveCapturedLevel(layout),"completed replay boundary saved");FTProject.LevelLayoutStore.TryGet(1,out layout,out history);check(history==null,"completed replay record has no rewind history");
+FTProject.GameClock.StepManualFrame(0);
+}
+FTProject.GameClock.SetPaused(true);return new {success=true,checks=checks.Count,details=checks};
+}catch(System.Exception ex){FTProject.GameClock.SetPaused(true);return new {success=false,checks=checks.Count,details=checks,failure=ex.ToString()};}

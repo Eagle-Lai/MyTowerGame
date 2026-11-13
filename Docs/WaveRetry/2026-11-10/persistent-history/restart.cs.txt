@@ -1,0 +1,40 @@
+var checks=new System.Collections.Generic.List<string>();
+try{
+System.Action<bool,string> check=(ok,msg)=>{if(!ok)throw new System.Exception(msg);checks.Add(msg);};
+var f=FTProject.GameFlowManager.Instance;check(f!=null&&FTProject.SaveManager.IsTestStorage,"fresh Play session uses isolated storage");
+check(!FTProject.GameClock.IsManualSimulation,"manual simulation did not survive Play restart");
+var scope=FTProject.GameClock.BeginManualSimulation();f.TeardownLevel();
+var flags=System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic;
+check(((System.Collections.IDictionary)typeof(FTProject.GameFlowManager).GetField("_waveRestartHistory",flags).GetValue(f)).Count==0,"runtime history empty before disk load");
+FTProject.LevelLayout saved;FTProject.WaveRestartHistory history;check(FTProject.LevelLayoutStore.TryGet(1,out saved,out history)&&history!=null,"read stored boundary and history");
+int cursor=saved.roundCursor;f.InitLevel(1,true);
+typeof(FTProject.GameFlowManager).GetField("_autoNextTimer",flags).SetValue(f,0f);
+var expected=SimpleJSON.JSON.Parse(System.IO.File.ReadAllText("D:/FreedomTower_1/Library/WaveHistoryPersistence-20261110/expected.json"));
+System.Func<string> snapshot=()=>{var l=FTProject.LevelLayoutStore.CaptureCurrentLevel(1,f.CompletedRoundCount,f.RunMetrics);l.savedAtUnix=0;l.runMetrics.combatElapsedSeconds=System.Math.Round(l.runMetrics.combatElapsedSeconds,7);l.runMetrics.levelElapsedSeconds=System.Math.Round(l.runMetrics.levelElapsedSeconds,7);return UnityEngine.JsonUtility.ToJson(l);};
+System.Func<string> phases=()=>{var ss=new System.Collections.Generic.List<string>();foreach(var t in FTProject.TowerManager.Instance.Towers){var s=new FTProject.TowerSnapshot{row=t.Cell.Row,col=t.Cell.Col,type=t.Config.Type,level=t.Config.Level};t.CaptureCheckpointState(s);ss.Add(UnityEngine.JsonUtility.ToJson(s));}return string.Join("|",ss.ToArray());};
+check(f.RunMetrics.runId==expected["runId"].Value&&f.CompletedRoundCount==cursor,"same run identity and formal cursor after restart");
+check(snapshot()==expected["records"][cursor].Value,"resumed exact resources counters ledger and clocks");
+check(phases()==expected["phases"][cursor].Value,"resumed tower phases and original attack order");
+check(f.CanRestartPreviousWave==(cursor>0),"previous-wave availability rehydrated");
+var hud=FTProject.UIManager.Instance.Get<FTProject.HudView>(FTProject.HudView.LogicalName);
+if(cursor>0){
+ var prev=hud.transform.Find("Btn_PreviousWave").GetComponent<UnityEngine.UI.Button>();
+ prev.onClick.Invoke();var dialog=FTProject.UIManager.Instance.Get<FTProject.ConfirmView>(FTProject.ConfirmView.LogicalName);
+ check(dialog!=null&&FTProject.GameClock.IsPaused,"actual previous button opens paused confirmation after restart");
+ dialog.transform.Find("Panel/CancelBtn").GetComponent<UnityEngine.UI.Button>().onClick.Invoke();
+ check(snapshot()==expected["records"][cursor].Value,"cancel after restart preserves boundary");
+ prev.onClick.Invoke();dialog=FTProject.UIManager.Instance.Get<FTProject.ConfirmView>(FTProject.ConfirmView.LogicalName);
+ dialog.transform.Find("Panel/ConfirmBtn").GetComponent<UnityEngine.UI.Button>().onClick.Invoke();
+ cursor--;
+ check(f.CompletedRoundCount==cursor&&f.CurrentRoundIndex==cursor+1,"confirmed rollback targets correct wave");
+ check(snapshot()==expected["records"][cursor].Value&&phases()==expected["phases"][cursor].Value,"rollback after restart restores full independent expected boundary");
+ check(FTProject.LevelLayoutStore.TryGet(1,out saved,out history)&&saved.roundCursor==cursor&&history.checkpoints.Count==cursor+1,"rollback persists pruned history in same write");
+ check(!history.checkpoints.Exists(c=>c.layout.roundCursor>cursor),"discarded future cannot survive next restart");
+}
+hud.RefreshAll();check(hud.transform.Find("Bg_Round/RoundText").GetComponent<TMPro.TMP_Text>().text==FTProject.Localization.Get("Wave {0}/{1}",cursor+1,f.Level.RoundCount),"HUD matches after refresh");
+if(cursor==0)check(!f.RestartPreviousWave(),"first-wave boundary cannot rewind further");
+FTProject.GameClock.StepManualFrame(0);scope.Dispose();FTProject.GameClock.SetPaused(true);
+var report=new {success=true,cursor=cursor,checks=checks.Count,details=checks};
+System.IO.File.AppendAllText("D:/FreedomTower_1/Library/WaveHistoryPersistence-20261110/restart-results.txt","cursor="+cursor+" passed="+checks.Count+System.Environment.NewLine);
+return report;
+}catch(System.Exception ex){FTProject.GameClock.SetPaused(true);return new {success=false,checks=checks.Count,details=checks,failure=ex.ToString()};}

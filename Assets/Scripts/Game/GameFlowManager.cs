@@ -34,18 +34,8 @@ namespace FTProject
     {
         public static GameFlowManager Instance { get; private set; }
 
-        // 【2026-10-30 用户定规】局内的塔阵 / 金币 / 生命一律**不落盘**：
-        //   过去每波开始前、每波结束、退出选关、失败都会写一份快照（外加一份"失败续局点"），
-        //   只要中途退出再进来，布阵和金币/血量就都还在 —— 等于给了玩家"反复重打同一波"的
-        //   免费重试，构成漏洞。现在这些状态只活在内存里：退出 / 杀进程 = 本局作废，从第一波重打。
-        //   只有**通关**会落盘（星级、最快时间、最佳剩余生命，见 SaveManager.RecordClear）。
-        //   因此这里不再提供"是否有可续玩存档"的查询，选关 / 主菜单的"继续"入口也一并下线。
-        //
-        // 【2026-10-31 增补：布阵与资源落盘】按用户口径，**每通过一波**就把该关的
-        //   布阵（格位/塔型/等级）与**金币/生命**一起存一份（`LevelLayoutStore`），
-        //   重进这一关时：资源直接覆盖、塔阵免费还原；整关通关时再存一次（带 runId）。
-        //   ★它**不存波次游标**，所以重进一定从第 1 波开始 —— 10-30 "不准跳波 / 不准失败续局"
-        //     的核心禁令仍然成立。把它当成"带资源重打"的便利，而不是续玩存档。
+        // 当前存档口径（2026-11-10）：layout/campaign 同时保存当前波次边界和本局开波历史。
+        // 重新进入会恢复边界；回退后立即裁掉未来分支并落盘。旧 level_snapshot 仍不使用。
 
         [Header("场景引用（由 SceneMainBuilder 自动填充）")]
         public BoardView boardView;
@@ -101,19 +91,11 @@ namespace FTProject
             }
         }
 
-        private sealed class WaveRestartCheckpoint
-        {
-            public LevelLayout layout;
-            public int roundId;
-            public float goldCarry;
-            public int killed, leaked;
-            public double combatSeconds, levelSeconds;
-            public bool timerStarted;
-            public List<TowerSnapshot> towerStates = new List<TowerSnapshot>();
-        }
         private WaveRestartCheckpoint _waveRestartCheckpoint;
-        // 只属于本局；保留每一波开打前的独立副本，支持在准备态连续向前回退。
+        // Belongs to one run; persisted with its current boundary, then rehydrated
+        // after stopping/restarting. Teardown only releases the in-memory copy.
         private readonly Dictionary<int, WaveRestartCheckpoint> _waveRestartHistory = new Dictionary<int, WaveRestartCheckpoint>();
+        private string _waveHistoryContentSignature;
         private bool _restartWaveConfirmOpen;
         private bool _restoringWave;
         private int _waveRestartRevision;
@@ -153,7 +135,11 @@ namespace FTProject
                 checkpoint.goldCarry >= 0 && checkpoint.goldCarry < 1 &&
                 !double.IsNaN(checkpoint.combatSeconds) && !double.IsInfinity(checkpoint.combatSeconds) &&
                 !double.IsNaN(checkpoint.levelSeconds) && !double.IsInfinity(checkpoint.levelSeconds) &&
-                checkpoint.combatSeconds >= 0 && checkpoint.levelSeconds >= 0;
+                checkpoint.combatSeconds >= 0 && checkpoint.levelSeconds >= 0 &&
+                !double.IsNaN(layout.runMetrics.combatElapsedSeconds) && !double.IsInfinity(layout.runMetrics.combatElapsedSeconds) &&
+                !double.IsNaN(layout.runMetrics.levelElapsedSeconds) && !double.IsInfinity(layout.runMetrics.levelElapsedSeconds) &&
+                System.Math.Abs(layout.runMetrics.combatElapsedSeconds - checkpoint.combatSeconds) <= 1e-7 &&
+                System.Math.Abs(layout.runMetrics.levelElapsedSeconds - checkpoint.levelSeconds) <= 1e-7;
         }
 
 
@@ -411,6 +397,9 @@ namespace FTProject
             // ⑨ 回合队列
             _roundIds = Level.RoundIds != null ? new List<int>(Level.RoundIds) : new List<int>();
             _roundCursor = 0;
+            _waveRestartCheckpoint = null;
+            _waveRestartHistory.Clear();
+            _waveHistoryContentSignature = BuildWaveHistoryContentSignature();
             // 计划量取自关卡配置本身（回合 → 波次 → 怪物列表），不再依赖评级表。
             _run.expectedWaveCount = _roundIds.Count;
             _run.expectedEnemyCount = CountPlannedEnemies();
@@ -427,6 +416,10 @@ namespace FTProject
 
             // ⑩ 状态机就位（HUD 在下一行统一刷新，保证显示的是"还原之后"的金币/生命/波次）
             State = GameFlowState.Preparing;
+            // An explicit new game replaces the previous run immediately, even if
+            // the player stops before pressing Start for the first time.
+            if (!restoreSavedState)
+                SaveWaveBoundary(LevelLayoutStore.CaptureCurrentLevel(Level.Id, _roundCursor, _run));
             if (hud != null) hud.RefreshAll();
             if (_roundIds.Count == 0)
             {
@@ -478,7 +471,8 @@ namespace FTProject
         private void RestoreSavedLevelState(int levelId)
         {
             LevelLayout saved;
-            if (!LevelLayoutStore.TryGet(levelId, out saved))
+            WaveRestartHistory history;
+            if (!LevelLayoutStore.TryGet(levelId, out saved, out history))
             {
                 return;
             }
@@ -525,6 +519,15 @@ namespace FTProject
             _run = metrics.Clone();
             _roundCursor = Mathf.Clamp(saved.roundCursor, 0, _roundIds.Count);
             GameClock.RestoreTimers(_run.combatElapsedSeconds, _run.levelElapsedSeconds, saved.levelTimerStarted);
+            RestoreWaveRestartHistory(history);
+            WaveRestartCheckpoint current;
+            if (_waveRestartHistory.TryGetValue(_roundCursor, out current) && SameWaveBoundary(saved, current.layout))
+                foreach (TowerSnapshot phase in current.towerStates)
+                {
+                    BaseTower tower = FindCheckpointTower(phase.row, phase.col);
+                    if (tower != null && !tower.RestoreCheckpointState(phase))
+                        Debug.LogWarning("[Layout] Could not restore saved tower combat phase");
+                }
             Debug.Log(string.Format(
                 "[Layout] 第 {0} 关已续局：下一波 {1}/{2}，金币 {3}，生命 {4}/{5}，计时 {6:F1}s/{7:F1}s",
                 levelId, Mathf.Min(_roundCursor + 1, _roundIds.Count), _roundIds.Count,
@@ -651,7 +654,7 @@ namespace FTProject
                 return;
             }
 
-            // 重试检查点只保存在本局内存中；在本波产生收益、统计和战斗计时之前捕获。
+            // 在本波产生收益、统计和战斗计时之前捕获，再与当前边界一起持久化。
             PlayerDataManager player = PlayerDataManager.Instance;
             LevelLayout checkpoint = LevelLayoutStore.CaptureCurrentLevel(Level.Id, _roundCursor, _run);
             _waveRestartCheckpoint = checkpoint == null ? null : new WaveRestartCheckpoint
@@ -683,7 +686,7 @@ namespace FTProject
             if (_waveRestartCheckpoint != null) _waveRestartHistory[_roundCursor] = _waveRestartCheckpoint;
             // Disk resume also restarts the wave. Persist this complete boundary,
             // never a mixture of partial combat resources and completed-wave metrics.
-            if (_waveRestartCheckpoint != null) LevelLayoutStore.SaveCapturedLevel(checkpoint);
+            if (_waveRestartCheckpoint != null) SaveWaveBoundary(checkpoint);
             _waveRestartRevision++;
             if (_roundCursor == 0 && _run.completedWaveCount == 0) GameClock.StartLevelTimer();
             _unresolvedEnemies.Clear();
@@ -847,15 +850,12 @@ namespace FTProject
             //   但那次传的是 `roundCursor = 0, metrics = null`（通关后重进属于重玩，从第 1 波开始）。
             if (Level != null)
             {
-                LevelLayoutStore.SaveCurrentLevel(Level.Id, _roundCursor, _run, null);
+                SaveWaveBoundary(LevelLayoutStore.CaptureCurrentLevel(Level.Id, _roundCursor, _run));
             }
 
             // Save the next-wave wait in the same coherent boundary as tower phases.
             float delay = _roundCursor < _roundIds.Count && Configs.Global != null ? Configs.Global.AutoNextRoundDelaySec : 0f;
             _autoNextTimer = Mathf.Max(0f, delay); _autoNextTipAcc = 0f;
-
-            // 【2026-10-30】回合结束同样不再写快照（局内状态只存内存），
-            // 下一波的塔阵 / 金币 / 生命全部由本局运行中的对象继续持有。
 
             if (_roundCursor >= _roundIds.Count)
             {
@@ -937,9 +937,7 @@ namespace FTProject
             Debug.Log(string.Format("[Flow] 本局结束：{0}\n{1}",
                 victory ? "胜利" : "失败", PlayerDataManager.Instance.DumpDebugInfo()));
 
-            // 【2026-10-30】失败不再留"续局点"：那等于把塔阵 / 金币 / 生命落盘，
-            // 玩家可以从失败那一波无限重来（真正的漏洞）。现在失败就是本局作废，
-            // 回选关或重开都从第一波、满血、初始金币开始。
+            // 失败时不把归零生命覆盖到存档；重新进入仍读取上次完整波次边界。
 
             Tips(victory
                 ? (Localization.Get("Congratulations!") ?? "恭喜通关！")
@@ -1296,7 +1294,7 @@ namespace FTProject
             }
             if (_pendingSaveResult != null && !RetryPendingClearSave()) return;
             // 【2026-10-31】"重新开始"= 不要续局：从第 1 波、空棋盘、初始金币重打。
-            //   注意这不删除已落盘的记录 —— 退出到选关再进，仍然会续到那条记录上。
+            //   InitLevel 会立即以新局初始边界替换旧记录和历史。
             StartLevel(Level.Id, false);
         }
 
@@ -1304,7 +1302,7 @@ namespace FTProject
         public void QuitToSelect()
         {
             if (_pendingSaveResult != null && !RetryPendingClearSave()) return;
-            // 【2026-10-30】退出不写盘：本局的塔阵 / 金币 / 生命随 TeardownLevel 一起丢弃。
+            // 退出不采集半波状态；磁盘保留最近保存的完整边界及其历史。
             TeardownLevel();
             State = GameFlowState.None;
             // 回选关 = 离场：倍速复位 ×1（重开/下一关走 StartLevel→InitLevel，那里也会复位）
@@ -1527,6 +1525,111 @@ namespace FTProject
             foreach (int key in discarded) _waveRestartHistory.Remove(key);
         }
 
+        private bool SaveWaveBoundary(LevelLayout layout)
+        {
+            if (layout == null) return false;
+            var history = new WaveRestartHistory
+            {
+                levelId = Level.Id, runId = _run.runId,
+                contentSignature = _waveHistoryContentSignature,
+                roundIds = new List<int>(_roundIds),
+            };
+            var cursors = new List<int>(_waveRestartHistory.Keys);
+            cursors.Sort();
+            foreach (int cursor in cursors)
+                if (cursor <= layout.roundCursor) history.checkpoints.Add(_waveRestartHistory[cursor]);
+            bool saved = LevelLayoutStore.SaveCapturedLevel(layout, history);
+            if (!saved) Debug.LogWarning("[Layout] Wave boundary and history were not saved; previous persisted state retained");
+            return saved;
+        }
+
+        private void RestoreWaveRestartHistory(WaveRestartHistory history)
+        {
+            _waveRestartHistory.Clear();
+            _waveRestartCheckpoint = null;
+            if (history == null) return; // Old saves have no recoverable earlier boundaries.
+            bool valid = history.version == WaveRestartHistory.CurrentVersion && history.levelId == Level.Id &&
+                history.runId == _run.runId && !string.IsNullOrEmpty(_waveHistoryContentSignature) &&
+                history.contentSignature == _waveHistoryContentSignature && history.roundIds != null &&
+                history.roundIds.Count == _roundIds.Count && history.checkpoints != null &&
+                history.checkpoints.Count <= _roundIds.Count;
+            if (valid)
+                for (int i = 0; i < _roundIds.Count; i++)
+                    if (history.roundIds[i] != _roundIds[i]) { valid = false; break; }
+            var staged = new Dictionary<int, WaveRestartCheckpoint>();
+            if (valid)
+                foreach (WaveRestartCheckpoint checkpoint in history.checkpoints)
+                {
+                    int cursor = checkpoint != null && checkpoint.layout != null ? checkpoint.layout.roundCursor : -1;
+                    if (cursor > _roundCursor || !IsWaveCheckpointValid(checkpoint, cursor) ||
+                        !PreflightWaveTowers(checkpoint) || staged.ContainsKey(cursor) ||
+                        !SameCompletedPrefix(checkpoint.layout.runMetrics, _run, cursor) ||
+                        checkpoint.layout.goldCarry != checkpoint.goldCarry ||
+                        checkpoint.layout.levelTimerStarted != checkpoint.timerStarted)
+                    { valid = false; break; }
+                    staged.Add(cursor, checkpoint);
+                }
+            if (!valid)
+            {
+                Debug.LogWarning("[Layout] Saved wave history is incompatible or inconsistent; current progress retained, rewind disabled");
+                return;
+            }
+            foreach (var pair in staged) _waveRestartHistory.Add(pair.Key, pair.Value);
+            _waveRestartRevision++;
+        }
+
+        private static bool SameCompletedPrefix(LevelRunMetrics prefix, LevelRunMetrics run, int cursor)
+        {
+            if (prefix.expectedWaveCount != run.expectedWaveCount || prefix.expectedEnemyCount != run.expectedEnemyCount ||
+                run.waves == null || run.waves.Count < cursor) return false;
+            for (int i = 0; i < cursor; i++)
+                if (JsonUtility.ToJson(prefix.waves[i]) != JsonUtility.ToJson(run.waves[i])) return false;
+            return true;
+        }
+
+        private static bool SameWaveBoundary(LevelLayout a, LevelLayout b)
+        {
+            return a.gold == b.gold && a.goldCarry == b.goldCarry && a.hp == b.hp && a.maxHp == b.maxHp &&
+                System.Math.Abs(a.runMetrics.combatElapsedSeconds - b.runMetrics.combatElapsedSeconds) < 1e-7 &&
+                System.Math.Abs(a.runMetrics.levelElapsedSeconds - b.runMetrics.levelElapsedSeconds) < 1e-7 &&
+                JsonUtility.ToJson(new LevelLayout { towers = a.towers }) == JsonUtility.ToJson(new LevelLayout { towers = b.towers });
+        }
+
+        private string BuildWaveHistoryContentSignature()
+        {
+            // Generated row ToString includes every field and list. Normalize culture
+            // only for this synchronous computation; application language is untouched.
+            var culture = System.Globalization.CultureInfo.CurrentCulture;
+            try
+            {
+                System.Globalization.CultureInfo.CurrentCulture = System.Globalization.CultureInfo.InvariantCulture;
+                var text = new System.Text.StringBuilder("wave-history-v1\n");
+                System.Action<object> append = row => text.Append(row != null ? row.ToString() : "null").Append('\n');
+                append(Level.Raw); append(Map.Raw); append(Configs.Global != null ? Configs.Global.Raw : null);
+                append(Configs.Global != null ? Configs.Global.RawRules : null);
+                foreach (int id in _roundIds)
+                {
+                    RoundConfig round = Configs.GetRound(id);
+                    if (round == null) return null;
+                    append(round.Raw);
+                    foreach (int groupId in round.WaveIds)
+                    {
+                        WaveGroupConfig group = Configs.GetWaveGroup(groupId);
+                        if (group == null) return null;
+                        append(group.Raw);
+                    }
+                }
+                if (Configs.EnemyTable == null || Configs.TowerTable == null || Configs.BulletTable == null) return null;
+                foreach (var row in Configs.EnemyTable.DataList) if (row.LevelId == Level.Id) append(row);
+                foreach (var row in Configs.TowerTable.DataList) if (row.LevelId == Level.Id) append(row);
+                foreach (var row in Configs.BulletTable.DataList) if (row.LevelId == Level.Id) append(row);
+                append(Configs.GetWaveTuning(Level.Id, false)); append(Configs.GetWaveTuning(Level.Id, true));
+                using (var sha = System.Security.Cryptography.SHA256.Create())
+                    return System.BitConverter.ToString(sha.ComputeHash(System.Text.Encoding.UTF8.GetBytes(text.ToString()))).Replace("-", "");
+            }
+            finally { System.Globalization.CultureInfo.CurrentCulture = culture; }
+        }
+
         private static BaseTower FindCheckpointTower(int row, int col)
         {
             foreach (BaseTower tower in TowerManager.Instance.Towers)
@@ -1557,6 +1660,28 @@ namespace FTProject
             // 破坏当前局面之前检查还原依赖、格位和配置；历史不完整时不猜造数据。
             if (Map == null || boardView == null || TowerManager.Instance == null || EnemyManager.Instance == null ||
                 CombatSystem.Instance == null || AStarManager.Instance == null) return false;
+            if (!PreflightWaveTowers(checkpoint)) return false;
+            _restoringWave = true;
+            _waveRestartRevision++;
+            bool debugOverride = _run.debugOverride;
+            try
+            {
+                return ApplyWaveCheckpoint(checkpoint, debugOverride);
+            }
+            catch (System.Exception ex)
+            {
+                InvalidateRun("Wave restart failed: " + ex.Message);
+                return false;
+            }
+            finally
+            {
+                _restoringWave = false;
+                if (State == GameFlowState.GameOver) SetPausedState(false);
+            }
+        }
+
+        private bool PreflightWaveTowers(WaveRestartCheckpoint checkpoint)
+        {
             if (checkpoint.towerStates == null || checkpoint.towerStates.Count != checkpoint.layout.towerCount) return false;
             var cells = new HashSet<int>();
             int towerIndex = 0;
@@ -1571,77 +1696,68 @@ namespace FTProject
                 if (phase == null || !phase.HasValidRuntimeState() || phase.row != tower.row || phase.col != tower.col ||
                     phase.type != tower.type || phase.level != tower.level) return false;
             }
-            _restoringWave = true;
-            _waveRestartRevision++;
-            bool debugOverride = _run.debugOverride;
-            try
+            return true;
+        }
+
+        private bool ApplyWaveCheckpoint(WaveRestartCheckpoint checkpoint, bool debugOverride)
+        {
+            _autoNextTimer = 0f;
+            _autoNextTipAcc = 0f;
+            _wave.Stop();
+            GameClock.SetCombatRunning(false);
+            if (TowerPlacement.Instance != null)
             {
-                _autoNextTimer = 0f;
-                _autoNextTipAcc = 0f;
-                _wave.Stop();
-                GameClock.SetCombatRunning(false);
-                if (TowerPlacement.Instance != null)
-                {
-                    TowerPlacement.Instance.CancelPlacement();
-                    TowerPlacement.Instance.Deselect();
-                }
-                UIManager.Instance.Close(TowerInfoView.LogicalName);
-                UIManager.Instance.Close(SellConfirmView.LogicalName);
-                EnemyManager.Instance.ClearAll();
-                TowerManager.Instance.ClearAll();
-                FloatingTextManager.ClearAll();
-                CombatSystem.Instance.ResetStats();
-                _unresolvedEnemies.Clear();
-                _run = checkpoint.layout.runMetrics.Clone();
-                _run.debugOverride |= debugOverride;
-                _roundCursor = checkpoint.layout.roundCursor;
-                _pendingResult = null;
-                _pendingSaveResult = null;
-                State = GameFlowState.Preparing;
-                GameClock.RestoreTimers(checkpoint.combatSeconds, checkpoint.levelSeconds, checkpoint.timerStarted);
-                PlayerDataManager.Instance.RestoreState(Level.Id, checkpoint.layout.gold, checkpoint.layout.hp,
-                    checkpoint.layout.maxHp, checkpoint.killed, checkpoint.leaked, checkpoint.goldCarry);
-                int restored = LevelLayoutStore.RestoreTowers(checkpoint.layout);
-                // 空阵也必须刷新路径（RestoreTowers 对零塔提前返回）。
-                AStarManager.Instance.RequestRefresh();
-                if (restored != checkpoint.layout.towerCount)
-                {
-                    InvalidateRun("Wave restart could not restore every tower");
-                    return false;
-                }
-                foreach (TowerSnapshot phase in checkpoint.towerStates)
-                {
-                    BaseTower tower = FindCheckpointTower(phase.row, phase.col);
-                    if (tower == null || !tower.RestoreCheckpointState(phase))
-                    {
-                        InvalidateRun("Wave restart could not restore tower combat state");
-                        return false;
-                    }
-                }
-                // 覆盖本波内卖塔产生的即时存档，保证退关重进也不会留下已撤销的交易。
-                LevelRunMetrics restoredSave = _run.Clone();
-                restoredSave.combatElapsedSeconds = checkpoint.combatSeconds;
-                restoredSave.levelElapsedSeconds = checkpoint.levelSeconds;
-                if (!LevelLayoutStore.SaveCurrentLevel(Level.Id, _roundCursor, restoredSave, null))
-                    Tips(Localization.Get("Wave restored, but saving failed.") ?? "波次已恢复，但存档失败。");
-                _waveRestartCheckpoint = null;
-                DiscardWaveHistoryAfter(_roundCursor);
-                if (_hud != null) _hud.RefreshAfterWaveRestart();
-                SetPausedState(false);
-                Debug.Log(string.Format("[Flow] 第 {0} 关第 {1} 波已恢复开波局面，等待开始", Level.Id, _roundCursor + 1));
-                return true;
+                TowerPlacement.Instance.CancelPlacement();
+                TowerPlacement.Instance.Deselect();
             }
-            catch (System.Exception ex)
+            UIManager.Instance.Close(TowerInfoView.LogicalName);
+            UIManager.Instance.Close(SellConfirmView.LogicalName);
+            EnemyManager.Instance.ClearAll();
+            TowerManager.Instance.ClearAll();
+            FloatingTextManager.ClearAll();
+            CombatSystem.Instance.ResetStats();
+            _unresolvedEnemies.Clear();
+            _run = checkpoint.layout.runMetrics.Clone();
+            _run.debugOverride |= debugOverride;
+            _roundCursor = checkpoint.layout.roundCursor;
+            _pendingResult = null;
+            _pendingSaveResult = null;
+            State = GameFlowState.Preparing;
+            GameClock.RestoreTimers(checkpoint.combatSeconds, checkpoint.levelSeconds, checkpoint.timerStarted);
+            PlayerDataManager.Instance.RestoreState(Level.Id, checkpoint.layout.gold, checkpoint.layout.hp,
+                checkpoint.layout.maxHp, checkpoint.killed, checkpoint.leaked, checkpoint.goldCarry);
+            int restored = LevelLayoutStore.RestoreTowers(checkpoint.layout);
+            // 空阵也必须刷新路径（RestoreTowers 对零塔提前返回）。
+            AStarManager.Instance.RequestRefresh();
+            if (restored != checkpoint.layout.towerCount)
             {
-                InvalidateRun("Wave restart failed: " + ex.Message);
+                InvalidateRun("Wave restart could not restore every tower");
                 return false;
             }
-            finally
+            foreach (TowerSnapshot phase in checkpoint.towerStates)
             {
-                _restoringWave = false;
-                // 异常收尾也不能把结算界面永久冻结在确认弹窗的暂停态。
-                if (State == GameFlowState.GameOver) SetPausedState(false);
+                BaseTower tower = FindCheckpointTower(phase.row, phase.col);
+                if (tower == null || !tower.RestoreCheckpointState(phase))
+                {
+                    InvalidateRun("Wave restart could not restore tower combat state");
+                    return false;
+                }
             }
+            // 覆盖本波内卖塔产生的即时存档，保证退关重进也不会留下已撤销的交易。
+            _waveRestartCheckpoint = null;
+            DiscardWaveHistoryAfter(_roundCursor);
+            // Prune before committing so stopping here cannot revive the old
+            // branch from disk. Persist the original registered tower order.
+            var boundary = JsonUtility.FromJson<LevelLayout>(JsonUtility.ToJson(checkpoint.layout));
+            boundary.runMetrics = _run.Clone();
+            boundary.runMetrics.combatElapsedSeconds = checkpoint.combatSeconds;
+            boundary.runMetrics.levelElapsedSeconds = checkpoint.levelSeconds;
+            if (!SaveWaveBoundary(boundary))
+                Tips(Localization.Get("Wave restored, but saving failed.") ?? "波次已恢复，但存档失败。");
+            if (_hud != null) _hud.RefreshAfterWaveRestart();
+            SetPausedState(false);
+            Debug.Log(string.Format("[Flow] 第 {0} 关第 {1} 波已恢复开波局面，等待开始", Level.Id, _roundCursor + 1));
+            return true;
         }
 
         private void OnQuitToSelectRequest()
@@ -1738,13 +1854,13 @@ namespace FTProject
                 // damaged HP and a trimmed wave ledger cannot form one valid save.
                 // Restore the entire wave-start boundary, including undoing the sale.
                 if (IsWaveCheckpointValid(_waveRestartCheckpoint, _roundCursor))
-                    LevelLayoutStore.SaveCapturedLevel(_waveRestartCheckpoint.layout);
+                    SaveWaveBoundary(_waveRestartCheckpoint.layout);
                 return;
             }
 
             // runId 传 null：卖塔不是通关，把某次通关的 runId 写到续局记录上
             // 会让 `IsRunCommitted` 把这一局误判成已入档，结算时反而写不进星级。
-            LevelLayoutStore.SaveCurrentLevel(Level.Id, _roundCursor, _run, null);
+            SaveWaveBoundary(LevelLayoutStore.CaptureCurrentLevel(Level.Id, _roundCursor, _run));
             Debug.Log(string.Format(
                 "[Layout] 第 {0} 关出售防御塔（{1}），塔阵已立即落盘",
                 Level.Id, tower != null ? tower.name : "已销毁"));

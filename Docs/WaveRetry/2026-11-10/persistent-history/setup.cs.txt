@@ -1,0 +1,30 @@
+var checks=new System.Collections.Generic.List<string>();
+try{
+System.Action<bool,string> check=(ok,msg)=>{if(!ok)throw new System.Exception(msg);checks.Add(msg);};
+var f=FTProject.GameFlowManager.Instance;check(f!=null,"Boot ready");check(FTProject.SaveManager.IsTestStorage,"isolated storage selected before boot");
+FTProject.GameClock.BeginManualSimulation();f.TeardownLevel();f.InitLevel(1,false);
+var p=FTProject.PlayerDataManager.Instance;p.RestoreState(1,10000,5000,5000);
+var flags=System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic;
+System.Action noAuto=()=>typeof(FTProject.GameFlowManager).GetField("_autoNextTimer",flags).SetValue(f,0f);
+System.Func<string> snapshot=()=>{var l=FTProject.LevelLayoutStore.CaptureCurrentLevel(1,f.CompletedRoundCount,f.RunMetrics);l.savedAtUnix=0;l.runMetrics.combatElapsedSeconds=System.Math.Round(l.runMetrics.combatElapsedSeconds,7);l.runMetrics.levelElapsedSeconds=System.Math.Round(l.runMetrics.levelElapsedSeconds,7);return UnityEngine.JsonUtility.ToJson(l);};
+System.Func<string> phases=()=>{var ss=new System.Collections.Generic.List<string>();foreach(var t in FTProject.TowerManager.Instance.Towers){var s=new FTProject.TowerSnapshot{row=t.Cell.Row,col=t.Cell.Col,type=t.Config.Type,level=t.Config.Level};t.CaptureCheckpointState(s);ss.Add(UnityEngine.JsonUtility.ToJson(s));}return string.Join("|",ss.ToArray());};
+var records=new SimpleJSON.JSONArray();var phaseRecords=new SimpleJSON.JSONArray();
+System.Action<int> build=kind=>{FTProject.BaseTower t=null;for(int r=f.Map.Rows-1;r>=0&&t==null;r--)for(int c=f.Map.Cols-1;c>=0&&t==null;c--)t=FTProject.TowerManager.Instance.RestoreTower(kind,1,r,c,97);check(t!=null,"tower restored for test");};
+System.Action finish=()=>{for(int i=0;i<20000&&f.State==FTProject.GameFlowState.RoundRunning;i++){FTProject.GameClock.StepManualFrame(.1);f.StepManualSimulation();foreach(var e in UnityEngine.Object.FindObjectsOfType<FTProject.BaseEnemy>())if(e.IsAlive)e.Hurt(1000000);}noAuto();check(f.State==FTProject.GameFlowState.Preparing,"wave completed");};
+for(int n=0;n<5;n++){
+ if(n==0){build(1);build(2);}if(n==1)check(FTProject.TowerManager.Instance.TryUpgrade(FTProject.TowerManager.Instance.Towers[0])!=null,"upgrade changes second wave boundary");if(n==2)build(3);if(n==3)check(FTProject.TowerManager.Instance.Sell(FTProject.TowerManager.Instance.Towers[0]),"preparation sale");
+ p.AddGold(.375f);FTProject.GameClock.RestoreTimers(n*11.25,n*15.5,n>0);
+ int tnum=0;foreach(var t in FTProject.TowerManager.Instance.Towers){typeof(FTProject.BaseTower).GetField("_fireTimer",flags).SetValue(t,.1f+.01f*n+.001f*tnum);typeof(FTProject.BaseTower).GetField("_searchTimer",flags).SetValue(t,.03f+.002f*tnum);tnum++;}
+ records.Add(snapshot());phaseRecords.Add(phases());
+ FTProject.EventDispatcher.TriggerEvent(FTProject.EventName.StartRoundRequestEvent);check(f.CurrentRoundIndex==n+1&&f.CanRestartCurrentWave,"wave started");
+ FTProject.LevelLayout saved;FTProject.WaveRestartHistory history;check(FTProject.LevelLayoutStore.TryGet(1,out saved,out history)&&history!=null&&history.checkpoints.Count==n+1,"history written at each start");
+ if(n<4)finish();
+}
+FTProject.GameClock.StepManualFrame(3);f.StepManualSimulation();p.AddGold(15.5f);p.LoseHp(1);check(FTProject.TowerManager.Instance.Sell(FTProject.TowerManager.Instance.Towers[0]),"active-wave sale persists original boundary and history");
+var result=new SimpleJSON.JSONObject();result["records"]=records;result["phases"]=phaseRecords;result["runId"]=f.RunMetrics.runId;
+System.IO.File.WriteAllText("D:/FreedomTower_1/Library/WaveHistoryPersistence-20261110/expected.json",result.ToString());
+FTProject.GameClock.StepManualFrame(0);FTProject.GameClock.SetPaused(true);
+return new {success=true,checks=checks.Count,details=checks,storage=FTProject.SaveManager.Instance.StorageLocation,runId=f.RunMetrics.runId};
+}catch(System.Exception ex){FTProject.GameClock.SetPaused(true);return new {success=false,checks=checks.Count,details=checks,failure=ex.ToString()};}
+
+

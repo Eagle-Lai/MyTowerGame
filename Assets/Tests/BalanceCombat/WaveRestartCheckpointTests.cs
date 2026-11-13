@@ -236,6 +236,23 @@ namespace FTProject.Tests
             }
         }
 
+        [TestCase(double.NaN)]
+        [TestCase(double.PositiveInfinity)]
+        [TestCase(-1d)]
+        [TestCase(1d)]
+        public void InvalidRepeatedClockCannotBeUsedAsCheckpoint(double seconds)
+        {
+            using (var fixture = new HistoryFixture())
+            {
+                Assert.That(fixture.flow.CanRestartPreviousWave, Is.True);
+                fixture.layout.runMetrics.combatElapsedSeconds = seconds;
+                Assert.That(fixture.flow.CanRestartPreviousWave, Is.False);
+                fixture.layout.runMetrics.combatElapsedSeconds = 0;
+                fixture.layout.runMetrics.levelElapsedSeconds = seconds;
+                Assert.That(fixture.flow.CanRestartPreviousWave, Is.False);
+            }
+        }
+
         // Inactive fixture does not run Awake/OnEnable or subscribe to the live event dispatcher.
         private sealed class HistoryFixture : System.IDisposable
         {
@@ -262,7 +279,7 @@ namespace FTProject.Tests
                     runSaved = true, gold = 100, hp = 10, maxHp = 10,
                     runMetrics = new LevelRunMetrics { runId = "history-test" },
                     towers = new System.Collections.Generic.List<TowerLayoutEntry>() };
-                checkpoint = System.Activator.CreateInstance(typeof(GameFlowManager).GetNestedType("WaveRestartCheckpoint", System.Reflection.BindingFlags.NonPublic), true);
+                checkpoint = new WaveRestartCheckpoint();
                 SetCheckpoint("layout", layout);
                 SetCheckpoint("roundId", level.RoundIds[0]);
                 history = (System.Collections.IDictionary)typeof(GameFlowManager).GetField("_waveRestartHistory", Flags).GetValue(flow);
