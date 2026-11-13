@@ -47,6 +47,16 @@
     全程不动工作区；校验点为「分片末 tree == 原提交 tree」「末端 tree == 原末端 tree」。
   - **预防**：大资源（图集/字体/AB/APK）从一开始就按目录或按族分笔入库，别攒成一笔；单笔控制在 7MB 以内最稳。
 - 凭据弹窗 → 在 `~/.gitconfig` 的 `[credential]` 段插一行空 `helper =` 后重试，并用 `ls-remote` 核对 sha。
+- ※**2026-11-13 实测：真正的坑是 `~/.gitconfig` 里的 URL 级代理，而不是环境变量**。当次
+  `env` 注入 `http_proxy=https_proxy=127.0.0.1:22182`（端口 OPEN 但拒连），`-c http.proxy=...7890` 也不生效，
+  报错固定为 `Failed to connect to github.com:443 over proxy 127.0.0.1 after ~2s`。
+  根因：`~/.gitconfig` 有 `http.https://github.com.proxy = http://127.0.0.1:7892`（**7892 已不在监听**），
+  **URL 级配置优先级高于 `-c http.proxy` 与环境变量** → 覆盖必须写成
+  `git -c http.https://github.com.proxy=http://127.0.0.1:7890 push origin main`
+  （写成空串 `-c http.https://github.com.proxy=` 即强制直连，实测直连也可通）。
+  排查第一步改成 `git config --show-origin --get-regexp "proxy|http\..*proxy"`，别再只 `env | grep -i proxy`。
+  同次 15 笔共 **24.35MB**（最大单 blob 4.89MB，`Assets/ConfigJson/tbenemydata.json`）经 `7890 + HTTP/2` **一次性推成功**，
+  说明「总量 24MB / 单笔 <5MB」在当前网络下不需要拆包；前提是每笔都小，别把大资源攒成单笔。
 
 ## 出包铁律（2026-10-19 黑屏事故）
 - ★★出 APK 前**必须核对 Build Settings 场景列表**：`Boot.unity` 启用 + `Main.unity` 禁用（main 只能从 AB 加载）。
