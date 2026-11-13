@@ -1,0 +1,71 @@
+{
+  "schema": "balance_capacity/1",
+  "map": "Assets/ConfigJson/tblevelmap.json",
+  "spacings": [2],
+  "gridSpacing": 2,
+  "port": {
+    "runtimePath": "balance_campaign.py _runtime_path (4-dir A*, stop when E enters open list, heap by (f, first-open ordinal))",
+    "snakeWalls": "balance_fill_gate.py snake_walls(cells, spacing, augment=True) with augment_layout(radius=2.0)",
+    "capacity": "balance_campaign.py capacity (0-1 reserved-route cost; primary count only)",
+    "csharp": "AStarWrapper.cs FindPath / AStarManager.cs GetAStarPath; Board.cs ParseCell/IsWalkable/IsBuildable; BaseTower.cs TryBuildInternal"
+  },
+  "command": "node .workbuddy/tools/balance_capacity.mjs --levels 1,2 --spacing 2 --out D:\\FreedomTower_1\\.workbuddy\\artifact-edit\\capacity-analysis",
+  "levels": [
+    {
+      "levelId": 1,
+      "cols": 13,
+      "rows": 7,
+      "buildableCells": 89,
+      "start": [0, 3],
+      "end": [12, 3],
+      "euclideanStartEnd": 12,
+      "capacity": 78,
+      "reservedBuildableCells": 11,
+      "emptyPathEdges": 12,
+      "bySpacing": {
+        "2": {
+          "towers": 33,
+          "fingerWalls": 30,
+          "sentryCells": 3,
+          "pathEdges": 42,
+          "pathConnected": true,
+          "fingersOnly": {
+            "towers": 30,
+            "pathEdges": 42,
+            "pathConnected": true
+          },
+          "towerCells": [[2,0], [0,2], [2,1], [1,3], [2,2], [11,3], [2,3], [2,4], [2,5], [4,1], [4,2], [4,3], [4,4], [4,5], [4,6], [6,0], [6,1], [6,2], [6,3], [6,4], [6,5], [8,1], [8,2], [8,3], [8,4], [8,5], [8,6], [10,0], [10,1], [10,2], [10,3], [10,4], [10,5]]
+        }
+      },
+      "issues": []
+    },
+    {
+      "levelId": 2,
+      "cols": 16,
+      "rows": 9,
+      "buildableCells": 142,
+      "start": [0, 4],
+      "end": [15, 4],
+      "euclideanStartEnd": 15,
+      "capacity": 128,
+      "reservedBuildableCells": 14,
+      "emptyPathEdges": 15,
+      "bySpacing": {
+        "2": {
+          "towers": 59,
+          "fingerWalls": 56,
+          "sentryCells": 3,
+          "pathEdges": 71,
+          "pathConnected": true,
+          "fingersOnly": {
+            "towers": 56,
+            "pathEdges": 71,
+            "pathConnected": true
+          },
+          "towerCells": [[2,0], [0,3], [2,1], [1,4], [2,2], [15,3], [2,3], [2,4], [2,5], [2,6], [2,7], [4,1], [4,2], [4,3], [4,4], [4,5], [4,6], [4,7], [4,8], [6,0], [6,1], [6,2], [6,3], [6,4], [6,5], [6,6], [6,7], [8,1], [8,2], [8,3], [8,4], [8,5], [8,6], [8,7], [8,8], [10,0], [10,1], [10,2], [10,3], [10,4], [10,5], [10,6], [10,7], [12,1], [12,2], [12,3], [12,4], [12,5], [12,6], [12,7], [12,8], [14,0], [14,1], [14,2], [14,3], [14,4], [14,5], [14,6], [14,7]]
+        }
+      },
+      "issues": []
+    }
+  ]
+}

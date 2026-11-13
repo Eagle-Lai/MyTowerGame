@@ -1,0 +1,143 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="980" viewBox="0 0 1600 980">
+  <defs>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="4" stdDeviation="5" flood-color="#000" flood-opacity="0.45"/>
+    </filter>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#77d8dc"/>
+    </marker>
+  </defs>
+
+  <rect width="1600" height="980" fill="#09121d"/>
+  <rect x="36" y="30" width="1528" height="920" rx="16" fill="#0e1b2a" stroke="#2d485c" stroke-width="2"/>
+
+  <text x="800" y="78" text-anchor="middle" fill="#ecf5fa" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="32" font-weight="700">L02 预期最终防御塔布局</text>
+  <text x="800" y="112" text-anchor="middle" fill="#9cb6c7" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="17">按 L01 零漏怪通关布局的布阵规律映射到 16×9 地图 · 15 座 N3 改为 P3 · 目标投入 7,116 金</text>
+
+  <!-- Board -->
+  <g transform="translate(180,160)">
+    <rect x="-8" y="-8" width="1248" height="708" rx="8" fill="#08111b" stroke="#365468" stroke-width="2"/>
+
+    <!-- Column labels -->
+    <g fill="#88a9bb" font-family="Consolas, Microsoft YaHei, monospace" font-size="14" text-anchor="middle">
+      <text x="35" y="-25">c0</text><text x="115" y="-25">c1</text><text x="195" y="-25">c2</text><text x="275" y="-25">c3</text>
+      <text x="355" y="-25">c4</text><text x="435" y="-25">c5</text><text x="515" y="-25">c6</text><text x="595" y="-25">c7</text>
+      <text x="675" y="-25">c8</text><text x="755" y="-25">c9</text><text x="835" y="-25">c10</text><text x="915" y="-25">c11</text>
+      <text x="995" y="-25">c12</text><text x="1075" y="-25">c13</text><text x="1155" y="-25">c14</text><text x="1235" y="-25">c15</text>
+    </g>
+    <!-- Row labels -->
+    <g fill="#88a9bb" font-family="Consolas, Microsoft YaHei, monospace" font-size="14" text-anchor="end">
+      <text x="-20" y="45">r0</text><text x="-20" y="120">r1</text><text x="-20" y="195">r2</text>
+      <text x="-20" y="270">r3</text><text x="-20" y="345">r4</text><text x="-20" y="420">r5</text>
+      <text x="-20" y="495">r6</text><text x="-20" y="570">r7</text><text x="-20" y="645">r8</text>
+    </g>
+
+    <!-- Grid -->
+    <g stroke="#294152" stroke-width="1" fill="#132434">
+      <path d="M0 0H1280 M0 75H1280 M0 150H1280 M0 225H1280 M0 300H1280 M0 375H1280 M0 450H1280 M0 525H1280 M0 600H1280 M0 675H1280"/>
+      <path d="M0 0V675 M80 0V675 M160 0V675 M240 0V675 M320 0V675 M400 0V675 M480 0V675 M560 0V675 M640 0V675 M720 0V675 M800 0V675 M880 0V675 M960 0V675 M1040 0V675 M1120 0V675 M1200 0V675 M1280 0V675"/>
+    </g>
+
+    <!-- Light route hints: towers are the blocking pattern; this is not a pathfinding proof. -->
+    <path d="M35 337 C100 337 100 40 195 40 S300 337 355 337 S460 40 515 40 S620 337 675 337 S780 40 835 40 S940 337 995 337 S1100 40 1155 40 S1200 337 1245 337" fill="none" stroke="#77d8dc" stroke-width="3" stroke-dasharray="8 8" opacity="0.35" marker-end="url(#arrow)"/>
+
+    <!-- Tower cells -->
+    <g font-family="Segoe UI, Microsoft YaHei, sans-serif" text-anchor="middle" filter="url(#shadow)">
+      <!-- r0 -->
+      <g transform="translate(240,0)"><rect width="70" height="65" x="5" y="5" rx="7" fill="#276c75" stroke="#64e0df"/><text x="40" y="31" fill="#f2ffff" font-size="22" font-weight="700">P1</text><text x="40" y="51" fill="#bbf4f0" font-size="12">减速 Lv1</text></g>
+      <g transform="translate(560,0)"><rect width="70" height="65" x="5" y="5" rx="7" fill="#276c75" stroke="#64e0df"/><text x="40" y="31" fill="#f2ffff" font-size="22" font-weight="700">P1</text><text x="40" y="51" fill="#bbf4f0" font-size="12">减速 Lv1</text></g>
+      <g transform="translate(880,0)"><rect width="70" height="65" x="5" y="5" rx="7" fill="#276c75" stroke="#64e0df"/><text x="40" y="31" fill="#f2ffff" font-size="22" font-weight="700">P1</text><text x="40" y="51" fill="#bbf4f0" font-size="12">减速 Lv1</text></g>
+      <g transform="translate(1200,0)"><rect width="70" height="65" x="5" y="5" rx="7" fill="#2a5b78" stroke="#79c7ff"/><text x="40" y="31" fill="#f2ffff" font-size="22" font-weight="700">P3</text><text x="40" y="51" fill="#c8e7ff" font-size="12">减速 Lv3</text></g>
+
+      <!-- r1 -->
+      <g transform="translate(80,75)"><rect width="70" height="65" x="5" y="5" rx="7" fill="#276c75" stroke="#64e0df"/><text x="40" y="31" fill="#f2ffff" font-size="22" font-weight="700">P1</text><text x="40" y="51" fill="#bbf4f0" font-size="12">减速 Lv1</text></g>
+      <g transform="translate(240,75)"><rect width="70" height="65" x="5" y="5" rx="7" fill="#2a5b78" stroke="#79c7ff"/><text x="40" y="31" fill="#f2ffff" font-size="22" font-weight="700">P3</text><text x="40" y="51" fill="#c8e7ff" font-size="12">减速 Lv3</text></g>
+      <g transform="translate(400,75)"><rect width="70" height="65" x="5" y="5" rx="7" fill="#2a5b78" stroke="#79c7ff"/><text x="40" y="31" fill="#f2ffff" font-size="22" font-weight="700">P3</text><text x="40" y="51" fill="#c8e7ff" font-size="12">减速 Lv3</text></g>
+      <g transform="translate(560,75)"><rect width="70" height="65" x="5" y="5" rx="7" fill="#2a5b78" stroke="#79c7ff"/><text x="40" y="31" fill="#f2ffff" font-size="22" font-weight="700">P3</text><text x="40" y="51" fill="#c8e7ff" font-size="12">减速 Lv3</text></g>
+      <g transform="translate(720,75)"><rect width="70" height="65" x="5" y="5" rx="7" fill="#2a5b78" stroke="#79c7ff"/><text x="40" y="31" fill="#f2ffff" font-size="22" font-weight="700">P3</text><text x="40" y="51" fill="#c8e7ff" font-size="12">减速 Lv3</text></g>
+      <g transform="translate(880,75)"><rect width="70" height="65" x="5" y="5" rx="7" fill="#2a5b78" stroke="#79c7ff"/><text x="40" y="31" fill="#f2ffff" font-size="22" font-weight="700">P3</text><text x="40" y="51" fill="#c8e7ff" font-size="12">减速 Lv3</text></g>
+      <g transform="translate(1040,75)"><rect width="70" height="65" x="5" y="5" rx="7" fill="#2a5b78" stroke="#79c7ff"/><text x="40" y="31" fill="#f2ffff" font-size="22" font-weight="700">P3</text><text x="40" y="51" fill="#c8e7ff" font-size="12">减速 Lv3</text></g>
+      <g transform="translate(1200,75)"><rect width="70" height="65" x="5" y="5" rx="7" fill="#2a5b78" stroke="#79c7ff"/><text x="40" y="31" fill="#f2ffff" font-size="22" font-weight="700">P3</text><text x="40" y="51" fill="#c8e7ff" font-size="12">减速 Lv3</text></g>
+
+      <!-- r2 -->
+      <g transform="translate(80,150)"><rect width="70" height="65" x="5" y="5" rx="7" fill="#2a5b78" stroke="#79c7ff"/><text x="40" y="31" fill="#f2ffff" font-size="22" font-weight="700">P3</text><text x="40" y="51" fill="#c8e7ff" font-size="12">减速 Lv3</text></g>
+      <g transform="translate(240,150)"><rect width="70" height="65" x="5" y="5" rx="7" fill="#2a5b78" stroke="#79c7ff"/><text x="40" y="31" fill="#f2ffff" font-size="22" font-weight="700">P3</text><text x="40" y="51" fill="#c8e7ff" font-size="12">减速 Lv3</text></g>
+      <g transform="translate(400,150)"><rect width="70" height="65" x="5" y="5" rx="7" fill="#2a5b78" stroke="#79c7ff"/><text x="40" y="31" fill="#f2ffff" font-size="22" font-weight="700">P3</text><text x="40" y="51" fill="#c8e7ff" font-size="12">减速 Lv3</text></g>
+      <g transform="translate(560,150)"><rect width="70" height="65" x="5" y="5" rx="7" fill="#2a5b78" stroke="#79c7ff"/><text x="40" y="31" fill="#f2ffff" font-size="22" font-weight="700">P3</text><text x="40" y="51" fill="#c8e7ff" font-size="12">减速 Lv3</text></g>
+      <g transform="translate(720,150)"><rect width="70" height="65" x="5" y="5" rx="7" fill="#2a5b78" stroke="#79c7ff"/><text x="40" y="31" fill="#f2ffff" font-size="22" font-weight="700">P3</text><text x="40" y="51" fill="#c8e7ff" font-size="12">减速 Lv3</text></g>
+      <g transform="translate(880,150)"><rect width="70" height="65" x="5" y="5" rx="7" fill="#2a5b78" stroke="#79c7ff"/><text x="40" y="31" fill="#f2ffff" font-size="22" font-weight="700">P3</text><text x="40" y="51" fill="#c8e7ff" font-size="12">减速 Lv3</text></g>
+      <g transform="translate(1040,150)"><rect width="70" height="65" x="5" y="5" rx="7" fill="#2a5b78" stroke="#79c7ff"/><text x="40" y="31" fill="#f2ffff" font-size="22" font-weight="700">P3</text><text x="40" y="51" fill="#c8e7ff" font-size="12">减速 Lv3</text></g>
+      <g transform="translate(1200,150)"><rect width="70" height="65" x="5" y="5" rx="7" fill="#2a5b78" stroke="#79c7ff"/><text x="40" y="31" fill="#f2ffff" font-size="22" font-weight="700">P3</text><text x="40" y="51" fill="#c8e7ff" font-size="12">减速 Lv3</text></g>
+
+      <!-- r3 -->
+      <g transform="translate(80,225)"><rect width="70" height="65" x="5" y="5" rx="7" fill="#7b5a2a" stroke="#edc66b"/><text x="40" y="31" fill="#fff9e6" font-size="22" font-weight="700">N3</text><text x="40" y="51" fill="#ffe6a5" font-size="12">普通 Lv3</text></g>
+      <g transform="translate(240,225)"><rect width="70" height="65" x="5" y="5" rx="7" fill="#7b5a2a" stroke="#edc66b"/><text x="40" y="31" fill="#fff9e6" font-size="22" font-weight="700">N3</text><text x="40" y="51" fill="#ffe6a5" font-size="12">普通 Lv3</text></g>
+      <g transform="translate(400,225)"><rect width="70" height="65" x="5" y="5" rx="7" fill="#7b5a2a" stroke="#edc66b"/><text x="40" y="31" fill="#fff9e6" font-size="22" font-weight="700">N3</text><text x="40" y="51" fill="#ffe6a5" font-size="12">普通 Lv3</text></g>
+      <g transform="translate(560,225)"><rect width="70" height="65" x="5" y="5" rx="7" fill="#7b5a2a" stroke="#edc66b"/><text x="40" y="31" fill="#fff9e6" font-size="22" font-weight="700">N3</text><text x="40" y="51" fill="#ffe6a5" font-size="12">普通 Lv3</text></g>
+      <g transform="translate(720,225)"><rect width="70" height="65" x="5" y="5" rx="7" fill="#7b5a2a" stroke="#edc66b"/><text x="40" y="31" fill="#fff9e6" font-size="22" font-weight="700">N3</text><text x="40" y="51" fill="#ffe6a5" font-size="12">普通 Lv3</text></g>
+      <g transform="translate(880,225)"><rect width="70" height="65" x="5" y="5" rx="7" fill="#7b5a2a" stroke="#edc66b"/><text x="40" y="31" fill="#fff9e6" font-size="22" font-weight="700">N3</text><text x="40" y="51" fill="#ffe6a5" font-size="12">普通 Lv3</text></g>
+      <g transform="translate(1040,225)"><rect width="70" height="65" x="5" y="5" rx="7" fill="#7b5a2a" stroke="#edc66b"/><text x="40" y="31" fill="#fff9e6" font-size="22" font-weight="700">N3</text><text x="40" y="51" fill="#ffe6a5" font-size="12">普通 Lv3</text></g>
+      <g transform="translate(1200,225)"><rect width="70" height="65" x="5" y="5" rx="7" fill="#2a5b78" stroke="#79c7ff"/><text x="40" y="31" fill="#f2ffff" font-size="22" font-weight="700">P3</text><text x="40" y="51" fill="#c8e7ff" font-size="12">减速 Lv3</text></g>
+
+      <!-- r4 -->
+      <g transform="translate(0,300)"><rect width="70" height="65" x="5" y="5" rx="7" fill="#103f4a" stroke="#57e2da" stroke-width="2"/><text x="40" y="42" fill="#eaffff" font-size="21" font-weight="700">S</text></g>
+      <g transform="translate(80,300)"><rect width="70" height="65" x="5" y="5" rx="7" fill="#7b5a2a" stroke="#edc66b"/><text x="40" y="31" fill="#fff9e6" font-size="22" font-weight="700">N3</text><text x="40" y="51" fill="#ffe6a5" font-size="12">普通 Lv3</text></g>
+      <g transform="translate(240,300)"><rect width="70" height="65" x="5" y="5" rx="7" fill="#743b2d" stroke="#ff9b78"/><text x="40" y="31" fill="#fff3ef" font-size="22" font-weight="700">F3</text><text x="40" y="51" fill="#ffd0c1" font-size="12">火力 Lv3</text></g>
+      <g transform="translate(400,300)"><rect width="70" height="65" x="5" y="5" rx="7" fill="#7b5a2a" stroke="#edc66b"/><text x="40" y="31" fill="#fff9e6" font-size="22" font-weight="700">N3</text><text x="40" y="51" fill="#ffe6a5" font-size="12">普通 Lv3</text></g>
+      <g transform="translate(560,300)"><rect width="70" height="65" x="5" y="5" rx="7" fill="#743b2d" stroke="#ff9b78"/><text x="40" y="31" fill="#fff3ef" font-size="22" font-weight="700">F3</text><text x="40" y="51" fill="#ffd0c1" font-size="12">火力 Lv3</text></g>
+      <g transform="translate(720,300)"><rect width="70" height="65" x="5" y="5" rx="7" fill="#7b5a2a" stroke="#edc66b"/><text x="40" y="31" fill="#fff9e6" font-size="22" font-weight="700">N3</text><text x="40" y="51" fill="#ffe6a5" font-size="12">普通 Lv3</text></g>
+      <g transform="translate(880,300)"><rect width="70" height="65" x="5" y="5" rx="7" fill="#743b2d" stroke="#ff9b78"/><text x="40" y="31" fill="#fff3ef" font-size="22" font-weight="700">F3</text><text x="40" y="51" fill="#ffd0c1" font-size="12">火力 Lv3</text></g>
+      <g transform="translate(1040,300)"><rect width="70" height="65" x="5" y="5" rx="7" fill="#7b5a2a" stroke="#edc66b"/><text x="40" y="31" fill="#fff9e6" font-size="22" font-weight="700">N3</text><text x="40" y="51" fill="#ffe6a5" font-size="12">普通 Lv3</text></g>
+      <g transform="translate(1200,300)"><rect width="70" height="65" x="5" y="5" rx="7" fill="#103f4a" stroke="#57e2da" stroke-width="2"/><text x="40" y="42" fill="#eaffff" font-size="21" font-weight="700">E</text></g>
+
+      <!-- r5 -->
+      <g transform="translate(80,375)"><rect width="70" height="65" x="5" y="5" rx="7" fill="#7b5a2a" stroke="#edc66b"/><text x="40" y="31" fill="#fff9e6" font-size="22" font-weight="700">N3</text><text x="40" y="51" fill="#ffe6a5" font-size="12">普通 Lv3</text></g>
+      <g transform="translate(240,375)"><rect width="70" height="65" x="5" y="5" rx="7" fill="#7b5a2a" stroke="#edc66b"/><text x="40" y="31" fill="#fff9e6" font-size="22" font-weight="700">N3</text><text x="40" y="51" fill="#ffe6a5" font-size="12">普通 Lv3</text></g>
+      <g transform="translate(400,375)"><rect width="70" height="65" x="5" y="5" rx="7" fill="#7b5a2a" stroke="#edc66b"/><text x="40" y="31" fill="#fff9e6" font-size="22" font-weight="700">N3</text><text x="40" y="51" fill="#ffe6a5" font-size="12">普通 Lv3</text></g>
+      <g transform="translate(560,375)"><rect width="70" height="65" x="5" y="5" rx="7" fill="#7b5a2a" stroke="#edc66b"/><text x="40" y="31" fill="#fff9e6" font-size="22" font-weight="700">N3</text><text x="40" y="51" fill="#ffe6a5" font-size="12">普通 Lv3</text></g>
+      <g transform="translate(720,375)"><rect width="70" height="65" x="5" y="5" rx="7" fill="#7b5a2a" stroke="#edc66b"/><text x="40" y="31" fill="#fff9e6" font-size="22" font-weight="700">N3</text><text x="40" y="51" fill="#ffe6a5" font-size="12">普通 Lv3</text></g>
+      <g transform="translate(880,375)"><rect width="70" height="65" x="5" y="5" rx="7" fill="#7b5a2a" stroke="#edc66b"/><text x="40" y="31" fill="#fff9e6" font-size="22" font-weight="700">N3</text><text x="40" y="51" fill="#ffe6a5" font-size="12">普通 Lv3</text></g>
+      <g transform="translate(1040,375)"><rect width="70" height="65" x="5" y="5" rx="7" fill="#7b5a2a" stroke="#edc66b"/><text x="40" y="31" fill="#fff9e6" font-size="22" font-weight="700">N3</text><text x="40" y="51" fill="#ffe6a5" font-size="12">普通 Lv3</text></g>
+      <g transform="translate(1120,375)"><rect width="70" height="65" x="5" y="5" rx="7" fill="#7b5a2a" stroke="#edc66b"/><text x="40" y="31" fill="#fff9e6" font-size="22" font-weight="700">N3</text><text x="40" y="51" fill="#ffe6a5" font-size="12">普通 Lv3</text></g>
+      <g transform="translate(1200,375)"><rect width="70" height="65" x="5" y="5" rx="7" fill="#7b5a2a" stroke="#edc66b"/><text x="40" y="31" fill="#fff9e6" font-size="22" font-weight="700">N3</text><text x="40" y="51" fill="#ffe6a5" font-size="12">普通 Lv3</text></g>
+
+      <!-- r6 -->
+      <g transform="translate(80,450)"><rect width="70" height="65" x="5" y="5" rx="7" fill="#2a5b78" stroke="#79c7ff"/><text x="40" y="31" fill="#f2ffff" font-size="22" font-weight="700">P3</text><text x="40" y="51" fill="#c8e7ff" font-size="12">减速 Lv3</text></g>
+      <g transform="translate(240,450)"><rect width="70" height="65" x="5" y="5" rx="7" fill="#2a5b78" stroke="#79c7ff"/><text x="40" y="31" fill="#f2ffff" font-size="22" font-weight="700">P3</text><text x="40" y="51" fill="#c8e7ff" font-size="12">减速 Lv3</text></g>
+      <g transform="translate(400,450)"><rect width="70" height="65" x="5" y="5" rx="7" fill="#2a5b78" stroke="#79c7ff"/><text x="40" y="31" fill="#f2ffff" font-size="22" font-weight="700">P3</text><text x="40" y="51" fill="#c8e7ff" font-size="12">减速 Lv3</text></g>
+      <g transform="translate(560,450)"><rect width="70" height="65" x="5" y="5" rx="7" fill="#2a5b78" stroke="#79c7ff"/><text x="40" y="31" fill="#f2ffff" font-size="22" font-weight="700">P3</text><text x="40" y="51" fill="#c8e7ff" font-size="12">减速 Lv3</text></g>
+      <g transform="translate(720,450)"><rect width="70" height="65" x="5" y="5" rx="7" fill="#2a5b78" stroke="#79c7ff"/><text x="40" y="31" fill="#f2ffff" font-size="22" font-weight="700">P3</text><text x="40" y="51" fill="#c8e7ff" font-size="12">减速 Lv3</text></g>
+      <g transform="translate(880,450)"><rect width="70" height="65" x="5" y="5" rx="7" fill="#2a5b78" stroke="#79c7ff"/><text x="40" y="31" fill="#f2ffff" font-size="22" font-weight="700">P3</text><text x="40" y="51" fill="#c8e7ff" font-size="12">减速 Lv3</text></g>
+      <g transform="translate(1040,450)"><rect width="70" height="65" x="5" y="5" rx="7" fill="#2a5b78" stroke="#79c7ff"/><text x="40" y="31" fill="#f2ffff" font-size="22" font-weight="700">P3</text><text x="40" y="51" fill="#c8e7ff" font-size="12">减速 Lv3</text></g>
+      <g transform="translate(1120,450)"><rect width="70" height="65" x="5" y="5" rx="7" fill="#7b5a2a" stroke="#edc66b"/><text x="40" y="31" fill="#fff9e6" font-size="22" font-weight="700">N3</text><text x="40" y="51" fill="#ffe6a5" font-size="12">普通 Lv3</text></g>
+      <g transform="translate(1200,450)"><rect width="70" height="65" x="5" y="5" rx="7" fill="#7b5a2a" stroke="#edc66b"/><text x="40" y="31" fill="#fff9e6" font-size="22" font-weight="700">N3</text><text x="40" y="51" fill="#ffe6a5" font-size="12">普通 Lv3</text></g>
+
+      <!-- r7 -->
+      <g transform="translate(80,525)"><rect width="70" height="65" x="5" y="5" rx="7" fill="#2a5b78" stroke="#79c7ff"/><text x="40" y="31" fill="#f2ffff" font-size="22" font-weight="700">P3</text><text x="40" y="51" fill="#c8e7ff" font-size="12">减速 Lv3</text></g>
+      <g transform="translate(240,525)"><rect width="70" height="65" x="5" y="5" rx="7" fill="#2a5b78" stroke="#79c7ff"/><text x="40" y="31" fill="#f2ffff" font-size="22" font-weight="700">P3</text><text x="40" y="51" fill="#c8e7ff" font-size="12">减速 Lv3</text></g>
+      <g transform="translate(400,525)"><rect width="70" height="65" x="5" y="5" rx="7" fill="#2a5b78" stroke="#79c7ff"/><text x="40" y="31" fill="#f2ffff" font-size="22" font-weight="700">P3</text><text x="40" y="51" fill="#c8e7ff" font-size="12">减速 Lv3</text></g>
+      <g transform="translate(560,525)"><rect width="70" height="65" x="5" y="5" rx="7" fill="#2a5b78" stroke="#79c7ff"/><text x="40" y="31" fill="#f2ffff" font-size="22" font-weight="700">P3</text><text x="40" y="51" fill="#c8e7ff" font-size="12">减速 Lv3</text></g>
+      <g transform="translate(720,525)"><rect width="70" height="65" x="5" y="5" rx="7" fill="#2a5b78" stroke="#79c7ff"/><text x="40" y="31" fill="#f2ffff" font-size="22" font-weight="700">P3</text><text x="40" y="51" fill="#c8e7ff" font-size="12">减速 Lv3</text></g>
+      <g transform="translate(880,525)"><rect width="70" height="65" x="5" y="5" rx="7" fill="#2a5b78" stroke="#79c7ff"/><text x="40" y="31" fill="#f2ffff" font-size="22" font-weight="700">P3</text><text x="40" y="51" fill="#c8e7ff" font-size="12">减速 Lv3</text></g>
+      <g transform="translate(1040,525)"><rect width="70" height="65" x="5" y="5" rx="7" fill="#2a5b78" stroke="#79c7ff"/><text x="40" y="31" fill="#f2ffff" font-size="22" font-weight="700">P3</text><text x="40" y="51" fill="#c8e7ff" font-size="12">减速 Lv3</text></g>
+
+      <!-- r8 -->
+      <g transform="translate(80,600)"><rect width="70" height="65" x="5" y="5" rx="7" fill="#276c75" stroke="#64e0df"/><text x="40" y="31" fill="#f2ffff" font-size="22" font-weight="700">P1</text><text x="40" y="51" fill="#bbf4f0" font-size="12">减速 Lv1</text></g>
+      <g transform="translate(400,600)"><rect width="70" height="65" x="5" y="5" rx="7" fill="#276c75" stroke="#64e0df"/><text x="40" y="31" fill="#f2ffff" font-size="22" font-weight="700">P1</text><text x="40" y="51" fill="#bbf4f0" font-size="12">减速 Lv1</text></g>
+      <g transform="translate(720,600)"><rect width="70" height="65" x="5" y="5" rx="7" fill="#276c75" stroke="#64e0df"/><text x="40" y="31" fill="#f2ffff" font-size="22" font-weight="700">P1</text><text x="40" y="51" fill="#bbf4f0" font-size="12">减速 Lv1</text></g>
+      <g transform="translate(1040,600)"><rect width="70" height="65" x="5" y="5" rx="7" fill="#276c75" stroke="#64e0df"/><text x="40" y="31" fill="#f2ffff" font-size="22" font-weight="700">P1</text><text x="40" y="51" fill="#bbf4f0" font-size="12">减速 Lv1</text></g>
+    </g>
+  </g>
+
+  <!-- Legend and metrics -->
+  <g transform="translate(180,875)" font-family="Segoe UI, Microsoft YaHei, sans-serif">
+    <rect x="0" y="0" width="1240" height="48" rx="8" fill="#142838" stroke="#365468"/>
+    <text x="24" y="31" fill="#d8e9f2" font-size="16" font-weight="700">图例：</text>
+    <text x="105" y="31" fill="#edc66b" font-size="16">N3 = 普通塔 Lv3</text>
+    <text x="330" y="31" fill="#79c7ff" font-size="16">P3 = 减速塔 Lv3</text>
+    <text x="560" y="31" fill="#64e0df" font-size="16">P1 = 减速塔 Lv1</text>
+    <text x="790" y="31" fill="#ff9b78" font-size="16">F3 = 火力塔 Lv3</text>
+    <text x="1020" y="31" fill="#9cb6c7" font-size="16">S/E = 出生/终点</text>
+  </g>
+  <text x="800" y="950" text-anchor="middle" fill="#7691a2" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="13">注：红框标出的 15 座 N3 已替换为 P3；其它塔位、等级和起终点保持不变，尚未写入 Unity。</text>
+</svg>

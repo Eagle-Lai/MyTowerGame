@@ -1,0 +1,14 @@
+import fs from 'node:fs/promises';
+import { FileBlob, SpreadsheetFile } from '@oai/artifact-tool';
+const root='D:/FreedomTower_1';
+const out=process.argv[3]??`${root}/Library/BalanceStage/l02-ground15-20261110`;
+await fs.mkdir(out,{recursive:true});
+const input=process.argv[6]??`${root}/Luban/Config/Datas/Levels/L02/EnemyData.xlsx`;
+const range=process.argv[4]??'B30:E43';
+const inspectRange=process.argv[5]??'B34:E38';
+const wb=await SpreadsheetFile.importXlsx(await FileBlob.load(input));
+const image=await wb.render({sheetName:'Sheet',range,scale:1.5,format:'png'});
+const tag=process.argv[2]??'before';
+await fs.writeFile(`${out}/${tag}.png`,new Uint8Array(await image.arrayBuffer()));
+console.log(JSON.stringify({render:`${out}/${tag}.png`,range,values:wb.worksheets.getItem('Sheet').getRange(inspectRange).values}));
+process.exit(0);

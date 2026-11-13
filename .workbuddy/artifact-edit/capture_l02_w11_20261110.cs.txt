@@ -1,0 +1,79 @@
+// Execute through the verified unityMCP instance. Read-only gameplay inspection.
+// Writes evidence under Library only; never starts/stops/pauses/advances the game.
+var flow = FTProject.GameFlowManager.Instance;
+if (!UnityEditor.EditorApplication.isPlaying || flow == null || flow.Level == null)
+    return new { captured = false, reason = "No live level" };
+if (flow.Level.Id != 2 || flow.CurrentRoundIndex != 11 || flow.CompletedRoundCount != 10 ||
+    (flow.State != FTProject.GameFlowState.Preparing && flow.State != FTProject.GameFlowState.RoundComplete))
+    return new { captured = false, reason = "Waiting for L02 before W11", level = flow.Level.Id, wave = flow.CurrentRoundIndex, state = flow.State.ToString() };
+if (FTProject.CombatSystem.Instance == null || FTProject.CombatSystem.Instance.AliveEnemyCount != 0)
+    return new { captured = false, reason = "Boundary still contains enemies" };
+var metrics = flow.RunMetrics;
+if (metrics == null || metrics.completedWaveCount != 10 || metrics.waves.Count != 10)
+    return new { captured = false, reason = "Completed ledger does not match W11 preparation" };
+var player = FTProject.PlayerDataManager.Instance;
+var layout = FTProject.LevelLayoutStore.CaptureCurrentLevel(2, 10, metrics, metrics.runId);
+var ordered = new System.Collections.Generic.List<FTProject.TowerLayoutEntry>();
+var phases = new System.Collections.Generic.List<FTProject.TowerSnapshot>();
+foreach (var tower in FTProject.TowerManager.Instance.Towers)
+{
+    if (tower == null || !tower.IsBuilt || tower.Cell == null || tower.Config == null) continue;
+    var entry = layout.towers.Find(e => e.row == tower.Cell.Row && e.col == tower.Cell.Col);
+    if (entry == null) throw new System.InvalidOperationException("Missing tower layout entry");
+    ordered.Add(entry);
+    var phase = new FTProject.TowerSnapshot { row = entry.row, col = entry.col, type = entry.type, level = entry.level };
+    tower.CaptureCheckpointState(phase);
+    if (!phase.HasValidRuntimeState()) throw new System.InvalidOperationException("Invalid tower phase");
+    phases.Add(phase);
+}
+if (ordered.Count != layout.towerCount) throw new System.InvalidOperationException("Tower count changed");
+layout.towers = ordered;
+var checkpoint = new FTProject.WaveRestartCheckpoint {
+    layout = layout, roundId = flow.Level.RoundIds[10], goldCarry = player.GoldCarry,
+    killed = player.TotalKilled, leaked = player.TotalLeaked,
+    combatSeconds = FTProject.GameClock.CombatElapsedSeconds, levelSeconds = FTProject.GameClock.LevelElapsedSeconds,
+    timerStarted = FTProject.GameClock.IsLevelTimerRunning, towerStates = phases
+};
+var root = new SimpleJSON.JSONObject();
+root["capturedAtUtc"] = System.DateTime.UtcNow.ToString("o");
+root["projectRoot"] = System.IO.Directory.GetParent(UnityEngine.Application.dataPath).FullName;
+root["unityVersion"] = UnityEngine.Application.unityVersion;
+root["state"] = flow.State.ToString(); root["wave"] = flow.CurrentRoundIndex;
+root["completedWaves"] = flow.CompletedRoundCount;
+root["gamePaused"] = FTProject.GameClock.IsPaused;
+root["editorPaused"] = UnityEditor.EditorApplication.isPaused;
+root["speed"] = FTProject.GameClock.Speed;
+root["isTestStorage"] = FTProject.SaveManager.IsTestStorage;
+root["checkpoint"] = SimpleJSON.JSON.Parse(UnityEngine.JsonUtility.ToJson(checkpoint));
+var registered = typeof(FTProject.CombatSystem).GetField("_towers", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic).GetValue(FTProject.CombatSystem.Instance) as System.Collections.Generic.List<FTProject.BaseTower>;
+root["combatTowerOrder"] = new SimpleJSON.JSONArray();
+foreach (var tower in registered)
+{
+    if (tower == null || !tower.IsBuilt || tower.Config == null || tower.Cell == null) continue;
+    var row = new SimpleJSON.JSONObject(); row["row"] = tower.Cell.Row; row["col"] = tower.Cell.Col;
+    row["configId"] = tower.Config.Id; row["type"] = tower.Config.Type; row["level"] = tower.Config.Level;
+    row["investedGold"] = tower.InvestedGold; row["evidenceDamage"] = tower.EvidenceDamage;
+    row["fireCount"] = tower.FireCount; row["hits"] = tower.EvidenceHits; row["airHits"] = tower.EvidenceAirHits;
+    root["combatTowerOrder"].Add(row);
+}
+root["groundPath"] = new SimpleJSON.JSONArray();
+foreach (var point in FTProject.AStarManager.Instance.GetPath())
+{
+    var row = new SimpleJSON.JSONObject(); row["x"] = point.Center.x; row["y"] = point.Center.y;
+    root["groundPath"].Add(row);
+}
+root["liveW11Enemies"] = new SimpleJSON.JSONArray();
+foreach (int id in new[] {6000100,6000101,6000102,6000103,6000105})
+{
+    var enemy = FTProject.Configs.GetEnemy(id, false);
+    var row = new SimpleJSON.JSONObject(); row["id"] = id; row["hp"] = enemy.Hp; row["armor"] = enemy.Armor;
+    row["speed"] = enemy.Speed; row["isFlying"] = enemy.IsFlying; row["leakDamage"] = enemy.DamageToPlayer;
+    root["liveW11Enemies"].Add(row);
+}
+string campaign;
+if (FTProject.SaveManager.Instance.TryGetUserValue(FTProject.LevelLayoutStore.StorageKey, out campaign))
+    root["campaignBook"] = SimpleJSON.JSON.Parse(campaign);
+var directory = "D:/FreedomTower_1/Library/BalanceStage/l02-w11-review-20261110-135842";
+var path = System.IO.Path.Combine(directory, "user-w11-" + System.DateTime.UtcNow.ToString("yyyyMMdd-HHmmss") + "-" + System.Guid.NewGuid().ToString("N").Substring(0,8) + ".json");
+System.IO.File.WriteAllText(path, root.ToString(2));
+return new { captured = true, path = path, towers = layout.towerCount, gold = layout.gold, hp = layout.hp, killed = checkpoint.killed, leaked = checkpoint.leaked, state = flow.State.ToString() };

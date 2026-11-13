@@ -1,0 +1,15 @@
+import fs from 'node:fs';
+import path from 'node:path';
+const request=path.resolve('Library/BalanceStage/trusted-terminal-design-20261109/engine',process.argv[2]+'-request.json').replaceAll('\\','/');
+if(!fs.existsSync(request))throw Error('Request not found');
+const code=`var t=typeof(FTProject.EditorTools.BalancePlayModeVerifier);if(!FTProject.EditorTools.BalancePlayModeVerifier.Running)return "Batch is not running";
+var flags=System.Reflection.BindingFlags.Static|System.Reflection.BindingFlags.NonPublic;
+var runs=(System.Collections.Generic.List<SimpleJSON.JSONNode>)t.GetField("Runs",flags).GetValue(null);
+int i=(int)t.GetField("_runIndex",flags).GetValue(null);
+if(i>=runs.Count)return "No active run";
+runs.RemoveRange(i+1,runs.Count-i-1);
+var req=SimpleJSON.JSON.Parse(System.IO.File.ReadAllText("${request}"));
+foreach(var run in req["runs"].AsArray.Children)runs.Add(run);
+return "Kept active diagnostic; queued "+req["runs"].Count+" requested candidates";`;
+const file='Library/BalanceStage/unity-mcp-20261109/queue-next.json';
+fs.writeFileSync(file,JSON.stringify({action:'execute',code}));console.log(file);

@@ -1,0 +1,69 @@
+if (!UnityEditor.EditorApplication.isPlaying || !FTProject.Configs.IsLoaded)
+    return new { ready = false, playing = UnityEditor.EditorApplication.isPlaying, loaded = FTProject.Configs.IsLoaded };
+string directory = "D:/FreedomTower_1/Library/BalanceStage/l02-w15-all-enemy-hp10-r2-20261110";
+var manifest = SimpleJSON.JSON.Parse(System.IO.File.ReadAllText(directory + "/applied-manifest.json"));
+var root = new SimpleJSON.JSONObject();
+root["checkedAtUtc"] = System.DateTime.UtcNow.ToString("o");
+root["projectRoot"] = System.IO.Directory.GetParent(UnityEngine.Application.dataPath).FullName;
+root["unityVersion"] = UnityEngine.Application.unityVersion;
+root["playing"] = UnityEditor.EditorApplication.isPlaying;
+root["loader"] = FTProject.ResLoader.ImplName;
+root["loaderReady"] = FTProject.ResLoader.Instance.IsReady;
+root["compilationFailed"] = UnityEditor.EditorUtility.scriptCompilationFailed;
+root["failedTableCount"] = FTProject.Configs.FailedTables.Count;
+root["enemyRowCount"] = FTProject.Configs.EnemyTable.DataList.Count;
+root["rows"] = new SimpleJSON.JSONArray();
+int checkedRows = 0, mismatches = 0, combatMismatches = 0;
+var level = FTProject.Configs.LevelTable.GetOrDefault(2);
+var round = level != null && level.RoundList.Count > 14 ? FTProject.Configs.GetRound(level.RoundList[14]) : null;
+bool w15HardWave = round != null && round.Id == 2015 && round.WaveType == 2;
+var tuning = FTProject.Configs.GetWaveTuning(2, w15HardWave);
+bool combatHpEqualsRaw = true;
+foreach (var pair in manifest["edits"])
+{
+    var edit = pair.Value;
+    int id = edit["enemyId"].AsInt;
+    var enemy = FTProject.Configs.EnemyTable.GetOrDefault(id);
+    float expected = edit["new"].AsFloat;
+    bool match = enemy != null && enemy.Hp == expected && enemy.IsFlying == edit["isFlying"].AsInt;
+    checkedRows++;
+    if (!match) mismatches++;
+    var row = new SimpleJSON.JSONObject();
+    row["id"] = id; row["expectedHp"] = expected; row["actualHp"] = enemy != null ? enemy.Hp : 0;
+    var combat = enemy != null ? new FTProject.EnemyConfig(enemy, tuning) : null;
+    bool combatMatch = combat != null && combat.Hp == expected && combat.Speed == enemy.Speed && combat.Armor == UnityEngine.Mathf.Clamp01(enemy.Armor);
+    if (!combatMatch) combatMismatches++;
+    if (combat == null || combat.Hp != enemy.Hp) combatHpEqualsRaw = false;
+    row["combatHp"] = combat != null ? combat.Hp : 0;
+    row["combatSpeed"] = combat != null ? combat.Speed : 0;
+    row["combatArmor"] = combat != null ? combat.Armor : 0;
+    row["combatMatch"] = combatMatch;
+    row["match"] = match; root["rows"].Add(row);
+}
+root["checkedRows"] = checkedRows;
+root["mismatches"] = mismatches;
+root["combatMismatches"] = combatMismatches;
+root["w15HardWave"] = w15HardWave;
+root["combatHpEqualsRaw"] = combatHpEqualsRaw;
+var loaded = typeof(FTProject.Configs).GetField("LoadedJson", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic).GetValue(null) as System.Collections.Generic.Dictionary<string, string>;
+root["normalLoadedJsonMismatches"] = new SimpleJSON.JSONArray();
+foreach (var kv in loaded)
+{
+    string path = "D:/FreedomTower_1/Assets/ConfigJson/" + kv.Key + ".json";
+    if (!System.IO.File.Exists(path) || System.IO.File.ReadAllText(path) != kv.Value)
+        root["normalLoadedJsonMismatches"].Add(kv.Key);
+}
+root["normalLoadedJsonCount"] = loaded.Count;
+int goldExceptions = 0;
+foreach (var scene in FTProject.Configs.LevelTable.DataList)
+    if (scene.InitialGold != 100) goldExceptions++;
+root["initialGoldExceptionCount"] = goldExceptions;
+root["w10AirHp"] = FTProject.Configs.EnemyTable.GetOrDefault(6000095).Hp;
+root["w11AirHp"] = FTProject.Configs.EnemyTable.GetOrDefault(6000105).Hp;
+bool ok = checkedRows == 5 && mismatches == 0 && combatMismatches == 0 && w15HardWave && combatHpEqualsRaw && loaded.Count == 11 && root["normalLoadedJsonMismatches"].Count == 0 &&
+    goldExceptions == 0 && FTProject.Configs.FailedTables.Count == 0 && FTProject.ResLoader.Instance.IsReady && !UnityEditor.EditorUtility.scriptCompilationFailed;
+root["ok"] = ok;
+System.IO.File.WriteAllText(directory + "/normal-unity-verification.json", root.ToString(2));
+return new { ok = ok, checkedRows = checkedRows, mismatches = mismatches, combatMismatches = combatMismatches, w15HardWave = w15HardWave,
+    normalLoadedJsonCount = loaded.Count, jsonMismatches = root["normalLoadedJsonMismatches"].Count,
+    initialGoldExceptions = goldExceptions };
