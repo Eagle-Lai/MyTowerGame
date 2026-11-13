@@ -1,0 +1,43 @@
+
+if(UnityEditor.EditorApplication.isPlaying || FTProject.Configs.ActiveLevelId!=2) throw new System.Exception("Requires stopped L02 editor.");
+var flags=System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic|System.Reflection.BindingFlags.Public;
+var sf=System.Reflection.BindingFlags.Static|System.Reflection.BindingFlags.NonPublic;
+var cs=FTProject.CombatSystem.Instance;
+var oldGrid=cs.Grid;
+var oldHits=cs.StatHitCount;var oldSearch=cs.StatSearchCount;var oldFire=cs.StatFireCount;
+var spawn=typeof(FTProject.BaseEnemy).GetField("_evidenceSpawnSequence",sf);var oldSpawn=spawn.GetValue(null);
+var scene=UnityEditor.SceneManagement.EditorSceneManager.NewPreviewScene();
+var active=UnityEngine.SceneManagement.SceneManager.GetActiveScene();
+var objects=new System.Collections.Generic.List<UnityEngine.GameObject>();
+var results=new System.Collections.Generic.List<object>();
+System.Action<object,string,object> set=(o,n,v)=>o.GetType().GetProperty(n,flags).GetSetMethod(true).Invoke(o,new object[]{v});
+System.Func<string,UnityEngine.GameObject> make=n=>{var go=new UnityEngine.GameObject(n);go.hideFlags=UnityEngine.HideFlags.HideAndDontSave;UnityEngine.SceneManagement.SceneManager.MoveGameObjectToScene(go,scene);objects.Add(go);return go;};
+try{
+  for(int slowTier=0;slowTier<=3;slowTier++){
+    var grid=new FTProject.EnemyGrid(2f,256);set(cs,"Grid",grid);
+    var e=make("W15_Bat_Transit").AddComponent<FTProject.BaseEnemy>();
+    e.transform.position=new UnityEngine.Vector3(-4f,0f,0f);
+    e.Init(FTProject.Configs.GetEnemy(6000145,true),new System.Collections.Generic.List<AStar.Point>{new AStar.Point(0,0){Center=new UnityEngine.Vector2(-4f,0f)},new AStar.Point(10,0){Center=new UnityEngine.Vector2(10f,0f)}});
+    e.NextDamageTextTime=float.MaxValue;
+    var normal=make("L02_Normal3").AddComponent<FTProject.BaseTower>();set(normal,"Config",FTProject.Configs.GetTower(2003));set(normal,"IsBuilt",true);
+    FTProject.BaseTower slow=null;
+    if(slowTier>0){slow=make("L02_Slow"+slowTier).AddComponent<FTProject.BaseTower>();set(slow,"Config",FTProject.Configs.GetTower(2006+slowTier));set(slow,"IsBuilt",true);}
+    float startHp=e.CurrentHp;float time=0f,inRangeTime=0f;float dt=1f/120f;
+    while(e.Position.x<4f && time<30f){
+      e.Tick(dt);grid.Update(e,e.Position);
+      if(slow!=null)slow.TickAttack(dt);
+      if(e.Position.sqrMagnitude<=normal.Config.RadiusWorld*normal.Config.RadiusWorld)inRangeTime+=dt;
+      normal.TickAttack(dt);time+=dt;
+      if(!e.IsAlive)throw new System.Exception("Diagnostic enemy died unexpectedly");
+    }
+    results.Add(new{slowTier=slowTier,slowRatio=slow==null?0f:slow.Config.EffectValue,totalTransitSeconds=time,normalRangeSeconds=inRangeTime,normalAirHits=normal.EvidenceAirHits,normalDamage=startHp-e.CurrentHp,airHp=e.CurrentHp,normalCooldown=normal.Config.CooldownSec,normalAirDamage=normal.Config.Power*normal.Config.AirDamageScale,normalRadius=normal.Config.RadiusWorld});
+  }
+  var output=new{scope="Actual BaseEnemy.Tick movement + BaseTower.TickAttack for normal/slow, synthetic straight crossing, actual L02 W15 Bat and L02 towers; not original player formation.",results=results};
+  System.IO.File.WriteAllText("D:/FreedomTower_1/Library/CombatDiagnostics/20261111-W15-air/transit-results.json",Newtonsoft.Json.JsonConvert.SerializeObject(output,Newtonsoft.Json.Formatting.Indented));
+  return output;
+}finally{
+  set(cs,"Grid",oldGrid);set(cs,"StatHitCount",oldHits);set(cs,"StatSearchCount",oldSearch);set(cs,"StatFireCount",oldFire);spawn.SetValue(null,oldSpawn);
+  for(int i=objects.Count-1;i>=0;i--)if(objects[i]!=null)UnityEngine.Object.DestroyImmediate(objects[i]);
+  UnityEditor.SceneManagement.EditorSceneManager.ClosePreviewScene(scene);
+  if(active.IsValid())UnityEngine.SceneManagement.SceneManager.SetActiveScene(active);
+}

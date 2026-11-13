@@ -1,0 +1,103 @@
+
+if (UnityEditor.EditorApplication.isPlaying) throw new System.InvalidOperationException("Diagnostic requires stopped editor.");
+if (FTProject.Configs.ActiveLevelId != 2 || !FTProject.Configs.IsLoaded) throw new System.InvalidOperationException("L02 configuration is not loaded.");
+var flags = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public;
+var staticFlags = System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public;
+var cs = FTProject.CombatSystem.Instance;
+var gridProperty = typeof(FTProject.CombatSystem).GetProperty("Grid");
+var oldGrid = cs.Grid;
+var oldHits = cs.StatHitCount;
+var spawnField = typeof(FTProject.BaseEnemy).GetField("_evidenceSpawnSequence", staticFlags);
+var oldSpawn = spawnField.GetValue(null);
+var scene = UnityEditor.SceneManagement.EditorSceneManager.NewPreviewScene();
+var oldActiveScene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
+var objects = new System.Collections.Generic.List<UnityEngine.GameObject>();
+var results = new System.Collections.Generic.List<object>();
+var checks = 0;
+System.Action<bool,string> check = (ok,msg) => { checks++; if (!ok) throw new System.Exception(msg); };
+System.Func<string,UnityEngine.GameObject> make = name => {
+    var go = new UnityEngine.GameObject(name);
+    go.hideFlags = UnityEngine.HideFlags.HideAndDontSave;
+    UnityEngine.SceneManagement.SceneManager.MoveGameObjectToScene(go,scene);
+    objects.Add(go);
+    return go;
+};
+System.Action<object,string,object> set = (obj,name,value) => obj.GetType().GetProperty(name,flags).GetSetMethod(true).Invoke(obj,new object[]{value});
+System.Func<int,FTProject.BaseTower> tower = id => {
+    var t = make("AirDamageDiagnosticTower"+id).AddComponent<FTProject.BaseTower>();
+    set(t,"Config",FTProject.Configs.GetTower(id));
+    return t;
+};
+var detonate = typeof(FTProject.BaseTower).GetMethod("DetonateAt",flags);
+var hurt = typeof(FTProject.BaseTower).GetMethod("HurtEnemy",flags);
+var aura = typeof(FTProject.BaseTower).GetMethod("TickSlowAura",flags);
+var effects = typeof(FTProject.BaseEnemy).GetMethod("TickEffects",flags);
+var pick = typeof(FTProject.BaseTower).GetMethod("PickBestTarget",staticFlags);
+var speedField = typeof(FTProject.BaseEnemy).GetField("_speed",flags);
+var dotField = typeof(FTProject.BaseEnemy).GetField("_dotDps",flags);
+try {
+    for (int tier=1;tier<=3;tier++) {
+        for (int slowTier=1;slowTier<=3;slowTier++) {
+            for (int normalCount=0;normalCount<=1;normalCount++) {
+                var grid = new FTProject.EnemyGrid(2f,256);
+                gridProperty.GetSetMethod(true).Invoke(cs,new object[]{grid});
+                var flying = make("W15_Bat").AddComponent<FTProject.BaseEnemy>();
+                flying.Init(FTProject.Configs.GetEnemy(6000145,true),new System.Collections.Generic.List<AStar.Point>{new AStar.Point(0,0),new AStar.Point(10,0)});
+                flying.NextDamageTextTime = float.MaxValue;
+                var ground = make("W15_Crawler").AddComponent<FTProject.BaseEnemy>();
+                ground.transform.position = new UnityEngine.Vector3(0.1f,0,0);
+                ground.Init(FTProject.Configs.GetEnemy(6000142,true),null);
+                ground.NextDamageTextTime = float.MaxValue;
+                grid.Update(flying,flying.Position);
+                grid.Update(ground,ground.Position);
+                var blast = tower(2003+tier);
+                var slow = tower(2006+slowTier);
+                var normal = tower(2000+tier);
+                var bullet = FTProject.Configs.GetBullet(blast.Config.BulletId);
+                var normalBullet = FTProject.Configs.GetBullet(normal.Config.BulletId);
+                var airStart = flying.CurrentHp;
+                var groundStart = ground.CurrentHp;
+                float expectedNormalDamage = normal.Config.Power*normal.Config.AirDamageScale*(1f-flying.Config.Armor);
+                int blastAirHitsStart=blast.EvidenceAirHits, normalAirHitsStart=normal.EvidenceAirHits;
+                for(int shot=0;shot<10;shot++) {
+                    float beforeSlow=flying.CurrentHp;
+                    aura.Invoke(slow,new object[]{0.25f});
+                    check(flying.CurrentHp==beforeSlow,"Slow aura changed HP");
+                    check(flying.Config.IsFlying && (bool)typeof(FTProject.BaseEnemy).GetField("_flying",flags).GetValue(flying),"Flying classification changed");
+                    check((float)speedField.GetValue(flying)<flying.Config.Speed,"Slow did not apply");
+                    var candidates=new System.Collections.Generic.List<FTProject.BaseEnemy>{flying,ground};
+                    var selected=(FTProject.BaseEnemy)pick.Invoke(null,new object[]{candidates,UnityEngine.Vector2.zero,100f,blast.Config.TargetMode,blast.Config.CanAttackAir,false});
+                    check(selected==ground,"Blast tower selected flying enemy after slow");
+                    float beforeBlast=flying.CurrentHp;
+                    detonate.Invoke(blast,new object[]{UnityEngine.Vector2.zero,bullet.AoeRadius,blast.Config.Power,bullet});
+                    check(flying.CurrentHp==beforeBlast,"Blast damaged flying enemy after slow");
+                    if(normalCount>0) {
+                        hurt.Invoke(normal,new object[]{flying,normal.Config.Power,normalBullet});
+                        check(UnityEngine.Mathf.Abs(flying.CurrentHp-(beforeBlast-expectedNormalDamage))<0.002f,"Unexpected normal tower damage");
+                    }
+                    float beforeEffects=flying.CurrentHp;
+                    effects.Invoke(flying,new object[]{0.25f});
+                    check(flying.CurrentHp==beforeEffects,"Effect ticking changed flying HP");
+                    check((float)dotField.GetValue(flying)==0f,"Unexpected DOT after slow/blast");
+                }
+                check(blast.EvidenceAirHits==blastAirHitsStart,"Blast evidence records air hit");
+                check(ground.CurrentHp<groundStart,"Explosion did not damage ground control");
+                results.Add(new { blastTier=tier,slowTier=slowTier,normalCount=normalCount,explosions=10,airStart=airStart,airEnd=flying.CurrentHp,groundDamage=groundStart-ground.CurrentHp,blastAirHits=blast.EvidenceAirHits-blastAirHitsStart,normalAirHits=normal.EvidenceAirHits-normalAirHitsStart,slowRatio=slow.Config.EffectValue,speed=(float)speedField.GetValue(flying)});
+            }
+        }
+    }
+    var output = new { project=UnityEngine.Application.dataPath, unity=UnityEngine.Application.unityVersion, activeLevel=FTProject.Configs.ActiveLevelId, enemyId=6000145,hardWave=true,checks=checks,scenarios=results,scope="Loaded compiled combat methods with actual L02 W15 configs, isolated preview scene; no full wave replay." };
+    var json = Newtonsoft.Json.JsonConvert.SerializeObject(output,Newtonsoft.Json.Formatting.Indented);
+    var dir="D:/FreedomTower_1/Library/CombatDiagnostics/20261111-W15-air";
+    System.IO.Directory.CreateDirectory(dir);
+    System.IO.File.WriteAllText(dir+"/isolated-results.json",json);
+    return output;
+} finally {
+    gridProperty.GetSetMethod(true).Invoke(cs,new object[]{oldGrid});
+    typeof(FTProject.CombatSystem).GetProperty("StatHitCount").GetSetMethod(true).Invoke(cs,new object[]{oldHits});
+    spawnField.SetValue(null,oldSpawn);
+    for(int i=objects.Count-1;i>=0;i--) if(objects[i]!=null) UnityEngine.Object.DestroyImmediate(objects[i]);
+    UnityEditor.SceneManagement.EditorSceneManager.ClosePreviewScene(scene);
+    if(oldActiveScene.IsValid()) UnityEngine.SceneManagement.SceneManager.SetActiveScene(oldActiveScene);
+}
+

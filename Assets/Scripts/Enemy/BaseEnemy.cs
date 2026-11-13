@@ -41,6 +41,32 @@ namespace FTProject
         public bool IsAlive { get; private set; }
         /// <summary>是否已完成回收（CombatSystem 据此从列表移除）</summary>
         public bool IsFullyRecycled { get; private set; }
+
+#if UNITY_EDITOR
+        // ---- 临时诊断（2026-11-11 空中怪「漏一只 / 后续全灭」排查，定位完即可整块删除）----
+        // 目的：一只飞行怪被漏掉或击杀时，打印它这一路到底挨了多少伤害、
+        // 以及命中它的塔里有多少是「本来打不到空中」的（后者 >0 即说明对空过滤被绕过）。
+        public int DiagAirHitByAirCapable;
+        public int DiagAirHitByGroundOnly;
+        private float _diagTaken;
+        private float _diagSpawnAt;
+
+        public void NoteAirHit(bool canAttackAir)
+        {
+            if (canAttackAir) DiagAirHitByAirCapable++;
+            else DiagAirHitByGroundOnly++;
+        }
+
+        private void LogAirDiag(string outcome)
+        {
+            if (Config == null || !Config.IsFlying) return;
+            Debug.Log(string.Format(
+                "[AirDiag] {0} id={1} name={2} hp={3:F1}/{4:F1} taken={5:F1} hits(airCapable/groundOnly)={6}/{7} life={8:F1}s pos=({9:F2},{10:F2})",
+                outcome, Config.Id, Config.Name, CurrentHp, TotalHp, _diagTaken,
+                DiagAirHitByAirCapable, DiagAirHitByGroundOnly,
+                Time.time - _diagSpawnAt, transform.position.x, transform.position.y));
+        }
+#endif
         /// <summary>EnemyGrid 中的格子 key（0 表示未入格）</summary>
         public int GridKey { get; set; }
 
@@ -173,6 +199,12 @@ namespace FTProject
             TotalHp = cfg.Hp;
             CurrentHp = cfg.Hp;
             BodyRadius = cfg.BodyRadius;
+#if UNITY_EDITOR
+            DiagAirHitByAirCapable = 0;
+            DiagAirHitByGroundOnly = 0;
+            _diagTaken = 0f;
+            _diagSpawnAt = Time.time;
+#endif
 
             // 池化复用必须清状态效果，否则新怪会带着上一只的减速 / 持续伤害出场
             _slowRatio = 0f;
@@ -766,6 +798,9 @@ namespace FTProject
 
             float real = damage * (1f - Config.Armor);
             CurrentHp -= real;
+#if UNITY_EDITOR
+            _diagTaken += real;
+#endif
             UpdateHpBar();
 
             // 持续伤害是"每帧一小口"（dps × dt，通常 0.1 上下），
@@ -800,6 +835,9 @@ namespace FTProject
         private void Die()
         {
             IsAlive = false;
+#if UNITY_EDITOR
+            LogAirDiag("KILL");
+#endif
 
             // ★ 击杀奖励（v1.0 遗漏：原实现死亡时不发奖励）
             // 【2026-10-29】reward 改为小数：每只 0.16~1.40，由 AddGold 累加满 1 才入账，
@@ -829,6 +867,9 @@ namespace FTProject
         private void OnReachEnd()
         {
             IsAlive = false;
+#if UNITY_EDITOR
+            LogAirDiag("LEAK");
+#endif
             int dmg = Config.DamageToPlayer;
             // 震幅只认「基础伤害」：leakDamageBonus 是经济/难度旋钮，
             // 调它不该连带改变屏幕抖动强度（震屏口径仍受"只有漏怪震"约束）。

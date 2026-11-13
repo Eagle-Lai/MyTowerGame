@@ -760,7 +760,11 @@ namespace FTProject
             EvidenceOverkill += Mathf.Max(0, effective - e.CurrentHp);
             EvidenceHits++;
             RecordEvidenceEffect(e);
-            if (e.Config.IsFlying) EvidenceAirHits++;
+            if (e.Config.IsFlying)
+            {
+                EvidenceAirHits++;
+                e.NoteAirHit(Config.CanAttackAir);   // 临时诊断：统计命中飞行怪的塔是否本来就能对空
+            }
 #endif
             e.Hurt(damage);
             // 【2026-10-31 修双计】命中数只在 BaseEnemy.Hurt 里加一次 ——
