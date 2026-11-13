@@ -177,6 +177,20 @@
 - 本条仅为此次连接线索，下次仍须按 AGENTS.md 重新确认，不能作为默认端口或跨工程配置。
 
 
+## 2026-11-09 Codex L02 末端压力隔离回放连接线索（家用 D 机）
+
+- 本次工作区 D:/FreedomTower_1，ProjectVersion 和 MCP project/info 均为 Unity 2022.3.62f3c1，manifest 插件为 v10.3.0。
+- 用户本会话明确提供 stdio、6400。本轮使用已有官方 MCP 服务的 Python SDK 会话；instances 返回唯一实例 FreedomTower_1@520e2c6d、path=D:/FreedomTower_1/Assets、port=6400，选择实例后核对 projectRoot 一致。客户端服务名口径为 unityMCP。
+- 该端口与路径对应关系仅为当次连接线索，下次仍需现场确认，不能用作跨会话默认端口。测试候选只从 Library/BalanceStage 加载，并使用 replay 隔离存储；测试临时生命值不写配置源表。
+
+## 2026-11-10 Codex L02 W9 定点改表连接线索（家用 D 机）
+
+- 当次实体工程为 D:/FreedomTower_1；工作区、ProjectVersion、manifest 与 MCP project/info 交叉核对一致：Unity 2022.3.62f3c1，插件 v10.3.0。
+- 用户本会话确认 stdio、6400；当前原生 Codex unityMCP 工具已恢复。instances 返回唯一实例 FreedomTower_1@520e2c6d、port=6400、path=D:/FreedomTower_1/Assets。选择完整实例 ID 后再次核对 projectRoot 与版本一致。没有修改客户端配置或端口，没有扫描。
+- 当前资源清单没有 custom-tools URI，实例 project_scoped_tools=false；使用本服务的 tool-groups 和已暴露标准工具。此模式的 6400 是 stdio 桥接端口，不是推测的 HTTP URL。
+- 通过 Unity MCP 调用本工程 LubanExporter.ExportInternal，返回成功并实际更新两个 JSON。资产刷新后在非 Play 状态通过 Configs.ReloadForNewRunAsync 正常重载，FailedTables 为空；读取 W9 四种 HP 与数量匹配本次源表，W8 保持。既有关卡归属告警与 Unity Remote 异常保留，未扩范围处理。
+- 以上仅作本次连接线索，下次仍须现场确认，不是跨会话或跨工程默认值。证据：Library/BalanceStage/w9-candidate-apply-20261110/。
+
 ## 2026-11-07 Codex HUD 重试本波连接实测线索（家用 D 机）
 
 - 当前实体工程 D:/FreedomTower_1；ProjectVersion 与 MCP project/info 均为 Unity 2022.3.62f3c1；manifest 插件 v10.3.0。
@@ -184,4 +198,89 @@
 - instances 唯一实例 FreedomTower_1@520e2c6d，path=D:/FreedomTower_1/Assets，port=6400；逐次 set_active_instance 后核对 project/info 的 projectRoot 与 Unity 版本。服务名口径 unityMCP。本插件资源目录未提供 custom-tools URI（首次读取返回 Unknown resource），其它资源与 execute_code/refresh_unity/read_console/run_tests 均可用。
 - 编译重载恢复后重新选择并核对同一工程。此记录只作线索，下次仍须现场确认；8082 是 HTTP URL 线索，6400 是本次 stdio 桥接 socket，二者不可混用。
 - 同日“回到上波”后续需求仍按当次授权 stdio / 6400 连接，逐次发现实例并按完整路径/版本核对。最终编译成功、编辑器退出 Play Mode 且 ready_for_tools=true。插件空闲快照时间戳不更新导致 stale_status 时，使用 MCP execute_code 调其原生 EditorStateCache.ForceUpdate 重新采样真实状态；未改插件文件。功能与数据验证见 Docs/WaveRetry/2026-11-07/previous-wave/README.md。
+
+
+
+## 2026-11-10 Codex L02 W10–W25 应用后续连接核对
+
+- 本轮重新选择 FreedomTower_1@520e2c6d，project/info 与工作区 D:/FreedomTower_1、Unity 2022.3.62f3c1、manifest 插件 v10.3.0 一致。原生客户端服务 unityMCP，stdio 桥接 6400 为用户本会话确认线索；没有扫描、猜测或改端口，下次仍须现场确认。
+- 经原生 MCP 调用工程 LubanExporter.ExportInternal 成功（11:24:58 上海时间），刷新资产后用正常 Configs.ReloadForNewRunAsync 加载。FailedTables=[]；实际内存 16 波、80 个 HP/数量、16 个完整出生序列签名全部匹配。非 Play，未战斗模拟；既有归属告警与 Unity Remote 异常保留。
+- 审计：Library/BalanceStage/w10-w25-apply-20261110/；报告：Artifacts/L02_W10_W25_20261110_applied.md。本条只作当次线索，不是默认端口或跨工程结论。
+
+## 2026-11-10 Codex 波次回退历史持久化连接与验收线索
+
+- 本轮工作区 D:/FreedomTower_1，ProjectVersion、manifest 与 MCP project/info 交叉核对一致：Unity 2022.3.62f3c1、插件 v10.3.0。沿用用户当次明确要求的 stdio / 6400，原生服务 unityMCP；instances 返回 FreedomTower_1@520e2c6d。编译重载后重新选定完整实例并核对工程；没有扫描、猜测或修改端口。此记录仅作当次线索，下次仍需重新确认。
+- 当前插件资源清单没有 custom-tools；使用已暴露的标准资源和工具。闲置编辑器快照会因时间戳停更出现 stale_status，本轮通过 MCP execute_code 调用插件原生 EditorStateCache.ForceUpdate 重新采样，未修改插件文件；最终 ready_for_tools=true。
+- layout/campaign 现将当前波次边界与本局开波历史成对持久化；Teardown 仅释放内存。回退裁掉未来历史并落盘，显式新局立即替换当前关旧局；旧档缺失历史时不推造此前记录。取代 11-07 的内存历史限制。
+- 最终 78 项 EditMode 测试与 124 个运行场景检查通过；实际每退一波都 Stop / Play，从第 5 波退到第 1 波，再重启核对第一波。真实 SQLite / JSON 故障测试确认失败保留旧记录对。测试隔离存储已退出，playing=false、testStorage=false、manual=false、scriptCompilationFailed=false。Android 真机、断电与操作系统强杀未验收。
+- 实施、脚本和原始结果：Docs/WaveRetry/2026-11-10/persistent-history/README.md。配置源表和导出目录哈希与本轮开始时一致，保留既有 L02 修改。
+
+## 2026-11-10 Codex L02 地面血量第三轮连接核对线索
+
+- 当前工作区、ProjectVersion、manifest 与 MCP project/info 一致：D:/FreedomTower_1，Unity 2022.3.62f3c1，插件 v10.3.0。本会话按用户明确指定的 stdio 6400 使用原生 unityMCP；instances 实测 FreedomTower_1@520e2c6d，端口 6400。Play 进入/退出后均重新选择完整实例并核对身份；没有扫描、猜测或修改端口。此记录只作线索，下次仍须现场确认。
+- 本轮 Luban ExportInternal 成功导出 11 张表，正常 Play 的 61 个目标 HP 与全部 11 张 JSON 逐项核对通过；失败表 0、无编译失败。最终停止运行、Boot 场景干净。证据 Library/BalanceStage/l02-ground8-r3-20261110/。
+
+## 2026-11-10 Codex L02 地面血量第四轮连接核对线索
+
+- 本轮再次交叉核对工作区 D:/FreedomTower_1、ProjectVersion Unity 2022.3.62f3c1、manifest 插件 v10.3.0 与 MCP project/info 一致。按用户本会话指定的 stdio，unityMCP instances 返回 FreedomTower_1@520e2c6d、桥接端口 6400；Play 进入及退出后重新选择实例并核对身份。仅作线索，下次仍须现场确认。
+- Luban ExportInternal 真实返回 true；正常 Play 加载的 61 个地面 HP 和 11 张 JSON 全匹配，失败表 0，无编译失败。结束时停止运行，Boot 场景干净。证据 Library/BalanceStage/l02-ground8-r4-20261110/。
+
+## 2026-11-10 Codex L02 W15 地面/空中数值核对线索
+
+- 工作区 D:/FreedomTower_1，manifest / ProjectVersion / project/info 相符（Unity 2022.3.62f3c1、MCP 10.3.0）。本轮在当前会话通过 unityMCP stdio /6400 使用实例 FreedomTower_1@520e2c6d，并于 Play 前后重新核对实例与工程身份。只作线索，下次仍须现场确认。
+- Luban ExportInternal 成功；正常 Play 加载 W15 五种敌人的 HP、11 张 JSON 全匹配。编辑器恢复停止、Boot 场景干净。证据 Library/BalanceStage/l02-w15-all-enemy-hp10-20261110/。
+
+## 2026-11-10 Codex L02 W15 第二轮 -10% 连接核对线索
+
+- 当前工程 D:/FreedomTower_1、ProjectVersion Unity 2022.3.62f3c1、manifest MCP v10.3.0 与原生 unityMCP project/info 一致。依用户本会话授权 stdio，instances 返回完整实例 FreedomTower_1@520e2c6d、桥接端口 6400；Play 前后重新选择实例并核对身份。仅作线索，下次仍须现场确认。
+- Luban ExportInternal 导出成功，Editor Play 五条 HP、L02 W15 困难波 EnemyConfig 与 11 张已加载 JSON 全匹配，失败表 0、无编译失败；最终停止 Play、Boot 场景干净。证据 Library/BalanceStage/l02-w15-all-enemy-hp10-r2-20261110/。
+
+## 2026-11-11 Codex L02 W15 第三轮 -20% 连接核对线索
+
+- 当前工程 D:/FreedomTower_1，ProjectVersion、manifest 与 MCP project/info 一致：Unity 2022.3.62f3c1，MCP v10.3.0。依用户指定 stdio / 6400 使用 unityMCP；instances 为 FreedomTower_1@520e2c6d，Play 前后重新选择并核对路径/版本。此处仅为当次线索，不是默认端口。
+- Play 切换期间实例暂时不可用，等待 5.5 秒后恢复；退出 Play 后 EditorStateCache 旧快照 stale，通过 MCP execute_code 调插件原生 ForceUpdate 后状态 ready_for_tools=true，未改插件文件。
+- 配置验证通过：11 张 JSON 正常加载，五条 W15 HP 与困难波 EnemyConfig 实际值一致，失败表 0；最终退出 Play、Boot 场景干净。完整审计见 Library/BalanceStage/l02-w15-all-enemy-hp20-r3-20261111/。
+
+## 2026-11-11 Codex L02 W15 空中 -10% 连接核对线索
+
+- 本轮按用户确认 stdio / 6400 选择实例 FreedomTower_1@520e2c6d；工作区、ProjectVersion、manifest 与 MCP project/info 对应 D:/FreedomTower_1、Unity 2022.3.62f3c1、插件 v10.3.0。只作当次线索，下次仍需重新确认。
+- Luban 导出 11 表成功。Unity Play 中 Bat HP / 困难波 EnemyConfig HP 匹配 736.8494、失败表 0；退出 Play 后实例、Boot 场景与 ready 状态核对通过。审计见 Library/BalanceStage/l02-w15-air-hp10-20261111/。
+
+## 2026-11-11 Codex L02 W15 空中掉血排查连接线索
+
+- 本轮重新核对工作区 D:/FreedomTower_1、ProjectVersion Unity 2022.3.62f3c1、manifest MCP v10.3.0 与原生 unityMCP project/info 一致。custom-tools 资源当前未提供；instances 实测 transport=stdio、FreedomTower_1@520e2c6d、桥接端口 6400；EditorPrefs 现场实测 HTTP URL=http://127.0.0.1:8082。没有猜测、扫描或修改端口，以上只作本轮线索，下次仍须重新核对。
+- 编辑器停止状态，用临时 PreviewScene 调用已编译战斗方法与当前内存 L02 W15 配置：18 组慢速/爆炸/普通塔组合中，火力塔对空命中均为 0。实际移动+TickAttack 合成穿越对照显示，三级减速让一座三级普通塔命中从 10 次增至 20 次、总伤害从约 143 增至 286。没有重放用户原阵型，不将机制验证表述为原现场完整归因。
+- 未改代码/配置/场景/存档，未切换 Play；诊断对象、Grid、统计已恢复。报告及可复核脚本：Artifacts/CombatDiagnostics/2026-11-11-L02-W15-air/README.md。
+
+## 2026-11-11 Codex L02 W16–W25 现行源表趋势调整连接线索
+
+- 本轮现场核对工作区 D:/FreedomTower_1、ProjectVersion Unity 2022.3.62f3c1、manifest MCP v10.3.0；EditorPrefs UseHttpTransport=0、UnitySocketPort=6400、HttpUrl=http://127.0.0.1:8082，客户端配置实际为 unityMCP stdio launcher。没有改配置、猜测或扫描端口。custom-tools URI 未提供，instances 返回 FreedomTower_1@520e2c6d、stdio/6400，project/info 的完整路径及版本一致。以上仅为本次线索，下次重新现场确认。
+- Luban ExportInternal 返回 true，11 表导出成功。强制刷新请求编译期间 MCP 自动恢复断线，随后重新读现场状态文件、选定实例并核对身份；编译/域重载/资产更新均结束，ready_for_tools=true。正常 Play 加载的 11 张 JSON 与磁盘一致、FailedTables=[]；41 条改动 Raw/普通/困难路径共 123 个 HP 读取通过。最终退出 Play，Boot 场景，Console 只有开始前的 Unity Remote 异常。
+- 本轮只改 L02 W16–W25 地面 hp 41 格；源工作簿与导出 JSON 白名单外零改动，其余关卡、10 张 JSON 及 Assets/Gen 内容不变。方法和审计见 Artifacts/L02_W16_W25_Current_Source_Trend_20261111.md 与 Library/BalanceStage/l02-w16-w25-source-trend-20261111/。
+
+## 2026-11-11 Codex L02 W16 +50% 强度修订连接核对
+
+- 当前工程再次现场核对D:/FreedomTower_1、Unity2022.3.62f3c1、MCP10.3.0，EditorPrefs仍为stdio/socket6400、HttpUrl=http://127.0.0.1:8082；原生unityMCP instances返回FreedomTower_1@520e2c6d，project/info相符。刷新编译自动恢复断线后重读现场status、instances、重新选定并核对身份；没有改配置、猜测或扫描端口。只作本次线索。
+- Luban真实成功导出11表，正常Play的11张JSON匹配磁盘，FailedTables=[]；41条HP三路径123次验证通过，无编译失败，最终退出Play回Boot。实测强度待玩家复测。最新数值见Artifacts/L02_W16_W25_Strength_Revision_20261111.md，审计Library/BalanceStage/l02-w16-w25-strength-revision-20261111/。
+
+## 2026-11-11 Codex L02 W16–W25 地面 HP -10% 连接核对
+
+- 本轮现场自检D:/FreedomTower_1、Unity2022.3.62f3c1、manifest MCP10.3.0，EditorPrefs UseHttpTransport=0、socket6400、HttpUrl=http://127.0.0.1:8082；原生unityMCP instances为FreedomTower_1@520e2c6d，project/info路径和版本一致。刷新编译恢复断线后重读现场status与instances，重新选定并核对身份；未猜测、扫描或改端口，只作当次线索。
+- Luban导出11表成功，正常Play加载11张JSON与磁盘匹配、失败表0；41行HP三路径123次验证通过，编译无失败；退出Play回Boot。报告Artifacts/L02_W16_W25_Ground_HP_Minus10_20261111.md；审计Library/BalanceStage/l02-w16-w25-ground-minus10-20261111/。
+
+## 2026-11-11 Codex L02 W16–W25 地面 HP 第二轮 -10% 连接核对
+
+- 本轮现场核对D:/FreedomTower_1、Unity2022.3.62f3c1、manifest MCP10.3.0、EditorPrefs stdio/socket6400、HttpUrl=http://127.0.0.1:8082；原生unityMCP instances为FreedomTower_1@520e2c6d，project/info一致。刷新编译自动恢复断线后重读现场status和instances，重新选择并核对身份，未猜测、扫描或修改端口。仅当次连接线索，下次重新确认。
+- Luban成功11表，正常Play的11张JSON匹配磁盘，失败表0、41行三路径123次HP验证通过、编译无失败，退出Play回Boot。报告Artifacts/L02_W16_W25_Ground_HP_Minus10_R2_20261111.md；审计Library/BalanceStage/l02-w16-w25-ground-minus10-r2-20261111/。
+
+## 2026-11-12 Codex L02 W20–W25 地面 HP +50% 连接核对
+
+- 本轮现场核对 D:/FreedomTower_1、Unity 2022.3.62f3c1、manifest MCP v10.3.0。EditorPrefs HttpUrl 实测 http://127.0.0.1:8082，客户端 unityMCP 实际为 stdio launcher；instances 实测 FreedomTower_1@520e2c6d、桥接端口 6400。project/info 完整路径和版本一致；启动 Play 域重载后重新选择实例、核对身份。未猜测、扫描或修改端口。以上仅为当次线索，下次必须重新确认。
+- 本轮 25 个地面 HP ×1.50，源表逐格回读、导出 JSON 和范围哈希比对通过，Luban 11 表真实成功。Boot Play 配置加载完成后退出；scriptCompilationFailed=false。空中出生顺序源表/JSON 均 PASS。报告 Artifacts/L02_W20_W25_Ground_HP_Plus50_20261112.md。
+
+
+## 2026-11-12 Codex L02 W20–W25 地面 HP -20% 连接核对
+
+- 本轮现场核对 D:/FreedomTower_1、Unity 2022.3.62f3c1、manifest MCP v10.3.0。EditorPrefs HttpUrl 实测 http://127.0.0.1:8082；客户端 unityMCP 为 stdio，实例 FreedomTower_1@520e2c6d、桥接端口 6400。Play 重载后 instances 短暂为空，经现场 status 只读核对后恢复，重新选择实例并核对 project/info。未扫描、猜测或修改端口，只作当次线索。
+- 25 个地面 HP 按当前值 ×0.80，源表回读及导出 JSON 白名单验证通过，Luban 11 表成功。Unity IsLoaded=true、FailedTables=[]，已退出 Play，无编译失败。报告 Artifacts/L02_W20_W25_Ground_HP_Minus20_20261112.md。
 
