@@ -98,6 +98,7 @@ export function normalizeTowerRows(tables) {
       prices: r.prices,            // L1 = build cost; L2/L3 = incremental upgrade cost
       upgradeTo: r.upgradeTo,
       canAttackAir: r.canAttackAir === 1,
+      airDamageScale: r.airDamageScale > 0 ? r.airDamageScale : 1,
       effectType,                  // 0 single target, 3 splash, 1 slow aura
       effectValue: r.effectValue,  // slow ratio for frost
       aoeRadius: effectType === 3 && bullet ? bullet.aoeRadius : 0,
@@ -545,7 +546,9 @@ export function pickTarget(enemies, x, y, radius, canAttackAir, airOnly = false)
 }
 
 function better(e, cur) {
-  return e.travelled > cur.travelled || (e.travelled === cur.travelled && e.id < cur.id);
+  const a = e.targetProgress ?? e.travelled;
+  const b = cur.targetProgress ?? cur.travelled;
+  return a > b || (a === b && e.id < cur.id);
 }
 
 // Legal only if S still reaches E after the tower occupies idx (TowerManager.TryBuildInternal).
@@ -569,6 +572,7 @@ export function prepareLevel(levelId, tables, opts) {
 }
 
 export function makeRunState(prep, tables, opts) {
+  opts = { ...DEFAULTS, ...opts };
   const towerRows = normalizeTowerRows(tables);
   if (opts.towerPowerScale !== 1) {
     for (const row of towerRows.values()) row.power *= opts.towerPowerScale;
@@ -703,7 +707,7 @@ export function makeEnemy(st, enemyId) {
     enemyId,
     flying,
     alive: true,
-    hp: st.roundIdx + 1 === st.nRounds ? Math.round(cfg.hp * st.opts.ehpScale) : cfg.hp,
+    hp: st.roundIdx + 1 === st.nRounds ? cfg.hp * st.opts.ehpScale : cfg.hp,
     armor: cfg.armor,
     speed: cfg.speed,
     reward: cfg.reward,
@@ -715,6 +719,7 @@ export function makeEnemy(st, enemyId) {
     y: g.yOf[g.start],
     route: null,         // ground: cell indices, current route
     s: 0,                // ground: arc length along current route (cells)
+    pathCursor: 0,
     total: 0,            // flyer: straight-line length S -> E
   };
   if (flying) {
@@ -757,6 +762,27 @@ export function moveEnemy(st, e) {
     if (e.slowTimer <= 0) { e.slowTimer = 0; e.slowRatio = 0; }
   }
   const step = e.speed * (1 - e.slowRatio) * st.dt;
+  if (st.opts.runtimeWaypoints && !e.flying) {
+    if (!e.route?.length) { leak(st, e); return; }
+    const oldCursor = e.pathCursor;
+    let dx = 0, dy = 0, dist = 0;
+    while (e.pathCursor < e.route.length) {
+      const cell = e.route[e.pathCursor];
+      dx = st.grid.xOf[cell] - e.x; dy = st.grid.yOf[cell] - e.y;
+      dist = Math.hypot(dx, dy);
+      if (dist > 0.05) break;
+      e.pathCursor += 1;
+    }
+    if (e.pathCursor >= e.route.length) { leak(st, e); return; }
+    e.targetProgress = e.pathCursor / (e.route.length - 1);
+    if (oldCursor !== e.pathCursor) return;
+    const moved = Math.min(step, dist);
+    e.x += dx / dist * moved; e.y += dy / dist * moved;
+    e.travelled += moved;
+    const previous = e.route[Math.max(0, e.pathCursor - 1)];
+    e.s = Math.max(0, e.pathCursor - 1) + Math.hypot(e.x-st.grid.xOf[previous], e.y-st.grid.yOf[previous]);
+    return;
+  }
   if (e.flying) {
     e.travelled = Math.min(e.total, e.travelled + step);
     const f = e.total > 0 ? e.travelled / e.total : 1;
@@ -831,10 +857,10 @@ function fire(st, t, target) {
   if (row.effectType === 3) {
     // C#: DetonateAt. Centre = target position at fire time; power applies to every hit unit.
     for (const e of splashHits(st.enemies, target.x, target.y, row.aoeRadius, row.canAttackAir)) {
-      hurtEnemy(st, e, row.power);
+      hurtEnemy(st, e, row.power * (e.flying ? (row.airDamageScale ?? 1) : 1));
     }
   } else {
-    hurtEnemy(st, target, row.power);
+    hurtEnemy(st, target, row.power * (target.flying ? (row.airDamageScale ?? 1) : 1));
   }
 }
 
@@ -911,6 +937,7 @@ function rerouteGround(st) {
     }
     e.route = getRoute(st, node);
     e.s = 0;
+    e.pathCursor = 0;
     e.x = st.grid.xOf[node];
     e.y = st.grid.yOf[node];
   }

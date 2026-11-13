@@ -40,6 +40,8 @@ namespace FTProject.EditorTools
         private static JSONNode _plannedOperations;
         private static string _operationError;
         private static bool _waitForFunds;
+        private static bool _carryQueuedOperations;
+        private static bool _insideUpdate;
         private static bool _performanceScreensCaptured;
         private static string _pendingScreenshot;
         private static int _pendingScreenshotWave;
@@ -91,9 +93,14 @@ namespace FTProject.EditorTools
                 throw new InvalidOperationException("Replay requires an idle EditMode editor.");
             _requestPath = Path.GetFullPath(requestPath);
             if (!File.Exists(_requestPath)) throw new FileNotFoundException(_requestPath);
-            JSON.Parse(File.ReadAllText(_requestPath));
+            JSONNode parsedRequest = JSON.Parse(File.ReadAllText(_requestPath));
+            if(parsedRequest["suppressPresentation"].AsBool && parsedRequest["keepPlaying"].AsBool)
+                throw new InvalidOperationException("Presentation suppression must exit PlayMode after the isolated test.");
             SessionState.SetString(RequestKey, _requestPath);
-            SessionState.SetString("FT.Balance.TestStorageContext", "replay-" + Guid.NewGuid().ToString("N"));
+            string resumeContext = parsedRequest["resumeStorageContext"].Value;
+            if (!string.IsNullOrEmpty(resumeContext) && !System.Text.RegularExpressions.Regex.IsMatch(resumeContext, "^replay-[0-9a-f]{32}$"))
+                throw new InvalidOperationException("Only an isolated replay storage context can be resumed.");
+            SessionState.SetString("FT.Balance.TestStorageContext", string.IsNullOrEmpty(resumeContext) ? "replay-" + Guid.NewGuid().ToString("N") : resumeContext);
             _oldStartScene = EditorSceneManager.playModeStartScene != null ? AssetDatabase.GetAssetPath(EditorSceneManager.playModeStartScene) : "";
             SessionState.SetString("FT.Balance.OldStartScene", _oldStartScene);
             var scene = AssetDatabase.LoadAssetAtPath<SceneAsset>("Assets/Scenes/main.unity");
@@ -250,6 +257,13 @@ namespace FTProject.EditorTools
 
         private static void Update()
         {
+            if (_insideUpdate) return;
+            _insideUpdate = true;
+            try { UpdateCore(); }
+            finally { _insideUpdate = false; }
+        }
+        private static void UpdateCore()
+        {
             if (!EditorApplication.isPlaying || _request == null || !Running) return;
             try
             {
@@ -304,7 +318,7 @@ namespace FTProject.EditorTools
                     UIManager.Instance.Close(LevelDetailView.LogicalName);
                     UIManager.Instance.Close("LoadingView");
                     LevelLoadingMask.Hide();
-                    flow.InitLevel(run["levelId"].AsInt, false);
+                    flow.InitLevel(run["levelId"].AsInt, run["resumeSaved"].AsBool);
                     _initialGold = PlayerDataManager.Instance.Gold;
                     _initialHp = PlayerDataManager.Instance.Hp;
                     EnemyOutcomes.Clear(); OperationStages.Clear();
@@ -315,11 +329,12 @@ namespace FTProject.EditorTools
                     Operations.Clear(); Boundaries.Clear(); StepCosts.Clear();
                     BalanceRenderSampler.Reset();
                     _performanceScreensCaptured = false;
-                    BaseTower.EvidenceTrackReentry = !_request["renderedPerformance"].AsBool;
+                    BaseTower.EvidenceTrackReentry = !_request["renderedPerformance"].AsBool && !_request["capturePressure"].AsBool;
                     _allocatedStart = GC.GetTotalMemory(false); _levelInitialized = true;
                     _operationError = null;
                     _pendingScreenshot = null;
                     _waitForFunds = run["waitForFunds"].AsBool;
+                    _carryQueuedOperations = run["carryOperations"].AsBool;
                     ReplayedOperations.Clear();
                     _towerLimit = run["towerLimit"] != null ? run["towerLimit"].AsInt : 8;
                     _buildPlan = run["buildPlan"];
@@ -382,6 +397,8 @@ namespace FTProject.EditorTools
                 if (step <= 0 || step > .1f) throw new InvalidOperationException("Step must be in (0,.1]");
                 for (int i = 0; i < count; i++)
                 {
+                    if(!EditorApplication.isPlayingOrWillChangePlaymode || !EditorApplication.isPlaying || _request==null || !Running || !SaveManager.IsTestStorage) return;
+                    if(_request["suppressPresentation"].AsBool) IsolatedBalancePresentation.Prepare();
                     if (!string.IsNullOrEmpty(_pendingScreenshot) && flow.State == GameFlowState.RoundRunning &&
                         flow.CurrentRoundIndex == _pendingScreenshotWave && flow.RunMetrics.waves.Count > 0 &&
                         flow.RunMetrics.waves[flow.RunMetrics.waves.Count - 1].successfulSpawned > 0)
@@ -391,7 +408,9 @@ namespace FTProject.EditorTools
                     }
                     if (flow.State == GameFlowState.GameOver) { RecordResult(flow, run, "finished"); return; }
                     var metrics = (LevelRunMetrics)RunField.GetValue(flow);
-                    if (metrics != null && metrics.levelElapsedMs > 2400000) { RecordResult(flow, run, "simulation_timeout"); return; }
+                    double levelLimit = _request["maxLevelSeconds"].AsDouble;
+                    if (levelLimit <= 0) levelLimit = 2400;
+                    if (metrics != null && metrics.levelElapsedMs > levelLimit * 1000) { RecordResult(flow, run, "simulation_timeout"); return; }
                     double wallLimit = run["wallTimeoutSeconds"].AsDouble;
                     if (wallLimit <= 0) wallLimit = 300;
                     if (EditorApplication.timeSinceStartup - _runWall > wallLimit) { RecordResult(flow, run, "wall_timeout"); return; }
@@ -405,7 +424,8 @@ namespace FTProject.EditorTools
                         }
                         else Shop(flow, run["strategy"].Value, nextWave);
                         CaptureBoundary(nextWave, run);
-                        if (nextWave == 1) EventDispatcher.TriggerEvent(EventName.StartRoundRequestEvent);
+                        if (nextWave == 1 || run["resumeSaved"].AsBool && flow.State == GameFlowState.Preparing)
+                            EventDispatcher.TriggerEvent(EventName.StartRoundRequestEvent);
                         // Later waves retain the actual configured 5 second automatic waiting time.
                     }
                     if (_plannedOperations == null && (string)run["strategy"] == "plan" && flow.State == GameFlowState.RoundRunning)
@@ -582,9 +602,9 @@ namespace FTProject.EditorTools
                 index++;
                 JSONNode op = kv.Value;
                 if (ReplayedOperations.Contains(index)) continue;
-                if (op["waveOrdinal"].AsInt < wave)
+                if (op["waveOrdinal"].AsInt < wave && !_carryQueuedOperations)
                 { _operationError = "Previous-wave operation was never affordable: " + op.ToString(); return false; }
-                if (op["waveOrdinal"].AsInt != wave) continue;
+                if (op["waveOrdinal"].AsInt > wave) continue;
                 long due = op["timeMs"].AsLong;
                 if (boundary ? due != 0 : (!_waitForFunds && due == 0) || due > elapsed) continue;
                 int row = op["row"].AsInt, col = op["col"].AsInt;
@@ -831,7 +851,7 @@ namespace FTProject.EditorTools
             entry["strategy"] = run["strategy"].Value; entry["speed"] = run["speed"].AsFloat;
             entry["speedComparisonGroup"] = run["speedComparisonGroup"].Value;
             entry["state"] = state; entry["stepSeconds"] = _request["stepSeconds"].AsDouble;
-            entry["fundingPolicy"] = _waitForFunds ? "Scheduled earliest time; wait for actual funds within the same wave; reject unfinished prior-wave actions" : "Exact scheduled affordability required";
+            entry["fundingPolicy"] = _carryQueuedOperations ? "Earliest-wave queue; pay only with actual earned gold; unaffordable transactions carry forward" : _waitForFunds ? "Scheduled earliest time; wait for actual funds within the same wave; reject unfinished prior-wave actions" : "Exact scheduled affordability required";
             entry["pendingOperations"] = new JSONArray();
             if (_plannedOperations != null)
             {
