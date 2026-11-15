@@ -287,3 +287,20 @@ Luban/BalanceDesign/Versions/*/Datas/
 
 # 关卡表的临时中间产物（一次性草稿，不参与运行时；正式回滚基线用 .bak_* 后缀）
 Luban/Config/Datas/Levels/**/*.xlsx.new
+
+# ---------------------------------------------------------------------------
+# 12. 数值体系 V2 工具链与落表备份（2026-11-15 新增）
+# ---------------------------------------------------------------------------
+# .NET 工具（MapMetrics / RefSim / StaticServe）的构建产物，dotnet build 可重建。
+# 注意只限定 balance_v2 下，避免影响工程里其它同名目录。
+/.workbuddy/tools/balance_v2/**/bin/
+# 这三个 .csproj 是 V2 工具的真实工程文件（不是 Unity 自动生成的空壳），必须入库，
+# 否则 clone 下来无法 dotnet build。第 5 节的 *.csproj 只针对 Unity 生成的工程文件。
+!/.workbuddy/tools/balance_v2/**/*.csproj
+
+# apply_v2_tables.py 每轮 --apply 前整份快照的源表副本（8 表 × 30 关 × 5 轮 ≈ 1200 个 xlsx）。
+# 与第 4b 节同理：可重算的中间产物，需要历史版本时用 git / 上一轮 commit 即可。
+/Docs/BalanceV2/backup_20261115_before_v2*/
+
+# 一次性调查任务的输出目录（会话 UUID 命名，内容为候选值草稿与 inspect 预览）。
+/outputs/
