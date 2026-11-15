@@ -76,6 +76,18 @@ namespace FTProject
 
         public string Desc { get { return _m.Desc; } }
 
+        /// <summary>
+        /// 空中怪出生格（行, 列）；任一为负 = 不单独指定，沿用起点 S。
+        /// 【为什么需要】起终点直线不足 5 格的地图，空中怪从 S 起飞只飞 2–4 格就到终点，
+        ///   2026-11-15 用户定规：这类地图空中怪统一从左上角 (0,0) 出生，S 本身就在左上角的 L28 用右上角。
+        /// </summary>
+        public int AirSpawnRow { get { return _m.AirSpawnRow; } }
+        public int AirSpawnCol { get { return _m.AirSpawnCol; } }
+        public bool HasAirSpawn
+        {
+            get { return AirSpawnRow >= 0 && AirSpawnCol >= 0 && AirSpawnRow < Rows && AirSpawnCol < Cols; }
+        }
+
         /// <summary>取指定格子的字符；越界或行长度不足时返回 '.'（当空地处理）</summary>
         public char GetCell(int row, int col)
         {

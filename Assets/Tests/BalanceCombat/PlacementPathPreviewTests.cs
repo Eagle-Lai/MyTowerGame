@@ -178,7 +178,7 @@ namespace FTProject.Tests
                 ".###.",
                 "....E",
             };
-            return new LevelMapConfig(new cfg.LevelMap(9001, 1, 5, 5, cells, "preview-double-route"));
+            return new LevelMapConfig(new cfg.LevelMap(9001, 1, 5, 5, cells, "preview-double-route", -1, -1));
         }
 
         /// <summary>只有一条 L 形通路的 3×5 图：中段任一格都是"堵死点"。</summary>
@@ -192,7 +192,7 @@ namespace FTProject.Tests
                 ".##",
                 "..E",
             };
-            return new LevelMapConfig(new cfg.LevelMap(9002, 1, 3, 5, cells, "preview-single-route"));
+            return new LevelMapConfig(new cfg.LevelMap(9002, 1, 3, 5, cells, "preview-single-route", -1, -1));
         }
 
         private static void SetProperty(object instance, string name, object value)

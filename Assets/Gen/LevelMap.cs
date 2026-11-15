@@ -24,10 +24,12 @@ public sealed partial class LevelMap :  Bright.Config.BeanBase
         { if(!_json["rows"].IsNumber) { throw new SerializationException(); }  Rows = _json["rows"]; }
         { var __json0 = _json["cells"]; if(!__json0.IsArray) { throw new SerializationException(); } Cells = new System.Collections.Generic.List<string>(__json0.Count); foreach(JSONNode __e0 in __json0.Children) { string __v0;  { if(!__e0.IsString) { throw new SerializationException(); }  __v0 = __e0; }  Cells.Add(__v0); }   }
         { if(!_json["desc"].IsString) { throw new SerializationException(); }  Desc = _json["desc"]; }
+        { if(!_json["airSpawnRow"].IsNumber) { throw new SerializationException(); }  AirSpawnRow = _json["airSpawnRow"]; }
+        { if(!_json["airSpawnCol"].IsNumber) { throw new SerializationException(); }  AirSpawnCol = _json["airSpawnCol"]; }
         PostInit();
     }
 
-    public LevelMap(int id, int levelId, int cols, int rows, System.Collections.Generic.List<string> cells, string desc ) 
+    public LevelMap(int id, int levelId, int cols, int rows, System.Collections.Generic.List<string> cells, string desc, int airSpawnRow, int airSpawnCol ) 
     {
         this.Id = id;
         this.LevelId = levelId;
@@ -35,6 +37,8 @@ public sealed partial class LevelMap :  Bright.Config.BeanBase
         this.Rows = rows;
         this.Cells = cells;
         this.Desc = desc;
+        this.AirSpawnRow = airSpawnRow;
+        this.AirSpawnCol = airSpawnCol;
         PostInit();
     }
 
@@ -67,6 +71,14 @@ public sealed partial class LevelMap :  Bright.Config.BeanBase
     /// 备注
     /// </summary>
     public string Desc { get; private set; }
+    /// <summary>
+    /// 空中怪出生格的行（0 起，自上而下）；-1=沿用起点 S
+    /// </summary>
+    public int AirSpawnRow { get; private set; }
+    /// <summary>
+    /// 空中怪出生格的列（0 起，自左向右）；-1=沿用起点 S
+    /// </summary>
+    public int AirSpawnCol { get; private set; }
 
     public const int __ID__ = -2066999464;
     public override int GetTypeId() => __ID__;
@@ -89,6 +101,8 @@ public sealed partial class LevelMap :  Bright.Config.BeanBase
         + "Rows:" + Rows + ","
         + "Cells:" + Bright.Common.StringUtil.CollectionToString(Cells) + ","
         + "Desc:" + Desc + ","
+        + "AirSpawnRow:" + AirSpawnRow + ","
+        + "AirSpawnCol:" + AirSpawnCol + ","
         + "}";
     }
     

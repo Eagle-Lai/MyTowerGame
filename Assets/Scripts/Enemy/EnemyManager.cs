@@ -103,8 +103,14 @@ namespace FTProject
                 enemy.transform.SetParent(EnemyParent, false);
             }
 
-            // 出生点 = 路径第一格
+            // 出生点 = 路径第一格；空中怪若本关指定了空中出生格则从那里起飞
+            //（飞行直线以 Init→SetupFlyingPath 时的当前位置为起点，所以必须在 Init 之前定位）
             Vector2 spawn = path[0].Center;
+            LevelMapConfig map = GameFlowManager.Instance != null ? GameFlowManager.Instance.Map : null;
+            if (cfg.IsFlying && map != null && map.HasAirSpawn && BoardView.Instance != null)
+            {
+                spawn = BoardView.Instance.CellCenter(map.AirSpawnRow, map.AirSpawnCol);
+            }
             enemy.transform.position = new Vector3(spawn.x, spawn.y, 0f);
 
             enemy.Init(cfg, path);
