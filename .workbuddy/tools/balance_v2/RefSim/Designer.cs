@@ -64,7 +64,7 @@ public static class Designer
     }
 
     // ------------------------------------------------------------ 参照解：玩家常见打法
-    static List<Act> Plan(MapG M, int stage, out int wallCount, out int optionalCount, out Dictionary<string, int> typeCount, out List<int> altOpening, out int airSpentOut, out int groundSpentOut)
+    public static List<Act> Plan(MapG M, int stage, out int wallCount, out int optionalCount, out Dictionary<string, int> typeCount, out List<int> altOpening, out int airSpentOut, out int groundSpentOut, int upBudgetFixed = -1)
     {
         var pathIdx = new Dictionary<int, int>(); for (int i = 0; i < M.FinalPath.Count; i++) pathIdx[M.FinalPath[i]] = i;
         var free = Enumerable.Range(0, M.W * M.H).Where(i => M.Free[i] && i != M.S && i != M.E && !M.PathSet.Contains(i)).ToList();
@@ -107,7 +107,7 @@ public static class Designer
 
         var q = new List<Act>();
         foreach (var c in walls) q.Add(new Act(c, type[c], false, 1, TowerDef.Of(type[c], 1).Cost, "绕路墙#" + (q.Count + 1)));
-        int wallCost = q.Sum(a => a.Cost); int upBudget = (int)Math.Round(wallCost * Kappa) - wallCost;
+        int wallCost = q.Sum(a => a.Cost); int upBudget = upBudgetFixed >= 0 ? upBudgetFixed : (int)Math.Round(wallCost * Kappa) - wallCost;
         int airBudget = (int)Math.Round(upBudget * AirBudgetShare), groundBudget = upBudget - airBudget;
 
         // 升级/补建分两池：航线池 = 射程覆盖空中航线的单体（升级或可选位新建）；地面池 = 其余。

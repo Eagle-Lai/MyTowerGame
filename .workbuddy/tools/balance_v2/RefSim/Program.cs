@@ -6,6 +6,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
+if (args.Length > 0 && args[0] == "baseline") { Baseline.Run(args.Skip(1).ToArray()); return; }
 var metricsPath = args.Length > 0 ? args[0] : "Docs/BalanceV2/map_metrics.json";
 var outDir = args.Length > 1 ? args[1] : "Docs/BalanceV2/sim";
 var only = args.Length > 2 ? args[2].Split(',').ToHashSet() : null;
@@ -33,10 +34,10 @@ static class Json { public static readonly JsonSerializerOptions Opt = new() { W
 public record MapIn(string Level, int Cols, int Rows, int[] Start, int[] Goal, int LongestCells, int[][] Path, string[] Cells);
 
 // ---------------------------------------------------------------- 全局参数（02_全局参数.md）
-public record TowerDef(int Type, int Lv, int Cost, double Power, double Cd, double Range, double Splash, double Slow, bool Air)
+public record TowerDef(int Type, int Lv, int Cost, double Power, double Cd, double Range, double Splash, double Slow, bool Air, double AirMul = 1)
 {
     public double Dps => Cd > 0 && Power > 0 ? Power / Cd : 0;
-    public static readonly TowerDef[,] T =
+    public static TowerDef[,] T =
     {
         { new(1,1,20, 8,0.80,2.00,0,0,true), new(1,2,30,20,0.80,2.25,0,0,true), new(1,3,50,44,0.80,2.50,0,0,true) },
         { new(2,1,30,12,1.50,2.00,0.90,0,false), new(2,2,40,30,1.50,2.10,1.05,0,false), new(2,3,60,60,1.50,2.20,1.20,0,false) },
@@ -205,7 +206,7 @@ public class Sim
                 while (tw.Timer >= d.Cd && tw.Tgt != null)
                 {
                     tw.Timer -= d.Cd; double p = d.Power * FireScale;
-                    if (d.Type == 1) Hit(tw.Tgt, p, t);
+                    if (d.Type == 1) Hit(tw.Tgt, p * (tw.Tgt.A.Fly ? d.AirMul : 1), t);
                     else { double cx = tw.Tgt.X, cy = tw.Tgt.Y; foreach (var e in live) if (!e.A.Fly && !e.Dead && (e.X - cx) * (e.X - cx) + (e.Y - cy) * (e.Y - cy) <= d.Splash * d.Splash) Hit(e, p, t); }
                     if (tw.Tgt.Dead) tw.Tgt = Pick(tw, live);
                 }
